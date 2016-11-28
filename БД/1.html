@@ -1,0 +1,290 @@
+<div font-family="arial">
+<p>Совсем недавно у нас появился новый раздел “Продвинутый php”, который фактически символизирует переход на следующую ступень на нашем пути от новичков до профессионалов <img src="http://i-novice.net/wp-includes/images/smilies/simple-smile.png" alt=":)" class="wp-smiley" style="height: 1em; max-height: 1em;"> В связи с таким качественных переходом, будет несправедливо не затронуть тему имеющую непосредственной отношение к программированию на php – проектированию базы данных.</p>
+<p>При написании небольших программ на php, владеть навыками, которые будут описаны в этой статье, не так важно. Но если Вы беретесь за задачи побольше (какая-нибудь CMS или просто большой портал), то они для Вас будут просто необходимыми.<br>
+<span id="more-110"></span></p>
+<p>Вкратце опишу тему нормализации баз данных. Сразу, стоит заметить, что термин нормальная таблица можно воспринимать не только в рамках математического аппарата, но и просто так. Потому что нормальные таблицы, действительно являются нормальными (или даже хорошими <img src="http://i-novice.net/wp-includes/images/smilies/simple-smile.png" alt=":)" class="wp-smiley" style="height: 1em; max-height: 1em;"> ), в том смысле, что при работе с ними всякие трудности практически исключены и время разработки Вашего проекта значительно сокращается.</p>
+<p>Официальное определение же гласит, что:</p>
+<p>“Нормальная форма — требование, предъявляемое к структуре таблиц в теории реляционных баз данных для устранения из базы избыточных функциональных зависимостей между атрибутами (полями таблиц).”</p>
+<p>Сразу приведу примеры трудностей, которые могут возникнуть при работе с не нормальной таблицей (если уж Вы на слово не верите <img src="http://s.w.org/images/core/emoji/72x72/1f609.png" alt="??" draggable="false" class="emoji"> ).</p>
+<p>Предположим, что у нас есть таблица – каталог товаров следующего вида:</p>
+<p>id, category, product1, product2, product3</p>
+<p>Да, это поля этой таблицы. Я, конечно, немного утрирую, но просто в этом случае недостатки настолько большие, что рассматривать их можно без микроскопа.</p>
+<p>В этой таблице хранится весь каталог. Каждая строка состоит из имени категории и списка продуктов, которые в нее входят.</p>
+<p>Итак, первый недостаток. Вполне логично предположить, что этот каталог рано или поздно придется редактировать. Все операции над каталогом будем рассматривать в контексте работы с таблицей базы данных. В таком случае, допустимы следующие операции: добавление/удаление/редактирование товара и добавление/удаление/редактирование категории.</p>
+<p>Я думаю, Вы уже смекнули, какие трудности нас ожидают <img src="http://i-novice.net/wp-includes/images/smilies/simple-smile.png" alt=":)" class="wp-smiley" style="height: 1em; max-height: 1em;"><br>
+Например, для того, чтобы удалить товар, нам нужно просто очистить нужную ячейку нужной строки. Не такая серьезная проблема, для упрямых программистов ;). Вопрос в том, сколько лишних действий придется сделать для этого. А именно, придется перебрать все ячейки всех строк и найти в одной из них нужное название товара и очистить эту ячейку. Для редактирования товара нужно будет выполнить такой же объем операций. Добавление товара это вообще ночной кошмар в этой ситуации. Во-первых, если все ячейки отведенные под товары в категории уже заняты (все три), то в таблицу придется добавлять новый столбец. Но проблема возникает уже перед этим – для определения свободных мест для продукта, нужно будет пройти их все (или проверить занятые, по крайней мере). Короче проблем много, будем считать, что я Вас убедил.</p>
+<p>Перехожу к делу. Нормальных форм существует несколько. Несколько стадий совершенства, так сказать. Для каждого вида, помимо его критериев, я буду приводить методы, которые нужно применять для приведения таблиц в эту форму.</p>
+<p>Первая нормальная форма (1NF)</p>
+<p>Основные критерии:</p>
+<ul>
+<li>Все строки должны быть различными.</li>
+<li>Все элементы внутри ячеек должны быть атомарными (не списками). Другими словами, элемент является атомарным, если его нельзя разделить на части, которые могут использовать в таблице независимо друг от друга.</li>
+</ul>
+<p>Пример не 1NF таблицы:</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Категория</td>
+<td align="center">Товары</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">Война и Мир, Азбука</td>
+</tr>
+<tr>
+<td align="center">Игрушки</td>
+<td align="center">Юла</td>
+</tr>
+</tbody></table>
+<p>В этом примере в одной из ячеек содержится список из двух элементов: Война и Мир, Азбука, т.е. он является не атомарным.</p>
+<p>Исправить можно так:</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Категория</td>
+<td align="center">Товары</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">Война и Мир</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">Азбука</td>
+</tr>
+<tr>
+<td align="center">Игрушки</td>
+<td align="center">Юла</td>
+</tr>
+</tbody></table>
+<p>Вот, теперь это таблица в первой нормальной форме.</p>
+<p>Методы приведения к 1NF:</p>
+<ul>
+<li>Устраните повторяющиеся группы в отдельных таблицах (одинаковые строки).</li>
+<li>Создайте отдельную таблицу для каждого набора связанных данных.</li>
+<li>Идентифицируйте каждый набор связанных данных с помощью первичного ключа (добавить уникальный id для каждой строки)</li>
+</ul>
+<p>Вторая нормальная форма (2NF)</p>
+<p>Основные критерии:</p>
+<ul>
+<li>Таблица должна находиться в первой нормальной форме.</li>
+<li>Любое её поле, не входящее в состав первичного ключа, функционально полно зависит от первичного ключа.</li>
+</ul>
+<p>Сразу скажу, что если Ваша таблица приведена к первой нормальной форме и у нее установлен уникальный id для каждой строки, то она находится и во второй нормальной форме.</p>
+<p>Значение второго правила можно понять на примере, когда первичный ключ таблицы состоит из нескольких полей. То есть каждой строке соответствует уникальный набор из нескольких значение полей таблицы.</p>
+<p>Например. Эта таблица находится в первой нормальной форме, но не во второй.</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Категория</td>
+<td align="center">Дата</td>
+<td align="center">Скидка</td>
+<td align="center">Товар</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">10.10.2008</td>
+<td align="center">10%</td>
+<td align="center">PHP for dummies</td>
+</tr>
+<tr>
+<td align="center">Ноутбуки</td>
+<td align="center">11.10.2008</td>
+<td align="center">20%</td>
+<td align="center">Acer</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">10.10.2008</td>
+<td align="center">10%</td>
+<td align="center">Windows XP</td>
+</tr>
+</tbody></table>
+(текст в скобках)
+<!-- ul#nav>li.item$*4>a{Item $} -->
+<ul id="nav">
+	<li class="item1"><a href="">Item 1</a></li>
+	<li class="item2"><a href="">Item 2</a></li>
+	<li class="item3"><a href="">Item 3</a></li>
+	<li class="item4"><a href="">Item 4</a></li>
+</ul>
+<p>В этой таблице первичный ключ составляют первые два столбца (Категория и Дата).<br>
+Скидка функционально полно зависит от них обоих, так как определяется одновременно категорией и датой. А вот с товаром проблемы. Она зависит только от категории и не зависит от даты (в любой день будет лежать там, пока не купят). Поэтому, говорят, что он зависит функционально не полно от всего первичного ключа и функционально полно от его части (Категория). Это нарушает требования второй нормальной формы.</p>
+<p>Исправляется это разделением этой таблицы на две другие:</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Категория</td>
+<td align="center">Дата</td>
+<td align="center">Скидка</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">10.10.2008</td>
+<td align="center">10%</td>
+</tr>
+<tr>
+<td align="center">Ноутбуки</td>
+<td align="center">11.10.2008</td>
+<td align="center">20%</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">10.10.2008</td>
+<td align="center">10%</td>
+</tr>
+</tbody></table>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Категория</td>
+<td align="center">Товар</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">PHP for dummies</td>
+</tr>
+<tr>
+<td align="center">Ноутбуки</td>
+<td align="center">Acer</td>
+</tr>
+<tr>
+<td align="center">Книги</td>
+<td align="center">Windows XP</td>
+</tr>
+</tbody></table>
+<p>Вот и все. Теперь эти таблицы находятся во второй нормальной форме.</p>
+<p>Методы приведения к 2NF:</p>
+<ul>
+<li>Создайте отдельные таблицы для наборов значений, относящихся к нескольким записям (Выше мы это сделали).</li>
+<li>Свяжите эти таблицы с помощью внешнего ключа (В нашем случае – это поле Категория).</li>
+</ul>
+<p>Третья нормальная форма (3NF)</p>
+<p>Основные критерии:</p>
+<ul>
+<li>Таблица находится во второй нормальной форме.</li>
+<li>Любой её не ключевой атрибут функционально зависит только от первичного ключа.</li>
+</ul>
+<p>Проще говоря, второе правило требует выносить все не ключевые поля, содержимое которых может относиться к нескольким записям таблицы в отдельные таблицы.<br>
+Например, есть у нас таблица:</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Имя шпиона</td>
+<td align="center">Государство</td>
+</tr>
+<tr>
+<td align="center">Джеймс Бонд</td>
+<td align="center">Великобритания</td>
+</tr>
+<tr>
+<td align="center">Ким Филби</td>
+<td align="center">СССР</td>
+</tr>
+<tr>
+<td align="center">Штирлиц</td>
+<td align="center">СССР</td>
+</tr>
+</tbody></table>
+<p>В этой таблице ключом является имя шпиона. А не ключевым полем – государство, на которое он работает. Вполне логично предположить, что в этой таблице государства могут быть одинаковыми для нескольких записей. И для того, чтобы эта таблица находилась в третей нормальной форме, не обходимо ее разделить на две:</p>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">ID</td>
+<td align="center">Государство</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">Великобритания</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">СССР</td>
+</tr>
+</tbody></table>
+<table border="1" cellpadding="2" cellspacing="2">
+<tbody><tr>
+<td align="center">Имя шпиона</td>
+<td align="center">Государство</td>
+</tr>
+<tr>
+<td align="center">Джеймс Бонд</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">Ким Филби</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">Штирлиц</td>
+<td align="center">2</td>
+</tr>
+</tbody></table>
+<p>Благодаря этому правилу, при удалении какого-то государства, имена шпионов не будут утеряны <img src="http://i-novice.net/wp-includes/images/smilies/simple-smile.png" alt=":)" class="wp-smiley" style="height: 1em; max-height: 1em;"></p>
+<p>Вообще, говоря, на практике, совершенствовать таблицы заканчивают на этом этапе (приведя их в третью нормальную форму).</p>
+<p>Методы приведения к 3NF</p>
+<ul>
+<li>Удаление полей не зависящих от ключа</li>
+</ul>
+<p>Нормальная форма Бойса-Кодда (BCNF)</p>
+<p>Эта форма почти то же самое, что и третья. С одним небольшим дополнительным условием.</p>
+<p>Основные критерии:</p>
+<ul>
+<li>Таблица находится в третьей нормальной форме</li>
+<li>В таблице должен быть только один потенциальный первичный ключ</li>
+</ul>
+<p>Другими словами, в таблице должен быть только один первичный ключ и не должно быть других потенциальных вариантов (например, набор не ключевых полей это таблицы).</p>
+<p>Методы приведения к BCNF</p>
+<ul>
+<li>Вынести в отдельную таблицу потенциальные первичные ключи</li>
+</ul>
+<p>Четвертая нормальная форма (4NF)</p>
+<p>Начиная с этой формы, буду приводить лишь краткую информацию о форме и ее критериях, так как практического применения это все не найдет. В общеобразовательных целях, так сказать, поделюсь <img src="http://i-novice.net/wp-includes/images/smilies/simple-smile.png" alt=":)" class="wp-smiley" style="height: 1em; max-height: 1em;"></p>
+<p>Ну, тут как и во всех предыдущих формах требования, включают в себя требования всех предыдущих форм + что-то еще. В это форме дополнительное правило должно исключать многозначные зависимости. Другими словами все строки таблицы должны быть независимыми друг от друга. В том смысле, что наличие какой-то строки X, не должно означать, что строка Y тоже где-то есть в этой таблице.</p>
+<p>Пятая нормальная форма (5NF)</p>
+<p>В некоторых предыдущих формах, для разрешения требований, мы производили декомпозицию таблицы (выделение некоторых полей в отдельную таблицу) на две другие. Так вот, оказывается, что иногда такого рода декомпозицию нельзя без потерь произвести (на две таблицы именно), но зато можно произвести декомпозицию на 3 и более таблицы. Пятая форма как раз призывает, чтобы все возможные декомпозиции были произведены.</p>
+<p>В самом начале статьи я показал, какие проблемы могут возникнуть при работе с не нормальными таблицами. В научной терминологии эти проблемы называют аномалиями. И, собственно, вся иерархия нормальных форм, построена таким образом, что каждая последующая ограничивает список возможных аномалий предыдущей формы. Этот процесс сопутствует процессу уменьшения энтропии базы данных, то есть наличия лишней информации. Мы добрались до 5ой нормальной формы, но этот список, в принципе никто не думал прекращать. Вот и в 1981 году Фагин (R. Fagin) опубликовал статью, в которой ввел понятие доменно-ключевой нормальной формы (ДКНФ).</p>
+<p>Доменно-ключевая нормальная форма (ДКНФ)</p>
+<p>В своей статье Фагин показал, отношение в ДКНФ не имеет аномалий модификации. Другими словами, что бы Вы там не меняли – ничего не потеряется, eсли соблюдены все ограничения относительно ключей и доменов.</p>
+<p>На самом деле формулировка слишком общая, но суть ее заключается в том, что если выполнять некоторые правила, то при любых действиях с таблицей ее целостность не пострадает и вся необходимая информация сохранится.</p>
+<p>Если рассматривать на примере, то правила действуют примерно так: нельзя просто удалить категорию из таблицы категорий, если с этой категорией связаны продукты из таблицы продуктов. Прежде чем удалять категорию необходимо выполнить предварительные действия в таблице продуктов (например, поле отвечающее за id категории этого товара нужно сделать NULL).</p>
+<p>На этом список нормальных форм заканчивается. Поэтому, желаю Вам удачи и внимательности при содержании всех Ваших таблиц, хотя бы в третей нормальной форме <img src="http://s.w.org/images/core/emoji/72x72/1f609.png" alt="??" draggable="false" class="emoji"></p>
+
+				<div>
+<br>
+            <div class="labels">
+
+<!-- Яндекс.Директ -->
+<script type="text/javascript">
+yamax = 7; //Максимальное количество цветов в эксперименте
+yablock = 2; //Номер блока рекламы для формирования имени среза
+yarnd = Math.floor(Math.random()*yamax)+1;
+yaid = yablock.toString() + yarnd.toString();
+yacol = '990000'; //Цвет по-умолчанию, если что-то пойдет не так
+if (yarnd == 1) {yacol = '990000';}
+if (yarnd == 2) {yacol = 'CC0000';}
+if (yarnd == 3) {yacol = '009900';}
+if (yarnd == 4) {yacol = '00CC00';}
+if (yarnd == 5) {yacol = '000099';}
+if (yarnd == 6) {yacol = '0000CC';}
+if (yarnd == 7) {yacol = '0E97BF';}
+yandex_partner_id = 97608; //Ваш идентификатор в РСЯ
+yandex_stat_id = yaid;
+yandex_site_bg_color = 'FFFFFF';
+yandex_site_charset = 'utf-8';
+yandex_ad_format = 'direct';
+yandex_font_size = 1.2;
+yandex_direct_type = 'flat';
+yandex_direct_limit = 3;
+yandex_direct_title_font_size = 1.2;
+yandex_direct_title_color = yacol;
+yandex_direct_url_color = '000000';
+yandex_direct_text_color = '000000';
+yandex_direct_hover_color = '66000';
+yandex_direct_favicon = true;
+document.write('<sc'+'ript type="text/javascript" src="http://an.yandex.ru/system/context.js"></sc'+'ript>');
+</script><script type="text/javascript" src="http://an.yandex.ru/system/context.js"></script>
+<!-- END Яндекс.Директ -->
+
+			</div>
+<br>
+            <div class="labels">
+				<b>Теги:</b> <a href="http://i-novice.net/tags/bazy-dannyx/" rel="tag">базы данных</a>			</div>
+<br>
+<script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script> <div data-yasharelink="http://i-novice.net/6-normalnyx-form-bd/" class="yashare-auto-init b-share_theme_counter" data-yasharequickservices="vkontakte,odnoklassniki,yaru,facebook,twitter,moimir,gplus" data-yasharetheme="counter" data-yasharetype="big"><span class="b-share"><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="ВКонтакте" class="b-share__handle b-share__link b-share-btn__vkontakte b-share-btn__counter" href="https://share.yandex.net/go.xml?service=vkontakte&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="vkontakte"><span class="b-share-icon b-share-icon_vkontakte"></span><span class="b-share-counter">16</span></a></span><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="Одноклассники" class="b-share__handle b-share__link b-share-btn__odnoklassniki" href="https://share.yandex.net/go.xml?service=odnoklassniki&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="odnoklassniki"><span class="b-share-icon b-share-icon_odnoklassniki"></span><span class="b-share-counter">0</span></a></span><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="Facebook" class="b-share__handle b-share__link b-share-btn__facebook" href="https://share.yandex.net/go.xml?service=facebook&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="facebook"><span class="b-share-icon b-share-icon_facebook"></span><span class="b-share-counter">0</span></a></span><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="Twitter" class="b-share__handle b-share__link b-share-btn__twitter" href="https://share.yandex.net/go.xml?service=twitter&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="twitter"><span class="b-share-icon b-share-icon_twitter"></span></a></span><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="Мой Мир" class="b-share__handle b-share__link b-share-btn__moimir" href="https://share.yandex.net/go.xml?service=moimir&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="moimir"><span class="b-share-icon b-share-icon_moimir"></span><span class="b-share-counter"></span></a></span><span class="b-share-btn__wrap"><a rel="nofollow" target="_blank" title="Google Plus" class="b-share__handle b-share__link b-share-btn__gplus" href="https://share.yandex.net/go.xml?service=gplus&amp;url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;title=6%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%91%D0%94" data-service="gplus"><span class="b-share-icon b-share-icon_gplus"></span><span class="b-share-counter">0</span></a></span><iframe style="display: none" src="//yastatic.net/share/ya-share-cnt.html?url=http%3A%2F%2Fi-novice.net%2F6-normalnyx-form-bd%2F&amp;services=vkontakte,odnoklassniki,yaru,facebook,twitter,moimir,gplus"></iframe></span></div>
+</div>
+
+				

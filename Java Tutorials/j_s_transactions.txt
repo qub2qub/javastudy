@@ -1,0 +1,284 @@
+ACID 
+(атомарность - atomicity
+согласованность - consistency
+изолированность - isolation
+стойкость - durability)
+
+integrity - целостность
+***************************
+Isolation is typically defined at database level as a property that defines how/when the changes made by one operation become visible to other.
+Изоляция показывает как/когда изменения сделанные одной транзакцией будут видны для другой транзакции.
+
+
+***************************
+Java EE developers have had two choices for transaction management: global or local transactions.
+1) Global transactions enable you to work with multiple transactional resources, typically relational databases and message queues. The application server manages global transactions through the JTA.
+2) Local transactions are resource-specific, such as a transaction associated with a JDBC connection. Local transactions may be easier to use, but have significant disadvantages: they cannot work across multiple transactional resources. 
+-----------------
+
+Типы транзакций:
+1) Физические - единая транзакция, к-я может действовать сразу для нескольких методов.
+2) Логические/локальные - транзакция каждого метода.
+Несколько логических транзакций могут быть внутри 1 физической транзакции.
+
+propagation - 
+1)очень важное св-во, от него полностью зависит как будет работать приложение с БД.
+2) НЕ оставлять зн-е по умолчанию.
+3) Нужно следить, повлияет ли ошибка во внутренней транзакции на внешнюю транзакцию.
+
+1) Isolation - это степень в которой данная транзакция изолирована от действий/результатов работы/влияния/ других транзакций.
+2) Propagation - обычно, если код выполняется внутри области транзакции (within a transaction scope) - то он (код) будет запущен в транзакции. Но есть опция/возможность указать такое поведение, чтобы транзакционный метод выполнялся тогда когда транзакционный контекст уже существовал (transaction context already exists).
+3) Timeout - как долго может выполняться даннная транзакция, до того как истечёт timeout и она будет автоматически rolled back.
+4) Read-only status - может быть использована транзакция только для чтения, если она только считывает данные и не изменяет их.
+----------------------
+
+-----(1) MANDATORY - Support a current transaction, throw an exception if none exists.
+использовать текущую транзакцию, если её нет - выбрасывать исключение.
+Использовать тогда, когда вы уверены, что транзакция уже началась, и этот метод надо использовать в этой транзакции.
+
+-----(2) NESTED - если текущая транзакция существует - то nested выполняется в ней.
+Если текущей НЕТ - то nested ведёт себя как REQUIRED.
+Вложенная транзакция (подтранзакция), подтверждается вместе с внешней транзакцией (т.е. когда завершается внешняя транзакция - то завершится и nested транзакция.). Если нет существующей транзакции - то nested работает как REQUIRED.
+--PROPAGATION_NESTED uses a single physical transaction with multiple savepoints that it can roll back to. Such partial rollbacks allow an inner transaction scope to trigger a rollback for its scope, with the outer transaction being able to continue the physical transaction despite some operations having been rolled back. This setting is typically mapped onto JDBC savepoints, so will only work with JDBC resource transactions. See Spring’s DataSourceTransactionManager.
+Использовать когда, нужны подтранзакции. Т.е. 1-й метод начал транзакцию, 2-й - создал создал свою собственную подтранзакцию, и эта 2-я может никак не влиять на внешнюю. Т.е. если будет откат 2-й транзакции, то 1-я продолжит работу. Внешняя транзакция не пострадает, а вложенная может выполнится или откатиться.
+
+-----(3) NEVER - Execute non-transactionally, throw an exception if a transaction exists.
+Вообще Не выполнять в транзакции, если транзакция запущена - выбросить исключение.
+Антипод к mandatory. Использовать когда надо выполнять без транзакции.
+
+-----(4) NOT_SUPPORTED - Execute non-transactionally, suspend the current transaction if one exists.
+Вообще Не выполнять в транзакции, если транзакция запущена - она будет приостановлена.
+Не выполнять в текущей транзакции, если транзакция уже была запущена - то она будет приостановлена на время выполнения этого метода. И сам метод будет выполняться вне транзакции, и после завершения метода транзакция будет возобновлена.
+
+-----(5) REQUIRED - Support a current transaction, create a new one if none exists.
+если какая-то транзакция уже запущена - то выполнять метод внутри неё, иначе (если транзакции до этого не было) метод создаёт новую транзакцию.
+--SPRING PROPAGATION_REQUIRED - для каждого метода с такой аннотацией создаётся новая логическая транзакция (logical transaction scope). Для каждой такой logical transaction scope можно индивидуально задать rollback-only статус, т.е. внешняя транзакция (outer transaction scope) будет логически независима от inner transaction scope. 
+Но для обычного стандартного случая ис-ия PROPAGATION_REQUIRED -- все эти scopes будут запамлены на одну и ту же физическую транзакцию. И т.о. в этом случае если у внутренней транзакции будет установлен rollback-only маркер - то он влияет и на шанс того, что внешняя транзакция может не закомититься.
+--However, in the case where an inner transaction scope sets the rollback-only marker, the outer transaction has not decided on the rollback itself, and so the rollback (silently triggered by the inner transaction scope) is unexpected. A corresponding UnexpectedRollbackException is thrown at that point. This is expected behavior so that the caller of a transaction can never be misled to assume that a commit was performed when it really was not. So if an inner transaction (of which the outer caller is not aware) silently marks a transaction as rollback-only, the outer caller still calls commit. The outer caller needs to receive an UnexpectedRollbackException to indicate clearly that a rollback was performed instead.
+
+-----(6) REQUIRES_NEW - Create a new transaction, and suspend the current transaction if one exists.
+Всегда Создаёт новую транзакцию (В любом случае создаст новую). Если до этого уже была запущена какая-то другая транзакция, то она приостанавливается на время выполнения метода.
+Выполнение существующей транзакции (если таковая есть) прерывается, и начинается новая транзакция. После завершения метода новая транзакция подтверждается, а старая – возобновляется. 
+Вследствие такого поведения атрибут REQUIRES_NEW должен использоваться на методе только в случае, если результат выполнения этого метода должен быть сохранён  (т.е. закомичен) в БД вне зависимости от результатов выполнения внешней транзакции (которая в этом случае приостанавливается).
+ Таким образом, следует всегда использовать атрибуты MANDATORY или REQUIRED вместо REQUIRES_NEW, кроме особых случаев, схожих с примером сохранения аудиторской информации. 
+(Например, допустим, что каждый торговый приказ (stock trade) должен быть отражен в базе данных аудита. Эта информация должна быть сохранена вне зависимости от того, был ли приказ успешен или завершился неудачей ввиду ошибок валидации, отсутствия необходимых средств или по любой другой причине. Если в этой ситуации не использовать атрибут REQUIRES_NEW для метода аудита, то сохранение аудиторской информации будет отменено вместе с сохранением самого приказа.)
+--PROPAGATION_REQUIRES_NEW, in contrast to PROPAGATION_REQUIRED, uses a completely independent transaction for each affected transaction scope. In that case, the underlying physical transactions are different and hence can commit or roll back independently, with an outer transaction not affected by an inner transaction’s rollback status.
+
+-----(7) SUPPORTS - Support a current transaction, execute non-transactionally if none exists.
+Метод Может выполняться внутри транзакции, если она запущена, иначе - выполнится без транзакции.
+Для transaction managers с синхронизацией транзакций это значение PROPAGATION_SUPPORTS конкретно отличается от "no transaction at all", т.к. SUPPORTS всё-таки задаёт transaction scope, к которой будет применяться синхронизация. Т.е. одни и те же объекты  (JDBC Connection, Hibernate Session, etc) будут расшарены в заданном scope ( will be shared for the entire specified scope).
+
+---------------------
+Рекомендованный спобоб дать понять ему (Spring Framework’s transaction infrastructure) о том, что надо откатить транзакцию -- это выбросить исключение из кода, в к-й в настоящий момент выполняет содержимое транзакции.
+Спринг словит любое unhandled Exception и вычислит, надо ли откатывать транзакцию.
+По умолчанию спринг откатит транзакцию в случае:
+1) получения runtime, unchecked exceptions. Т.е. это такие исключения, к-е явл-ся подклассом RuntimeException.
+2) получения Ошибки (Errors will also - by default - result in a rollback)
+----По умолчанию в случае Checked exceptions (that are thrown from a transactional method) -- отката не будет.
+***************************
+
+____________ Ошибки, связанные с локальными транзакциями ____________
+локальных транзакций, также часто называемых транзакциями баз данных. В былые времена при работе с хранилищами данных (например, через JDBC) было принято оставлять обработку транзакций базе данных. В конце концов, это ее прямая обязанность, не так ли? Локальные транзакции идеально подходят для обработки логических единиц работы (logical units of work – LUW), выполняющих единичные операторы вставки, изменения или удаления данных.
+В этом примере методы insertTrade() и updateAcct() используют JDBC, не включая их в одну транзакцию. После выполнения метода insertTrade() торговый приказ был сохранен в базе данных, и соответствующая транзакция была подтверждена. Если вызов метода updateAcct(), то приказ останется в таблице TRADE что будет означать несогласованность базы данных. Если бы метод placeTrade() использовал транзакции, то обе операции являлись бы частью единой LUW, и заказ на торги был бы отменен в случае сбоя при обновлении счета.
+(ORM-based frameworks require a transaction in order to trigger the synchronization between the object cache and the database.It is through a transaction commit that the SQL code is generated and the database affected by the desired action (that is, insert, update, delete). Without a transaction there is no trigger for the ORM to generate SQL code and persist the changes, so the method simply ends — no exceptions, no updates. If you are using an ORM-based framework, you must use transactions. You can no longer rely on the database to manage the connections and commit the work. ) 
+ ORM framework-ам требуются транзакции для синхронизации содержимого их кэша объектов и базы данных. Генерация SQL-кода и изменение базы данных вследствие выполнения нужного оператора (insert, update или delete) выполняется только при подтверждении транзакции. В отсутствие транзакции некому дать сигнал ORM о том, что надо сгенерировать код SQL и выполнить изменения в базе данных, поэтому метод просто завершается, ничего не сделав, даже не выбросив исключения. При работе с ORM вы обязаны использовать транзакции. Больше нельзя полагаться на базу данных в вопросах управления соединения и подтверждения изменений.
+---------
+При использовании аннотации @Transactional в Spring следует добавить следующую строку в конфигурационный файл Spring:
+
+<tx:annotation-driven transaction-manager="transactionManager"/>
+
+В свойстве transaction-manager хранится ссылка на менеджер транзакций (transaction manager bean), определенный в конфигурационном файле Spring. Эта строка указывает Spring, что при применении перехватчика транзакций следует использовать аннотацию @Transactional. Без нее данная аннотация игнорируется, в результате чего транзакции в коде не используются вовсе.
+
+*******************
+Значения по умолчанию для <tx:advice/> tag (и для @Transactional)
+•Propagation setting is REQUIRED. 
+•Isolation level is DEFAULT. 
+•Transaction is read/write. 
+•Transaction timeout defaults to the default timeout of the underlying transaction system, or none if timeouts are not supported. 
+•Any RuntimeException triggers rollback, and any checked Exception does not. 
+---при использовании аннотации @Transactional без параметров 
+1 режимом распространения является REQUIRED, 
+2 значением атрибута "только чтение" (read-only flag) – false, 
+3 уровень изоляции соответствует уровню изоляции по умолчанию для базы данных (как правило, это READ_COMMITTED), 
+4 и транзакция не будет откатываться в случае контролируемых исключений (checked exception).
+-------------
+____________ Ошибки для read-only flag у аннотации @Transactional 
+The read-only flag is applied only if a transaction is started. If no transaction was started -- the read-only flag is ignored.
+из-за режима распространения SUPPORTS новая транзакция не начинается, поэтому в методе используется локальная транзакция (т.е. транзакция базы данных). Флаг "только чтение" применяется только в случае начала новой транзакции, иначе - он просто игнорируется.
+Если у транзакции поставить атрибут Propagation.REQUIRED, то Метод выбросит исключение, говорящее о том, что производится попытка изменения данных через соединение, разрешающее только операции чтения. 
+Because a transaction is started (REQUIRED), the connection is set to read-only.
+Странной особенностью флага "только чтение" является то, что он вступает в силу только с началом новой транзакции. Зачем надо начинать транзакцию, если речь идет только о чтении данных? Разумеется, этого делать не нужно. Начало транзакции при выполнении операции чтения всего лишь добавит лишних накладных расходов в обрабатывающий поток, а также может привести к появлению разделяемых блокировок чтения в базе данных (это зависит от типа используемой базы данных и уровня изоляции). Таким образом, флаг "только чтение" оказывается несколько бессмысленным при работе через JDBC и приводит к увеличению накладных расходов из-за выполнения необязательной транзакции.
+------------------
+При ис-ии ORM-based framework  и аннотации 
+@Transactional(readOnly = true, propagation=Propagation.REQUIRED)
+public long insertTrade(TradeData trade) throws Exception {
+   em.persist(trade);
+   return trade.getTradeId();
+}
+возможны след. варианты:
+AThrow a read-only connection exception
+BCorrectly insert the trade order and commit the data
+CDo nothing because the readOnly flag is set to true
+In some cases the answer is C, but in most cases (particularly when using JPA) the answer is B. The trade order is correctly inserted into the database without error.
+Потом что это только при ис-ии jdbc и режима Propagation.REQUIRED будет выброшено исключение, а в случае с ORM framework-ами read-only flag работает иначе:
+When you are generating a key on an insert, the ORM framework will go to the database to obtain the key and subsequently perform the insert. For some vendors, such as Hibernate, the flush mode will be set to MANUAL, and no insert will occur for inserts with non-generated keys. The same holds true for updates.
+начало и завершение транзакции приводят к увеличению продолжительности обработки и повышенному расходованию ресурсов. Итак, можно сделать следующий вывод: при использовании ORM флаг "только чтение", как правило, бесполезен, и в большинстве случаев игнорируется. Однако если вы все же хотите его использовать, то обязательно установите режим распространения SUPPORTS, чтобы избежать запуска транзакций.
+Еще лучше вообще не использовать аннотацию @Transactional при чтении данных из БД.
+------------------
+Проблемы, связанные с атрибутом REQUIRES_NEW, возникают в случае, если методы (каждый из которых имеет аннотацию с REQUIRES_NEW) вызываются внутри одной логической единицы работы (LUW) путем межсервисного или программного взаимодействия. И если первый отработает нормально, а второй выбросит исключение - то первый останется закоимичен в БД, а второй откатится. Если нужно было чтобы они оба (или ни один из них) закомитился- то тут будет ошибка.
+Использование атрибута транзакции REQUIRES_NEW означает, что выполнение существующей транзакции (если таковая есть) прерывается, и начинается новая транзакция. После завершения метода новая транзакция подтверждается, а старая – возобновляется. 
+Вследствие такого поведения атрибут REQUIRES_NEW должен использоваться только в случае, если операция с базой данных должна быть подтверждена вне зависимости от результатов внешней транзакции.
+---------------- *****************
+
+____________Ошибки, связанные с откатом транзакций
+upon a checked exception (и the Spring Framework и EJB) -- the transaction commits any work that has not yet been committed.
+при выбросе контролируемого исключения в Spring Framework или EJB транзакция всё равно подтвердит все неподтвержденные к этому моменту изменения.
+Т.е. если транзакция в методе состоит из нескольких операций, и возникнет checked exception, то транзакция потом всё равно успешно завершится, и все изменения, к-е были сделаны до возникновения exception, будут закомичены в БД.
+---
+Run-time exceptions (that is, unchecked exceptions) automatically force the entire logical unit of work to roll back
+Исключения времени выполнения (неконтролируемые исключения) автоматически приводят к откату всей логической единицы работы (т.е. транзакции), а контролируемые исключения – нет.
+Пэтому если метод сам выбросил и сам же словил в своём же try-catch блоке обычное checked exception -- то использование @Transactional у этого метода бессмысленно с точки зрения транзакций (т.к. она всё равно не соблюдается, и statement-ы выполняются частично и несогласованно).
+Подобное поведение может показаться странным, однако для такого поведения у транзакций есть свои обоснования:
+1)не все контролируемые исключения (checked exceptions) плохие, т.к.  они могут использоваться для отправки уведомлений или передачи управления на основе заданного условия.
+2) код сам может обработать некоторые типы контролируемых исключений (checked exceptions), т.е. исправить проблемную ситуацию, и тем самым в конце он сможет завершить транзакцию успешно (т.е. закомитить её). 
+(Например, приложение для книжного Интернет-магазина. Для завершения заказа приложение должно отправить клиенту подтверждение по электронной почте. Если сервер e-mail неработоспособен, то будет выброшено контролируемое исключение SMTP, сигнализирующее о невозможности отправки сообщения. Если бы контролируемые исключения автоматически приводили к откату транзакций, то весь заказ на покупку книг был бы отменен только потому, что сервер не смог отправить почту. By not automatically rolling back on checked exceptions, you can catch that exception and perform some sort of corrective action (such as sending the message to a pending queue) and commit the rest of the order.)
+--------------
+Если вы используете декларативную модель транзакций (она более подробно описывается во второй статье этой серии), то необходимо указать, как именно контейнер или инфраструктура (framework) должны обрабатывать контролируемые исключения. В Spring Framework это делается при помощи параметра rollbackFor в аннотации @Transactional.
+Значением этого параметра может быть:
+1) класс исключения, 
+2) массив подобных классов. 
+Или можно использовать параметр rollbackForClassName для задания имен исключений в строковом виде. 
+Существует также обратный параметр noRollbackFor для указания того, что любое исключение, кроме заданных, должно приводить к откату транзакции. Как правило, большинство разработчиков указывают в качестве значения Exception.class, что означает, что все исключения, выбрасываемые данным методом, должны приводить к откату транзакции.
+**************************
+____________ 3 модели транзакций и 4 стратегии использования транзакций. (IBM)
+Платформой Java поддерживаются следующие 3 модели транзакций:
+1) локальная модель (Local Transaction model);
+2) программная модель (Programmatic Transaction model);
+3) декларативная модель (Declarative Transaction model).
+Эти модели задают:
+1) основные принципы поведения транзакций. 
+2) как транзакции должны реализовываться.
+ При этом модели описывают только правила и семантику обработки транзакций, оставляя вопросы применения модели на усмотрение разработчика. 
+
+----1. Локальная модель транзакций
+Локальная модель транзакций получила свое имя из-за того, что управление всеми транзакциями осуществляется менеджером ресурсов базы данных, а не контейнером или инфраструктурой, в которой выполняется ваше приложение. (transactions are managed by the underlying database resource manager, not the container or framework your application is running in)
+В этой модели вы управляете только соединениями, а не транзакциями.
+you can't use the Local Transaction model when you make database updates using an ORM frameworks such as Hibernate, TopLink, or the Java Persistence API (JPA). 
+НО вы можете применять эту модель при использовании data-access objects (DAO) or JDBC-based frameworks and database stored procedures.
+Local Transaction model можно ис-ть 2 двумя способами:
+1) оставить управление соединением Базе Данных (let the database manage the connection) 
+[Для этого необходимо установить свойство autoCommit JDBC-объекта Connection в true (это значение используется по умолчанию). Таким образом вы указываете системе управления базой данных (СУБД), что необходимо подтверждать транзакцию после выполнения каждой операции вставки, изменения или удаления записи, либо откатывать ее в случае ошибки.]
+2) программно управленять соединением (manage the connection programmatically)
+[свойство autoCommit объекта Connection должно равняться false, и вам придется самостоятельно подтверждать или откатывать транзакции.]
+
+----2. Программная модель транзакций
+ответственность за управление транзакциями возлагается на разработчика, он сам управляет транзакциями, и они оказываются изолированными от низкоуровневых соединений с базой данных.
+При работе с этой моделью разработчик должен самостоятельно получить ссылку на транзакцию от менеджера транзакций, начать ее, затем подтвердить, а если возникло исключение – то откатить.
+Spring Framework поддерживает два способа реализации программной модели транзакций. Можно использовать либо класс TransactionTemplate, либо напрямую работать с менеджером транзакций платформы (platform transaction manager) [таких менеджеров в спринге есть по крайней мере 9 штук: DataSourceTransactionManager, HibernateTransactionManager, JpaTransactionManager, JtaTransactionManager...].
+Для конфигурирования менеджера JpaTransactionManager в Spring необходимо определить объект класса org.springframework.orm.jpa.JpaTransactionManager в XML-контексте приложения и добавить в него ссылку на JPA Entity Manager Factory bean.
+И потом inject-ните этот transaction manager в ваш bean.
+
+----3. Декларативная модель транзакций
+The Declarative Transaction model, otherwise known as Container Managed Transactions (CMT), is the most common transaction model in the Java platform.
+При работе с этой моделью контейнер самостоятельно начинает, подтверждает и откатывает транзакции. Задачей разработчика является только описание поведения транзакций. Большинство ошибок, рассмотренных в первой статье серии, связаны с использованием именно декларативной модели.
+--Атрибуты транзакций:
+Required
+Mandatory
+RequiresNew
+Supports
+NotSupported
+Never
+*NESTED
+----------
+--Required - если метод вызывается в области видимости ранее начатой транзакции, то именно она будет использоваться при выполнении метода. В противном случае метод methodA() начнет новую транзакцию. 
+Если methodA запустил новую транзакцию, то именно он и должен её  завершить (закомитить или откатить).
+
+--Mandatory - если метод вызывается в области видимости ранее начатой транзакции, то именно она будет использоваться при выполнении метода. Иначе, если метод вызывается вне контекста транзакции (if methodA() is invoked without a transaction context), то будет выброшено исключение типа TransactionRequiredException, сигнализирующее о том, что транзакция должна быть начата до вызова метода methodA().
+
+--RequiresNew - метод всегда начинает новую транзакцию (и, соответственно, эта транзакция должна быть закончена в этом же методе), вне зависимости от того, был ли вызван метод в контексте существующей транзакции или нет. Н-р, если methodA() был вызван в контексте некой транзакции (назовем ее Transaction1), то она будет приостановлена, и будет начата новая транзакция (Transaction2). При завершении метода methodA() транзакция Transaction2 либо подтверждается, либо откатывается, после чего возобновляется выполнение Transaction1. Такая схема работы очевидным образом нарушает принцип ACID (атомарность, согласованность, изолированность, стойкость) (atomicity, consistency, isolation, durability). Т.к. операции изменения данных в БД более не содержатся внутри одной единицы работы. Если транзакцию Transaction1 придется откатить, то результаты Transaction2 все равно останутся подтвержденными.
+
+--Supports - если methodA() вызывается в области видимости существующей транзакции, то он будет выполнен внутри этой транзакции. Если же метод methodA() вызывается вне контекста транзакции, то транзакция и не будет начата вовсе.
+Этот атрибут, как правило, используется для операций чтения данных из базы. почему бы в этом случае не использовать атрибут NotSupported? (Это будет означать, что метод будет выполняться вне контекста транзакции.) -> Потому что если выполнять запрос внутри транзакции, то данные будут читаться из лога транзакций базы данных, т.е. будут видны все только что сделанные изменения. Если же запрос выполняется вне транзакции, то ему будут доступны только неизменённые данные из самой таблицы. (Invoking the query operation in the context of an existing transaction will cause data to be read from the database transaction log (in other words, updated data), whereas running without a transaction scope will case the query to read unchanged data from the table) This is not necessarily a bad thing; it depends on your use case and business logic. 
+Допустим, что вы добавляете новый торговый приказ в таблицу TRADE и сразу за этим, не заканчивая транзакцию, запрашиваете полный список всех приказов. В этом случае еще не подтвержденный приказ попадет в результаты запроса. Если бы использовался атрибут NotSupported, то в результаты попали бы только записи из таблицы, а не из лога транзакций, поэтому неподтвержденный заказ был бы не виден. 
+
+--NotSupported - означает, что метод НЕ должен выполняться внутри транзакции (он не будет создавать новую транзакцию, или не будет исползовать уже существующую). Если этот атрибут указан для метода methodA(), вызванного в контексте транзакции, то она будет приостановлена до момента завершения метода. После выхода из метода выполнение транзакции будет возобновлено.
+Данный атрибут имеет смысл использовать в ограниченном числе случаев, причем, как правило, они связаны с вызовом хранимых процедур (stored procedures). Если хранимая процедура вызывается в контексте существующей транзакции, но при этом содержит строку BEGIN TRANS, то будет сгенерировано исключение, говорящее о том, что новая транзакция не может быть начата. 
+Если у вас нет возможности изменить код хранимой процедуры, то можно использовать атрибут NotSupported для приостановки текущей транзакции, чтобы избежать исключения. При этом теряется свойство атомарности изменений, поскольку операции с базой данных более не являются частью одной логической единицей работы (LUW).
+
+--Never - ведет себя практически так же, как и NotSupported, за одним важным исключением: если метод, отмеченный данным атрибутом, вызывается в контексте транзакции, то выбрасывается исключение, сигнализирующее о том, что в момент вызова этого метода транзакция недопустима (a transaction is not allowed when you invoke that method).
+смысл использовать: тестирование. Он позволяет легко и быстро проверить факт существования транзакции в момент вызова некоторого метода. 
+*********************************
+Стратегии использования транзакций (Transaction strategies):
+1) стратегия клиентского дирижирования (client orchestration transaction strategy);
+2) стратегия на основе интерфейсного слоя (API layer transaction strategy);
+3) стратегия с высокой степенью параллелизма (High Concurrency transaction strategy);
+4) высокопроизводительная стратегия (High-Speed Processing transaction strategy).
+
+---1. Client Orchestration
+is used when multiple server-based or model-based calls from the client layer fulfill a single unit of work (когда несколько клиентских обращений к серверу или к модели составляют одну единицу работы).
+По сути, именно клиент определяет последовательность действий, необходимых для каждого конкретного запроса. Например, для отправки торгового приказа может быть необходимо сохранить его в базе данных, а затем обновить состояние счета клиента, отразив в нем сумму сделки. Если приложение предоставляет слишком "мелкозернистый" интерфейс, то приходится вызывать оба метода (по отдельности) на стороне клиента. В этом случае и транзакция должна определяться на клиентской стороне, чтобы гарантировать атомарность обработки запроса.
+
+---2. API Layer
+применяется, когда приложение предоставляет меньшее количество методов, которые выступают в качестве основных точек доступа к серверной функциональности (при желании такие точки можно называть сервисами).
+При этом все клиенты выполняют вызов только одного серверного метода для обработки запроса. Если применить эту стратегию к предыдущему примеру с отправкой торгового приказа, то следует создать один метод (processTrade()), который будет вызываться клиентами. Он должен содержать всю логику сохранения приказа и обновления состояния счета.
+
+---3. High Concurrency
+a variation of the API Layer transaction strategy, is used for applications that cannot support long-running transactions from the API layer (usually because of performance or scalability needs).
+ис-ся в тех приложениях, к-е не могут поддерживать долгие транзакции от API слоя (в основном из-за нужд производительности и масштабируемости).
+High Concurrency is used primarily in applications that support a high degree of concurrency from a user perspective. Transactions are fairly expensive in the Java platform. Depending on the database you are using, they can cause locks in the database, hold up resources, slow down an application from a throughput standpoint, and in some cases even cause deadlocks in the database. The main idea behind this transaction strategy is to shorten the transaction scope so that you minimize the locks in the database while still maintaining an atomic unit of work for any given client request. In some cases, you may need to refactor your application logic to support this transaction strategy.
+Т.е. приложение должно параллельно обслуживать большое число запросов от клиентов. На платформе Java транзакции обходятся достаточно дорого. В зависимости от используемой базы данных, они могут приводить к блокировкам (в некоторых случаях даже взаимным блокировкам), захвату ресурсов и ухудшению пропускной способности приложения. Главной идеей High Concurrency стратегии является сокращение контекста транзакций (transaction scope) с целью минимизации блокировок, но при этом по-прежнему сохраняя свойство атомарности при обработке любого клиентского запроса.
+
+---4. High-Speed Processing
+Высокопроизводительная стратегия является, вероятно, наиболее экстремальной из всех возможных стратегий. Она применяется в случаях, когда необходимо добиться максимальной скорости обработки запросов (и, как следствие, пропускной способности), но при этом в какой-то мере сохранить атомарность выполнения транзакций. Данная стратегия подразумевает некоторый риск для целостности и согласованности данных, однако при правильной реализации она является наиболее быстрой из всех стратегий, возможных на платформе Java. В то же время она оказывается наиболее сложной и неудобной в реализации из всех четырех стратегий
+*********************************************
+SPRING <TX:ADVICE> <tx:attributes> <tx:method> ATTRIBUTES
+Внутри  <tx:method/> можно задать след. атрибуты:
+1) name -- Method name(s) with which the transaction attributes are to be associated. The wildcard (*) character can be used to associate the same transaction attribute settings with a number of methods; for example, get*, handle*, on*Event, and so forth.
+2) propagation -- Transaction propagation behavior.
+3) isolation -- Transaction isolation level.
+4) timeout -- Transaction timeout value (in seconds).
+5) read-only -- Is this transaction read-only?
+6) rollback-for -- Exception(s) that trigger rollback; comma-delimited.
+7) no-rollback-for -- Exception(s) that do not trigger rollback; comma-delimited. 
+--------------
+You can omit the transaction-manager attribute in the <tx:annotation-driven/> tag if the bean name of the PlatformTransactionManager that you want to wire in has the name transactionManager. If the PlatformTransactionManager bean that you want to dependency-inject has any other name, then you have to use the transaction-manager attribute explicitly, as in the preceding example.
+
+The @EnableTransactionManagement annotation provides equivalent support if you are using Java based configuration. Simply add the annotation to a @Configuration class. See the javadocs for full details.
+
+The standard javax.transaction.Transactional annotation is also supported as a drop-in replacement to Spring’s own annotation. Please refer to JTA 1.2 documentation for more details.
+
+Method visibility and @Transactional
+When using proxies, you should apply the @Transactional annotation only to methods with public visibility. If you do annotate protected, private or package-visible methods with the @Transactional annotation, no error is raised, but the annotated method does not exhibit the configured transactional settings. Consider the use of AspectJ (see below) if you need to annotate non-public methods.
+
+You can place the @Transactional annotation before an interface definition, a method on an interface, a class definition, or a public method on a class. However, the mere presence of the @Transactional annotation is not enough to activate the transactional behavior. The @Transactional annotation is simply metadata that can be consumed by some runtime infrastructure that is @Transactional-aware and that can use the metadata to configure the appropriate beans with transactional behavior. In the preceding example, the <tx:annotation-driven/> element switches on the transactional behavior.
+
+Spring recommends that you only annotate concrete classes (and methods of concrete classes) with the @Transactional annotation, as opposed to annotating interfaces. You certainly can place the @Transactional annotation on an interface (or an interface method), but this works only as you would expect it to if you are using interface-based proxies. The fact that Java annotations are not inherited from interfaces means that if you are using class-based proxies ( proxy-target-class="true") or the weaving-based aspect ( mode="aspectj"), then the transaction settings are not recognized by the proxying and weaving infrastructure, and the object will not be wrapped in a transactional proxy, which would be decidedly bad.
+
+In proxy mode (which is the default), only external method calls coming in through the proxy are intercepted. This means that self-invocation, in effect, a method within the target object calling another method of the target object, will not lead to an actual transaction at runtime even if the invoked method is marked with @Transactional. Also, the proxy must be fully initialized to provide the expected behaviour so you should not rely on this feature in your initialization code, i.e. @PostConstruct.
+Consider the use of AspectJ mode (see mode attribute in table below) if you expect self-invocations to be wrapped with transactions as well. In this case, there will not be a proxy in the first place; instead, the target class will be weaved (that is, its byte code will be modified) in order to turn @Transactional into runtime behavior on any kind of method.
+
+The proxy-target-class attribute controls what type of transactional proxies are created for classes annotated with the @Transactional annotation. If proxy-target-class is set to true, class-based proxies are created. If proxy-target-class is false or if the attribute is omitted, standard JDK interface-based proxies are created.
+
+@EnableTransactionManagement and <tx:annotation-driven/> only looks for @Transactional on beans in the same application context they are defined in. This means that, if you put annotation driven configuration in a WebApplicationContext for a DispatcherServlet, it only checks for @Transactional beans in your controllers, and not your services.
+
+The most derived location takes precedence when evaluating the transactional settings for a method. Т.е. если задана @Transactional на классе, а потом также и на методе, то @Transactional на методе будет приоритетнее, и возьмёт верх.
+---------------
+@Transactional settings
+
+The @Transactional annotation is metadata that specifies that an interface, class, or method must have transactional semantics; for example, "start a brand new read-only transaction when this method is invoked, suspending any existing transaction". The default @Transactional settings are as follows:
+1) Propagation setting is PROPAGATION_REQUIRED.
+2) Isolation level is ISOLATION_DEFAULT.
+3) Transaction is read/write.
+4) Transaction timeout defaults to the default timeout of the underlying transaction system, or to none if timeouts are not supported.
+5) Any RuntimeException triggers rollback, and any checked Exception does not. 
+
+For declarative transactions, the transaction name is always the fully-qualified class name + "." + method name of the transactionally-advised class. For example, if the handlePayment(..) method of the BusinessService class started a transaction, the name of the transaction would be: com.foo.BusinessService.handlePayment
+
+Multiple Transaction Managers with @Transactional
+Most Spring applications only need a single transaction manager, but there may be situations where you want multiple independent transaction managers in a single application. The value attribute of the @Transactional annotation can be used to optionally specify the identity of the PlatformTransactionManager to be used. This can either be the bean name or the qualifier value of the transaction manager bean.
+The default <tx:annotation-driven> target bean name transactionManager will still be used if no specifically qualified PlatformTransactionManager bean is found.
+
+Custom shortcut annotations
+If you find you are repeatedly using the same attributes with @Transactional on many different methods, then Spring’s meta-annotation support allows you to define custom shortcut annotations for your specific use cases.
+--------------
+ instances of the TransactionTemplate class are threadsafe, in that instances do not maintain any conversational state. TransactionTemplate instances do however maintain configuration state, so while a number of classes may share a single instance of a TransactionTemplate, if a class needs to use a TransactionTemplate with different settings (for example, a different isolation level), then you need to create two distinct TransactionTemplate instances.

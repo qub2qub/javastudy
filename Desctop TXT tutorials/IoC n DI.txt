@@ -1,0 +1,73 @@
+ in reality IoC is much larger than dependency injection. The Spring IoC container enforces dependency injection in its various forms and employs a number of established design patterns to achieve this.
+
+ In “The Dependency Inversion Principle” (or DIP), Robert C. Martin states the three defining factors of “bad code”:
+1) It is hard to change because every change affects too many other parts of the system (Rigidity)
+2) When you make a change, unexpected parts of the system break (Fragility)
+3) It is hard to reuse in another application because it cannot be disentangled from the current application (Immobility)
+
+ According to Martin, interdependency causes these coding problems (we'll call them RFI for Rigidity, Fragility, and Immobility). To fix RFI issues in your OO code, DIP has two basic rules:
+
+1. High level modules should not depend upon low level modules, both should depend upon abstractions.
+[т.е. высокоуровневые модули, которые содержат основную бизнесс логику и др мясо приложения - должны быть независимыми от нижнеуровневых компонентов/библиотек. Это нужно для того чтобы при изменении этих нижнеуровневых библиотек оствить верхнеуровневые неизменными]
+2. Abstractions should not depend upon details, details should depend upon abstractions.
+[перед тем как вводить абстракцию надо идти с другого конца: а именно найти в своём коде/классах общее поведение и для него ввести эту абстракцию.
+Ваш интерфейс / абстракция должна удовлетворять пересечению между потребностями бизнес-логики и общими чертами поведения нижнеуровневых модулей. Вы должны также оставить детали того, как эти формы поведения реализуются с классами реализации.]
+-----
+Dependency Injection takes the level of decoupling that began with the Dependency Inversion Principle one step further. Dependency injection has the concept of an assembler – or what in Java is commonly referred to as a Factory -- that instantiates the objects required by an application and “injects” them into their dependent objects. 
+
+ In the case of a dependency injection-informed framework such as Spring, components are coded to interfaces, just as in the DIP example above. But now the IoC container manages the instantiation, management, and class casting of the implemented objects so that the application doesn't have to. This removes any true dependencies on low-level implemented classes.
+
+There are three types of Dependency Injection employed by IoC container providers.:
+1) Constructor Injection --- The constructor arguments are injected during instance instantiation.
+2) Setter Injection --- This is the most favored method of dependency injection in Spring. Dependencies are “set” in the objects through setter methods defined in a Spring configuration file.
+3) Interface Injection --- This is not implemented in Spring currently, but by Avalon. It’s a different type of DI that involves mapping items to inject to specific interfaces.
+[Interface Injection
+]
+---
+[мапинг - ключ=интерфейс, а значчение=тот объект, к-й надо вставить в этот интерфейс.
+в спринге можно написать @ImplementedBy.
+у бина можно написать name - inject class name='..'
+applicationContext.getBean()]
+
+Spring uses the concept of a BeanFactory as its assembler, and it is the BeanFactory that manages the JavaBeans you have configured to run within it.
+-----------
+Inversion of control
+IoC -- это принцип дизайна, при котором части программы получают поток управления от общего фреймворка/структуры. Архитектура программного обеспечения с таким дизайном инвертирует контроль по сравнению с традиционными процедурного программирования: 
+в традиционном программировании, пользовательский код, который выражает цель программы, многократно вызывает используемые библиотеки, чтобы решать общие задачи, но с IoC эти вызовы  делает сам фреймворк.
+Инверсия управления используется для увеличения модульности программы и делает её расширяемой. 
+
+Термин связан с DI, но и отличается от принципа инверсии зависимостей, который (DIP) убирает зависимость высокоуровневых слоёв от низкоуровневых, применяя для этого общие/совместно используемые (shared) абстракции.
+----------
+Software frameworks, callbacks, schedulers, event loops and dependency injection are examples of design patterns that follow the inversion of control principle, although the term is most commonly used in the context of object-oriented programming.
+
+Inversion of control serves the following design purposes:
+
+1) To decouple the execution of a task from implementation.
+2) To focus a module on the task it is designed for.
+3) To free modules from assumptions about how other systems do what they do and instead rely on contracts.
+4) To prevent side effects when replacing a module.
+
+Inversion of control is sometimes facetiously referred to as the "Hollywood Principle: Don't call us, we'll call you".
+[Вы не можете управлять вызовом этих методов, только тем, что они делают. Контейнер вызывает нас, а не мы вызываем его.]
+------------
+В наши дни, в связи с ростом количества IoC-контейнеров, существует некоторая путаница со смыслом инверсии управления. Некоторые люди путают общий принцип с конкретными стилями инверсии управления (такими как внедрение зависимостей), которые эти контейнеры используют. Все это немного запутанно (и иронично), так как IoC-контейнеры, как правило, рассматриваются в качестве конкурента EJB, но EJB использует инверсию управления.
+*****************
+5. The IoC container
+5.1 Introduction to the Spring IoC container and beans
+
+This chapter covers the Spring Framework implementation of the Inversion of Control (IoC) [1]principle. IoC is also known as dependency injection (DI). It is a process whereby objects define their dependencies, that is, the other objects they work with, only through constructor arguments, arguments to a factory method, or properties that are set on the object instance after it is constructed or returned from a factory method. The container then injects those dependencies when it creates the bean. This process is fundamentally the inverse, hence the name Inversion of Control (IoC), of the bean itself controlling the instantiation or location of its dependencies by using direct construction of classes, or a mechanism such as the Service Locator pattern.
+
+The org.springframework.beans and org.springframework.context packages are the basis for Spring Framework's IoC container. The BeanFactory interface provides an advanced configuration mechanism capable of managing any type of object. ApplicationContext is a sub-interface of BeanFactory. It adds easier integration with Spring's AOP features; message resource handling (for use in internationalization), event publication; and application-layer specific contexts such as the WebApplicationContext for use in web applications.
+
+In short, the BeanFactory provides the configuration framework and basic functionality, and the ApplicationContext adds more enterprise-specific functionality. The ApplicationContext is a complete superset of the BeanFactory, and is used exclusively in this chapter in descriptions of Spring's IoC container. For more information on using the BeanFactory instead of the ApplicationContext, refer to Section 5.15, “The BeanFactory”.
+------------------
+6.3 Bean overview
+Within the container itself, these bean definitions are represented as BeanDefinition objects, which contain (among other information) the following metadata:
+
+1 A package-qualified class name: typically the actual implementation class of the bean being defined.
+2 Bean behavioral configuration elements, which state how the bean should behave in the container (scope, lifecycle callbacks, and so forth).
+3 References to other beans that are needed for the bean to do its work; these references are also called collaborators or dependencies.
+4 Other configuration settings to set in the newly created object, for example, the number of connections to use in a bean that manages a connection pool, or the size limit of the pool. 
+
+This metadata translates to a set of properties that make up each bean definition.
+-----------

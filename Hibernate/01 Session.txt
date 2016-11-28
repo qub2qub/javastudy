@@ -1,0 +1,203 @@
+http://docs.jboss.org/hibernate/orm/5.0/javadocs/org/hibernate/Session.html
+public interface Session extends SharedSessionContract, Closeable
+The main runtime interface between a Java application and Hibernate. This is the central API class abstracting the notion of a persistence service.
+The lifecycle of a Session is bounded by the beginning and end of a logical transaction. (Long transactions might span several database transactions.)
+The main function of the Session is to offer create, read and delete operations for instances of mapped entity classes. Instances may exist in one of three states:
+1 transient: never persistent, not associated with any Session
+2 persistent: associated with a unique Session
+3 detached: previously persistent, not associated with any Session
+Transient instances may be made persistent by calling save(), persist() or saveOrUpdate(). Persistent instances may be made transient by calling delete(). Any instance returned by a get() or load() method is persistent. Detached instances may be made persistent by calling update(), saveOrUpdate(), lock() or replicate(). The state of a transient or detached instance may also be made persistent as a new persistent instance by calling merge().
+save() and persist() result in an SQL INSERT, delete() in an SQL DELETE and update() or merge() in an SQL UPDATE. Changes to persistent instances are detected at flush time and also result in an SQL UPDATE. saveOrUpdate() and replicate() result in either an INSERT or an UPDATE.
+It is not intended that implementors be threadsafe. 
+Instead each thread/transaction should obtain its own instance from a SessionFactory.
+A Session instance is serializable if its persistent classes are serializable.
+A typical transaction should use the following idiom:
+ Session sess = factory.openSession();
+ Transaction tx;
+ try {
+     tx = sess.beginTransaction();
+     //do some work
+     ...
+     tx.commit();
+ }
+ catch (Exception e) {
+     if (tx!=null) tx.rollback();
+     throw e;
+ }
+ finally {
+     sess.close();
+ }
+ If the Session throws an exception, the transaction must be rolled back and the session discarded. The internal state of the Session might not be consistent with the database after the exception occurs.
+*************************
+http://www.tutorialspoint.com/hibernate/hibernate_sessions.htm
+The session objects should not be kept open for a long time because they are not usually thread safe and they should be created and destroyed them as needed. The main function of the Session is to offer create, read and delete operations for instances of mapped entity classes. Instances may exist in one of the following three states at a given point in time:
+1    transient: A new instance of a a persistent class which is not associated with a Session and has no representation in the database and no identifier value is considered transient by Hibernate.
+2    persistent: You can make a transient instance persistent by associating it with a Session. A persistent instance has a representation in the database, an identifier value and is associated with a Session.
+3    detached: Once we close the Hibernate Session, the persistent instance will become a detached instance.
+***************************
+http://docs.jboss.org/hibernate/orm/5.0/userGuide/en-US/html_single/#preface
+Starting with version 3.0.1, Hibernate added the SessionFactory.getCurrentSession() method. Initially, this assumed usage of JTA transactions, where the JTA transaction defined both the scope and context of a current session.
+new extension interface, org.hibernate.context.spi.CurrentSessionContext, and a new configuration parameter, hibernate.current_session_context_class, have been added to allow pluggability of the scope and context of defining current sessions.
+See the Javadocs for the org.hibernate.context.spi.CurrentSessionContext interface for a detailed discussion of its contract. It defines a single method, currentSession(), by which the implementation is responsible for tracking the current contextual session. Out-of-the-box, Hibernate comes with three implementations of this interface:
+1    org.hibernate.context.internal.JTASessionContext: current sessions are tracked and scoped by a JTA transaction. The processing here is exactly the same as in the older JTA-only approach. See the Javadocs for details.
+2    org.hibernate.context.internal.ThreadLocalSessionContext:current sessions are tracked by thread of execution. See the Javadocs for details.
+3    org.hibernate.context.internal.ManagedSessionContext: current sessions are tracked by thread of execution. However, you are responsible to bind and unbind a Session instance with static methods on this class: it does not open, flush, or close a Session.
+The first two implementations provide a "one session - one database transaction" programming model. This is also known and used as session-per-request.
+-----------
+The POJO should have a no-argument constructor. Both Hibernate and JPA require this.
+JPA requires that this constructor be defined as public or protected. Hibernate for the most part does note care about the visibility as long as the system's SecurityManager allows overriding the visibility. That said, the constructor should be defined with at least package visibility if you wish to leverage runtime proxy generation.
+ 
+The identifier attribute does not necessarily need to be mapped to the column(s) that physically define the primary key. However, it should map to column(s) that can uniquely identify each row.
+We recommend that you declare consistently-named identifier attributes on persistent classes and that you use a nullable (i.e., non-primitive) type. 
+A central feature of Hibernate is the ability to lazy load an entity's data via runtime proxies. This feature depends upon the entity class being non-final or else implementing an interface that declares all the attribute getters/setters.
+Although not required, it is recommended to follow JavaBean conventions by defining getters and setters for you entities persistent attributes. Hibernate can also directly access the entity's fields.
+Attributes (whether fields or getters/setters) need not be declared public. Hibernate can deal with attributes declared with public, protected, package or private visibility. 
+Implementing equals() and hashCode()
+There is really just one absolute case: a class that acts as an identifier must implement equals/hashCode based on the id value(s).  Generally this is pertinent for user classes used as composite identifiers. Beyond this one absolute case and the few others we will discuss below, you may want to consider not implementing equals/hashCode. 
+So what's all the fuss? Normally, most Java objects provide a built-in equals() and hashCode() based on the object's identity, so each new object will be different from all others. This is generally what you want in ordinary Java programming. Conceptually however this starts to break down when you start to think about the possibility multiple instances of a class representing the same data which is in fact the case when we start dealing with data from a database. Every time we load a specific Person from the database we would naturally get a unique instance. Hibernate, however, works hard to make sure that does not happen within a given Session. In fact Hibernate guarantees equivalence of persistent identity (database row) and Java identity inside a particular session scope. So if we ask a Hibernate Session to load that specific Person multiple times we will actually get back the same instance:
+ In cases where you will be dealing with entities outside of a Session (whether they be transient or detached), especially in cases where you will be using them in Java collections, you should consider implementing equals/hashCode.
+A common initial approach is to use the entity's identifier attribute as the basis for equals/hashCode calculations
+***********************
+Dynamic models
+The main advantage of dynamic models is quick turnaround time for prototyping without the need for entity class implementation. The main down-fall is that you lose compile-time type checking and will likely deal with many exceptions at runtime.
+***********************
+bootstrapping
+The term bootstrapping refers to initializing and starting a software component. In Hibernate we are specifically talking about the process of building a fully functional SessionFactory instance or EntityManagerFactory instance for JPA. The process is very different for each. 
+ Actually we are concerned with building 2 different ServiceRegistries. First is the org.hibernate.boot.registry.BootstrapServiceRegistry. The BootstrapServiceRegistry is intended to hold services that Hibernate needs at both bootstrap and run time. This boils down to 3 services:
+1    org.hibernate.boot.registry.classloading.spi.ClassLoaderService - which controls how Hibernate interacts with ClassLoaders
+2    org.hibernate.integrator.spi.IntegratorService - which controls the management ands discovery of org.hibernate.integrator.spi.Integrator instances.
+3   org.hibernate.boot.registry.selector.spi.StrategySelector - which control how Hibernate resolves implementations of various strategy contracts. This is a very powerful service, but a full discussion of it is beyond the scope of this guide.
+If you are ok with the default behavior of Hibernate in regards to these BootstrapServiceRegistry services (which is quite often the case, especially in SE environments), then building the BootstrapServiceRegistry can be skipped.
+If you wish to alter how the BootstrapServiceRegistry is built, that is controlled through the org.hibernate.boot.registry.BootstrapServiceRegistryBuilder
+---
+The second ServiceRegistry is the org.hibernate.boot.registry.StandardServiceRegistry. You will almost always need to configure the StandardServiceRegistry, which is done through org.hibernate.boot.registry.StandardServiceRegistryBuilder:
+// An example using an implicitly built BootstrapServiceRegistry
+StandardServiceRegistryBuilder standardRegistryBuilder	= new StandardServiceRegistryBuilder();
+// An example using an explicitly built BootstrapServiceRegistry
+BootstrapServiceRegistry bootstrapRegistry = ...;
+StandardServiceRegistryBuilder standardRegistryBuilder	= new StandardServiceRegistryBuilder( bootstrapRegistry );
+---
+Controlling StandardServiceRegistry building
+StandardServiceRegistryBuilder standardRegistryBuilder = ...;
+// load some properties via resource lookup
+standardRegistryBuilder.loadProperties( "org/hibernate/example/MyProperties.properties" );
+// configure the registry from a resource lookup for a cfg.xml config file
+standardRegistryBuilder.configure( "org/hibernate/example/my.cfg.xml" );
+// apply a random setting
+standardRegistryBuilder.applySetting( "myProp", "some value" );
+// apply a service initiator
+standardRegistryBuilder.addInitiator( new CustomServiceInitiator() );
+// apply a service impl
+standardRegistryBuilder.addService( SomeCustomService.class, new SomeCustomServiceImpl() );
+// and finally build the StandardServiceRegistry
+StandardServiceRegistry standardRegistry = standardRegistryBuilder.build();
+3.1.2. Building the Metadata
+The second step in native bootstrapping is the building of a org.hibernate.boot.Metadata object containing the parsed representations of an application's domain model and its mapping to a database. The first thing we obviously need to build a parsed representation is the source information to be parsed (annotated classes, `hbm.xml` files, `orm.xml` files). This is the purpose of org.hibernate.boot.MetadataSources: 
+MetadataSources sources = new MetadataSources( standardRegistry );
+// alternatively, we can build the MetadataSources without passing
+// a service registry, in which case it will build a default
+// BootstrapServiceRegistry to use.  But the approach shown above is preferred
+// MetadataSources sources = new MetadataSources();
+// add a class using JPA/Hibernate annotations for mapping
+sources.addAnnotatedClass( MyEntity.class );
+// add the name of a class using JPA/Hibernate annotations for mapping.
+// differs from above in that accessing the Class is deferred which is
+// important if using runtime bytecode-enhancement
+sources.addAnnotatedClassName( "org.hibernate.example.Customer" );
+// Adds the named hbm.xml resource as a source: which performs the
+// classpath lookup and parses the XML
+sources.addResource( "org/hibernate/example/Order.hbm.xml" );
+// Adds the named JPA orm.xml resource as a source: which performs the
+// classpath lookup and parses the XML
+sources.addResource( "org/hibernate/example/Product.orm.xml" );
+/////////////// èëè
+MetadataSources sources = new MetadataSources( standardRegistry )
+		.addAnnotatedClass( MyEntity.class )
+		.addAnnotatedClassName( "org.hibernate.example.Customer" )
+		.addResource( "org/hibernate/example/Order.hbm.xml" )
+		.addResource( "org/hibernate/example/Product.orm.xml" );
+************************
+Building the SessionFactory
+The final step in native bootstrapping is to build the SessionFactory itself.
+Building SessionFactory via SessionFactoryBuilder
+SessionFactoryBuilder sessionFactoryBuilder = metadata.getSessionFactoryBuilder();
+// Supply an SessionFactory-level Interceptor
+sessionFactoryBuilder.applyInterceptor( new MySessionFactoryInterceptor() );
+// Add a custom observer
+sessionFactoryBuilder.addSessionFactoryObservers( new MySessionFactoryObserver() );
+// Apply a CDI BeanManager (for JPA event listeners)
+sessionFactoryBuilder.applyBeanManager( getBeanManagerFromSomewhere() );
+SessionFactory sessionFactory = sessionFactoryBuilder.build();
+**********************
+Both the org.hibernate.Session API and javax.persistence.EntityManager API represent a context for dealing with persistent data. This concept is called a persistence context. Persistent data has a state in relation to both a persistence context and the underlying database. 
+Entity states:
+1    transient - the entity has just been instantiated and is not associated with a persistence context. It has no persistent representation in the database and typically no identifier value has been assigned.
+2    managed, or persistent - the entity has an associated identifier and is associated with a persistence context. It may or may not physically exist in the database yet.
+3    detached - the entity has an associated identifier, but is no longer associated with a persistence context (usually because the persistence context was closed or the instance was evicted from the context)
+4    removed - the entity has an associated identifier and is associated with a persistence context, however it is scheduled for removal from the database.
+-Much of the org.hibernate.Session and javax.persistence.EntityManager methods deal with moving entities between these states. 
+--
+Hibernate itself can handle deleting detached state. JPA, however, disallows it
+The implication here is that the entity instance passed to the org.hibernate.Session delete method can be either in managed or detached state, while the entity instance passed to remove on javax.persistence.EntityManager must be in managed state
+----
+Obtain an entity reference without initializing its data
+the ability to obtain a reference to an entity without having to load its data is hugely important. The most common case being the need to create an association between an entity and another, existing entity
+*getReference
+    Should be used in cases where the identifier is assumed to exist, where non-existence would be an actual error. Should never be used to test existence. That is because this method will prefer to create and return a proxy if the data is not already associated with the Session rather than hit the database. The quintessential use-case for using this method is to create foreign-key based associations.
+*load
+    Will return the persistent data associated with the given identifier value or null if that identifier does not exist.
+In addition to those 2 methods, each also defines the method with accepting a org.hibernate.LockOptions argument
+-----
+Refresh entity state
+You can reload an entity instance and it's collections at any time.
+One case where this is useful is when it is known that the database state has changed since the data was read. Refreshing allows the current database state to be pulled into the entity instance and the persistence context. 
+Another case where this might be useful is when database triggers are used to initialize some of the properties of the entity. Note that only the entity instance and its collections are refreshed unless you specify REFRESH as a cascade style of any associations.
+---------
+4.7. Modifying managed/persistent state
+Entities in managed/persistent state may be manipulated by the application and any changes will be automatically detected and persisted when the persistence context is flushed. There is no need to call a particular method to make your modifications persistent.
+---
+4.8. Working with detached data
+Detachment is the process of working with data outside the scope of any persistence context. Data becomes detached in a number of ways. Once the persistence context is closed, all data that was associated with it becomes detached. Clearing the persistence context has the same effect. Evicting a particular entity from the persistence context makes it detached. And finally, serialization will make the deserialized form be detached (the original instance is still managed). 
+---
+4.8.1. Reattaching detached data
+Reattachment is the process of taking an incoming entity instance that is in detached state and re-associating it with the current persistence context.
+Important! - JPA does not provide for this model. This is only available through Hibernate org.hibernate.Session.
+session.lock( someDetachedCat, LockMode.NONE );
+session.saveOrUpdate( someDetachedCat );
+@Unless the entity is mapped with select-before-update, in which case Hibernate will pull the current state from the database and see if an update is needed. @
+---
+4.8.2. Merging detached data
+Merging is the process of taking an incoming entity instance that is in detached state and copying its data over onto a new instance that is in managed state.
+---
+4.9. Checking persistent state - session.contains( cat );
+if ( Hibernate.isInitialized( customer.getOrders()) ) ) {
+    //display orders if loaded
+}
+---
+4.10. Accessing Hibernate APIs from JPA
+JPA defines an incredibly useful method to allow applications access to the APIs of the underlying provider.
+Session session = entityManager.unwrap( Session.class );
+SessionImplementor sessionImplementor = entityManager.unwrap( SessionImplementor.class );
+*****************************
+Chapter 5. Database access
+ Generally speaking applications should not have to configure a ConnectionProvider explicitly if using one of the Hibernate-provided implementations. Hibernate will internally determine which ConnectionProvider to use based on the following algorithm:
+1    If hibernate.connection.provider_class is set, it takes precedence
+ 2   else if hibernate.connection.datasource is set -> Section 5.1.1, “Using DataSources”
+  3  else if any setting prefixed by hibernate.c3p0. is set -> Section 5.1.2, “Using c3p0”
+   4 else if any setting prefixed by hibernate.proxool. is set -> Section 5.1.3, “Using Proxool”
+   5 else if any setting prefixed by hibernate.hikari. is set -> Section 5.1.4, “Using Hikari”
+   6 else if hibernate.connection.url is set -> Section 5.1.5, “Using Hibernate's built-in (and unsupported) pooling”
+   7 else -> Section 5.1.6, “User-provided Connections”
+----
+5.1.7. ConnectionProvider support for transaction isolation setting
+The value for hibernate.connection.isolation can be specified in one of 3 formats:
+1    the integer value accepted at the JDBC level
+2    the name of the java.sql.Connection constant field representing the isolation you would like to use. For example, TRANSACTION_REPEATABLE_READ for java.sql.Connection#TRANSACTION_REPEATABLE_READ. Not that this is only supported for JDBC standard isolations, not for isolation levels specific to a particular JDBC driver.
+3    a short-name version of the java.sql.Connection constant field without the TRANSACTION_ prefix. For example, REPEATABLE_READ for java.sql.Connection#TRANSACTION_REPEATABLE_READ. Again, this is only supported for JDBC standard isolations, not for isolation levels specific to a particular JDBC driver.
+---
+Chapter 6. Transactions and concurrency control
+Physical Transactions
+Hibernate uses the JDBC API for persistence. In the world of Java there are 2 well defined mechanism for dealing with transactions in JDBC: JDBC itself and JTA. Hibernate supports both mechanisms for integrating with transactions and allowing applications to manage physical transactions. 
+Important! - To reduce lock contention in the database, the physical database transaction needs to be as short as possible. Long database transactions prevent your application from scaling to a highly-concurrent load. Do not hold a database transaction open during end-user-level work, but open it after the end-user-level work is finished. This is concept is referred to as transactional write-behind.
+--
+6.3. Transactional patterns (and anti-patterns)

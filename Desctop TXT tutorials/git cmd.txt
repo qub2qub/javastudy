@@ -1,0 +1,323 @@
+$ GIT ADD -
+ò.å. ñ÷èòàòü ÷òî ýòî çíà÷èò "äîáàâèòü òåêóùåå ñîñòîÿíèå âñåõ ôàéëîâ â ñëåäóþùèé êîìèò"
+git add is a multipurpose command – you use it to begin tracking new files, to stage files, and to do other things like marking merge-conflicted files as resolved. It may be helpful to think of it more as “add this content to the next commit” rather than “add this file to the project”
+
+ÅÑËÈ ÈÇÌÅÍÈËÈ ÓÆÅ ÄÎÁÀÂËÅÍÍÛÉ ÔÀÉË - ÒÎ:
+ Now CONTRIBUTING.md is listed as both staged and unstaged. How is that possible? It turns out that Git stages a file exactly as it is when you run the git add command. If you commit now, the version of CONTRIBUTING.md as it was when you last ran the git add command is how it will go into the commit, not the version of the file as it looks in your working directory when you run git commit. If you modify a file after you run git add, you have to run git add again to stage the latest version of the file
+
+$ GIT STATUS -S
+ or git status --short you get a far more simplified output from the command
+$ git status -s
+ M README
+MM Rakefile
+A  lib/git.rb
+M  lib/simplegit.rb
+?? LICENSE.txt
+Ïåðâàÿ áóêâà ïîêàçûâàåò staged ñòàòóñ, à âòîðàÿ - ÷òî îí áûë èçìåí¸í è âñ¸ (è íå äîáàâëåí â êîìèò)
+New files that aren’t tracked have a ?? next to them, new files that have been added to the staging area have an A, modified files have an M and so on. There are two columns to the output - the left hand column indicates that the file is staged and the right hand column indicates that it’s modified. So for example in that output, the README file is modified in the working directory but not yet staged, while the lib/simplegit.rb file is modified and staged. The Rakefile was modified, staged and then modified again, so there are changes to it that are both staged and unstaged
+
+$ git diff --staged
+This command compares your staged changes to your last commit
+RUN "git diff --cached" to see what you’ve staged so far (--staged and --cached are synonyms)
+
+$ git diff
+It’s important to note that git diff by itself doesn’t show all changes made since your last commit – only changes that are still unstaged. This can be confusing, because if you’ve staged all of your changes, git diff will give you no output.
+
+$ git commit
+default commit message contains the latest output of the git status command commented out and one empty line on top
+
+git commit -v
+puts the diff of your change in the editor so you can see exactly what changes you’re committing
+
+git commit -m
+you can type your commit message inline with the commit command by specifying it after a -m flag
+
+Remember that the commit records the snapshot you set up in your staging area. Anything you didn’t stage is still sitting there modified; you can do another commit to add it to your history. Every time you perform a commit, you’re recording a snapshot of your project that you can revert to or compare to later.
+
+$ git commit -a
+$ git commit -a -m 'added new benchmarks'
+If you want to skip the staging area, Git provides a simple shortcut. Adding the -a option to the git commit command makes Git automatically stage every file that is already tracked before doing the commit, letting you skip the git add part
+
+Removing Files
+To remove a file from Git, you have to remove it from your tracked files (more accurately, remove it from your staging area) and then commit. The git rm command does that, and also removes the file from your working directory so you don’t see it as an untracked file the next time around.
+
+If you simply remove the file from your working directory, it shows up under the “Changed but not updated” (that is, unstaged) area of your git status output
+Then, if you run git rm, it stages the file’s removal
+The next time you commit, the file will be gone and no longer tracked. If you modified the file and added it to the index already, you must force the removal with the -f option. This is a safety feature to prevent accidental removal of data that hasn’t yet been recorded in a snapshot and that can’t be recovered from Git.
+
+$ git rm --cached
+Another useful thing you may want to do is to keep the file in your working tree but remove it from your staging area. In other words, you may want to keep the file on your hard drive but not have Git track it anymore. This is particularly useful if you forgot to add something to your .gitignore file and accidentally staged it, like a large log file or a bunch of .a compiled files. To do this, use the --cached option
+
+$ git rm log/\*.log
+You can pass files, directories, and file-glob patterns to the git rm command. That means you can do things such as. ââåðõó
+Note the backslash (\) in front of the *. This is necessary because Git does its own filename expansion in addition to your shell’s filename expansion. This command removes all files that have the .log extension in the log/ directory. Or, you can do something like this:
+$ git rm \*~
+This command removes all files that end with ~
+
+$ git mv file_from file_to
+Git doesn’t explicitly track file movement. If you rename a file in Git, no metadata is stored in Git that tells it you renamed the file. However, Git is pretty smart about figuring that out after the fact 
+
+$ git log 
+lists the commits made in that repository in reverse chronological order – that is, the most recent commits show up first.
+
+$ git log -p -2
+shows the difference introduced in each commit. You can also use -2, which limits the output to only the last two entries
+
+$ git log --stat
+the --stat option prints below each commit entry a list of modified files, how many files were changed, and how many lines in those files were added and removed. It also puts a summary of the information at the end.
+
+$ git log --pretty=oneline
+This option changes the log output to formats other than the default. A few prebuilt options are available for you to use. The oneline option prints each commit on a single line, which is useful if you’re looking at a lot of commits. In addition, the short, full, and fuller options show the output in roughly the same format but with less or more information, respectively
+
+$ git log --pretty=format:"%h - %an, %ar : %s"
+The most interesting option is format, which allows you to specify your own log output format. This is especially useful when you’re generating output for machine parsing – because you specify the format explicitly, you know it won’t change with updates to Git
+
+$ git log --pretty=format:"%h %s" --graph
+The oneline and format options are particularly useful with another log option called --graph. This option adds a nice little ASCII graph showing your branch and merge history
+
+$ git log --since=2.weeks
+the time-limiting options such as --since and --until are very useful. For example, this command gets the list of commits made in the last two weeks
+This command works with lots of formats – you can specify a specific date like "2008-01-15", or a relative date such as "2 years 1 day 3 minutes ago"
+
+You can also filter the list to commits that match some search criteria. The --author option allows you to filter on a specific author, and the --grep option lets you search for keywords in the commit messages. (Note that if you want to specify both author and grep options, you have to add --all-match or the command will match commits with either.
+
+$ git log -Sfunction_name
+Another really helpful filter is the -S option which takes a string and only shows the commits that introduced a change to the code that added or removed that string. For instance, if you wanted to find the last commit that added or removed a reference to a specific function, you could call
+
+$ git commit --amend
+when you commit too early and possibly forget to add some files, or you mess up your commit message.
+This command takes your staging area and uses it for the commit. If you’ve made no changes since your last commit (for instance, you run this command immediately after your previous commit), then your snapshot will look exactly the same, and all you’ll change is your commit message.
+
+$ git reset HEAD <file>
+let’s say you’ve changed two files and want to commit them as two separate changes, but you accidentally type git add * and stage them both. How can you unstage one of the two
+
+$ git checkout -- <file>
+How can you easily unmodify it – revert it back to what it looked like when you last committed (or initially cloned) - the changes have been reverted.
+it is a dangerous command. Any changes you made to that file are gone – you just copied another file over it.
+
+$ git fetch [remote-name]
+The command goes out to that remote project and pulls down all the data from that remote project that you don’t have yet. After you do this, you should have references to all the branches from that remote, which you can merge in or inspect at any time.
+
+$ git fetch origin
+ fetches any new work that has been pushed to that server since you cloned (or last fetched from) it. It’s important to note that the git fetch command pulls the data to your local repository – it doesn’t automatically merge it with any of your work or modify what you’re currently working on. You have to merge it manually into your work when you’re ready
+
+$ git pull 
+command to automatically fetch and then merge a remote branch into your current branch.
+
+$ git push [remote-name] [branch-name]
+When you have your project at a point that you want to share, you have to push it upstream. The command for this is simple.
+If you and someone else clone at the same time and they push upstream and then you push upstream, your push will rightly be rejected. You’ll have to pull down their work first and incorporate it into yours before you’ll be allowed to push
+
+$  git remote show [remote-name]
+It lists the URL for the remote repository as well as the tracking branch information. The command helpfully tells you that if you’re on the master branch and you run git pull, it will automatically merge in the master branch on the remote after it fetches all the remote references. It also lists all the remote references it has pulled down.
+
+$ git remote rename curName newName
+
+$ git tag -a v1.4 -m "my version 1.4"
+ñîçäà¸ò òÿæ¸ëûé òýã, àííîòèðîâàííûé
+
+$ git log --pretty=oneline
+$ git tag -a v1.2 9fceb02
+Now, suppose you forgot to tag the project at v1.2, which was at the “updated rakefile” commit. You can add it after the fact. To tag that commit, you specify the commit checksum (or part of it) at the end of the command
+
+$ git push origin v1.5
+By default, the git push command doesn’t transfer tags to remote servers. You will have to explicitly push tags to a shared server after you have created them. This process is just like sharing remote branches – you can run git push origin [tagname].
+
+$ git push origin --tags
+This will transfer all of your tags to the remote server that are not already there.
+
+$ git checkout -b version2 v2.0.0
+You can’t really check out a tag in Git, since they can’t be moved around. If you want to put a version of your repository in your working directory that looks like a specific tag, you can create a new branch at a specific tag with git checkout -b [branchname] [tagname]
+*****************
+BRANCHES
+Êîìèò òàêæå ñîäåðæèò ññûëêó íà êîìèò/êîìèòû, êîòîðûå ïðîèçîøèëè ïðÿìî ïåðåä òåêóùèì êîìèòîì.
+Git doesn’t store data as a series of changesets or differences, but instead as a series of snapshots
+When you make a commit, Git stores a commit object that contains a pointer to the snapshot of the content you staged. This object also contains the author’s name and email, the message that you typed, and pointers to the commit or commits that directly came before this commit (its parent or parents): zero parents for the initial commit, one parent for a normal commit, and multiple parents for a commit that results from a merge of two or more branches.
+
+To visualize this, let’s assume that you have a directory containing three files, and you stage them all and commit. Staging the files checksums each one (the SHA-1 hash we mentioned in Getting Started), stores that version of the file in the Git repository (Git refers to them as blobs), and adds that checksum to the staging area:
+
+$ git add README test.rb LICENSE
+$ git commit -m 'The initial commit of my project'
+When you create the commit by running git commit, Git checksums each subdirectory (in this case, just the root project directory) and stores those tree objects in the Git repository. Git then creates a commit object that has the metadata and a pointer to the root project tree so it can re-create that snapshot when needed.
+
+Your Git repository now contains five objects: one blob for the contents of each of your three files, one tree that lists the contents of the directory and specifies which file names are stored as which blobs, and one commit with the pointer to that root tree and all the commit metadata.
+
+BRANCHES 2
+A branch in Git is simply a lightweight movable pointer to one of these commits. The default branch name in Git is master. As you start making commits, you’re given a master branch that points to the last commit you made. Every time you commit, it moves forward automatically.
+
+The “master” branch in Git is not a special branch. It is exactly like any other branch. The only reason nearly every repository has one is that the git init command creates it by default and most people don’t bother to change it.
+
+What happens if you create a new branch? Well, doing so creates a new pointer for you to move around. 
+$ git branch testing
+This creates a new pointer to the same commit you’re currently on.
+How does Git know what branch you’re currently on? It keeps a special pointer called HEAD.
+this is a pointer to the local branch you’re currently on. In this case, you’re still on master. The git branch command only created a new branch – it didn’t switch to that branch
+
+& git checkout testing
+
+Switching branches changes files in your working directory
+
+It’s important to note that when you switch branches in Git, files in your working directory will change. If you switch to an older branch, your working directory will be reverted to look like it did the last time you committed on that branch. If Git cannot do it cleanly, it will not let you switch at all.
+
+$ git log --oneline --decorate --graph --all
+Because a branch in Git is in actuality a simple file that contains the 40 character SHA-1 checksum of the commit it points to, branches are cheap to create and destroy.
+*****************************
+$ git checkout master
+$ git merge hotfix
+Updating f42c576..3a0874c
+Fast-forward
+ index.html | 2 ++
+ 1 file changed, 2 insertions(+)
+You’ll notice the phrase “fast-forward” in that merge. Because the commit pointed to by the branch you merged in was directly upstream of the commit you’re on, Git simply moves the pointer forward. To phrase that another way, when you try to merge one commit with a commit that can be reached by following the first commit’s history, Git simplifies things by moving the pointer forward because there is no divergent work to merge together – this is called a “fast-forward.”
+**********************
+Topic Branches
+A topic branch is a short-lived branch that you create and use for a single particular feature or related work.
+It’s important to remember when you’re doing all this that these branches are completely local. When you’re branching and merging, everything is being done only in your Git repository – no server communication is happening.
+*********************
+Remote Branches
+Remote references are references (pointers) in your remote repositories, including branches, tags, and so on. You can get a full list of remote references explicitly with git ls-remote [remote], or git remote show [remote] for remote branches as well as more information.
+
+They take the form (remote)/(branch). For instance, if you wanted to see what the master branch on your origin remote looked like as of the last time you communicated with it, you would check the origin/master branch. If you were working on an issue with a partner and they pushed up an iss53 branch, you might have your own local iss53 branch; but the branch on the server would point to the commit at origin/iss53.
+
+“origin” is not special
+Just like the branch name “master” does not have any special meaning in Git, neither does “origin”. While “master” is the default name for a starting branch when you run git init which is the only reason it’s widely used, “origin” is the default name for a remote when you run git clone. If you run git clone -o booyah instead, then you will have booyah/master as your default remote branch.
+
+To synchronize your work, you run a git fetch origin command. This command looks up which server “origin” is (in this case, it’s git.ourcompany.com), fetches any data from it that you don’t yet have, and updates your local database, moving your origin/master pointer to its new, more up-to-date position.
+
+http://git-scm.com/book/en/v2/Git-Branching-Remote-Branches
+$ git remote add
+o demonstrate having multiple remote servers and what remote branches for those remote projects look like, let’s assume you have another internal Git server that is used only for development by one of your sprint teams. This server is at git.team1.ourcompany.com. You can add it as a new remote reference to the project you’re currently working on by running the git remote add command as we covered in Git Basics. Name this remote teamone, which will be your shortname for that whole URL.
+***********
+Pushing
+If you have a branch named serverfix that you want to work on with others, you can push it up the same way you pushed your first branch. Run git push <remote> <branch>:
+$ git push origin serverfix
+
+ If you didn’t want it to be called serverfix on the remote, you could instead run git push origin serverfix:awesomebranch to push your local serverfix branch to the awesomebranch branch on the remote project.
+
+If you don’t want to type PASSWORD every single time you push, you can set up a “credential cache”. The simplest is just to keep it in memory for a few minutes, which you can easily set up by running git config --global credential.helper cache.
+
+when you do a fetch that brings down new remote-tracking branches, you don’t automatically have local, editable copies of them. In other words, in this case, you don’t have a new serverfix branch – you only have an origin/serverfix pointer that you can’t modify.
+
+To merge this work into your current working branch, you can run git merge origin/serverfix. If you want your own serverfix branch that you can work on, you can base it off your remote-tracking branch:
+
+$ git checkout -b serverfix origin/serverfix
+This gives you a local branch that you can work on that starts where origin/serverfix is.
+
+Tracking Branches
+Checking out a local branch from a remote-tracking branch automatically creates what is called a “tracking branch” (or sometimes an “upstream branch”). Tracking branches are local branches that have a direct relationship to a remote branch. If you’re on a tracking branch and type git pull, Git automatically knows which server to fetch from and branch to merge into.
+
+$ git checkout -b [branch] [remotename]/[branch]
+This is a common enough operation that git provides the --track shorthand:
+$ git checkout --track origin/serverfix
+
+Upstream shorthand
+When you have a tracking branch set up, you can reference it with the @{upstream} or @{u} shorthand. So if you’re on the master branch and it’s tracking origin/master, you can say something like git merge @{u} instead of git merge origin/master if you wish.
+
+If you want totally up to date ahead and behind numbers, you’ll need to fetch from all your remotes right before running this. You could do that like this:
+$ git fetch --all; git branch -vv
+
+Pulling
+While the git fetch command will fetch down all the changes on the server that you don’t have yet, it will not modify your working directory at all. It will simply get the data for you and let you merge it yourself. However, there is a command called git pull which is essentially a git fetch immediately followed by a git merge in most cases.
+
+Deleting Remote Branches
+$ git push origin --delete serverfix
+*************************
+The Basic Rebase - http://git-scm.com/book/en/v2/Git-Branching-Rebasing
+you can take the patch of the change that was introduced in C4 and reapply it on top of C3. In Git, this is called rebasing. With the rebase command, you can take all the changes that were committed on one branch and replay them on another one.
+$ git checkout [branch]
+$ git rebase master
+It works by going to the common ancestor of the two branches (the one you’re on and the one you’re rebasing onto), getting the diff introduced by each commit of the branch you’re on, saving those diffs to temporary files, resetting the current branch to the same commit as the branch you are rebasing onto, and finally applying each change in turn.
+At this point, you can go back to the master branch and do a fast-forward merge.
+$ git checkout master
+$ git merge [branch]
+but rebasing makes for a cleaner history. If you examine the log of a rebased branch, it looks like a linear history: it appears that all the work happened in series, even when it originally happened in parallel.
+You’ll do this to make sure your commits apply cleanly on a remote branch. Maintainer doesn’t have to do any integration work – just a fast-forward or a clean apply.
+It’s only the history that is different. 
+!! Rebasing replays changes from one line of work onto another in the order they were introduced, whereas merging takes the endpoints and merges them together.!!
+
+You can take the changes on client that aren’t on server (C8 and C9) and replay them on your master branch by using the --onto option of git rebase:
+$ git rebase --onto master server client
+This basically says, “Check out the client branch, figure out the patches from the common ancestor of the client and server branches, and then replay them onto master.” It’s a bit complex, but the result is pretty cool.
+
+Now you can fast-forward your master branch 
+$ git checkout master
+$ git merge client
+-----
+You can rebase the server branch onto the master branch without having to <check it out first> by running:
+$ git rebase [basebranch] [topicbranch]
+This replays your server work on top of your master work
+Then, you can fast-forward the base branch (master):
+$ git checkout master
+$ git merge server
+--------------
+ÑÀÌÛÉ ÃËÀÂÍÛÉ ÍÅÄÎÑÒÀÒÎÊ REBASE:
+!!Do not rebase commits that exist outside your repository.!!
+When you rebase stuff, you’re abandoning existing commits and creating new ones that are similar but different. If you push commits somewhere and others pull them down and base work on them, and then you rewrite those commits with git rebase and push them up again, your collaborators will have to re-merge their work and things will get messy when you try to pull their work back into yours.
+
+Rebase When You Rebase
+If you do find yourself in a situation like this, Git has some further magic that might help you out. If someone on your team force pushes changes that overwrite work that you’ve based work on, your challenge is to figure out what is yours and what they’ve rewritten.
+
+It turns out that in addition to the commit SHA-1 checksum, Git also calculates a checksum that is based just on the patch introduced with the commit. This is called a “patch-id”.
+$ git rebase teamone/master
+OR
+$ git pull --rebase
+Or you could do it manually with a git fetch followed by a git rebase teamone/master in this case
+
+Rebase vs. Merge - what history means
+**********************
+ïðèìåð íà rebase îò åãîðà
+ñìîòðè òû ñäåëàë ñäåëàë ÷åêàóò îò ìàñòåðà
+ñîçäàë âåòêó
+ñäåëàë êàìèòû
+ïîòîì äåëàé ôåò÷
+ðåáåéçàåøüñÿ íà íîâûé ìàñòåð
+ïîòîì ìîæíî ñäåëàòü ìåðæ
+èëè ïåðåèìåíîâàòü ñâîþ âåòêó â ìàñòåð è ôîðñ ïóøíóòü
+1 git fetch
+2 git checkout origin/master -B test_branch
+3 git commit
+4 git fetch
+5 git rebase origin/master -i
+6 git branch -M master
+7 git push master -f
+ýòî îäèí âàðèàíò è äëÿ íåãî íóæíî ïîääåðæèâàòü î÷åðåäü â êàêîì ñïðåä øèòå
+÷òîá äâà ÷åëîâåêà îäíîâðåìåííî íå ïóøàëè ìàñòåð
+è åùå ïîòîìó ÷òî èìÿ âåòêè òåðÿåòñÿ
+íóæíî äîáàâëÿòü ôëàã
+òîãäà áóäåò âñå ëèíåéíî
+íî åñëè èñïîëüçîâàòü ìåðæ òî èìÿ âåòîê íå òåðÿåòñÿ è íåò ëèíåéíîñòè
+******************
+git config --global alias.graf 'log --oneline --decorate --graph --all'
+*** çàìåíèòü òåêñê â êâ.ñêîáêàõ regexp = \[[^\]]+\]
+*******************
+http://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project
+êàê êîìèòèòü è ÷åêàóòèòü remote branch è ðàáîòàòü â êîìàíäå.
+--------------
+Deleting Remote Branches
+git push origin --delete serverfix
+
+
+************************
+E:\Idea\ws_1415\First [master +4 ~0 -0 !]> git graf
+* 8f05d63 (HEAD -> master) Base source for "First" project
+
+E:\Idea\ws_1415\First [master +4 ~0 -0 !]> git push
+fatal: The current branch master has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin master
+
+E:\Idea\ws_1415\First [master +4 ~0 -0 !]> git push --set-upstream origin master
+
+Warning: Permanently added 'github.com,192.30.252.130' (RSA) to the list of known hosts.
+Counting objects: 193, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (182/182), done.
+Writing objects: 100% (193/193), 903.83 KiB | 0 bytes/s, done.
+Total 193 (delta 5), reused 0 (delta 0)
+To git@github.com:qub2qub/First.git
+ * [new branch]      master -> master
+Branch master set up to track remote branch master from origin.
+
+E:\Idea\ws_1415\First [master +4 ~0 -0 !]> git graf
+* 8f05d63 (HEAD -> master, origin/master) Base source for "First" project
