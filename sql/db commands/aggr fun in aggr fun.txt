@@ -1,0 +1,75 @@
+http://www.sql-tutorial.ru/ru/book_aggregate_function_to_aggregate_function/page3.html
+ Агрегатная функция от агрегатной функции стр. 3
+
+
+Приведем ниже несколько стандартных решений рассматриваемой задачи.
+
+1. Использование предиката ALL в предложении WHERE
+Консоль
+Выполнить Скопировать Ctrl-C
+
+    SELECT maker, avg_price
+    FROM (SELECT maker, AVG(price) avg_price
+          FROM Product P JOIN PC ON P.model=PC.model
+          GROUP BY maker
+         ) X
+    WHERE avg_price >= ALL(SELECT AVG(price) avg_price
+          FROM Product P JOIN PC ON P.model=PC.model
+          GROUP BY maker
+           );
+
+
+На естественном языке этот запрос звучит следующим образом: «Найти производителей, средняя цена на ПК у которых не меньше, чем средние цены у КАЖДОГО из производителей ПК».
+
+2. Использование внутреннего соединения
+Консоль
+Выполнить Скопировать Ctrl-C
+
+    SELECT maker, avg_price
+    FROM (SELECT maker, AVG(price) avg_price
+          FROM Product P JOIN PC ON P.model=PC.model
+          GROUP BY maker
+          ) X JOIN
+          (SELECT MAX(avg_price) max_price
+           FROM (SELECT maker, AVG(price) avg_price
+            FROM Product P JOIN PC ON P.model=PC.model
+                 GROUP BY maker
+                 ) X
+           ) Y ON avg_price = max_price;
+
+
+Здесь мы соединяем подзапрос, определяющий производителей и средние цены на их ПК, с подзапросом, в котором определяется максимальная средняя цена. Соединение выполняется по условию равенства средней цены из первого подзапроса с максимальной ценой из второго.
+
+3. Использование предиката ALL в предложении HAVING
+Консоль
+Выполнить Скопировать Ctrl-C
+
+    SELECT maker, AVG(price) avg_price
+    FROM Product P JOIN PC ON P.model=PC.model
+    GROUP BY maker
+    HAVING AVG(price) >= ALL(SELECT AVG(price)
+           FROM Product P JOIN PC ON P.model=PC.model
+           GROUP BY maker
+               );
+
+
+Это решение отличается от первого варианта отсутствием «лишнего» запроса, который пришлось написать лишь затем, чтобы была возможность использовать алиас avg_price в предложении WHERE (смотри порядок обработки предложений оператора SELECT); с другой стороны, использование в предложении WHERE агрегатной функции также запрещено правилами языка.
+
+Все приведенные стандартные решения выглядят тяжеловесными, хотя и будут работать практически во всех СУБД. Эта громоздкость объясняется повторением в коде фактически одного и того же запроса. Однако общие табличные выражения – CTE, которые были введены в последних версиях стандарта, позволяют многократно ссылаться на один раз сформулированный запрос. Например, решения 1, 3 с помощью CTE можно записать в таком виде:
+Консоль
+Выполнить Скопировать Ctrl-C
+
+    WITH cte(maker, avg_price)
+    AS (
+    SELECT maker, AVG(price) avg_price
+    FROM Product P JOIN PC ON P.model=PC.model
+    GROUP BY maker
+       )
+    SELECT *
+    FROM cte
+    WHERE  avg_price>= ALL(SELECT avg_price
+                           FROM cte
+                           );
+
+
+Замечу, что поддержка общих табличных выражений появилась в SQL Server 2005 и в PostgreSQL 8.4.
