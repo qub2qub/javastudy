@@ -1,0 +1,222 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.4.5
+-- Dumped by pg_dump version 9.4.5
+-- Started on 2016-02-23 13:02:35 MSK
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- TOC entry 9 (class 2615 OID 16425)
+-- Name: comp; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA comp;
+
+
+ALTER SCHEMA comp OWNER TO postgres;
+
+SET search_path = comp, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 182 (class 1259 OID 16441)
+-- Name: laptop; Type: TABLE; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE laptop (
+    code integer NOT NULL,
+    model character varying(50) NOT NULL,
+    speed smallint,
+    ram smallint,
+    hd real,
+    screen smallint,
+    price money
+);
+
+
+ALTER TABLE laptop OWNER TO postgres;
+
+--
+-- TOC entry 183 (class 1259 OID 16444)
+-- Name: pc; Type: TABLE; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE pc (
+    code integer NOT NULL,
+    model character varying(50),
+    speed smallint,
+    ram smallint,
+    hd real,
+    cd character varying(10),
+    price money
+);
+
+
+ALTER TABLE pc OWNER TO postgres;
+
+--
+-- TOC entry 184 (class 1259 OID 16447)
+-- Name: printer; Type: TABLE; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE printer (
+    code integer NOT NULL,
+    model character varying(50),
+    color character(1),
+    type character varying(10),
+    price money
+);
+
+
+ALTER TABLE printer OWNER TO postgres;
+
+--
+-- TOC entry 181 (class 1259 OID 16426)
+-- Name: product; Type: TABLE; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE product (
+    model character varying(50) NOT NULL,
+    maker character varying(10),
+    type character varying(50)
+);
+
+
+ALTER TABLE product OWNER TO postgres;
+
+--
+-- TOC entry 2039 (class 0 OID 16441)
+-- Dependencies: 182
+-- Data for Name: laptop; Type: TABLE DATA; Schema: comp; Owner: postgres
+--
+
+COPY laptop (code, model, speed, ram, hd, screen, price) FROM stdin;
+\.
+
+
+--
+-- TOC entry 2040 (class 0 OID 16444)
+-- Dependencies: 183
+-- Data for Name: pc; Type: TABLE DATA; Schema: comp; Owner: postgres
+--
+
+COPY pc (code, model, speed, ram, hd, cd, price) FROM stdin;
+\.
+
+
+--
+-- TOC entry 2041 (class 0 OID 16447)
+-- Dependencies: 184
+-- Data for Name: printer; Type: TABLE DATA; Schema: comp; Owner: postgres
+--
+
+COPY printer (code, model, color, type, price) FROM stdin;
+\.
+
+
+--
+-- TOC entry 2038 (class 0 OID 16426)
+-- Dependencies: 181
+-- Data for Name: product; Type: TABLE DATA; Schema: comp; Owner: postgres
+--
+
+COPY product (model, maker, type) FROM stdin;
+1121	B	PC
+1232	A	PC
+1233	A	PC
+1260	E	PC
+1276	A	Printer
+1288	D	Printer
+1298	A	Laptop
+1321	C	Laptop
+1401	A	Printer
+1408	A	Printer
+1433	D	Printer
+1434	E	Printer
+1750	B	Laptop
+1752	A	Laptop
+2112	E	PC
+2113	E	PC
+\.
+
+
+--
+-- TOC entry 1921 (class 2606 OID 16457)
+-- Name: laptop_pkey; Type: CONSTRAINT; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY laptop
+    ADD CONSTRAINT laptop_pkey PRIMARY KEY (code);
+
+
+--
+-- TOC entry 1923 (class 2606 OID 16461)
+-- Name: pc_pkey; Type: CONSTRAINT; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY pc
+    ADD CONSTRAINT pc_pkey PRIMARY KEY (code);
+
+
+--
+-- TOC entry 1925 (class 2606 OID 16465)
+-- Name: printer_pkey; Type: CONSTRAINT; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY printer
+    ADD CONSTRAINT printer_pkey PRIMARY KEY (code);
+
+
+--
+-- TOC entry 1919 (class 2606 OID 16463)
+-- Name: product_pkey; Type: CONSTRAINT; Schema: comp; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY product
+    ADD CONSTRAINT product_pkey PRIMARY KEY (model);
+
+
+--
+-- TOC entry 1926 (class 2606 OID 16466)
+-- Name: laptop_model_fkey; Type: FK CONSTRAINT; Schema: comp; Owner: postgres
+--
+
+ALTER TABLE ONLY laptop
+    ADD CONSTRAINT laptop_model_fkey FOREIGN KEY (model) REFERENCES product(model);
+
+
+--
+-- TOC entry 1927 (class 2606 OID 16471)
+-- Name: pc_model_fkey; Type: FK CONSTRAINT; Schema: comp; Owner: postgres
+--
+
+ALTER TABLE ONLY pc
+    ADD CONSTRAINT pc_model_fkey FOREIGN KEY (model) REFERENCES product(model);
+
+
+--
+-- TOC entry 1928 (class 2606 OID 16476)
+-- Name: printer_model_fkey; Type: FK CONSTRAINT; Schema: comp; Owner: postgres
+--
+
+ALTER TABLE ONLY printer
+    ADD CONSTRAINT printer_model_fkey FOREIGN KEY (model) REFERENCES product(model);
+
+
+-- Completed on 2016-02-23 13:02:36 MSK
+
+--
+-- PostgreSQL database dump complete
+--
+
