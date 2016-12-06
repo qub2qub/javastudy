@@ -365,99 +365,138 @@ https://docs.oracle.com/javase/tutorial/java/nutsandbolts/variablesummary.html
 начать с этой:
 https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html
 *************************
-СИГНАТУРА МЕТОДА -- 
+СИГНАТУРА МЕТОДА -- ЭТО ИМЯ МЕТОДА И ТИВЫ ЕГО ПАРАМЕТРОВ. 
 - method signature  —- the method's name and the parameter types.
 
-
 -  Parameters refers to the list of variables in a method declaration. Arguments are the actual values that are passed in when the method is invoked. When you invoke a method, the arguments used must match the declaration's parameters in type and order. 
-- Primitive arguments, such as an int or a double, are passed into methods by value. This means that any changes to the values of the parameters exist only within the scope of the method. When the method returns, the parameters are gone and any changes to them are lost.
+++ ПАРАМЕТРЫ ссылются на список переменых в декларации метода. 
+АРГУМЕНТЫ -- это реальные значения, которые передаются внутрь метода, когда он вызывается.
+Аргументы должны совпадать с декларированными параметрами по типу и порядку следования.
+
+- Primitive arguments, such as an int or a double, are passed into methods by value. 
+This means that any changes to the values of the parameters exist only within the scope of the method. 
+When the method returns, the parameters are gone and any changes to them are lost.
+++ Т.е. при ПЕРЕДАЧЕ ПРИМИТИВОВ в метод передаётся значение примитива. Т.е. из исходного примитива берётся его значение и передаётся (происходит как бы невидимое создание второй копии значения, которое и уйдёт внутрь метода. исходно значение примитива останется как и было, нетронутым, и присвоиным исходной переменной.)
+Любые изменения значений параметров существуют только внутри области видимости метода.
+После выхода из метода параметры пропадают, как и любые изменения с ними.
+
 -Reference data type parameters, such as objects, are also passed into methods by value. This means that when the method returns, the passed-in reference still references the same object as before. However, the values of the object's fields can be changed in the method, if they have the proper access level
--Т.е. при передаче примитивов в метод передаётся значение примитива. Т.е. из исходного примитива берётся его значение и передаётся (происходит как бы невидимое создание второй копии значения, которое и уйдёт внутрь метода. исходно значение примитива останется как и было, нетронутым, и присвоиным исходной переменной.)
-- когда передаётся ссылочный тип, т.е. ссылка на объект, пишут, что тоже передаётся значение. А значение в этом случае - это ссылка на адрес в памяти. Т.е. занчение этой ссылки. ССылка остаётся той же, что и у исходного объекта. ПОЭтому когда в метода с этим объектом просиходят какие-то действия, то они фактически просиходят не со ссылкой, а с той памятью куда она ссылается. по выходу из метода - исходная переменная также осталась ссылаться на эту же область памяти. но по факту в этой памяти метод уже что-то изменил.
-НО НО НО если к локальной переменной в методе присвоится новый объект - то есть ссылка на новый оббъект -- ссылка будет ссылаться на новую область памяти для этого вновь созданного объекта. И будет изменять память там. по выходу из метода - эта ссылка потеряется, объект будет удалён gc, поэтому грубо говоря изменения в новом объекте не имеют смысла.
+++ когда ПЕРЕДАЁТСЯ ССЫЛОЧНЫЙ ТИП, т.е. ссылка на объект, она тоже передаётся по значению. 
+А значение в этом случае - это ссылка на адрес в памяти. Т.е. занчение этой ссылки. ССылка остаётся той же, что и у исходного объекта. ПОЭтому когда в методе с этим объектом просиходят какие-то действия, то они фактически просиходят не со ссылкой, а с той памятью куда она ссылается. по выходу из метода - исходная переменная также осталась ссылаться на эту же область памяти. но по факту в этой памяти метод уже что-то изменил.
+И после выхода из метода, переданная ссылка всё ещё указывает на тот же объект, что и раньше. При этом значение полей объекта могло быть изменено внутри метода, если к ним есть должный доступ.
+НО НО НО если к локальной переменной в методе присвоится новый объект - то есть ссылка на новый оббъект -- ссылка будет ссылаться на новую область памяти для этого вновь созданного объекта, и только внутри области видимости метода. И будет изменять память там. по выходу из метода - эта ссылка потеряется, объект будет удалён gc, поэтому грубо говоря изменения в новом объекте не имеют смысла.
 
 -  как происходит создание объекта:
-1-Declaration: The code set in bold are all variable declarations that associate a variable name with an object type.
-2-Instantiation: The new keyword is a Java operator that creates the object.
-3-Initialization: The new operator is followed by a call to a constructor, which initializes the new object.
+1-DECLARATION: The code set in bold are all variable declarations that associate a variable name with an object type.
+2-INSTANTIATION: The new keyword is a Java operator that creates the object.
+3-INITIALIZATION: The new operator is followed by a call to a constructor, which initializes the new object.
+
 you write: "type name;"
 This notifies the compiler that you will use name to refer to data whose type is type.
 Simply declaring a reference variable does not create an object. For that, you need to use the new operator.
 The new operator instantiates a class by allocating memory for a new object and returning a reference to that memory.
 The new operator also invokes the object constructor.
 The new operator returns a reference to the object it created. This reference is usually assigned to a variable of the appropriate type.
+Т.Е.:
+1) ДЕКЛАРАЦИЯ "VarType varName;" -- это инструкция для компилятора, что имя varName будет ссылаться на данные с типом VarType.
+Только декларация ссылки на переменную -- не создаёт объект. Для создания надо использовать ключевое слово new.
+2) Оператор new СОЗДАЁТ СУЩНОСТЬ КЛАССА ПУТЁМ ВЫДЕЛЕНИЯ ПАМЯТИ под этот новый объект, и возвращает ссылку на этот участок памяти.
+3) Оператор new также сразу после размещения объекта в памяти ВЫЗЫВАЕТ ЕГО КОНСТРУКТОР, чтобы проинициализировать созданный объект.
 
 -- All classes have at least one constructor. If a class does not explicitly declare any, the Java compiler automatically provides a no-argument constructor, called the default constructor. This default constructor calls the class parent's no-argument constructor, or the Object constructor if the class has no other parent. If the parent has no constructor (Object does have one), the compiler will reject the program.
+++Все классы имеют как минимум 1 конструктор; если у класса нет конструктора, то java компилятор автоматически добавляет конструктор без аргументов, к-й называется конструктор по умолчанию.
+Он (конструктор по умолчанию) вызывает родительский конструктор без аргументов. Если у класса нет родителя, то будет вызван конструктор у Object. Если у родителя нет конструктора -- компилятор откажется от программы.
 
 -- An object is eligible for garbage collection when there are no more references to that object. References that are held in a variable are usually dropped when the variable goes out of scope. Or, you can explicitly drop an object reference by setting the variable to the special value null.
+++ Объект будет подвергнут сбору мусора (garbage collection) кога на него больше нет ссылок:
+1) когда переменная выходит за область видимости
+2) можно явно задать null для переменной.
 
--- A method returns to the code that invoked it when it
+-- A method returns to the code that invoked it when it (whichever occurs first)
 1    completes all the statements in the method,
  2   reaches a return statement, or
   3  throws an exception (covered later),
 whichever occurs first.
+
+ВОЗВРАЩЕНИЕ из метода в вызвавший его код происходит когда (что наступит раньше):
+1) выполнены все выражения в методе
+2) достигнут оператор return
+3) выброшено исключение
+
 -- можно написать return в void методе, в этом случае метод выйдет в этой точке. надо для логического ветвления и выхода.
 -- You can override a method and define it to return a subclass of the original method.
 This technique, called covariant return type, means that the return type is allowed to vary in the same direction as the subclass.
--- Within an instance method or a constructor, this is a reference to the current object — the object whose method or constructor is being called. You can refer to any member of the current object from within an instance method or a constructor by using this.
--- From within a constructor, you can also use the this keyword to call another constructor in the same class. Doing so is called an explicit constructor invocation
+-- Within an instance method or a constructor, "this" is a reference to the current object — the object whose method or constructor is being called. You can refer to any member of the current object from within an instance method or a constructor by using this.
+-- From within a constructor, you can also use the "this" keyword to call another constructor in the same class. Doing so is called an explicit constructor invocation.
 If present, the invocation of another constructor must be the first line in the constructor.
--- A class may be declared with the modifier public, in which case that class is visible to all classes everywhere. If a class has no modifier (the default, also known as package-private), it is visible only within its own package
+-- A class may be declared with the modifier public, in which case that class is visible to all classes everywhere. If a class has no modifier (the default, also known as package-private), it is visible only within its own package.
 -- At the member level, you can also use the public modifier or no modifier (package-private) just as with top-level classes, and with the same meaning. For members, there are two additional access modifiers: private and protected. The private modifier specifies that the member can only be accessed in its own class. The protected modifier specifies that the member can only be accessed within its own package (as with package-private) and, in addition, by a subclass of its class in another package.
--- 
-Access Levels Modifier 	Class 	Package 	Subclass 	World
-public 		Y 	Y 	Y 	Y
-protected 	Y 	Y 	Y 	N
-no modifier 	Y 	Y 	N 	N
-private 	Y 	N 	N 	N
-The first data column indicates whether the class itself has access to the member defined by the access level. As you can see, a class always has access to its own members. The second column indicates whether classes in the same package as the class (regardless of their parentage) have access to the member. The third column indicates whether subclasses of the class declared outside this package have access to the member. The fourth column indicates whether all classes have access to the member.
--- Not all combinations of instance and class variables and methods are allowed:
+---------------------------------------
+Access Levels Modifier;	Class; 	Package; 	Subclass; 	World;
+public 					Y 	Y 	Y 	Y
+protected 				Y 	Y 	Y 	N
+no modifier 			Y 	Y 	N 	N (package-private, no subclass)
+private 				Y 	N 	N 	N
 
+The first data column indicates whether the class itself has access to the member defined by the access level. As you can see, a class always has access to its own members. The second column indicates whether classes in the same package as the class (regardless of their parentage) have access to the member. The third column indicates whether subclasses of the class declared outside this package have access to the member. The fourth column indicates whether all classes have access to the member.
+
+-- Not all combinations of instance and class variables and methods are allowed:
     Instance methods can access instance variables and instance methods directly.
     Instance methods can access class variables and class methods directly.
     Class methods can access class variables and class methods directly.
-    Class methods cannot access instance variables or instance methods directly—they must use an object reference. Also, class methods cannot use the this keyword as there is no instance for this to refer to.
+    Class methods cannot access instance variables or instance methods directly—they must use an object reference. Also, class methods cannot use the "this" keyword as there is no instance for this to refer to.
 -- The static modifier, in combination with the final modifier, is also used to define constants. The final modifier indicates that the value of this field cannot change.
-но для final объекта - значением этой переменной является ссылка, то в этом случае, ссылка на объект является неизменной. а сам объект можно изменять.
+но для final указан для объекта (ссылочного типа) - значением этой переменной является ссылка, то в этом случае, ссылка на объект является неизменной. а сам объект можно изменять.
 -- Note: If a primitive type or a string is defined as a constant and the value is known at compile time, the compiler replaces the constant name everywhere in the code with its value. This is called a compile-time constant. If the value of the constant in the outside world changes (for example, if it is legislated that pi actually should be 3.975), you will need to recompile any classes that use this constant to get the current value.
+++ Если тип константы равен примитиву или строке, то компилятор на этапе компиляции подставляет этто значение в код, и если значение изменилось -- надо перекомпилировать весь код, где использовалась эта константа.
 
--- A static initialization block is a normal block of code enclosed in braces, { }, and preceded by the static keyword.
+-- A static initialization block is a normal block of code enclosed in braces, { }, and preceded by the static keyword:
+static {
+	// some code in static initialization block
+}
 A class can have any number of static initialization blocks, and they can appear anywhere in the class body. The runtime system guarantees that static initialization blocks are called in the order that they appear in the source code.
-
+Статические блоки инициализации вызываются в том порядке, в котором они записаны.
+*********************************************
 -- Initializing Instance Members
 
-Normally, you would put code to initialize an instance variable in a constructor. There are two alternatives to using a constructor to initialize instance variables: initializer blocks and final methods.
+Normally, you would put code to initialize an instance variable in a constructor. There are two alternatives to using a constructor to initialize instance variables: 
+1) initializer blocks and 2) final methods.
 
-Initializer blocks for instance variables look just like static initializer blocks, but without the static keyword:
-
+Проинициализировать [ instance variables ] сущностные переменные можно 3 способами:
+1) в конструкторе
+2) и инициализационных блоках // { int a=1; }
+3) в final методах
+..
+2) INITIALIZER BLOCKS for instance variables look just like static initializer blocks, but without the static keyword:
 {
     // whatever code is needed for initialization goes here
 }
-
 The Java compiler copies initializer blocks into every constructor. Therefore, this approach can be used to share a block of code between multiple constructors.
+++ Инициализационный блок для переменных сущности, записываются просто в фигурных скобках, БЕЗ слова static. 
+Java compiler копирует эти initializer blocks в каждый конструктор.
 
-A final method cannot be overridden in a subclass.
+3) A final method cannot be overridden in a subclass.
 The method is final because calling non-final methods during instance initialization can cause problems.
 *******************************
 -- Summary of Creating and Using Classes and Objects
 
-Объявление класса даёт имя классу и между фигурными скобками содержит тело класса. Имени класса могут предшествовать модификаторы. Тело класса содержит поля, методы и конструкторы для класса. Класс использует поля для хранения информации о своём состоянии, а методы использует для реализации поведения. Конструкторы, который инициализируют новый экземпляр класса, называются по имени класса и выглядят как методы, но без возвращаемого типа.
+Объявление класса даёт имя классу и между фигурными скобками содержит тело класса. Имени класса могут предшествовать модификаторы. Тело класса содержит поля, методы и конструкторы для класса.
+ Класс использует поля для хранения информации о своём состоянии, а методы использует для реализации поведения. Конструкторы, которые инициализируют новый экземпляр класса, называются по имени класса и выглядят как методы, но без возвращаемого типа.
 
 Вы контролируете доступ к классам и членам одинаковым образом: с помощью модификатора доступа, например public в их объявлении.
 
 Вы определяете переменную  для всего класса или метод класса (class variable or a class method) с помощью ключевого слова static в объявлении члена. 
-Член, который не объявлен как static неявно считается членом экземпляра этого класса (т.е. принадлежит конкретной сущности а не всему классу). Переменные класса являются общими для всех экземпляров класса и могут быть доступны через имя класса, но также и через ссылку экземпляра класса. 
+Член, который не объявлен как static неявно считается членом экземпляра этого класса (т.е. принадлежит конкретной сущности, а не всему классу). Переменные класса являются общими для всех экземпляров класса и могут быть доступны через имя класса, но также и через ссылку экземпляра класса. 
 Экземпляры класса получают свою собственную копию каждой (instance variable) переменной экземпляра, к неё надо обращаться через ссылку экземпляра класса.
 
 Вы создаете объект из класса с помощью оператора new и конструктора. Оператор new возвращает ссылку на объект, который был создан. Вы можете присвоить ссылку какой-то переменной или использовать эту ссылку напрямую (сразу у неё можно вызвать какие-то методы).
 
 Сборщик мусора автоматически очищает неиспользуемые объекты. Объект не используется, если программа не имеет больше ссылок на него. Вы можете явно удалить ссылку, установив в переменную, содержащую ссылку, значение NULL.
 
-*******************
-Nested Classes
+************************************
+Nested Classes - ВЛОЖЕННЫЕ КЛАССЫ
 
 The Java programming language allows you to define a class within another class. Such a class is called a nested class and is illustrated here:
-
 class OuterClass {
     ...
     class NestedClass {
@@ -466,9 +505,11 @@ class OuterClass {
 }
 
 Terminology: Nested classes are divided into two categories: 
-1) static nested classes (that are declared static)
-2) non-static nested classes --  are called inner classes
-
+1) static nested classes (that are declared static) 
+2) non-static nested classes --  are called inner classes 
+Есть 2 вида ВЛОЖЕННЫХ КЛАССов:
+1) (СТАТИЧЕСКИЙ ВЛОЖЕННЫЙ КЛАСС)
+2) (ВНУТРЕННИЙ КЛАСС) - НЕ СТАТИЧЕСКИЙ
 class OuterClass {
     ...
     static class StaticNestedClass {
@@ -480,12 +521,13 @@ class OuterClass {
 }
 A nested class is a member of its enclosing class. 
 Вложенный класс - является членом своего объемлющего класса.
+
 Non-static nested classes (inner classes) have access to other members of the enclosing class, even if they are declared private. Static nested classes do not have access to other members of the enclosing class. 
 не-статические вложенные классы (т.е. обычные внутренние классы) -- имеют доступ ко всем (в т.ч. и private) остальным членам объемлющего класса (т.е. класса в котором они определены).
 
 As a member of the OuterClass, a nested class can be declared private, public, protected, or package private. (Recall that outer classes can only be declared public or package private.)
-Как и любой другой член объемлющего/внешнего класса (OuterClass) вложенный класс может быть объявлен private, public, protected, or package private.
-------------
+Как и любой другой член объемлющего/внешнего класса (OuterClass-а) вложенный класс может быть объявлен private, public, protected, or package private.
+--------------------------------
 Why Use Nested Classes?
 Зачеч нужны вложенные классы.
 1) Это способ логически сгруппировать классы, которые используются только в одном месте: Если класс полезен только для одного другого класса, то вполне логично, чтобы встроить его в этот класс и держать их вместе. Вложение таких "вспомогательных классов (helper classes)" делает их пакет более прямолинейным/гладким.
