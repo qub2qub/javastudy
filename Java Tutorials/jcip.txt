@@ -1,4 +1,29 @@
-﻿a class is thread-safe when it continues to behave correctly when accessed from multiple threads.
+a class is thread-safe when it continues to behave correctly when accessed from multiple threads.
 Класс является потокобезопастным -- если он продолжает правильно работать когда к нему ображаются много потоков.
 
 A class is thread-safe if it behaves correctly when accessed from multiple threads, regardless of the scheduling or interleaving of the execution of those threads by the runtime environment, and with no additional synchronization or other coordination on the part of the calling code.
+
+Since any single-threaded program is also a valid multithreaded program, it cannot be thread-safe if it is not even correct in a single-threaded environment. 1 If an object is correctly implemented, no sequence of operations - calls to public methods and reads or writes of public fields - should be able to violate any of its invariants or post-conditions. No set of operations performed sequentially or concurrently on instances of a thread-safe class can cause an instance to be in an invalid state.
+
+Thread-safe classes encapsulate any needed synchronization so that clients need not provide their own.
+***
+Writing thread-safe code is, at its core, about managing access to state, and in particular to shared, mutable state.
+Informally, an object's state is its data, stored in state variables such as instance or static fields. An object's state may include fields from other, dependent objects; a HashMap's state is partially stored in the HashMap object itself, but also in many Map.Entry objects. An object's state encompasses any data that can affect its externally visible behavior.
+
+By shared, we mean that a variable could be accessed by multiple threads; 
+by mutable, we mean that its value could change during its lifetime. 
+We may talk about thread safety as if it were about code, but what we are really trying to do is protect data from uncontrolled concurrent access.
+***
+Whether an object needs to be thread-safe depends on whether it will be accessed from multiple threads. This is a property of how the object is used in a program, not what it does.
+Whenever more than one thread accesses a given state variable, and one of them might write to it, they all must coordinate their access to it using synchronization.
+***
+If multiple threads access the same mutable state variable without appropriate synchronization, your program is broken. There are three ways to fix it:
+• Don’t share the state variable across threads;
+• Make the state variable immutable; or
+• Use synchronization whenever accessing the state variable.
+***
+Stateless objects are always thread-safe.
+stateless: it has no fields and references no fields from other classes. 
+***
+The most common type of race condition is check-then-act, where a potentially stale observation is used to make a decision on what to do next.
+This type of race condition is called check-then-act: you observe something to be true (file X doesn't exist) and then take action based on that observation (create X); but in fact the observation could have become invalid between the time you observed it and the time you acted on it (someone else created X in the meantime), causing a problem (unexpected exception, overwritten data, file corruption).
