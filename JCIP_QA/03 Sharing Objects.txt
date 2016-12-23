@@ -1,0 +1,53 @@
+﻿Синхронизация имеет и 2й важный аспект -- это видимость памяти, т.е. после того как 1 потом изменит значение переменной, 2й поток должен увидеть эти изменения.
+
+In the absence of synchronization, the compiler, processor, and runtime can do some downright weird things to the order in which operations appear to execute. Attempts to reason about the order in which memory actions “must” happen in insufficiently synchronized multithreaded programs will almost certainly be incorrect.
+Поэтому -- always use the proper synchronization whenever data is shared across threads.
+
+Reading data without synchronization is analogous to using the READ_UNCOMMITTED isolation level in a database, where you are willing to trade accuracy for performance. 
+
+3.1.2    Nonatomic 64-bit operations
+When a thread reads a variable without synchronization, it may see a stale value, but at least it sees a value that was actually placed there by some thread rather than some random value. 
+This safety guarantee is called OUT-OF-THIN-AIR safety.
+Out-of-thin-air safety applies to all variables, with one exception: 64-bit numeric variables (double and long) that are not declared volatile.
+
+Intrinsic locking can be used to guarantee that one thread sees the effects of another in a predictable manner. Without synchronization, there is no such guarantee.
+
+Зачем использовать 1 и тот же объект для lock ?
+Locking is not just about mutual exclusion; it is also about memory visibility. To ensure that all threads see the most up-to-date values of shared mutable variables, the reading and writing threads must synchronize on a common lock.
+
+Что такое volatile variables? и зачем они нужны?
+volatile variables - это weaker form of synchronization.
+When a field is declared volatile, the compiler and runtime are put on notice that this variable is shared and that operations on it should not be reordered with other memory operations.
+Volatile variables are not cached in registers or in caches where they are hidden from other processors, so a read of a volatile variable always returns the most recent write by any thread.
+
+В чём более широкий эффект volatile variables?
+When thread A writes to a volatile variable and subsequently thread B reads that same variable, the values of all variables that were visible to A prior to writing to the volatile variable become visible to B after reading the volatile variable. 
+Т.Е... So from a memory visibility perspective, writing a volatile variable is like exiting a synchronized block and reading a volatile variable is like entering a synchronized block. 
+НО.. However, we do not recommend relying too heavily on volatile variables for visibility; code that relies on volatile variables for visibility of arbitrary state is more fragile and harder to understand than code that uses locking.
+
+ Use volatile variables only when they simplify implementing and verifying your synchronization policy; avoid using volatile variables when veryfing correctness would require subtle reasoning about visibility. Good uses of volatile variables include ensuring the visibility of their own state, that of the object they refer to, or indicating that an important lifecycle event (such as initialization or shutdown) has occurred.
+
+Когда чаще всего применяются volatile variables?
+как флаг!
+The most common use for volatile variables is as a completion, interruption, or status flag.
+
+Ограничения volatile variables?
+Locking can guarantee both visibility and atomicity; volatile variables can only guarantee visibility.
+
+Когда можно использовать volatile variables?
+You can use volatile variables only when all the following criteria are met:
+• Writes to the variable do not depend on its current value, or you can ensure that only a single thread ever updates the value;
+• The variable does not participate in invariants with other state variables; and
+• Locking is not required for any other reason while the variable is being accessed.
+
+Что такое Publishing?
+1) Publishing an object means making it available to code outside of its current scope, such as by storing a reference to it where other code can find it, returning it from a nonprivate method, or passing it to a method in another class. 
+An object that is published when it should not have been is said to have escaped. 
+2) Any object that is reachable from a published object by following some chain of nonprivate field references and method calls has also been published.
+3) A final mechanism by which an object or its internal state can be published is to publish an inner class instance, because inner class instances contain a hidden reference to the enclosing instance.
+
+Что такое alien method?
+an alien method is one whose behavior is not fully specified by Class "С".
+This includes methods in other classes as well as overrideable methods (neither private nor final) in C itself.
+Passing an object to an alien method must also be considered publishing that object.
+
