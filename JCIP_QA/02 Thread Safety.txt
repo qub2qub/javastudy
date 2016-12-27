@@ -10,17 +10,21 @@ Whether an object needs to be thread-safe depends on whether it will be accessed
 
 Is a thread-safe program one that is constructed entirely of thread-safe classes? 
 Not necessarily—a program that consists entirely of thread-safe classes may not be thread-safe, and a thread-safe program may contain classes that are not thread-safe.
+Почему: потому что взаимодействие может быть небезопасным:
+есть 2 интежера, они все thread-safe, надо сделать атомарную операцию, и если это не в синхронизированном блоке? 
 
 Что такое thread-safe класс? [Определение of thread safety]
+два потока одновременно выполняются и используют общие ресурсы.
 - A class is thread-safe if it behaves correctly when accessed from multiple threads, REGARDLESS OF THE SCHEDULING OR INTERLEAVING OF THE EXECUTION of those threads by the runtime environment, and with no additional synchronization or other coordination on the part of the calling code.
 - No set of operations performed sequentially or concurrently on instances of a thread-safe class can cause an instance to be in an invalid state.
 - Thread-safe classes encapsulate any needed synchronization so that clients need not provide their own.
 
 Какие объекта будут потокобезопасны: statefull или stateless?
 Stateless objects are always thread-safe.
+Почему:т.к. не хранят состояние в переменных, которые могут быть причиной ошибок.
 
 Что такое race conditions?
-A race condition occurs when the correctness of a computation depends on the relative timing or interleaving of multiple threads by the runtime; 
+A race condition occurs when the correctness of a computation depends on the relative timing or interleaving of multiple threads by the runtime;
 in other words, when getting the right answer relies on lucky timing. 
 The most common type of race condition is CHECK-THEN-ACT, where a potentially stale observation is used to make a decision on what to do next.
 
@@ -31,6 +35,7 @@ A common idiom that uses check-then-act is lazy initialization.
 The term race condition is often confused with the related term DATA RACE, which arises when synchronization is not used to coordinate all access to a shared nonfinal field.
 Code with data races has no useful defined semantics under the Java Memory Model. Not all race conditions are data races, and not all data races are race conditions, but they both can cause concurrent programs to fail in unpredictable ways.
 
+Какие виды race condition ты знаешь?
 Какой ещё есть вид race condition?
 READ-MODIFY-WRITE operations, like incrementing a counter, define a transformation of an object's state in terms of its previous state. 
 To increment a counter, you have to know its previous value and make sure no one else changes or uses that value while you are in mid-update.
@@ -41,7 +46,7 @@ To avoid race conditions, there must be a way to prevent other threads from usin
 Что такое atomic operation?
 Operations A and B are atomic with respect to each other if, from the perspective of a thread executing A, when another thread executes B, either all of B has executed or none of it has. An atomic operation is one that is atomic with respect to all operations, including itself, that operate on the same state.
 
-Что такое составные действия?
+Что такое составные операции?
 We refer collectively to check-then-act and read-modify-write sequences as COMPOUND ACTIONS: sequences of operations that must be executed atomically in order to remain thread-safe.
 
 Если у класса есть только 1 элемент для хранения состояния?
@@ -49,7 +54,7 @@ When a single element of state is added to a stateless class, the resulting clas
 
 Практичнее и проще использовать уже существующие thread-safe объекты.
 
-Если в thread-safe используются несколько переменных(несколько операций) -- то не независимы, и все они должны выполняться в ОДНОЙ И ТОЙ ЖЕ atomic operation.
+Если в thread-safe используются несколько переменных(несколько операций) -- то они не независимы, и все они должны выполняться в ОДНОЙ И ТОЙ ЖЕ atomic operation.
 т.к. всё равно существует шанс, даже несмотря на то что сами операции атомарны, что 1 переменная будет изменена, а вторая -- нет.
 
 Что такое built-in locking mechanism for enforcing atomicity: the synchronized block ?
@@ -58,13 +63,15 @@ A synchronized block has two parts:
 2) and a block of code to be guarded by that lock. 
 A SYNCHRONIZED METHOD is a shorthand for a SYNCHRONIZED BLOCK that spans an ENTIRE METHOD BODY, and whose lock is the object on which the method is being invoked. (Static synchronized methods use the Class object for the lock.)
 
-Какие объекты могут выступат в качестве lock ?
-Every Java object can implicitly act as a lock for purposes of synchronization; these built-in locks are called intrinsic locks or monitor locks. 
+Какие объекты могут выступать в качестве lock ?
+Every Java object can implicitly act as a lock for purposes of synchronization; 
+these built-in locks are called intrinsic locks or monitor locks. 
 
-Как можно получить это lock?
-The lock is automatically acquired by the executing thread before entering a synchronized block and automatically released when control exits the synchronized block, whether by the normal control path or by throwing an exception out of the block. The only way to acquire an intrinsic lock is to enter a synchronized block or method guarded by that lock.
+Как можно получить "acquire" lock?
+The lock is automatically acquired by the executing thread before entering a synchronized block and automatically released when control exits the synchronized block, whether by the normal control path or by throwing an exception out of the block. 
+The only way to acquire an intrinsic lock is to enter a synchronized block or method guarded by that lock.
 
-Что такое " обоюдная взаимоисключающая блокировка"=MUTEXES?
+Что такое "обоюдная взаимоисключающая блокировка"=MUTEXES?
 Intrinsic locks in Java act as mutexes (or mutual exclusion locks), which means that at most one thread may own the lock. When thread A attempts to acquire a lock held by thread B, A must wait, or block, until B releases it. If B never releases the lock, A waits forever.
 
 Что значит атомарность? atomicity
@@ -84,15 +91,16 @@ simplifies the development of object-oriented concurrent code. Without reentrant
 Просто синхронизации для составного действия недостаточно.
 Синхронизация должна быть для любой операции, которая обращается к переменной.
 For each mutable state variable that may be accessed by more than one thread, all accesses to that variable must be performed with the same lock held. In this case, we say that the variable is guarded by that lock.
-Every shared, mutable variable should be guarded by exactly one lock. Make it clear to maintainers which lock that is.
+Every shared, mutable variable should be guarded by exactly one lock. 
+Make it clear to maintainers which lock that is.
 
- serialization (turning an object into a byte stream);
- Сериализация -- превращение объекта в поток байт.
+serialization (turning an object into a byte stream);
+Сериализация -- превращение объекта в поток байт.
 
 Какие данные надо защищать?
 Not all data needs to be guarded by locks — only mutable data that will be accessed from multiple threads.
 
-When a variable is guarded by a lock—meaning that every access to that variable is performed with that lock held—you've ensured that only one thread at a time can access that variable. 
+When a variable is guarded by a lock — meaning that every access to that variable is performed with that lock held — you've ensured that only one thread at a time can access that variable. 
 When a class has invariants that involve more than one state variable, there is an additional requirement: each variable participating in the invariant must be guarded by the same lock.
 For every invariant that involves more than one variable, all the variables involved in that invariant must be guarded by the same lock.
 
