@@ -157,7 +157,7 @@ When a thread sets the volatile cache field to reference a new OneValueCache, th
 
 Что за a special guarantee of initialization safety for sharing immutable objects от JMM ?
 -Если выполнены все условия по неизменяемости:
-unmodifiable state, all fields are final, and proper construction.
+[1]unmodifiable state, [2]all fields are final, [3]and proper construction.
 ТО Immutable objects can be safely accessed even when synchronization is not used to publish the object reference.
 -Immutable objects can be used safely by any thread without additional synchronization, even when synchronization is not used to publish them.
 -This guarantee extends to the values of all final fields of properly constructed objects; final fields can be safely accessed without additional synchronization. However, if final fields refer to mutable objects, synchronization is still required to access the state of the objects they refer to.
@@ -171,6 +171,11 @@ To publish an object safely, both the reference to the object and the object’s
 •4• Storing a reference to it into a field that is properly guarded by a lock.
 
 -The internal synchronization in thread-safe collections means that placing an object in a thread-safe collection, such as a Vector or synchronizedLi st, fulfills the last of these requirements.
+The thread-safe library collections offer the following safe publication guarantees, even if the Javadoc is less than clear on the subject:
+•    Placing a key or value in a Hashtable, synchronizedMap, or Concurrent-Map safely publishes it to any thread that retrieves it from the Map (whether directly or via an iterator);
+•    Placing an element in a Vector, CopyOnWriteArrayList, CopyOnWrite-ArraySet, synchronizedList, or synchronizedSet safely publishes it to any thread that retrieves it from the collection;
+•    Placing an element on a BlockingQueue or a ConcurrentLinkedQueue safely publishes it to any thread that retrieves it from the queue.
+
 -Other handoff mechanisms in the class library (such as Future and Exchanger) also constitute safe publication;
 -Using a static initializer is often the easiest and safest way to publish objects that can be statically constructed:
               public static Holder holder = new Holder(42);

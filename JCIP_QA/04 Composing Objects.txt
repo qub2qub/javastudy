@@ -1,7 +1,80 @@
 ﻿Компоновка объектов
+
+Как понять, что класс будет thread-safe или не будет?
 Encapsulation makes it possible to determine that a class is thread-safe without having to examine the entire program.
 
+Чтобы класс был thread-safe, надо:
 The design process for a thread-safe class should include these three basic elements:
 •1• Identify the variables that form the object’s state;
 •2• Identify the invariants that constrain the state variables;
 •3• Establish a policy for managing concurrent access to the object’s state.
+
+Состояние объекта начинается с его полей.
+Если все поля примитивы (т.е. содержат только простое значение) -- то эти поля и определяют состояние такого объекта.
+А если же поля являются ссылками на другие объекты -- то состояние объекта будет включать в себя также и поля из этих связанных объектов.
+For example, the state of a LinkedList includes the state of all the link node objects belonging to the list.
+
+The synchronization policy defines how an object coordinates access to its state without violating its invariants or postconditions. It specifies what combination of immutability, thread confinement, and locking is used to maintain thread safety, and which variables are guarded by which locks. To ensure that the class can be analyzed and maintained, document the synchronization policy.
+
+Что значит сделать класс thread-safe ?
+Making a class thread-safe means ensuring that its invariants hold under concurrent access; this requires reasoning about its state.
+
+Что такое пространство состояния [state space]?
+Objects and variables have a STATE SPACE: the range of possible states they can take on. The smaller this state space, the easier it is to reason about.
+Many classes have invariants that identify certain states as valid or invalid. 
+Например,
+The value field in Counter is a long. The state space of a long ranges from Long.MIN_VALUE to Long.MAX_VALUE, but Counter places constraints on value; negative values are not allowed.
+Similarly, operations may have postconditions that identify certain state transitions as invalid. If the current state of a Counter is 17, the only valid next state is 18.
+
+When the next state is derived(производное) from the current state, the operation is necessarily a compound action. Not all operations impose state transition constraints; when updating a variable that holds the current temperature, its previous state does not affect the computation.
+Constraints placed on states or state transitions by invariants and postconditions create additional synchronization or encapsulation requirements. If certain states are invalid, then the underlying state variables must be encapsulated, otherwise client code could put the object into an invalid state. If an operation has invalid state transitions, it must be made atomic(related variables must be fetched or updated in a single atomic operation). On the other hand, if the class does not impose any such constraints, we may be able to relax encapsulation or serialization requirements to obtain greater flexibility or better performance.
+
+!! You cannot ensure thread safety without understanding an object’s invariants and postconditions. Constraints on the valid values or state transitions for state variables can create atomicity and encapsulation requirements.
+
+Что такое State-dependent operations ?
+Operations with state-based preconditions are called STATE-DEPENDENT.
+In a single-threaded program, if a precondition does not hold, the operation has no choice but to fail. But in a concurrent program, the precondition may become true later due to the action of another thread. Concurrent programs add the possibility of waiting until the precondition becomes true, and then proceeding with the operation.
+
+Что такое State ownership и в чём выражается в классе?
+не все поля в классе определяют его состояние.
+State ownership -- это элемент дизайна класса (an element of class design)
+Состояние объекта -- это такие переменные, которые содержат те данные, которыми класс обладает\владеет (own).
+
+In many cases, OWNERSHIP AND ENCAPSULATION go together—the object encapsulates the state it owns and owns the state it encapsulates. It is the owner of a given state variable that gets to decide on the locking protocol used to maintain the integrity of that variable's state. 
+Ownership implies control, but once you publish a reference to a mutable object, you no longer have exclusive control; at best, you might have "shared ownership". 
+A class usually DOES NOT OWN the OBJECTS PASSED TO ITS METHODS or constructors, unless the method is designed to explicitly transfer ownership of objects passed in (such as the synchronized collection wrapper factory methods).
+
+Пример для "split ownership" ?
+the collection owns the state of the collection infrastructure, but client code owns the objects stored in the collection. 
+An example is ServletContext.
+
+Как безопасно использовать не thread-safe объект в многопоточном приложении?
+1) You can ensure that it is only accessed from a single thread (thread confinement), or 
+2) that all access to it is properly guarded by a lock.
+
+Что такое instance confinement?
+Encapsulation simplifies making classes thread-safe by promoting instance confinement, often just called confinement.
+When an object is encapsulated within another object, all code paths that have access to the encapsulated object are known and can be therefore be analyzed more easily than if that object were accessible to the entire program.
+!! Encapsulating data within an object confines access to the data to the object’s methods, making it easier to ensure that the data is always accessed with the appropriate lock held.
+
+Чем можно ограничить использование объекта?
+(Заточённые\ограниченные объекты) Confined objects must NOT escape their intended scope (предназначеную область).
+An object may be confined to:
+1) a class instance (such as a private class member), 
+2) a lexical scope (such as a local variable), or 
+3) a thread (such as an object that is passed from method to method within a thread, but not supposed to be shared across threads).
+
+Ошибки, когда объект сбежит из заключения:
+if an object is intended to be confined to a specific scope, then letting it escape from that scope is a bug. 
+Confined objects can also escape by publishing other objects such as iterators or inner class instances that may indirectly publish the confined objects.
+
+Можно ли понять только по виду класса, что он будет thread-safe ?
+Confinement makes it easier to build thread-safe classes because a class that confines its state can be analyzed for thread safety without having to examine the whole program.
+
+Что такое Java monitor pattern ?
+ An object following the Java monitor pattern encapsulates all its mutable state and guards it with the object's own intrinsic lock.
+Пример: Counter -- It encapsulates one state variable, , value, and all access to that state variable is through the methods of Counter, which are all synchronized.
+
+Какие приемущества в исползовании private lock object instead of an object's intrinsic lock(or any other publicly accessible lock) ?
+Making the lock object private encapsulates the lock so that client code cannot acquire it, whereas a publicly accessible lock allows client code to participate in its synchronization policy— correctly or incorrectly.
+
