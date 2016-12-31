@@ -51,8 +51,7 @@ When thread A writes to a volatile variable and subsequently thread B reads that
 как флаг!
 The most common use for volatile variables is as a completion, interruption, or status flag.
 
-Ограничения volatile variable
-s?пе
+Ограничения volatile variable?
 Locking can guarantee both visibility and atomicity; volatile variables can only guarantee visibility.
 
 Когда можно использовать volatile variables?
@@ -149,7 +148,7 @@ When a thread sets the volatile cache field to reference a new OneValueCache, th
  The cache-related operations cannot interfere with each other because One-ValueCache is immutable and the cache field is accessed only once in each of the relevant code paths. This combination of an immutable holder object for multiple state variables related by an invariant, and a volatile reference used to ensure its timely visibility, allows VolatileCachedFactorizer to be thread-safe even though it does no explicit locking.
 
 Что такое Safe publication?
- sometimes we do want to share objects across threads, and in this case we must do so safely. Unfortunately, simply storing a reference to an object into a public field, as in Listing 3.14, is not enough to publish that object safely. Потому что improper publication could allow another thread to observe a partially constructed object.
+sometimes we do want to share objects across threads, and in this case we must do so safely. Unfortunately, simply storing a reference to an object into a public field, as in Listing 3.14, is not enough to publish that object safely. Потому что improper publication could allow another thread to observe a partially constructed object.
  
 Какие 2 проблемы могут быть при неправильно расшаренных переменных?
 1) Other threads could see a stale value for the holder field, and thus see a null reference or other older value even though a value has been placed in holder. (ссылка самого холдера плохая)
@@ -170,6 +169,8 @@ To publish an object safely, both the reference to the object and the object’s
 •3• Storing a reference to it into a final field of a properly constructed object; or
 •4• Storing a reference to it into a field that is properly guarded by a lock.
 
+** Порядок загрузки\инициализации полей в классе?
+
 -The internal synchronization in thread-safe collections means that placing an object in a thread-safe collection, such as a Vector or synchronizedLi st, fulfills the last of these requirements.
 The thread-safe library collections offer the following safe publication guarantees, even if the Javadoc is less than clear on the subject:
 •    Placing a key or value in a Hashtable, synchronizedMap, or Concurrent-Map safely publishes it to any thread that retrieves it from the Map (whether directly or via an iterator);
@@ -185,11 +186,17 @@ Static initializers are executed by the JVM at class initialization time; becaus
 Safe publication is sufficient for other threads to safely access objects that are not going to be modified after publication without additional synchronization. The safe publication mechanisms all guarantee that the as-published state of an object is visible to all accessing threads as soon as the reference to it is visible, and if that state is not going to be changed again, this is sufficient to ensure that any access is safe.
 
 Какие объекты являются Effectively immutable objects?
-Objects that are NOT TECHNICALLY IMMUTABLE, but whose state will not be modified after publication, are called effectively immutable. They do not need to meet the strict definition of immutability(3 пункта). they merely need to be treated by the program as if they were immutable after they are published. Using effectively immutable objects can simplify development and improve performance by reducing the need for synchronization.
+Objects that are NOT TECHNICALLY IMMUTABLE, but whose state will not be modified after publication, are called effectively immutable. They do not need to meet the strict definition of immutability(3 пункта). they merely need to be treated by the program as if they were immutable after they are published. 
+
+В чём выгода использоваться Effectively immutable objects?
+Using effectively immutable objects can simplify development and improve performance by reducing the need for synchronization.
+
 [Collections.synchronizedMap(new HashMap<String, Date>());
 If the Date values are not modified after they are placed in the Map, then the synchronization in the synchronizedMap implementation is sufficient to publish the Date values safely, and no additional synchronization is needed when accessing them.]
 
 SAFELY PUBLISHED EFFECTIVELY IMMUTABLE OBJECTS CAN BE USED SAFELY BY ANY THREAD WITHOUT ADDITIONAL SYNCHRONIZATION.
+
+**Можно ли наследоваться от анонимного класса?
 
 3.5.5 Mutable objects
 If an object may be modified after construction, safe publication ensures only the VISIBILITY of the AS-PUBLISHED STATE. Synchronization must be used not only to publish a mutable object, but also every time the object is accessed to ensure visibility of subsequent modifications. To share mutable objects safely, they must be safely published and be either thread-safe or guarded by a lock.
