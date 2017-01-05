@@ -112,8 +112,8 @@ We store the locations in a thread-safe Map implementation, ConcurrentHashMap.
 We also store the location using an immutable Point class instead of MutablePoint.
 ImmutablePoint is thread-safe because it is immutable. Immutable values can be freely shared and published, so we no longer need to copy the locations when returning them. (т.е. убираем перформанс ишьюс при получении локейшнс)
 DelegatingVehicleTracker in Listing 4.7 does not use any explicit synchronization; all access to state is managed by ConcurrentHashMap, and all the keys and values of the Map are immutable.
-Т.е. не надо никакой доплнительной синхронизации про доступе к мап или точке.
-Важно отметить, что поля мэп обозначены как private final, т.к. эти ссылки публикуются (возвращаются из класса вовне в другие классы), т.е. нельзя заменить ссылку у этих мэп на другие мэп с другим контентом.
+Т.е. не надо никакой доплнительной синхронизации при доступе к мап или точке.
+Важно отметить, что поля мэп обозначены как public final, т.к. эти ссылки публикуются (возвращаются из класса вовне в другие классы), т.е. нельзя заменить ссылку у этих мэп на другие мэп с другим контентом.
 
 If we had used the original MutablePoint class instead of ImmutablePoint, we would be breaking encapsulation by letting getLocations publish a reference to mutable state that is not thread-safe. Notice that we've changed the behavior of the vehicle tracker class slightly; while the monitor version returned a snapshot of the locations, the delegating version returns an unmodifiable but "live" view of the vehicle locations. This means that if thread A calls getLocations and thread B later modifies the location of some of the points, those changes are reflected in the Map returned to thread A. As we remarked earlier, this can be a benefit (more up-to-date data) or a liability (potentially inconsistent view of the fleet), depending on your requirements.
 
@@ -195,8 +195,8 @@ The requirement that the class be thread-safe implicitly adds another requiremen
 2) Another approach is to extend the class, assuming it was designed for extension. 
 Extension is more fragile than adding code directly to a class, because the implementation of the synchronization policy is now distributed over multiple, separately maintained source files. If the underlying class were to change its synchronization policy by choosing a different lock to guard its state variables, the subclass would subtly and silently break, because it no longer used the right lock to control concurrent access to the base class's state.
 
-3) Client-sidelocking
- A third strategy is to extend the functionality of the class without extending the class itself by placing extension code in a "helper" class.
+3) Client-side locking
+A third strategy is to extend the functionality of the class without extending the class itself by placing extension code in a "helper" class.
 ListHelper provides only the illusion of synchronization когда ис-ем helper класс для синхронизации.
 the various list operations, while all synchronized, use different locks, which means that putIfAbsent is not atomic relative to other operations on the List.
 
@@ -204,10 +204,13 @@ To make this approach work, we have to use the same lock that the List uses by u
 IN ORDER TO USE CLIENT-SIDE LOCKING, YOU MUST KNOW WHAT LOCK X USES.
 
 If extending a class to add another atomic operation is fragile because it distributes the locking code for a class over multiple classes in an object hierarchy, client-side locking is even more fragile because it entails(влечёт за собой) putting locking code for class C into classes that are totally unrelated to C.
-Client-side locking has a lot in common with class extension—they both couple the behavior of the derived(производного) class to the implementation of the base class. Just as extension violates encapsulation of implementation, client-side locking violates encapsulation of synchronization policy.
+Client-side locking has a lot in common with class extension — they both couple the behavior of the derived(производного) class to the implementation of the base class. 
+Just as extension violates encapsulation of implementation, client-side locking violates encapsulation of synchronization policy.
 
-Есть более надёжный способ добавить атомик операцию к уже существующему классу, это композиция (composition) 
+4) Есть более надёжный способ добавить атомик операцию к уже существующему классу, это композиция (composition) 
 т.е. создание типа прокси.
+но им надо поддерживать исходный интерфейс.
+но теоретически, можно и не implement-ить интерфейс, но это будет геморройнее 
 ImprovedList in Listing 4.16 implements the List operations by delegating them to an underlying List instance, and adds an atomic putIfAbsent method.
 (Like Collections.synchronizedList and other collections wrappers, ImprovedList assumes that once a list is passed to its constructor, the client will not use the underlying list directly again, accessing it only through the wrapper\ImprovedList.)
 ImprovedList adds an additional level of locking using its own intrinsic lock. It does not care whether the underlying List is thread-safe, because it provides its own consistent locking that provides thread safety even if the List is not thread-safe or changes its locking implementation.
@@ -220,4 +223,7 @@ Document a "class’s thread safety guarantees" for its clients; document its "s
 Crafting a synchronization policy requires a number of decisions: which variables to make volatile, which variables to guard with locks, which lock(s) guard which variables, which variables to make immutable or confine to a thread, which operations must be atomic, etc
 
 Как догадаться о неуказанной потокобезопасности: есть ли она в реализации?
-One way to improve the quality of your guess is to interpret the specification from the perspective of someone who will implement it (such as a container or database vendor), as opposed to someone who will merely use it
+One way to improve the quality of your guess is to interpret the specification from the perspective of someone who will implement it (such as a container or database vendor), as opposed to someone who will merely use it.
+
+зачем писать, thread-safe класс или нет?
+или ты будешь думать что он thread-safe, а на самом деле -- он нет.
