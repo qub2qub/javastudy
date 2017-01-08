@@ -3,22 +3,31 @@
 Чем отличаются Runnable от Callable?
 
 Most concurrent applications are organized around the execution of 
-TASKS --> abstract, discrete units of work. 
+TASKS --> abstract, discrete(отдельные единицы работы) units of work. 
 Dividing the work of an application into tasks имеет ряд приемуществ:
-1) simplifies program organization, 
-2) facilitates(облегчать, помогать, способствовать) error recovery by providing natural transaction boundaries, 
-3) promotes concurrency by providing a natural structure for parallelizing work.
+1) simplifies program organization, (упрощает организацию прогаммы)
+2) facilitates(облегчать, помогать, способствовать) error recovery(восстановление после ошибок) by providing natural transaction boundaries, 
+3) promotes concurrency by providing a natural structure(естественной структуры) for parallelizing work.
 
 *** 6.1 Executing tasks in threads ***
-The first step in organizing a program around task execution is identifying SENSIBLE TASK BOUNDARIES. 
+The first step in organizing a program around task execution is identifying ( разумный, благоразумный, здравомыслящий)SENSIBLE TASK BOUNDARIES. 
+
 Ideally, TASKS ARE INDEPENDENT ACTIVITIES: 
 work that doesn't depend on the state, result, or side effects of other tasks. 
-Independence facilitates concurrency, as independent tasks can be executed in parallel if there are adequate processing resources. 
+
+Independence facilitates(облегчает) concurrency, as independent tasks can be executed in parallel if there are adequate processing resources. 
 For greater flexibility in scheduling and load balancing tasks, each task should also represent a small fraction of your application's processing capacity.
 
 Server applications should exhibit (показывать, обнаруживать, проявлять) both GOOD THROUGHPUT and GOOD RESPONSIVENESS under normal load. 
-Также applications should exhibit GRACEFUL DEGRADATION as they become overloaded, rather than simply falling over under heavy load. 
+Также applications should exhibit (приятный, элегантный)GRACEFUL DEGRADATION as they become overloaded, rather than simply falling over under heavy load. 
 Choosing good task boundaries, coupled with a sensible task execution policy (see Section 6.2.2), can help achieve these goals.
+
+*** 6.1.1 Executing tasks sequentially *** добавть из этой части:
+какие + и - у последовательной обработки.
+*** 6.1.2 Explicitly creating threads for tasks ***
+также добавить + и -
+
+
 
 Most server applications offer a natural choice of task boundary: INDIVIDUAL CLIENT REQUESTS.
 
@@ -26,11 +35,12 @@ Most server applications offer a natural choice of task boundary: INDIVIDUAL CLI
 В таких случаях отзывчивость будет страдать, ЦПУ простаивать, некоторые ожидающие запросы так могут никогда и не выполниться, а юзер думать что сайт не работает.
 
 Распараллеливание обработки запросов даёт следующие приемущества:
-1) главный потом освобождается от нагрузки и может спокойно принимать след.запросы.
-2) запросы обрабатываются параллельно и одновременно
+1) главный поток освобождается от нагрузки и может спокойно принимать след.запросы.
+2) запросы обрабатываются параллельно и одновременно.
 3) код для обработки запросов\задач должен быть thread-safe.
 При это желательно чтобы частота поступления новых запросов была меньше чем способность сервера их обрабатывать.
 
+*** 6.1.3 Disadvantages of unbounded thread creation
 Недостатки такого распараллеливания:
 1) Thread lifecycle overhead (накладные расходы, издержки). Создание и удаление нового потока занимает время и ресурсы.
 2) Resource consumption (расход, потребление). Потоки потребляют системные ресурсы, в частности - память. А также если потоков больше чем процессоров -- то некоторые из них простаивают. много проставивающих потоков могут съесть всю память, усложнить работу garbage collector, и негативно сказаться на других сторонах производительности.
@@ -39,7 +49,7 @@ Most server applications offer a natural choice of task boundary: INDIVIDUAL CLI
 
 --- Each thread maintains two execution stacks, one for Java code and one for native code. Typical JVM defaults yield a combined stack size of around half a megabyte. (You can change this with the -Xss JVM flag or through the Thread constructor.) If you divide the per-thread stack size into 2 в 32й (32битные системы), you get a limit of a few thousands or tens of thousands of threads (8 192 потоков = 2в32й байт разделить на 512Кб-на1поток).
 
- Like other concurrency hazards, unbounded thread creation may appear to work just fine during prototyping and development, with problems surfacing only when the application is deployed and under heavy load.
+Like other concurrency hazards, unbounded thread creation may appear to work just fine during prototyping and development, with problems surfacing only when the application is deployed and under heavy load.
 
  *** 6.2 The Ex'ecutor framework ***
 TASKS   are logical units of work.
@@ -50,16 +60,18 @@ the THREAD-PER-TASK APPROACH suffers from poor resource management.
 The primary abstraction for task execution in the Java class libraries is not Thread, but EXECUTOR.
 
 Executor may be a simple interface, but it forms the basis for a flexible and powerful framework for asynchronous task execution that supports a wide variety of task execution policies. 
-It provides a standard means of DECOUPLING TASK SUBMISSION from TASK EXECUTION, describing tasks with Runnable. The Executor implementations also provide LIFECYCLE SUPPORT and HOOKS FOR ADDING STATISTICS GATHERING, APPLICATION MANAGEMENT, AND MONITORING.
+It provides a standard means of (расцепление, разъединение)DECOUPLING TASK SUBMISSION(передача на рассмотрение) from TASK EXECUTION, describing tasks with Runnable. 
+The Executor implementations also provide LIFECYCLE SUPPORT and HOOKS FOR ADDING STATISTICS GATHERING, APPLICATION MANAGEMENT, AND MONITORING.
 
-EXECUTOR IS BASED ON THE PRODUCER-CONSUMER PATTERN, where activities that submit tasks are the producers (producing units of work to be done) and the threads that execute tasks are the consumers (consuming those units of work). Using an Executor is usually the easiest path to implementing a producer-consumer design in your application.
+EXECUTOR IS BASED ON THE PRODUCER-CONSUMER PATTERN, where activities that submit tasks are the producers (producing units of work to be done) and the threads that execute tasks are the consumers (consuming those units of work). 
+Using an Executor is usually the easiest path to implementing a producer-consumer design in your application.
 
 Поэтому в примере переделали на ис-ие Executor, 
 тут главное в коде это сделать, т.к. в коде вряд ли потом легко поменяется логика запуска обработки запросов.
 А вот имплементация самого Executor может быть легко изменена в конфиге, наример. И это более частая практика.
 
 *** 6.2.2 Execution policies ***
-Разделяя передачу от выполнения (submission from execution) для текущей группы задач , вы задаёте политику выполнения (Execution policy), и также появляется возможность легко изменять эту политику.
+Разделяя передачу от выполнения (submission from execution) для текущей группы задач, вы задаёте политику выполнения (Execution policy), и также появляется возможность легко изменять эту политику.
 An execution policy specifies the "what, where, when, and how" of task execution:
 1) в каком потоке
 2) в каком порядке (fifo, lifo, др)
@@ -70,15 +82,21 @@ An execution policy specifies the "what, where, when, and how" of task execution
 
 Separating the specification of execution policy from task submission makes it practical to select an execution policy at deployment time that is matched to the available hardware.
 
-*** 6.2.3 Thread pools ***
-A thread pool manages a homogeneous pool of worker threads. 
+*** 6.2.3 Thread pools *** пул потоков.
+-- В чём разница между процессом и потоком?
+Процессы управляются на уровне ОС, а процесс управляет своими потоками.
+Потоками можно управлять внутри кода процесса. 
+
+A THREAD POOL manages a homogeneous pool of worker threads. 
 A thread pool is tightly bound to a WORK QUEUE holding tasks waiting to be executed. 
 Worker threads have a simple life: request the next task from the work queue, execute it, and go back to waiting for another task.
 
 Плюсы:
-1) не тратится время и ресурсы на создание и подчистку потоков
-2) лучшая отзывчивость (responsiveness): т.к. поток уже создан, когда пришла задача
+1) не тратится время и ресурсы на создание и подчистку потоков.
+2) лучшая отзывчивость (responsiveness): т.к. поток уже создан, когда пришла задача.
 3) оптимально кол-во потоков эффективно ис-ет ЦПУ и память.
+
+** какое оптимальное кол-во потоком в зависимости от кол-во ядер в процессоре??
 
 Пулы можно получить из static factory methods in Executors:
 -------------- 1) newFixedThreadPool. -------------- 
@@ -91,73 +109,91 @@ A single-threaded executor creates a single worker thread to process tasks, repl
 -------------- 4) newScheduledThreadPool. -------------- 
 A fixed-size thread pool that supports delayed and periodic task execution, similar to Timer. (See Section 6.2.5.)
 
+** Посмотреть как работает таймер??
+
 Использование TASK EXECUTION FRAMEWORK даёт ряд новых возможностей:
 tuning, management, monitoring, logging, error reporting, and other possibilities..
 
 *** 6.2.4 Executor lifecycle ***
-Since Executors provide a service to applications, they should be able to be shut down as well, both gracefully(вежливо, прилично) and abruptly(внезапно, резко), and feed back information to the application about the status of tasks that were affected by the shutdown.
+Since Executors provide a service to applications, they should be able to be shut down as well, both gracefully(вежливо, прилично) and abruptly(внезапно, резко), and feed back information to the application about the status of tasks that were affected by the shutdown(выключение).
 
-To address the issue of execution service lifecycle, the ExecutorService interface extends Executor, adding a number of methods for lifecycle management (as well as some convenience methods for task submission).
+To address the issue of execution service lifecycle, the ExecutorService interface extends Executor, adding a number of methods for lifecycle management (as well as some convenience methods for task submission(передача на рассмотрение)).
 
-The lifecycle implied by ExecutorService has three states —RUNNING, SHUTTING DOWN, AND TERMINATED. 
+The lifecycle implied by ExecutorService has three states — RUNNING, SHUTTING DOWN, AND TERMINATED. 
 1) ExecutorServices are initially created in the RUNNING state. 
-2) The SHUTDOWN method initiates a graceful shutdown: no new tasks are accepted but previously submitted tasks are allowed to complete—including those that have not yet begun execution. 
-3) The SHUTDOWNNOW method initiates an abrupt shutdown: it attempts to cancel outstanding tasks and does not start any tasks that are queued but not begun.
+2) The SHUTDOWN method initiates a GRACEFUL shutdown: no new tasks are accepted but previously submitted tasks are allowed to complete — including those that have not yet begun execution. 
+3) The SHUTDOWNNOW method initiates an ABRUPT SHUTDOWN: it attempts to cancel outstanding(нереализованный) tasks and does not start any tasks that are queued but not begun.
 4) Tasks submitted to an ExecutorService AFTER IT HAS BEEN SHUT DOWN are handled by the REJECTED EXECUTION HANDLER (see Section 8.3.3), which might silently discard the task or might cause execute to throw the unchecked RejectedExecutionException. 
 5) Once all tasks have completed, the ExecutorService transitions to the TERMINATED state. 
 
-You can wait for an ExecutorService to reach the terminated state with .awaitTermination(), or poll for whether it has yet terminated with .isTerminated(). 
-It is common to follow shutdown immediately by awaitTermination, creating the effect of synchronously shutting down the ExecutorService. (Executor shutdown and task cancellation are covered in more detail in Chapter 7)
+You can wait for an ExecutorService to reach the terminated state with .awaitTermination(), or poll(опросить) for whether it has yet terminated with .isTerminated(). 
+It is common to follow .shutdown() immediately by .awaitTermination(), creating the effect of synchronously shutting down the ExecutorService. (Executor shutdown and task cancellation are covered in more detail in Chapter 7)
 
 *** 6.2.5 Delayed and periodic tasks ***
 The Timer facility manages the execution of DEFERRED[отсроченный, отложенный] ("run this task in 100 ms") and PERIODIC[периодический, повторяющийся] ("run this task every 10 ms") tasks. 
 However, Timer has some drawbacks, and ScheduledThreadPoolExecutor should be thought of as its replacement.
 
+** Перечислить drawbacks у таймера ??
+** и как это решено в ScheduledThreadPoolExecutor ??
+** Пример плохого таймера ??
+
 Timer does have support for scheduling based on absolute, not relative time, so that tasks can be sensitive to changes in the system clock; ScheduledThreadPoolExecutor supports only relative time.
 
-If you need to build your own scheduling service, you may still be able to take advantage of the library by using a DelayQueue, a BlockingQueue implementation that provides the scheduling functionality of ScheduledThreadPoolExecutor. 
+If you need to build your own scheduling service, you may still be able to take advantage of the library by using a DelayQueue.
+DelayQueue -- это a BlockingQueue implementation that provides the scheduling functionality of ScheduledThreadPoolExecutor. 
 A DelayQueue manages a collection of Delayed objects. A Delayed has a delay time associated with it: DelayQueue lets you take an element only if its delay has expired. Objects are returned from a DelayQueue ordered by the time associated with their delay.
 
-*** 6.3 Finding exploitable parallelism *** Поиск вредоносного параллелизма **
+*** 6.3 Finding exploitable parallelism *** Поиск пригодного к эксплуатации параллелизма **
 Our sample component is the page-rendering portion of a browser application, which takes a page of HTML and renders it into an image buffer.
 sequential page renderer -- неэффективно.
 -- RUNNABLE --
 The Executor framework uses Runnable as its basic task representation. 
-Runnable is a fairly LIMITING abstraction; run CANNOT RETURN A VALUE OR THROW CHECKED EXCEPTIONS, although it can have SIDE EFFECTS such as writing to a log file or placing a result in a shared data structure.
+Runnable is a fairly LIMITING abstraction; run CANNOT RETURN A VALUE OR THROW CHECKED EXCEPTIONS, [поэтому используются workaround-ы вида:] although it can have SIDE EFFECTS such as writing to a log file or placing a result in a shared data structure.
 -- CALLABLE --
 Callable expects that the main entry point, CALL, will return a value and anticipates(ожидает) that it might throw an exception.
--- 
+---------------- 
 Many tasks are effectively deferred(отсроченный, отложенный) computations — executing a database query, fetching a resource over the network, or computing a complicated function. For these types of tasks, Callable is a better abstraction.
 Executors includes several utility methods for wrapping other types of tasks, including Runnable and java.security.PrivilegedAction, with a Callable.
 
 -- TASKS --
-Runnable and Callable describe abstract computational tasks. Tasks are usually finite: they have a clear starting point and they eventually terminate. The lifecycle of a task executed by an Executor has four phases: CREATED, SUBMITTED, STARTED, and COMPLETED. 
+Runnable and Callable describe abstract computational tasks. 
+Tasks are usually finite(ограниченный, имеющий предел): they have a clear starting point and they eventually terminate. 
+The lifecycle of a task executed by an Executor has four phases: CREATED, SUBMITTED, STARTED, and COMPLETED.
 Since tasks can take a long time to run, we also want to be able to cancel a task. In the Executor framework, tasks that have been submitted but not yet started can always be cancelled, and tasks that have started can sometimes be cancelled if they are responsive to interruption. Cancelling a task that has already completed has no effect.
 
 -- FUTURE --
 Future represents the lifecycle of a task and provides methods to test whether the task has completed or been cancelled, retrieve its result, and cancel the task. 
-Implicit in the specification of Future is that task lifecycle can only move forwards, not backwards — just like the ExecutorService lifecycle. Once a task is completed, it stays in that state forever.
+Implicit in the specification of Future is that task lifecycle can only move forwards, not backwards — just like the ExecutorService lifecycle. 
+Once a task is completed, it stays in that state forever.
 
-The behavior of get varies depending on the task state (not yet started, running, completed). It returns immediately or throws an Exception if the task has already completed, but if not it blocks until the task completes. 
+The behavior of .get() varies depending on the task state (not yet started, running, completed). 
+It returns immediately or throws an Exception if the task has already completed, but if not it blocks until the task completes. 
 If the task completes by throwing an exception, get() rethrows it wrapped in an ExecutionException; 
 if it was cancelled, get() throws CancellationException. 
-If get() throws ExecutionException, the underlying exception can be retrieved with getCause().
+If get() throws ExecutionException, the underlying exception can be retrieved with .getCause().
 
 **To express a non-value-returning task with Callable, use Callable<Void>.
-** Future<?> submit(Runnable task); --- вернёт null при успешном завершении.
+** в ExecutorService метод Future<?> submit(Runnable task); --- вернёт null при успешном завершении. т.к. Runnable не возвращает никакое значение.
 
 There are several ways to create a Future to describe a task. 
 The SUBMIT() methods in ExecutorService all return a Future, so that you can submit a Runnable or a Callable to an executor and get back a Future that can be used to retrieve the result or cancel the task. 
 You can also explicitly instantiate a FutureTask for a given Runnable or Callable. (Because FutureTask implements Runnable, it can be submitted to an Executor for execution or executed directly by calling its run method.)
 
-Submitting a Runnable or Callable to an Executor constitutes a SAFE PUBLICATION (see Section 3.5) of the Runnable or Callable from the submitting thread to the thread that will eventually execute the task. 
+** В AbstractExecutorService есть метод protected newTaskFor(..), который можно переопределить если делаешь свой ExecutorService.
+
+--- The safe publication ensures that the object's state is visible to the new owner..
+и что передаётся полностью созданный объект... 
+** описать что такое safe publication ??
+---
+
+Submitting a Runnable or Callable to an Executor constitutes a SAFE PUBLICATION (see Section 3.5) of the Runnable or Callable from the submitting thread to the thread that will eventually execute the task.
 Similarly, setting the result value for a Future constitutes a safe publication of the result from the thread in which it was computed to any thread that retrieves it via get().
 
 Какие могут быть проблемы\исключения\ситуации вокруг Future.get(), которые надо специально обрабатывать?
-The exception handling code surrounding Future.get deals with two possible problems: that the task encountered an Exception, or the thread calling get was interrupted before the results were available. 
+The exception handling code surrounding Future.get() deals with two possible problems: that the task encountered an Exception, or the thread calling .get() was interrupted before the results were available.
 
 А так в общем всё будет thread-safe:
-The state-dependent nature of get means that the caller need NOT be aware of the state of the task, and the safe publication properties of task submission and result retrieval make this approach thread-safe. 
+The state-dependent nature of .get() means that the caller need NOT be aware of the state of the task, and the safe publication properties of task submission and result retrieval make this approach thread-safe. 
 
 *** 6.3.4 Limitations of parallelizing heterogeneous tasks *** [ˏhet(ə)rə(ʊ)`ʤi:nıəs]
 ...can be tricky. (гетерогенный, различный; неоднородный; разнородный)
@@ -166,13 +202,20 @@ The state-dependent nature of get means that the caller need NOT be aware of the
 
 The real performance payoff of dividing a program’s workload into tasks comes when there are a large number of independent, homogeneous tasks that can be processed concurrently.
 
+The real performance payoff of dividing a program’s workload into tasks comes when there are a large number of independent, homogeneous tasks that can be processed concurrently.
+хорошо если много независимых задач -- тогда выигрыш производительности может быть большой.
+
 *** 6.3.5 CompletionService: Executor meets BlockingQueue ***
-Если есть пачка\партия (a batch of computations) задач, который отправляются на выполнение, и мы хотим получать результат каждой задачи, как только он будет доступен --- надо ис-сть CompletionService.
-You can submit Callable tasks to it for execution and use the queuelike methods take and poll to retrieve completed results, packaged as Futures, as they become available.
---The ExecutorCompletionService's  constructor creates a BlockingQueue to hold the completed results. FutureTask has a done method that is called when the computation completes. When a task is submitted, it is wrapped with a QueueingFuture, a subclass of FutureTask that overrides done to place the result on the BlockingQueue.
-The take and poll methods delegate to the BlockingQueue, blocking if results are not yet available.
+Если есть пачка\партия (a batch of computations) задач, который отправляются на выполнение, и мы хотим получить результат каждой задачи, как только он будет доступен --- надо ис-сть CompletionService.
+** реализация ExecutorCompletionService**
+
+You can submit Callable tasks to it for execution and use the queuelike methods take() and poll() to retrieve completed results, packaged as Futures, as they become available.
+--The ExecutorCompletionService's  constructor creates a BlockingQueue to hold the completed results. FutureTask has a .done() method that is called when the computation completes. When a task is submitted, it is wrapped with a QueueingFuture, a subclass of FutureTask that overrides done to place the result on the BlockingQueue.
+The take() and poll() methods delegate to the BlockingQueue, blocking if results are not yet available.
 --Multiple ExecutorCompletionServices can share a single Executor, so it is perfectly sensible to create an ExecutorCompletionService that is PRIVATE TO A PARTICULAR COMPUTATION while SHARING A COMMON Executor. 
-When used in this way, a CompletionService acts as a handle for a batch of computations in much the same way that a Future acts as a handle for a single computation. By remembering how many tasks were SUBMITTED to the CompletionService and counting how many completed results are RETRIEVED, you can know when all the results FOR A GIVEN BATCH have been retrieved, even if you use a shared Executor.
+тогда потоки Executor переиспользуются.
+When used in this way, a CompletionService acts as a handle for a batch of computations in much the same way that a Future acts as a handle for a single computation.
+By remembering how many tasks were SUBMITTED to the CompletionService and counting how many completed results are RETRIEVED, you can know when all the results FOR A GIVEN BATCH have been retrieved, even if you use a shared Executor.
 
 ** в чём отличие Future от FutureTask ??
 
@@ -182,7 +225,9 @@ Sometimes, if an activity does not complete within a certain amount of time, the
 2) Вторая трудность -- остановить выполнение задачи если она не завершилась в лимит отведённого времени.
 
 The true parameter to Future.cancel() means that the task thread can be interrupted if the task is currently running;
---The invokeAll() method takes a collection of tasks and returns a collection of Futures. The two collections have identical structures; invokeAll adds the Futures to the returned collection in the order imposed by the task collection's iterator, thus allowing the caller to associate a Future with the Callable it represents. 
+--The invokeAll() method takes a collection of tasks and returns a collection of Futures. The two collections have identical structures; invokeAll() adds the Futures to the returned collection in the order imposed by the task collection's iterator, thus allowing the caller to associate a Future with the Callable it represents. 
 --The timed version of invokeAll() will return when all the tasks have completed, the calling thread is interrupted, or the timeout expires.
 Any tasks that are not complete when the timeout expires are cancelled. On return from invokeAll(), each task will have either completed normally or been cancelled; the client code can call get() or isCancelled() to find out which.
 
+**6.3.8    Example: a travel reservations portal**
+пример

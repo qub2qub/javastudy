@@ -1,1 +1,55 @@
 ﻿07 Cancellation and Shutdown 135-166 (31 страница)
+
+mapping -- отображение [в другой системе (не на экране)], построение соответствий.
+
+Почему плох Thread.stop() --
+http://docs.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html
+Instead, it provides INTERRUPTION, a cooperative mechanism that lets one thread ask another to stop what it is doing.
+
+An activity is CANCELLABLE if external code can move it to completion before its normal completion.
+
+Причины, из-за которых может быть необходимо прервать активность:
+1) USER-REQUESTED CANCELLATION. The user clicked on the "cancel" button in a GUI application, or requested cancellation through a management interface such as JMX (Java Management Extensions).
+2) TIME-LIMITED ACTIVITIES. An application searches a problem space for a finite [`faınaıt] (ограниченный, имеющий предел) amount of time and chooses the best solution found within that time. When the timer expires, any tasks still searching are cancelled.
+3) APPLICATION EVENTS. An application searches a problem space by decomposing it so that different tasks search different regions of the problem space. When one task finds a solution, all other tasks still searching are cancelled.
+4) ERRORS. A web crawler searches for relevant pages, storing pages or summary data to disk. When a crawler task encounters an error (for example, the disk is full), other crawling tasks are cancelled, possibly recording their current state so that they can be restarted later.
+5) SHUTDOWN. When an application or service is shut down, something must be done about work that is currently being processed or queued for processing. In a graceful shutdown, tasks currently in progress might be allowed to complete; in a more immediate shutdown, currently executing tasks might be cancelled.
+
+В java нет приоритетного способа остановить поток/task. Есть только механизмы сотрудничества, т.е. определённый согласованный протокол (agreed-upon protocol) общения потока и другого кода, который запросил отмену этого потока.
+
+Договорённости по протоколу:
+1) a "CANCELLATION REQUESTED" FLAG that the task checks periodically; if it finds the flag set, the task terminates early.
+Но тут могут быть проблемы, т.к. если task который чекает флаг вызвал blocking method например BlockingQueue.put() -- то он может не проверять этот флаг и значит не закончится по требованию (или вообще никогда не закончится).
+2) ...
+
+A task that wants to be cancellable MUST HAVE a CANCELLATION POLICY that specifies the "how", "when", and "what" of cancellation — 
+1) how other code can request cancellation, 
+2) when the task checks whether cancellation has been requested, 
+3) what actions the task takes in response to a cancellation request.
+
+*** 7.1.1 Interruption ***
+THREAD INTERRUPTION is a cooperative mechanism for a thread to signal another thread that it should, at its convenience and if it feels like it, stop what it is doing and do something else.
+
+There is nothing in the API or language specification that ties interruption to any specific cancellation semantics, but in practice, using interruption for anything but cancellation is fragile and difficult to sustain(тяжело/сложно поддерживать) in larger applications.
+
+Each thread has a boolean interrupted status; interrupting a thread sets its interrupted status to true. Thread contains methods for interrupting a thread and querying the interrupted status of a thread.
+
+Три метода для прерывания:
+1) .interrupt() method interrupts the target thread
+2) .isInterrupted() returns the interrupted status of the target thread. 
+3) .interrupted() method CLEARS the interrupted status of the current thread and returns its previous value; this is the only way to clear the interrupted status.
+
+Blocking library methods like Thread.sleep() and Object.wait() try to detect when a thread has been interrupted and return early. They respond to interruption by clearing the interrupted status and throwing InterruptedException, indicating that the blocking operation completed early due to interruption. The JVM makes no guarantees on how quickly a blocking method will detect interruption, but in practice this happens reasonably quickly.
+
+Calling interrupt does not necessarily stop the target thread from doing what it is doing; it merely delivers the message that interruption has been requested.
+
+Надо думать что interruption -- не прерывает запущенный потомк, а лишь просит этот поток, что он сам себя прервал при первой возможности.
+(REQUESTS that the thread interrupt itself at the next convenient opportunity. These opportunities are called CANCELLATION POINTS.)
+
+wait, sleep, and join -- серьёзно воспринимают запрос на прерывание.
+До тех пор пока код сохраняет этот interruption request in place -- он(код) может никак не реагировать на этот запрос, перекладывая эту ответственность на вызвавший код.
+
+The static .interrupted() method should be used with caution, because it CLEARS the current thread's interrupted status. If you call interrupted and it returns true, unless you are planning to swallow the interruption, you should do something with it — 1) either throw InterruptedException or 2) restore the interrupted status by calling .interrupt() again.
+
+Interruption is usually the most sensible way to implement cancellation.
+sensible - благоразумный, здравомыслящий; практичный; целесообразный.

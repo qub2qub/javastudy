@@ -209,26 +209,37 @@ This is often the most sensible policy if you can get away with it—just propag
 2) RESTORE THE INTERRUPT. 
 Sometimes you cannot throw InterruptedException, for instance when your code is part of a Runnable. In these situations, you must catch InterruptedException and restore the interrupted status by calling interrupt on the current thread, so that code higher up the call stack can see that an interrupt was issued, as demonstrated in Listing 5.10. [Thread.currentThread().interrupt();]
 
-
 You can get much more sophisticated with interruption, but these two approaches should work in the vast majority of situations. But there is one thing you should NOT do with InterruptedException — [!! DO NOT] CATCH IT AND DO NOTHING IN RESPONSE. 
 This deprives(лишать; отбирать, отнимать, не допускать) code higher up on the call stack of the opportunity to act on the interruption, because the evidence that the thread was interrupted is lost. 
 The only situation in which it is acceptable to swallow an interrupt is when you are extending Thread and therefore control all the code higher up on the call stack. Cancellation and interruption are covered in greater detail in Chapter 7.
-
-*** 5.5 Synchronizers ***
+--------------------------------------------------------------------------------
+*** 5.5 Synchronizers *** 07.01.2016
 A SYNCHRONIZER is any object that coordinates the control flow of threads based on its state. 
-SYNCHRONIZER -- координирует ход выполнения потоков, в зависимости от своего состояния.
+SYNCHRONIZER -- любой объект, который координирует ход выполнения потоков, в зависимости от своего состояния.
 
-Blocking queues can act as synchronizers; other types of synchronizers include semaphores, barriers, and latches. 
+Типы\виды\разновидности синхронизаторов:
+1) Blocking queues can act as synchronizers
+2) semaphores,
+3) barriers, 
+4) latches,
+5) FutureTask also acts like a latch. 
+6) EXCHANGER -- another form of barrier.
 
-All synchronizers share certain structural properties: they encapsulate state that determines whether threads arriving at the synchronizer should be allowed to pass or forced to wait, provide methods to manipulate that state, and provide methods to wait efficiently for the synchronizer to enter the desired state.
+All synchronizers share certain STRUCTURAL PROPERTIES: they encapsulate STATE that:
+1) determines whether threads arriving at the synchronizer should be ALLOWED TO PASS or FORCED TO WAIT, 
+2) provide methods to MANIPULATE that STATE, 
+3) provide methods to WAIT EFFICIENTLY for the synchronizer TO ENTER the desired state. (Эфективно ждать момента, пока синхронизатор придёт в нужное состояние.)
 
-*** 5.5.1 Latches (триггер, защёлка, клапан, ) *** CountDownLatch *** ОДНОРАЗОВЫЕ ЗАЩЁЛКИ
-A latch is a synchronizer that can delay the progress of threads until it reaches its terminal state(конечное, последнее, заключительное состояние).
-Одноразовый замок на воротах, чтобы открыть его -- надо опустить все зубчики.
+*** 5.5.1 Latches (триггер, защёлка, клапан) *** CountDownLatch *** ОДНОРАЗОВЫЕ ЗАЩЁЛКИ
+A latch is a synchronizer that can delay(задержать, приостановить) the progress of threads until it reaches its terminal state(конечное, последнее, заключительное состояние).
+Как ОДНОРАЗОВЫЙ ЗАМОК НА ВОРОТАХ, чтобы открыть его -- надо ОПУСТИТЬ ВСЕ ЗУБЧИКИ.
 
-LATCHES ARE SINGLE-USE OBJECTS; ONCE A LATCH ENTERS THE TERMINAL STATE, IT CANNOT BE RESET.
-A latch acts as a gate: until the latch reaches the terminal state the gate is closed and no thread can pass, and in the terminal state the gate opens, allowing all threads to pass. 
-ONCE THE LATCH REACHES THE TERMINAL STATE, IT CANNOT CHANGE STATE AGAIN, SO IT REMAINS OPEN FOREVER. 
+LATCHES ARE SINGLE-USE OBJECTS; 
+ONCE A LATCH ENTERS THE TERMINAL STATE, IT CANNOT BE RESET.
+
+A latch acts as a GATE: until the latch reaches the terminal state the gate is closed and no thread can pass, and in the terminal state the gate opens, allowing all threads to pass. 
+ONCE THE LATCH REACHES THE TERMINAL STATE, IT CANNOT CHANGE STATE AGAIN, SO IT REMAINS OPEN FOREVER.
+
 Latches can be used to ensure that certain activities do not proceed until other one-time activities complete, such as:
 1) Ensuring that a computation does not proceed until resources it needs have been initialized.
 2) Ensuring that a service does not start until other services on which it depends have started.
@@ -236,8 +247,10 @@ Latches can be used to ensure that certain activities do not proceed until other
 
 CountDownLatch is a flexible latch implementation that can be used in any of these situations; 
 it allows one or more threads to wait for a set of events to occur. 
-The latch state consists of a counter initialized to a positive number, representing the number of events to wait for. 
-The countDown method decrements the counter, indicating that an event has occurred, and the await methods wait for the counter to reach zero, which happens when all the events have occurred. If the counter is nonzero on entry, await blocks until the counter reaches zero, the waiting thread is interrupted, or the wait times out.
+
+The latch state consists of a counter initialized to a positive number, representing the number of events to wait for.
+
+The .countDown() method decrements the counter, indicating that an event has occurred, and the await methods wait for the counter to reach zero, which happens when all the events have occurred. If the counter is nonzero on entry, await blocks until the counter reaches zero, the waiting thread is interrupted, or the wait times out.
 
 TestHarness.JAVA -- Presumably, we wanted to measure how long it takes to run a task n times concurrently.
 The first thing each worker thread does is wait on the starting gate; this ensures that none of them starts working until they all are ready to start. 
@@ -246,18 +259,21 @@ The last thing each does is count down on the ending gate; this allows the maste
 *** 5.5.2 FutureTask ***
 FutureTask also acts like a latch.
 FutureTask implements Future, which describes an abstract result-bearing computation(приносящее результат вычисление).
+
+A Future represents the result of an asynchronous computation.
+
 A computation represented by a FutureTask is implemented with a Callable, the result-bearing equivalent of Runnable, and can be in ONE OF THREE STATES: 
 1) waiting to run, 
 2) running, 
 3) completed. 
 Completion subsumes(включает) ALL THE WAYs a computation can complete, including normal completion, cancellation, and exception. 
+
 ONCE A FUTURETASK ENTERS THE COMPLETED STATE, IT STAYS IN THAT STATE FOREVER.
 
-The behavior of Future.get() depends on the state of the task. 
+The behavior of Future.get() depends on the state of the task: 
 1) If it is completed, get returns the result immediately, 
-2) and otherwise blocks until the task transitions to the completed state 
-3) and then returns the result 
-4) or throws an exception. 
+2) and otherwise blocks until the task transitions to the completed state and then returns the result.
+3) or throws an exception. 
 FutureTask conveys(передаёт) the result from the thread executing the computation to the thread(s) retrieving the result; the specification of FutureTask guarantees that this transfer constitutes a safe publication of the result.
 
 --- [eı`sıŋkrənəs] эйс-И-нкронэс ---
@@ -269,18 +285,20 @@ Preloader.java -- creates a FutureTask that describes the task of loading produc
 It provides a start method to start the thread, since it is inadvisable to start a thread from a constructor or static initializer. 
 When the program later needs the ProductInfo, it can call get(), which returns the loaded data if it is ready, or waits for the load to complete if not.
 
---Tasks described by Callable can throw checked and unchecked exceptions, and any code can throw an Error. Whatever the task code may throw, it is wrapped in an ExecutionException and rethrown from Future.get(). This complicates code that calls get(), not only because it must deal with the possibility of ExecutionException (and the unchecked CancellationException), but also because the cause of the ExecutionException is returned as a Throwable, which is inconvenient to deal with.
+--Tasks described by Callable can THROW checked and unchecked exceptions, and any code can throw an Error. Whatever the task code may throw, it is wrapped in an ExecutionException and rethrown from Future.get(). 
+--This complicates code that calls get(), not only because it must deal with the possibility of ExecutionException (and the unchecked CancellationException), but also because the cause of the ExecutionException is returned as a Throwable, which is inconvenient to deal with.
 
 --When get throws an ExecutionException in Preloader, the cause will fall into one of three categories: a checked exception thrown by the Callable, a RuntimeException, or an Error. We must handle each of these cases separately.
 
 *** 5.5.3 Semaphores *** СЕМАФОРЫ
 Семафоры бывают двоичные (binary semaphore) и подсчитывающие (counting semaphore), а также именованные и неименованные.
+
 Семафор обычно представляет собой целочисленную переменную или объект, над которыми разрешается производить три операции: инициализацию, инкремент и декремент. В зависимости от того, как они определены, декремент может означать блокировку процесса или ресурса, а инкремент - его разблокировку. 
 
 Counting semaphores are used to control the number of activities that can access a certain resource or perform a given action at the same time. 
 Counting semaphores can be used to implement resource pools or to impose a bound(наложить ограничение) on a collection.
 
-A Semaphore manages a set of VIRTUAL PERMITS; the initial number of permits is passed to the Semaphore constructor. 
+A Semaphore manages a set of VIRTUAL PERMITS; the initial number of permits is passed to the Semaphore constructor.
 Activities can acquire permits (as long as some remain) and release permits when they are done with them. If no permit is available, acquire blocks until one is (пока хотя бы 1 разрешение не станет доступным) (or until interrupted or the operation times out).
 The release method returns a permit to the semaphore.
 
@@ -292,49 +310,59 @@ Semaphores are useful for implementing resource pools such as database connectio
 *** 5.5.4 Barriers *** ждёт всё кол-во участников и пропускает их через турникет. *** МНОГОРАЗОВЫЙ
 Barriers are similar to latches in that they block a group of threads until some event has occurred. 
 The key difference is that with a barrier, ALL THE THREADS MUST COME TOGETHER AT A BARRIER POINT AT THE SAME TIME IN ORDER TO PROCEED. 
-LATCHES ARE FOR WAITING FOR EVENTS; BARRIERS ARE FOR WAITING FOR OTHER THREADS. 
+** LATCHES ARE FOR WAITING FOR EVENTS; BARRIERS ARE FOR WAITING FOR OTHER THREADS. 
 A barrier implements the protocol some families use to rendezvous during a day at the mall: "Everyone meet at McDonald's at 6:00; once you get there, stay there until everyone shows up, and then we'll figure out what we're doing next."
 
--CyclicBarrier allows a fixed number of parties to rendezvous repeatedly at a barrier point and is useful in parallel iterative algorithms that break down a problem into a fixed number of independent subproblems.
--Threads call await when they reach the barrier point, and await blocks until all the threads have reached the barrier point. If all threads meet at the barrier point, the barrier has been successfully passed, in which case all threads are released and the barrier is reset so it can be used again. 
--If a call to await times out or a thread blocked in await is interrupted, then the barrier is considered broken and all outstanding calls to await terminate with BrokenBarrierException. If the barrier is successfully passed, await returns a unique arrival index for each thread, which can be used to "elect" a leader that takes some special action in the next iteration. -CyclicBarrier also lets you pass a barrier action to the constructor; this is a Runnable that is executed (in one of the subtask threads) when the barrier is successfully passed but before the blocked threads are released. 
+- CyclicBarrier allows a fixed number of parties to rendezvous REPEATEDLY at a barrier point and is useful in PARALLEL ITERATIVE ALGORITHMS that break down a problem into a fixed number of independent subproblems.
+-- Threads call await when they reach the barrier point, and await blocks until all the threads have reached the barrier point. If all threads meet at the barrier point, the barrier has been successfully passed, in which case all threads are released and the barrier is reset so it can be used again. 
+--- If a call to await times out or a thread blocked in await is interrupted, then the barrier is considered broken and all outstanding calls to .await() terminate with BrokenBarrierException. If the barrier is successfully passed, .await() returns a unique arrival index for each thread, which can be used to "ELECT" a leader that takes some special action in the next iteration. 
+---- CyclicBarrier also lets you pass a barrier action to the constructor; this is a Runnable that is executed (in one of the subtask threads) when the barrier is successfully passed but before the blocked threads are released. 
 
-*** When using a CyclicBarrier, the assumption is that you specify the number of waiting threads that trigger the barrier. If you specify 5, you must have at least 5 threads to call await().
+********** When using a CyclicBarrier, the assumption is that you specify the number of waiting threads that trigger the barrier. If you specify 5, you must have at least 5 threads to call await().
 
 When using a CountDownLatch, you specify the number of calls to countDown() that will result in all waiting threads being released. This means that you can use a CountDownLatch with only a single thread.
 
 !!! The CyclicBarrier uses an ALL-OR-NONE breakage model for failed synchronization attempts: If a thread leaves a barrier point prematurely(преждевременно) because of interruption, failure, or timeout, ALL OTHER THREADS waiting at that barrier point will also leave abnormally via BrokenBarrierException (or InterruptedException if they too were interrupted at about the same time). 
-***
+************
 
 CellularAutomata.java
 https://bitstorm.org/gameoflife/
 
-Another form of barrier is EXCHANGER --->
-a two-party barrier in which the parties exchange data at the barrier point. 
--Exchangers are useful when the parties perform asymmetric activities, for example when one thread fills a buffer with data and the other thread consumes the data from the buffer; 
+Another form of barrier is EXCHANGER - a TWO-PARTY BARRIER in which the parties exchange data at the barrier point.
+
+- Exchangers are useful when the parties perform asymmetric activities, for example when one thread fills a buffer with data and the other thread consumes the data from the buffer; 
 these threads could use an Exchanger to meet and exchange a full buffer for an empty one. 
 When two threads exchange objects via an Exchanger, the exchange constitutes a safe publication of both objects to the other party.
 The timing of the exchange depends on the responsiveness requirements of the application.
 ---------------------------------------------------
 
 *** 5.6 Building an efficient, scalable result cache ***
-we'd like to create a Computable wrapper that remembers the results of previous computations and encapsulates the caching process. (This technique is known as memoization.)
-Memoizer2 in Listing 5.17 improves on the awful concurrent behavior of Memoizer1 by replacing the HashMap with a ConcurrentHashMap. Since ConcurrentHashMap is thread-safe, there is no need to synchronize when accessing the backing Map, thus eliminating the serialization induced by synchronizing compute in Memoizer1.
+we'd like to create a Computable wrapper that remembers the results of previous computations and encapsulates the caching process. (This technique is known as MEMOIZATION.)
+** КАКИЕ ПРОБЛЕМЫ С КЭШЕМ И КАК ИХ РЕШАТЬ ??
+*1* Memoizer1
+*2* Memoizer2 in Listing 5.17 improves on the awful concurrent behavior of Memoizer1 by replacing the HashMap with a ConcurrentHashMap. Since ConcurrentHashMap is thread-safe, there is no need to synchronize when accessing the backing Map, thus eliminating the serialization induced by synchronizing compute in Memoizer1.
 But it still has some defects as a cache — there is a window of vulnerability in which two threads calling compute at the same time could end up computing the same value.
 (The problem with Memoizer2 is that if one thread starts an expensive computation, other threads are not aware that the computation is in progress and so may start the same computation).
 
-Для этого надо дать понять, что такая-то задача уже выполняется, и второму с такой же задачей надо лишь продождать результатов и получить их. Поэтому здесь надо ис-ть FutureTask.
+*3* Для этого надо дать понять, что такая-то задача уже выполняется, и второму с такой же задачей надо лишь продождать результатов и получить их. Поэтому здесь надо ис-ть FutureTask.
 --FutureTask represents a computational process that may or may not already have completed. FutureTask.get() returns the result of the computation immediately if it is available; 
 otherwise it blocks until the result has been computed and then returns it.
 --Memoizer3 first checks to see if the appropriate calculation has been started (as opposed to finished, as in Memoizer2). If not, it creates a FutureTask, registers it in the Map, and starts the computation; otherwise it waits for the result of the existing computation. The result might be available immediately or might be in the process of being computed—but this is transparent to the caller of Future.get().
 
-there is still a small window of vulnerability in which two threads might compute the same value. This window is far smaller than in Memoizer2, but because the if block in compute is still a nonatomic check-then-act sequence, it is possible for two threads to call compute with the same value at roughly the same time, both see that the cache does not contain the desired value, and both start the computation. This unlucky timing is illustrated in Figure 5.4.
+*4* there is still a small window of vulnerability(уязвимость; ранимость) in which two threads might compute the same value. This window is far smaller than in Memoizer2, but because the if block in compute is still a NONATOMIC CHECK-THEN-ACT sequence, it is possible for two threads to call compute with the same value at roughly the same time, both see that the cache does not contain the desired value, and both start the computation. This unlucky timing is illustrated in Figure 5.4.
 
 Memoizer in Listing 5.19 takes advantage of the atomic putIfAbsent() method of ConcurrentMap, closing the window of vulnerability in Memoizer3.
 
---Caching a Future instead of a value creates the POSSIBILITY of CACHE POLLUTION: 
+-- Caching a Future instead of a value creates the POSSIBILITY of CACHE POLLUTION: 
 if a computation is cancelled or fails, future attempts to compute the result will also indicate cancellation or failure. 
-To avoid this, Memoizer removes the Future from the cache if it detects that the computation was cancelled; it might also be desirable to remove the Future upon detecting a RuntimeException if the computation might succeed on a future attempt. 
--- Memoizer also does not address cache expiration, but this could be accomplished by using a subclass of FutureTask that associates an expiration time with each result and periodically scanning the cache for expired entries. 
-(Similarly, it does not address cache eviction, where old entries are removed to make room for new ones so that the cache does not consume too much memory.)
+To avoid this, Memoizer removes the Future from the cache if it detects that the computation was cancelled; 
+it might also be desirable to remove the Future upon detecting a RuntimeException if the computation might succeed on a future attempt.
+-- Memoizer also does not address CACHE EXPIRATION, but this could be accomplished by using a subclass of FutureTask that associates an expiration time with each result and periodically scanning the cache for expired entries. 
+(Similarly, it does not address CACHE EVICTION, where old entries are removed to make room for new ones so that the cache does not consume too much memory.)
 
+что такое кэш - переиспользование результатов вычисления.
+Что дожно быть у идеального кэша:
+1) не считать одно и то же дважды (гарантировать что каждое зн-е будет вычислено только 1 раз)
+2) в многопоточном приложении -- распределять вычисления на много потоков, если в 1 уже вычилсяется нужно зн-е то другие кому надо не запускают новое а ждут результатов первого.
+3) CACHE EXPIRATION - Удалять истёкшие по валидности значения(либо обновлять эти значения). Например, курс валют каждый день.
+4) CACHE EVICTION - освобождать кэш от старых [может быть неиспользуемых значений]. чтобы кэш не разрастался безконтрольно.
