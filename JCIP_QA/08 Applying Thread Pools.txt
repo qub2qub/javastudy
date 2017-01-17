@@ -1,1 +1,41 @@
 Chapter 8 -- Applying Thread Pools -- 167-188 (21стр)
+*** 8.1 Implicit couplings between tasks and execution policies ***
+Executor framework decouples task submission from task execution.
+Не все задачи подходят\совместимы с execution policies.
+
+Специфическая политика выполнения нужна для:
+1) DEPENDENT TASKS.
+  The most well behaved tasks are independent: those that do not depend on the timing, results, or side effects of other tasks. When executing independent tasks in a thread pool, you can freely vary the pool size and configuration without affecting anything but performance.
+  При зависимых задачах появляются доп. ограничения (constraints on the execution policy), которыми надо аккуратно управлять, чтобы избежать liveness problems.
+
+2) Tasks that EXPLOIT(пользоваться, использовать) THREAD CONFINEMENT. 
+  Single-threaded executors выполняют задачи последовательно.
+  Objects can be confined to the task thread, thus enabling tasks designed to run in that thread to access those objects without synchronization, even if those resources are not thread-safe. 
+  Если потом сменить Single-threaded executor на другой то потоко-безопасность не гарантируется.
+
+3) Response-time-sensitive tasks.
+  Например, GUI applications. 
+  Поэтому долгие задачи лучше НЕ запускать в Single-threaded executor или в том, где мало потоков.
+
+4) Tasks that use ThreadLocal.
+   ThreadLocal allows each thread to have its own private "version" of a variable. However, executors are free to reuse threads as they see fit. 
+   The standard Executor implementations may reap idle threads when demand is low and add new ones when demand is high, and also replace a worker thread with a fresh one if an unchecked exception is thrown from a task. 
+   ThreadLocal makes sense to use in pool threads only if the thread-local value has a lifetime that is bounded by that of a task; Thread-Local should not be used in pool threads to communicate values between tasks.
+
+Thread pools work best when tasks are HOMOGENEOUS and INDEPENDENT. 
+Mixing long-running and short-running tasks risks "clogging" the pool unless it is very large; submitting tasks that depend on other tasks risks deadlock unless the pool is unbounded.
+
+Tasks that depend on other tasks require that the thread pool be large enough that tasks are never queued or rejected; 
+tasks that exploit thread confinement require sequential execution.
+Поэтому в документации надо описать какую политику выполнения должны поддерживать задачи, чтобы программеры не попутали и не сломали неверной реализацией работу программы.
+
+*** 8.1.1 Thread starvation deadlock ***
+If tasks that depend on other tasks execute in a thread pool, they can deadlock.
+Если задача зависит от результатов выполнения другой задачи -- то потенциально может случиться дэдлок.
+Например, в single-threaded executor 2я задачи никогда не выполниться раньше 1й, которая запустила 2ю и ждёт результатов её выполнения.
+Но такое же может случиться и в других executor, даже когда много потоков, но если они ждут выполнения других потоков, который застряли в ожидании в очереди.
+Это называется THREAD STARVATION DEADLOCK, and can occur whenever a pool task initiates an unbounded blocking wait for some resource or condition that can succeed only through the action of another pool task, such as waiting for the return value or side effect of another task, unless you can guarantee that the pool is large enough. 
+
+ tasks coordinating amongst themselves with a barrier could also cause thread starvation deadlock if the pool is not big enough.
+
+ 

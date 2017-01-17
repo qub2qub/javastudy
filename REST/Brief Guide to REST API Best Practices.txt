@@ -1,0 +1,674 @@
+p1 - Brief Guide to REST API Best Practices
+https://www.snyxius.com/blog/guide-to-rest-api-best-practices/#.V6LdV9J95dg
+p2 - Guide to Rest API Best Practices V.2
+https://www.snyxius.com/blog/guide-rest-api-best-practices-v-2/
+p3 - 21 Best Practices for designing and launching a RESTful API
+https://www.snyxius.com/blog/21-best-practices-designing-launching-restful-api/
+
+
+https://www.youtube.com/watch?v=cBhZ6S0PFCY
+HTTPS Everywhere
+
+RESTful API Design: what about errors? - ещё не читал
+https://apigee.com/about/blog/technology/restful-api-design-what-about-errors
+
+ambiguity [ˏæmbı`gju:ıtı] эмбигьЮити -- неясность, двусмысленность, неопределённость; неоднозначность; двойственность
+
+diversity [daı`vɜ:sıtı] дайвЁсити -- разнообразие; многообразие, отличие, различие; несходство; 
+
+resource [rɪˈsɔːs] рисОс
+response [rı`spɒns] риспОнс - ответ, отклик, реакция, ответное действие.
+
+robust [rə`bʌst, `rəʊbʌst] рэубАст -- здоровый, крепкий, сильный; прочный; устойчивый, надёжный; трудный, требующий усилий; трудоёмкий.
+
+что за такое connection-less nature of HTTP protocol ??
+
+AUTHENTICATION [ɔ:ˏθentı`keıʃ(ə)n] осэнтикЕЭйшн - удостоверение или засвидетельствование подлинности.
+-- ПРОЦЕСС, позволяющий установить, что пользователь (объект, машина, и др.) действительно тот, за кого себя выдаёт.
+Выполняется с помощью дополнительных идентификаторов - биометрической информации, паролей, специальных карточек, цифровой подписи и др. 
+В компьютерной системе пользователю обычно присваивается символическое имя или идентификационный код (SID), используемые в дальнейшем процедурами управления доступом; 
+аутентификация отличается от авторизации (authorization) тем, что не управляет предоставлением или непредоставлением права доступа к ресурсам.
+
+IDENTIFICATION [aıˏdentıfı`keıʃ(ə)n] айдэнтификЕЭйшн - 1) отождествление
+2) опознавание, определение, идентификация
+2. установление, выявление;
+3. опознавать; устанавливать личность; устанавливать подлинность
+-- процесс верификации (контроля), позволяющий при вхождении пользователя в систему установить его личность путём сравнения его атрибутов с хранящимися в базе данных атрибутами всех зарегистрированных пользователей; 
+в отличие от аутентификации, дополнительных идентификаторов не требует.
+
+vague [veıg] вейг - 1. неопределённый, туманный, нечёткий, неясный; смутный
+2. рассеянный, невыразительный, отсутствующий (о взгляде)
+
+hierarchical [ˏhaı(ə)`rɑ:kık(ə)l] хаирА(р)кикэл - иерархический
+
+**********************************************************
+HATEOAS = Hypermedia as the Engine of Application State
+**********************************************************
+
+A Brief Guide to REST API Best Practices --  Jun 8, 2016
+
+In their infancy, APIs were developed using RPC technique (Remote Procedural Call). It seemed like the API was executing locally giving it a look of functions. However, this made it difficult for the programmers, especially when it was required to transfer it to the web. All because of the connection-less nature of HTTP protocol.
+
+People did try to solve it by introducing modifications into RPC model. It indeed made the movement of apps to web faster. But the code turned out to be really inefficient. In the meantime W3C came up with REST and HTTP 1.1 creating ripples across the API landscape.
+And since REST (or REpresentational State Transfer, as it is known in academic circles) came into picture, it has dominated the landscape of APIs.
+
+Despite the popularity, REST is often not deployed in its best form. There’s a lot of ambiguity and diversity in understanding REST. That’s why we have come up with a brief guide to help you understand the REST API best practices.
+Keep URLs simple and descriptive
+
+The fundamental is to separate API into logical resources. And assign each of these resources a base URL.
+
+This will make your API easy to understand and self-descriptive. Here’s a simple example:
+
+Screenshot (2)
+
+Instead of saying /jobs or /jobs-listing, this website uses /job/listing. This is a classic example of a separate resource and a unique URL for each of them.
+
+For simplicity, some even advice using only 2 base URLs per resource.
+Remove complexities under the string query
+
+Most modern APIs come across functionalities of filtering based on some parameters which are associated to a resource. In these cases, one has to go beyond the resource level scope of the uniform resource.
+
+For example, /api/jobs?intern=true&location=texas. This is how you will query for all interns available in Texas.
+
+Typically when you request a resource on a RESTful API you will have nested resources that will come in the form of a reference.
+
+Here’s one more example from Zovi.com. It shows the kind of URL for the query of all Men’s new graphic tees for the caricature theme.
+
+Screenshot (3)
+Do NOT use GET for state changes
+
+The primary and the most used methods in HTTP protocol are GET, PUT, DELETE, and POST. This is basically analogous to HTTP verbs for CRUD: Read, Create, Delete, and Update respectively. There are other verbs as well which are negligibly used.
+
+However, the use of GET is avoided mostly by the developers when there is a change of states involved.
+Use nouns and not verbs
+
+Though it may sound strange, but there’s a logic behind this.
+
+For any resource that you model, it would be foolish to consider an object in isolation. It is related and also interacting with all the other resources. Once you start using verbs, it will become difficult as the number of actions on the resource increases.
+
+So to avoid the slippery slope, we resort to using nouns. Here’s chart to give you a better picture.
+Resource 	GET 	POST 	PUT 	DELETE
+/t-shirt 	Returns a list of t-shirts 	Create a new ticket 	Update the t-shirts data in bulk 	Delete all t-shirts
+
+/t-shrit/123 	Returns a specific t-shirt 	Method not allowed (405) 	Update a specific t-shirt 	Deletes a specific t-shirt
+Avoid using:
+/getTshirt
+/createTshirt
+/deleteTshirt
+Use [relevant] HTTP status codes
+
+Start by mapping the HTTP status codes to relevant standard-based codes.
+
+With over 70 HTTP codes, it is difficult to memorize all of them. So choose status codes which are only relevant to your API. Sometimes developers end up choosing uncommon status codes leading to project delays and even distant from building a reliable, robust API.
+
+Most API developers or companies use a very small subset of all HTTP codes. For example, the Google GData API uses only 10 status codes, Netflix uses 9, and Digg, only 8.
+Handle Errors with HTTP Status Codes
+
+Now that you have mapped relevant HTTP status codes with standard codes, you also need to add HTTP status codes for errors.
+
+Along with appropriate HTTP status code, your API should also return a message in the response, a message for the developer, and a message for the end user.
+
+Here are a few error codes should which will be sufficient for most purposes:
+
+204 NO CONTENT – [DELETE]
+
+304 NOT MODIFIED
+
+400 INVALID REQUEST – [POST/PUT/PATCH]
+
+401 UNAUTHORIZED
+
+403 FORBIDDEN
+
+404 NOT FOUND
+
+500 INTERNAL SERVER ERROR
+Always use HTTPS/TLS
+
+It must be evident if you’re a developer reading this. No exceptions here unless you don’t care if a 3rd party monitors or modifies a request in transit from the client to you or from you to the client.
+
+But with REST API, HTTPS does matters. Simply because it is extremely easy to access your API from anywhere in the world. And not all networks are secure: airports, public w-fi, airport, etc. All communications has to be secured by default. And having an SSL certificate is a simple way to ensure your information remains confidential.
+
+To know more, see this YouTube video HTTPS Everywhere, a talk given by Ilya Grigorik and Pierre Far at Google I/O 2014.
+Use URLs for API versioning
+
+The most pragmatic way to manage API versions it to put the version number at the base of your URL. For example, api.example.com/v1/path/to/resource.
+
+Versioning by URL allows developers to figure out which version of the service is in use at a glance. Just look at the HTTP request URL, and you know everything. /api/v1/ /api/v2/ and so forth.
+
+You can also use the API version as a parameter ?version=v2 if you want to provide a different way to query different versions through the URL. Knowledge of the API can help with the creation of your app and improving the security of the app.
+
+**********************************************************
+
+Guide to Rest API Best Practices V.2
+Oct 18, 2016
+
+This article is a continuation of previous articles on REST API best practices. In this article, we will offer a new best practice of REST API with a greater detail.
+
+So, without wasting any time lets dive into some new REST API best practices.
+1. Use HTTP Basic Authentication
+
+There are many ways to deal with authentication in REST API but the simplest way to deal with the authentication is HTTP basic authentication.
+
+A common use of basic authentication is for identification purpose- The user needs to provide a username and password as a means of identification, for using statistic data from the server.
+
+If a request does not include an appropriate Authorization header, the API sends a 401 Authorization Required as a result:
+
+Request is issued when a particular credential is used:
+
+This table shows the process for encoding credentials in base64.
+2. Use Custom Content Type
+
+If you are using standard text/xml content-type then you need to stop because it is very vague and user finds difficult to understand.
+
+Instead of these standard text/xml use custom content type in the following form:
+
+This allows your clients to process the information as the specified content-type. All three of these content-types are categories, but they are represented in different formats (xml, html, and json).
+
+But before using this custom content type the client need to know in advance, what to expect because they can’t ask any specific information which is outside the knowledge like the URL etc.
+3. Respond with standard media types
+
+If you are using Custom media type, then it is recommended that the service returns a response using a content type header with standard “application /json” or application/xml media type and an additional custom type header such as shown below:
+
+X-hedtech-Media-Type: application/vnd.hedtech.v4+json
+
+Responding with standard application/json is useful for client learning about your API, as browser add-ons will enable clients to make easily view the response.
+
+An API may always respond with a custom header, even when identifying a standard media type. That is, a custom header may be used even if it identifies the same standard media type identified in the Content-Type header.
+4. Use Link Type Relations
+
+Using link is a perfect way to signal what type of resource is being used or linked to.
+
+For example, a custom rel for a user resource might be http://rel.myapi.com/user, which serves two purposes:
+
+    Clients of your API must know this key ahead of time, as it is API-specific knowledge. For example, if it was available on your initial resource and you were using HAL to link to the user resource, clients might find the user link via initialResource._links[“http://rel.myapi.com/user”].href.
+    Developers writing API clients can visit that URI in their web browser, and get an explanation of what that resource represents in your API, including what methods are applicable and what they do.
+
+If you are using link type relation than it is important that we should make sure that they behave as expected, otherwise they might confuse our client.
+5. Use cURL
+
+cURL is a command line tool for transferring data across various protocols, including HTTP and support a various platform like Linux, Windows, Mac OS and Solaris.
+
+Most Linux distribution includes cURL in their package.
+
+cURL uses command line interface to send a request to an HTTP server and the request includes this command line syntax.
+
+Here the uri refer to the target HTTP address to send the request.
+
+There is four type of option available in cURL:
+1. -X COMMAND, –request COMMAND
+
+In the context of the REST API, you can use this request command with GET, POST, PUT or DELETE.
+
+Example: -X GET
+2. -H LINE, –header LINE
+
+Use header line option when you required more than one header.
+
+Example: -H “Accept: application/xml” -H “Content-Type: application/xml”
+3. -u USERNAME:PASSWORD, –user USERNAME:PASSWORD
+
+This username and password act as a convenient replacement for the Authorization header.
+
+Example: -u admin@internal:p@55w0rd!
+4. –cacert CERTIFICATE
+
+In a context of REST API it use to find the location for SSL communication. The certificate file is saved locally on the client machine. Use the -k attribute to bypass SSL.
+
+Example: –cacert ~/Certificates/rhevm.cer
+5. -d BODY, –data BODY
+
+In context for REST API, a body is used to request. Use POST, PUT, and DELETE requests with this body request and ensure to specify the Content-Type: application/xml header if a body exists in the request.
+
+Example: -d “<cdrom><file id=’rhel-server-6.0-x86_64-dvd.iso’/></cdrom>”
+
+Let us go through some example and see how to adapt REST requests to cURL command syntax:
+Example 1. GET Request
+
+The following GET request lists the virtual machines in the vms collection. Note that a GET request does not contain a body.
+
+Now adapt the GET request method, header (Accept: application/xml) and URI (https://[RHEVM-Host]:8443/api/vms) into the following cURL command:
+
+An xml representation of  vms collection display.
+Example 2. POST Request
+
+The post request creates a virtual collection in vms collection. but keep in mind that POST request requires a body.
+
+Adapt POST request method, headers (Accept: application/xml and Content-type: application/xml), URI (https://[RHEVM-Host]:8443/api/vms) and request body into the following cURL command:
+
+The REST API creates a new virtual machine and displays an XML representation of the resource.
+Example 3. PUT Request
+
+PUT request update the memory of virtual machine resources. It also requires body.
+
+Adapt PUT request method, headers (Accept: application/xml and Content-type: application/xml), URI (https://[RHEVM-Host]:8443/api/vms/082c794b-771f-452f-83c9-b2b5a19c0399) and request body into the following cURL command:
+
+These requests update the virtual machine with new memory configuration.
+Example 4. DELETE Request.
+
+These requests remove virtual machine resources.
+
+Adapt the method (DELETE) and URI (https://[RHEVM Host]:8443/api/vms/082c794b-771f-452f-83c9-b2b5a19c0399) into the following cUrl command:
+
+The REST API removes the virtual machine. Note the Accept: application/xml request header is optional due to the empty result of DELETE requests.
+6.  Use 4xx and 5xx status code
+
+The status code is defined as the data section of the message error, Forward and redirection responses may be used to contain human-readable diagnostic information.
+
+The 4xx  status code is used to tell the client that the fault has been taken on their side. This status code contains the explanation of the error situation, whether it’s temporary or permanent condition.
+
+These status codes are applicable to any request method.
+Decision chart of the 4xx status code
+
+5xx codes tell the client something happened on the server and their request by itself was perfectly valid. Except when responding to this error the server should contain the information of the error situation, whether it’s temporary or permanent condition.
+
+These response codes are applicable to any request method.
+Decision chart of the 5xx status code
+7. How to delete a resource
+
+The API delete a resource by using DELETE Request which is send to URI.
+
+Some cases require optional body content in the DELETE request to specify additional properties.
+
+A Delete  Request with an optional body may look like this:
+
+Content-Type: application/xml header to inform the API of the XML representation in the body content.
+
+If a DELETE request contains no body content, omit the Content-Type: application/xml header.
+8. Use a Consistent Representation ‘Domain Style’
+
+A consistent representation ‘Domain Style’ are used to represent appropriate attribute, element names, and structure which include hierarchical structures too.
+
+Mike Amundsen identifies three primary styles for representing domains: ‘domain-specific’, ‘general’, and ‘agnostic’.
+Domain    Style 	                                          Description
+domain-specific 	   Closely models the domain with respect to element names and          structure. Example element: “home-address”
+general 	   General element names are used whenever possible (and these          are then decorated with attributes to provide the specificity).            Example element: “address”: {“type”:”home }
+agnostic 	   Uses generic element names and relies on attributes to provide context. Example element: “ul”: {“type”:”home-address” }
+
+These Domain style strategies provide following  guidance:
+
+    Recognize these styles and apply them consciously
+    Favor use of the ‘domain-specific’ style due to its simplicity
+    Collaborate with GA to determine if there are reusable representations that may be used.
+    Balance “purity” with pragmatism. Authors and standards like OData specify affordances that some may not consider pragmatic. It is recommended to balance the ‘purity’ of approach with simplicity and productivity.
+
+ 
+9. Use HTTP  PATCH method
+
+HTTP PATCH method are used to apply the partial modification to resources. The PATCH method requests a set of changes described in the request entity be applied to the resource identified by the Request-URI.
+
+This set of change is represented in a format called “PATCH document” which is identified by the media type.
+
+If the Request-URI does not point to an existing resource, the server MAY create a new resource, depending on the patch document type (whether it can logically modify a null resource) and permissions, etc.
+PATCH Example:
+
+PATCH /file.txt HTTP/1.1
+
+Host: www.example.com
+
+Content-Type: application/example
+
+If-Match: “e0023aa4e”
+
+Content-Length: 100
+10.  Use Automated Testing
+
+Every modern platform supports these best practice and it is one of the best practice which cannot be avoided. It is an absolute requirement for RESTful APIs.
+
+Automated testing is used to test all representation of resources and also expected responses both success and error.
+
+Support for testing RESTful endpoints is often built-in to a testing framework or supported through a third party library. When available, higher-level abstractions (i.e., DSLs) should be used. For example, the following Groovy snippet shows the use of a higher-level DSL supporting REST:
+
+post(“/api/colleges”) {   // ‘POST’ /api/colleges => ‘create’
+headers[ ‘Content-Type’ ] = ‘application/json’
+headers[ ‘Authorization’ ] = authHeader()
+body { “””
+{
+“description”: “Great Valley University”,
+“code”: “GV”,
+“systemRequiredIndicator”: “Y”,
+}
+“””
+}
+}
+assertStatus 201
+assertEquals ‘application/json’, page?.webResponse?.contentType
+def stringContent = page?.webResponse?.contentAsString
+def data = JSON.parse( stringContent ).data
+id = data.id
+
+assertNotNull “Expected new College with an id but got: ${data}”, id
+
+assertEquals “Expected code ‘Z9’ but got ${data.code}”, ‘Z9’, data.code
+11. How to report a validation Error.
+
+If you are using a ‘400’ status code for validation error then it is recommended that your Custom HTTP header must have some additional information like:
+
+X-Status-Reason: Validation failed
+
+Validation errors should also be provided within the response body.
+
+The JSON or XML should provide details of any validation errors if a 400 or 422 status code is returned. Following is an example error:
+
+{ “errors” : [
+{
+“type”: “validation”,
+“resource”: {
+“id”: 25
+},
+“message”: “districtDivision value exceeds two character limit”
+}
+]
+}
+
+The specific structure and format of detailed error information is not standardized, and this strategy allows for different representations since various frameworks handle such responses differently.
+
+**********************************************************
+
+21 Best Practices for designing and launching a RESTful API
+Nov 3, 2016
+
+NOTE: This article is part two “21 Best practices for designing and launching a restful API”. In part one, you learned to develop a RESTful API and some of the best practices related to it.
+
+In part two, our main goal is to provide a road-map for designing and launching a REST API. We would recommend you to go through the first part, Guide to REST API Best Practices, before you proceed.
+
+Welcome to the part two.
+1. Use plural nouns
+
+Some of you might already know about it. But what to do when using plural for single instance of resource? If you want to keep your resources name more natural then always use plural.
+
+Don’t get mix up with singular and plural noun.
+
+For example use:
+
+/t-shirts instead of /t-shirt
+
+Thus, we recommend the plural form for 2 types of resources:
+
+    Resource collections: /v1/t-shirts
+    Resource instances: /v1/t-shirts/007
+
+As an example, for the creation of a user we will consider that POST /v1/t-shirts is the call of the create action on the users collection. Likewise, GET /v1/t-shirts/007 to retrieve a user can be understood as “I want t-shirt 007 in the t-shirts collection”
+2. Provide Links for Navigating through your API (HATEOAS)
+
+    Hypermedia as the Engine of Application State is a principle that hypertext links should be used to create a better navigation through the API.
+
+A hypermedia-driven site provides information to navigate the site’s REST interfaces dynamically by including hypermedia links with the responses.
+
+A HATEOAS-based response would look like this:
+
+{
+
+    "name": "Alice",
+
+    "links": [ {
+
+        "rel": "self",
+
+        "href": "http://localhost:8080/customer/1"
+
+    } ]
+
+}
+
+This response not only has the person’s name, but includes the self-linking URL where that person is located.
+
+    rel means relationship. In this case, it’s a self-referencing hyperlink. For example, an order might have a “rel”:”customer” relationship, linking the order to its customer.
+    href is a complete URL that uniquely defines the resource.
+
+3. Less Is More: Always Paginate Your Results
+
+Most modern API have come across this functionalities of setting the parameter in resources because we can’t return hundred or thousand of records when it come to fast and responsive UIs.
+
+For that reason we need pagination mechanism to make sure the responses are easier to handle.
+
+Pagination would look like this:
+
+{              
+ “start”: 1,
+ “count”: 20,
+ “totalCount”: 100,
+ “totalPages”: 5,
+ “links”: [
+ {
+ “href”: “https: //<url>/offset=40&limit=20”,
+ “rel”: “next”
+ },
+ {
+ “href”: “https: //<url>/offset=0&limit=20”,
+ “rel”: “previous”
+ }
+ ]
+ }
+
+4. Set the parameter for resources
+
+/employees?offset=30&limit=15       #returns the employees 30 to 45
+
+If the client omits the parameter you should use defaults. Don’t return all resources. A good default is offset=0 and limit=10. If the retrieval is more expensive you should decrease the limit.
+
+/employees       #returns the employees 0 to 10
+
+Moreover, if you use pagination, a client needs to know the total number of resources.
+Example
+
+Request: GET/employees
+
+Response:
+
+ 
+
+{
+
+  "offset": 0,
+
+  "limit": 10,
+
+  "total": 3465,
+
+  "employees": [
+
+    ...
+
+  ]
+}
+
+5. Handling ERROR JSON
+
+In an API handling error is important and it requires careful planning.
+
+And it’s highly recommended that always return the error message in its own set of field.
+
+A JSON error body should provide a few things for the developer – a useful error message, a unique error code (that can be looked up for more details in the docs) and possibly a detailed description.
+
+A good error message response might look something like this:
+
+{
+“code”: 1234,
+“message” : “Something bad happened :(“,
+“description” : “More details about the error here”
+}
+
+6. Use sub-resources for relations
+
+Sub resources are used to link one resource with another, so use sub resources to represent the relation.
+GET /groups/{group id}/members 	Returns a list of members in group with given id
+GET/groups/{groupid}/members/{member id} 	Returns user with given user id for given group id
+Example
+
+GET /cars/711/drivers/ Returns a list of drivers for car 711
+
+GET /cars/711/drivers/4 Returns driver #4 for car 711
+7. Use Date/Time Serialization in HTTP Headers
+
+The HTTP utilizes a different format for HTTP headers, which is Specified in RFC 822 which was updated by RFC 1123, that format includes various date, time and date-time formats.
+
+It is recommended that you should always use a time-stamp format which will look like this in your request headers:
+
+Sun, 06 Nov 1994 08:49:37 GMT
+
+Unfortunately, it doesn’t account for a millisecond or decimal fraction of a second in its format.
+8. Use the custom HTTP Header X-HTTP-Method
+
+As you know some proxies only support POST and GET method, and we know that it’s difficult to support API with this limitation.
+
+So, to override this POST and GET method, use the custom HTTP Header X-HTTP-METHOD-Override.
+9. Create Fine-Grained Resources
+
+When starting out, it’s much easier to create APIs that mimic the underlying application domain or database architecture of your system.
+
+Eventually, you’ll want aggregate services—services that utilize multiple underlying resources to reduce chattiness.
+
+But it’s much easier to create larger resources later from individual resources than it is to create fine-grained or individual resources from larger aggregates.
+
+Make it easy on yourself and start with small, easily defined resources, providing CRUD functionality on those. You can create those use-case-oriented, chattiness-reducing resources later.
+10. Consider connectedness
+
+One of the principles of API is connectedness—via hypermedia links.
+
+While services are still useful without them, APIs become more self-descriptive when links are returned in the response.
+
+At the very least, a ‘self’ reference informs clients how the data was or can be retrieved.
+
+Additionally, utilize the Location header to contain a link on resource creation via POST. For collections returned in a response that support pagination, ‘first’, ‘last’, ‘next’ and ‘prev’ links at a minimum are very helpful.
+11. Result filtering and sorting
+
+Another consideration for affecting results is the act of filtering data and/or ordering it on the server, retrieving a subset of data and/or in a specified order.
+
+These concepts work in conjunction with pagination and results-limiting and utilize query-string parameters, filter and sort respectively, to do their magic.
+
+Again, filtering and sorting are complex operations and don’t need to be supported by default on all resources. Document those resources that offer filtering and sorting.
+Filtering
+
+Filtering is defined as reducing the number of results returned by specifying some criteria that must be met on the data before it is returned.
+
+Filtering can get quite complex if services support a complete set of comparison operators and complex criteria matching.
+
+However, it is quite often acceptable to keep things sane by supporting a simple equality, ‘starts-with’ or contains comparison.
+
+For example:
+
+GET /groups?status=active – Returns a list of active groups
+Sorting
+
+Sorting is defined as determining the order in which items in a payload are returned from a service. In other words, the sort order of multiple items in a response payload.
+
+For example,
+GET /groups?sort=status,-name – Returns list of groups in ascending order of status; Within the same status, groups returned will be sorted by name in descending order.
+12. Use TLS/SSL for Transport Security
+
+Thanks to internet your web API can access from anywhere, it is very easy to retrieve the username and password from a basic authentication.
+
+To secure your web API authentication, all authentications should use SSL. OAuth2 requires the authorization server and access token credentials to use TLS.
+
+Switching between HTTP and HTTPS introduces security weaknesses and best practice is to use TLS by default for all communication.
+13. Rate limiting
+
+If your API is success then thousands of users will integrate to your API, things can and will go wrong: Inexperienced developers will call you thousands of times per hour.
+
+Then you should consider implementing rate limit early on.
+
+By implementing rate limit to your API you can protect server from being overloaded and maintain high quality of service to clients.
+
+At a minimum, include the following headers.
+
+    X-Rate-Limit-Limit- The number of allowed requests in the current period
+    X-Rate-Limit-Remaining – The number of remaining requests in the current period
+    X-Rate-Limit-Reset – The number of seconds left in the current period
+
+14. Use PUT on element- URL for updating resources
+
+restful-api-best-practices-example
+
+    The client sends a PUT request to the element URL /employee/21. The HTTP body of the request contains the updated attribute values (the new name “Bruce” of the employee 21).
+    The REST service updates the name of the employee with the ID 21 and confirms the changes with the HTTP status code 200
+
+15. Use POST on collection-URL for creating a new resource
+
+restful-api-best-practices-example-1
+
+    The client sends a POST request to the collection URL /employees. The HTTP body contains the attributes of the new resource “Harry Porter”.
+    The RESTFUL web service generates an ID for the new employee, creates the employee in its internal model and sends a response to the client.
+    This response contains a Location HTTP header that indicates the URL under which the created resource is accessible.
+
+16. Use camelCase for Attribute names
+
+To avoid the naming limitation, use CamelCase.
+
+CamelCase is a naming convention in which a name is formed of multiple words that are joined together as a single word with the first letter of each of the multiple words capitalized so that each word that makes up the name can easily be read.
+
+The camelCase will look like this:
+
+{ "yearOfBirth": 1982 }
+
+Reason behind using Camelcase
+
+JavaScript convention read those JavaScript code which do not use Underscores for example (“year_of_birth”) or capitalize (“YearOfBirth”).
+
+That RESTful web service will be consumed by a client written in JavaScript.
+
+Typically Client will convert the JSON response to a JavaScript object (bycalling var person = JSON.parse(response) ) and call its attributes.
+
+Therefore, it’s a good idea to stick to the JavaScript convention which makes the JavaScript code more readable and intuitive.
+17. Use verb for non-resources
+
+Sometimes a response to an API call doesn’t involve resources (like calculate, translate or convert).
+
+Example:
+
+GET /translate?from=de_DE&to=en_US&text=Hallo
+
+GET /calculate?para2=23&para2=43
+
+In this case, your API doesn’t return any resources. Instead, you execute an operation and return the result to the client. Hence, you should use verbs instead of nouns in your URL to distinguish clearly the non-resource responses from the resource-related responses.
+18. Use content-type header
+
+As you know everyday new format are created and used, recently XML was the format choice of the web server, but then JSON came along.
+
+So, to keep your API flexible and extendable for future, it is important that we should build API for future not for today.
+
+By taking advantage of content-type header we can define the request format and in return we can send back the same format.
+
+For example, if a user sends a request using text/xml, you could send back an XML response while another user could send an application/JSON request and you could reply with JSON.
+
+By building this functionality into your API, you are able to adapt to these new format requests without impacting other users, or other aspects of your API.
+
+This also means that you can stay on top of the technology curve without worrying about having to migrate users from one format to another, or from one API to another.
+19. Use HAL when providing hyperlink
+
+HAL is a simple format that gives a consistent and easy way to hyperlink between resources in your API.
+
+Adopting HAL will make your API explorable, and its documentation easily discoverable from within the API itself.  APIs that adopt HAL can be easily served and consumed using open source libraries available for most major programming languages.
+20. Use varnish for caching HTTP reverse proxy
+
+Varnish is an open source web accelerator that’s designed for high-performance content delivery. And it is a key to accelerate dynamic content, APIs and logic at the edge.
+
+Varnish receives a request for customer content that is not already cached; it will reach out to the customer’s origin servers and fetch the item requested, then send it to the user who has requested it.
+
+One of the key features of using Varnish Cache, in addition to its performance, is the flexibility of its configuration language, VCL.
+
+VCL enables you to write policies on how incoming requests should be handled. In such a policy you can decide what content you want to serve, from where you want to get the content and how the request or response should be altered.
+21. Aliases for common queries
+
+To make the API experience more pleasant for the average consumer, consider packaging up sets of condition into easily accessible RESTful paths. For example, when querying for most active, recommended groups etc, we can have endpoint like
+
+GET /groups/mostactive         –    Returns list of mostactive groups
+Default values can be used for the sort parameters
+
+    Field selection
+
+Field selection goes a long way in letting the API consumer minimize network traffic and speed up their own usage of the API.
+
+Use a fields query parameter that takes a comma separated list of fields to include.
+GET /groups/?fields=id,name,owner,status&status=active&sort=-name
+BONUS: Provide awesome documentation
+
+This might be the hardest job.
+
+But when exposing API to customer it is important to document all APIs. Documentation should minimum including description of API, error code, response code, sample success response and error response.
+
+A single error or misunderstanding in documentation can drive developer’s nuts and make them hate your product.
+
+So, be nice and provide all documentation to your developer that you would want to read.
+
+There are lots of open source tools for awesome documentation like Swagger , ENUNCIATE and Miredot, which enable client and documentation systems to update at the same pace as the server.
