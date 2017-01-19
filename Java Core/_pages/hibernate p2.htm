@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Hib p2</title>
+</head>
+<body>
+
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как настраивается кэш второго уровня в Hibernate?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Чтобы указать кэш второго уровня нужно определить hibernate.cache.provider_class в hibernate.cfg.xml:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-SVcK3t4_d8s/VsFoNU3WgpI/AAAAAAAAAOs/j_mFHKavAD0/s1600/hibernate.cache.provider_class.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibernate_002.jpg" height="66" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">По-умолчанию используется EHCache.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Чтобы
+ использвать кэш запросов нужно его включить установив свойство 
+hibernate.cache.use_query_cache в true в hibernate.properties.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<div style="text-align: justify;">
+<br></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какая разница в работе методов load(); и get();?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate session обладает различными методами для загрузки данных из базы данных. Наиболее часто</span><br>
+<a name="more"></a><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> используемые методы для этого - get() и load().</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод
+ load(); обычно используется когда в не уверен что запрашиваемый объект 
+уже находится в базе данных. Если объект не найден, то метод кидает 
+исключение Если объект найден — метод возвращает прокси объект, который 
+является ссылкой на объект находящийся в базе данных (запрос в базу 
+данных еще не был осуществлен, своего рода lazy изъятие), 
+непосредственный запрос к базе данных когда мы непосредственно 
+обращаемся к необходимому объекту через прокси объект.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод
+ get(); используется тогда, вы на 100 процентов не уверены есть ли 
+запрашиваемый объект в базе данных. В случае обращение к несуществующему
+ объекту, метод get(); вернет null. В случае нахождения объект, метод 
+get(); вернет сам объект и запрос в базу данных будет произведен 
+немедленно.</span></li>
+</ul>
+<br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы существуют различные состояния у entity bean?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Transient:
+ состояние, при котором объект никогда не был связан с какой-либо 
+сессией и не является персистентностью. Этот объект находится во 
+временном состоянии. Объект в этом состоянии может стать персистентным 
+при вызове метода save(), persist() или saveOrUpdate(). Объект 
+персистентности может перейти в transient состоянии после вызова метода 
+delete().</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Persistent:
+ когда объект связан с уникальной сессией он находится в состоянии 
+persistent (персистентности). Любой экземпляр, возвращаемый методами 
+get() или load() находится в состоянии persistent.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Detached:
+ если объект был персистентным, но сейчас не связан с какой-либо 
+сессией, то он находится в отвязанном (detached) состоянии. Такой объект
+ можно сделать персистентным используя методы update(), saveOrUpdate(), 
+lock() или replicate(). Состояния transient или detached так же могут 
+перейти в состояние persistent как новый объект персистентности после 
+вызова метода merge().</span><br>
+<div>
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что произойдет, если будет отсутствовать конструктор без аргументов у Entity Bean?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ использует рефлексию для создания экземпляров Entity бинов при вызове 
+методов get() или load(). Для этого используется метод 
+Class.newInstance(), который требует наличия конструктора без 
+параметров. Поэтому, в случае его отсутствия, вы получите ошибку 
+HibernateException.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как используется вызов метода Hibernate Session merge()?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ merge() может быть использован для обновления существующих значений, 
+однако этот метод создает копию из переданного объекта сущности и 
+возвращает его. Возвращаемый объект является частью контекста 
+персистентности и отслеживает любые изменения, а переданный объект не 
+отслеживается.</span><br>
+<div>
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В чем разница между Hibernate save(), saveOrUpdate() и persist()?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ save() используется для сохранения сущности в базу данных. Проблема с 
+использованием метода save() заключается в том, что он может быть вызван
+ без транзакции. А следовательно если у нас имеется отображение 
+нескольких объектов, то только первичный объект будет сохранен и мы 
+получим несогласованные данные. Также save() немедленно возвращает 
+сгенерированный идентификатор.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate persist() аналогичен save() с транзакцией. persist() не возвращает сгенерированный идентификатор сразу.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ saveOrUpdate() использует запрос для вставки или обновления, 
+основываясь на предоставленных данных. Если данные уже присутствуют в 
+базе данных, то будет выполнен запрос обновления. Метод saveOrUpdate() 
+можно применять без транзакции, но это может привести к аналогичным 
+проблемам, как и в случае с методом save().</span><br>
+<div>
+<br></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Lazy fetching(изъятие) в Hibernate?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Тип
+ изьятия Lazy, в Hibernate, связан с листовыми(дочерними) сущностями и 
+определяют политику совместного изъятия, если идет запрос на изъятие 
+сущности родителя.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Простой пример:</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Есть
+ сущность Дом. Он хранит информацию о своем номере, улице, количество 
+квартир и информацию о семьях которые живут в квартирах, эти семьи 
+формируют дочернюю сущность относительно сущности Дом. Когда мы 
+запрашиваем информацию о Доме, нам может быть совершенно ненужным знать 
+информацию семьях которые в нем проживают, тут нам на помощь приходит 
+lazy(ленивое) изъятие(fetching) которая позволяет сконфигурировать 
+сущность Дом, чтобы информацию о семьях подавалась только по 
+востребованию, это значительно облегчает запрос и ускоряет работу 
+приложения.</span><br>
+<div>
+<br></div>
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В чем разница между sorted collection и ordered collection? Какая из них лучше?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">При
+ использовании алгоритмов сортировки из Collection API для сортировки 
+коллекции, то он вызывает отсортированный список (sorted list). Для 
+маленьких коллекций это не приводит к излишнему расходу ресурсов, но на 
+больших коллекциях это может привести к потери производительности и 
+ошибкам OutOfMemory. Так же entity бины должны реализовывать интерфейс 
+Comparable или Comparator для работы с сортированными коллекциями.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">При
+ использовании фреймворка Hibernate для загрузки данных из базы данных 
+мы можем применить Criteria API и команду order by для получения 
+отсортированного списка (ordered list). Ordered list является лучшим 
+выбором к sorted list, т.к. он использует сортировку на уровне базы 
+данных. Она быстрее и не может привести к утечке памяти.</span><br>
+<br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как реализованы Join’ы Hibernate?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует несколько способов реализовать связи в Hibernate.</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Использовать ассоциации, такие как one-to-one, one-to-many, many-to-many.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Использовать
+ в HQL запросе команду JOIN. Существует другая форма «join fetch«, 
+позволяющая загружать данные немедленно (не lazy).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Исп</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ользовать чистый SQL запрос с командой join.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Почему мы не должны делать Entity class как final?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Хибернейт
+ использует прокси классы для ленивой загрузки данных (т.е. по 
+необходимости, а не сразу). Это достигается с помощью расширения entity 
+bean и, следовательно, если бы он был final, то это было бы невозможно. 
+Ленивая загрузка данных во многих случаях повышает производительность, а
+ следовательно важна.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что вы знаете о HQL и каковы его преимущества?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ Framework поставляется с мощным объектно-ориентированным языком 
+запросов - Hibernate Query Language (HQL). Он очень похож на SQL, за 
+исключением, что в нем используются объекты вместо имен таблиц, что 
+делает язык ближе к объектно-ориентированному программированию.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HQL
+ является регистронезависимым, кроме использования в запросах имен java 
+переменных и классов, где он подчиняется правилам Java. Например, SelECt
+ то же самое, что и select, но com.blogspot.jsehelper.MyClass отличен от
+ &nbsp;com.blogspot.jsehelper.MyCLASS. Запросы HQL кэшируются (это как 
+плюс так и минус).</span><br>
+<div>
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Query Cache в Hibernate?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ реализует область кэша для запросов resultset, который тесно 
+взаимодействует с кэшем второго уровня Hibernate. Для подключения этой 
+дополнительной функции требуется несколько дополнительных шагов в коде. 
+Query Cache полезны только для часто выполняющихся запросов с 
+повторяющимися параметрами. Для начала необходимо добавить эту запись в 
+файле конфигурации Hibernate:</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-pYzngooeg2U/Vu7RqbjGhoI/AAAAAAAAAYI/ebA5VnEf_zYAEtaRK_O9OZC-DSYXabQvQ/s1600/hibernate_cache.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibernate_cache.jpg" height="25" border="0" width="640"></a></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Уже внутри кода приложения для запроса применяется метод setCacheable(true), как показано ниже:</span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-A2goi5TAW40/Vu7SAvfkhbI/AAAAAAAAAYM/E8UVfcJrLkAf2X2VaK1fAaMwkXsDY9NbQ/s1600/setCacheable%2528true%2529.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/setCacheable28true29.jpg" height="72" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можем ли мы выполнить SQL (sql native) запрос в Hibernate?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">С
+ помощью использования SQLQuery можно выполнять чистый запрос SQL. В 
+общем случае это не рекомендуется, т.к. вы потеряете все преимущества 
+HQL (ассоциации, кэширование). Выполнить можно примерно так:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-iWIy1yF0Uac/Vu7SlpAmQDI/AAAAAAAAAYU/Bh3BwiN9Ad04yx698KZbXPb-Rs6S1eRPw/s1600/session.beginTransaction%2528%2529.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/session.png" height="138" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Назовите преимущества поддержки нативного sql в Hibernate.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Использование
+ нативного SQL может быть необходимо при выполнении запросов к некоторым
+ базам данных, которые могут не поддерживаться в Hibernate. Примером 
+может служить некоторые специфичные запросы и «фишки» при работе с БД от
+ Oracle.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Named SQL Query?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ поддерживает именованный запрос, который мы можем задать в каком-либо 
+центральном месте и потом использовать его в любом месте в коде. 
+Именованные запросы поддерживают как HQL, так и Native SQL. Создать 
+именованный запрос можно с помощью JPA аннотаций @NamedQuery, 
+@NamedNativeQuery или в конфигурационном файле отображения (mapping 
+files).</span><br>
+<div>
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы преимущества Named SQL Query?</span></li>
+</ul>
+</h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Именованный запрос Hibernate позволяет собрать множество запросов в одном месте, а затем вызывать их в любом классе.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Синтаксис
+ Named Query проверяется при создании session factory, что позволяет 
+заметить ошибку на раннем этапе, а не при запущенном приложении и 
+выполнении запроса.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Named Query</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> глобальные, т.е. заданные однажды, могут быть использованы в любом месте.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Однако
+ одним из основных недостатков именованного запроса является то, что его
+ очень трудно отлаживать (могут быть сложности с поиском места 
+определения запроса).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как добавить логирование log4j в Hibernate приложение?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавить зависимость log4j в проект.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создать log4j.xml или log4j.properties файл и добавить его в classpath.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ веб приложений используйте ServletContextListener, а для автономных 
+приложений DOMConfigurator или PropertyConfigurator для настройки 
+логирования.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создайте экземпляр org.apache.log4j.Logger и используйте его согласно задачи.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как логировать созданные Hibernate SQL запросы в лог-файлы?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для логирования запросов SQL добавьте в файл конфигурации Hibernate строчку:</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-6vFnHp4ICyI/Vu7TwbIyahI/AAAAAAAAAYk/4oWrfn68k_0pkoc-fpziXo0wsGdtnX_qQ/s1600/hibernate.show_sql.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibernate.jpg" height="29" border="0" width="640"></a></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></div>
+<div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что вы знаете о Hibernate прокси и как это помогает в ленивой загрузке (lazy load)?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ использует прокси объект для поддержки отложенной загрузки. Обычно при 
+загрузке данных из таблицы Hibernate не загружает все отображенные 
+(замаппинные) объекты. Как только вы ссылаетесь на дочерний объект или 
+ищите объект с помощью геттера, если связанная сущность не находиться в 
+кэше сессии, то прокси код перейдет к базе данных для загрузки связанной
+ сущности. Для этого используется javassist, чтобы эффективно и 
+динамически создавать реализации подклассов ваших entity объектов.</span></div>
+<div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></div>
+</div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как управлять транзакциями с помощью Hibernate?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Hibernate
+ вообще не допускает большинство операций без использования транзакций. 
+Поэтому после получения экземпляра session от SessionFactory необходимо 
+выполнить beginTransaction() для начала транзакции. Метод вернет ссылку,
+ которую мы можем использовать для подтверждения или отката транзакции.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ целом, управление транзакциями в фреймворке выполнено гораздо лучше, 
+чем в JDBC, т.к. мы не должны полагаться на возникновение исключения для
+ отката транзакции. Любое исключение автоматически вызовет 
+rollback.&nbsp;</span></div>
+<div>
+<br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое каскадные связи (обновления) в Hibernate?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ у нас имеются зависимости между сущностями (entities), то нам 
+необходимо определить как различные операции будут влиять на другую 
+сущность. Это реализуется с помощью каскадных связей (или обновлений). 
+Вот пример кода с использованием аннотации @Cascade:</span></div>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-gwksjcmFTvk/Vu7UV1Y9TDI/AAAAAAAAAYo/jcBzSdqAqKg-JzfsQQ9uUygYfwL8-fMTg/s1600/hibernat.annotation.Cascade.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibernat.jpg" height="187" border="0" width="640"></a></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Есть
+ некоторые различия между enum CascadeType в Hibernate и в JPA. Поэтому 
+обращайте внимание какой пакет вы импортируете при использовании 
+аннотации и константы типа.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: arial, helvetica, sans-serif;">Какие каскадные типы есть в Hibernate?</span></li>
+</ul>
+</h3>
+<span style="font-family: arial, helvetica, sans-serif;">Наиболее часто используемые CascadeType перечисления описаны ниже.</span></div>
+<div>
+<ul>
+<li><span style="font-family: arial, helvetica, sans-serif;">None: без 
+Cascading. Формально это не тип, но если мы не указали каскадной связи, 
+то никакая операция для родителя не будет иметь эффекта для ребенка.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">ALL: Cascades save, delete, update, evict, lock, replicate, merge, persist. В общем — всё.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">SAVE_UPDATE: Cascades save и update. Доступно только для hibernate.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">DELETE: передает в Hibernate native DELETE действие. Только для hibernate.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">DETATCH, MERGE, PERSIST, REFRESH и REMOVE – для простых операций.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">LOCK: передает в Hibernate native LOCK действие.</span></li>
+<li><span style="font-family: arial, helvetica, sans-serif;">REPLICATE: передает в Hibernate native REPLICATE действие.</span></li>
+</ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<br>
+<ul><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></ul>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое сесиия и фаблика сессий в Hibernate? Как настроить session factory в конфигурационном файле Spring?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Hibernate
+ сессия - это главный интерфейс взаимодействия Java-приложения и 
+Hibernate. SessionFactory позволяет создавать сессии согласно 
+конфигурации hibernate.cfg.xml. Например:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<img src="hibernate%20p2_files/SessionFactory_Hibernate.jpg" height="115" border="0" width="640"></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">При
+ вызове Configuration().configure() загружается файл hibernate.cfg.xml и
+ происходит настройка среды Hibernate. После того, как конфигурация 
+загружена, вы можете сделать дополнительную модификацию настроек уже на 
+программном уровне. Данные корректировки возможны до создания экземпляра
+ фабрики сессий. Экземпляр SessionFactory как правило создается один раз
+ и используется во всем приложении.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Главная
+ задача сессии - обеспечить механизмы создания, чтения и удаления для 
+экземпляров примапленых к БД классов. Экземпляры могут находиться в трёх
+ состояниях:</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">transient - никогда не сохранялись, не ассоциированы ни с одной сессией;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">persistent - ассоциированы с уникальной сессией;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">detached - ранее сохраненные, не ассоциированы с сессией.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Объект
+ Hibernate Session представляет одну операцию с БД. Сессию открывает 
+фабрика сессий. Сессия должна быть закрыта, когда все операции с БД 
+совершены. Пример:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<img src="hibernate%20p2_files/SessionFactory_Hibernate_close_session.jpg" height="384" border="0" width="640"></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как использовать JNDI DataSource сервера приложений с Hibernate Framework?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ веб приложении лучше всего использовать контейнер сервлетов для 
+управления пулом соединений. Поэтому лучше определить JNDI ресурс для 
+DataSource и использовать его в веб приложении. Для этого в Hibernate 
+нужно удалить все специфичные для базы данных свойства из и использовать
+ указания свойства JNDI DataSource:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-peD0nZQKTww/Vu7V8VKrJ3I/AAAAAAAAAY4/5FOtAdLeG_g6_hVQtIQx_IGXSPcfO3z1g/s1600/hibernate.connection.datasource.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibernate_003.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как интегрировать Hibernate и Spring?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Лучше
+ всего прочитать о настройках на сайтах фреймворков для текущей версии. 
+Оба фреймворка поддерживают интеграцию из коробки и в общем настройка их
+ взаимодействия не составляет труда. Общие шаги выглядят следующим 
+образом.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавить зависимости для hibernate-entitymanager, hibernate-core и spring-orm.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создать
+ классы модели и передать реализации DAO операции над базой данных. 
+Важно, что DAO классы используют SessionFactory, который внедряется в 
+конфигурации бинов Spring.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Настроить конфигурационный файл Spring (смотрите в офф. документации или из примера на этом сайте).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Дополнительно появляется возможность использовать аннотацию @Transactional и пере</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">стать беспокоиться об управлением транзакцией Hibernate.</span></li>
+</ul>
+<br>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие паттерны применяются в Hibernate?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Domain Model Pattern - объектная модель предметной области, включающая в себя как поведение так и данные.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Data
+ Mapper - слой мапперов (Mappers), который передает данные между 
+объектами и базой данных, сохраняя их независимыми друг от друга и себя.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Proxy Pattern - применяется для ленивой загрузки.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Factory pattern - используется в SessionFactory</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите о Hibernate Validator Framework.</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Проверка
+ данных является неотъемлемой частью любого приложения. Hibernate 
+Validator обеспечивает эталонную реализацию двух спецификаций JSR-303 и 
+JSR-349 применяемых в Java. Для настройки валидации в Hibernate 
+необходимо сделать следующие шаги.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавить hibernate validation зависимости в проект.</span></li>
+</ul>
+<br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-9SEY1EBgl8Q/Vu7WPotbAII/AAAAAAAAAY8/P3-MlVF3fVskabiOZlxBlviJ5SGZxOnhQ/s1600/javax.validation.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/javax.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Так
+ же требуются зависимости из JSR 341, реализующие Unified Expression 
+Language для обработки динамических выражений и сообщений о нарушении 
+ограничений.</span></li>
+</ul>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-V1E8ry1sFFA/Vu7WeKvgIAI/AAAAAAAAAZA/oFf4Lhrcqi4R0kZIS0hfb20WpwcXlGGEg/s1600/javax.el.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/javax_002.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Использовать необходимые аннотации в бинах.</span></li>
+</ul>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-wmbLdPYYRAk/Vu7W0GRosqI/AAAAAAAAAZI/0IFndz4480sYo4klsNvecdXNb3rm4WBnw/s1600/hibetnate.validation.example.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="hibernate%20p2_files/hibetnate.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие преимущества дает использование плагина Hibernate Tools Eclipse?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Плагин
+ Hibernate Tools упрощает настройку маппинга, конфигурационного файла. 
+Упрощает работы с файлами свойств или xml тегами. Помогает 
+минимизировать ошибки написания кода.</span></div>
+</div>
+
+
+</body></html>

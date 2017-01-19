@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Ant p1</title>
+</head>
+<body>
+
+<h3>
+<ul>
+<li><b style="font-family: arial, helvetica, sans-serif;"><span style="font-size: small;">Что такое Apache Ant?</span></b></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Apache
+ Ant - это основанный на Java набор инструментов для сборки приложений. 
+Большое преимущество Ant в его платформонезависимости. Все инструкции 
+командной строки, используемые для развертывания приложения, 
+представляются простыми XML-элементами. Ant можно использовать на любой 
+операционной системе, на которой работает Java. Ant, в отличие от 
+другого сборщика проектов Apache Maven, обеспечивает императивную, а не 
+декларативную сборку проекта.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как начать использовать ant?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Это очень просто.</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Загрузите последнюю версию ant из Apache. Распакуйте в папку на Вашей машине.<a name="more"></a></span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Установите Java SDK (последнюю версию).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пропишите переменные окружения, JAVA_HOME и ANT_HOME.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавте в Path %JAVA_HOME%/bin;%ANT_HOME%/bin в Windows, или ${JAVA_HOME}/bin:${ANT_HOME}/bin в UNIX.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Напишите "Hello world" build.xml</span></li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-zIc8hAUHoh0/V6F9NlCxHYI/AAAAAAAABAQ/2YegOA0lDhomYbzM0Jk-Y04_TQxTbuwUwCLcB/s1600/q002_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q002_p01.jpg" height="126" border="0" width="640"></a></div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В каталоге где расположен build.xml в командной строке введите ant.</span></li>
+</ul>
+<br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><b>Для чего нужен build.xml, из чего он состоит?</b></span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">build.xml
+ - файл сборки, данный файл обычно называют сценарии сборки, он должен 
+находиться в базовой директории проекта (однако не существует никаких 
+ограничений на имя файла или его расположение).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Файл
+ build.xml содержит внутри себя корневой элемент project, наполнением 
+которого являются элементы, относящиеся к одному из следующих понятий:</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Цели (Targets)</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Задачи (Tasks)</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ресурсы (Resources)</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Свойства (Properties)</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каждый
+ build-файл содержит один проект (project) и хотя бы одну цель (target).
+ Цель содержит задачи (tasks), задачи могут использовать для своей 
+работы отдельные ресурсы (resources) (например, файл) или коллекцию 
+ресурсов (множество файлов). Кроме целей, задач и ресурсов есть свойства
+ (properties). К свойствам можно относится как к переменным, а точнее 
+константам. У свойства есть имя и значение в виде строки. Значение 
+свойства устанавливается один раз и любая попытка изменить это значение 
+игнорируется.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Каждая
+ задача, встречающаяся в build-файле, может иметь id атрибут и может 
+быть позже вызвана по нему. Идентификаторы должны быть уникальными. 
+Здесь можно привести аналогию с языком программирования, где цель - это 
+функция, а задача - это операция. Между целями можно проставлять 
+зависимости, что позволяет определить порядок вызова.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ant
+ позволяет задавать глобальные переменные, которые можно использовать в 
+любом месте проекта. Необходимо запомнить одно правило, значения 
+переменной можно задавать один раз.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Напишите команду чтобы запустить процесс сборки, из командной строки.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Откройте
+ командную строку и перейти в каталог где расположен файл build.xml. 
+Введите в "ant" или "ant -f build.xml", чтобы начать процесс сборки.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Если
+ ви назвали свой файл по-другому, к примеру, "mybuild.xml", то для 
+запуска задач из этого файла всегда нужно будет указывать его название 
+"ant -f mybuild.xml".</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что вы знаете о теге Project.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Все XML-элементы файла должны быть размещены внутри тега &lt;project&gt;&lt;/project&gt;.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Тег project имеет три атрибута:</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">name &nbsp;- имя проекта, этот атрибут не обязателен.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">default
+ - цель по умолчанию, которая будет использоваться, если явно не 
+указанно, какую цель выполнять, это обязательный атрибут.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">basedir
+ - основная директория, из которой будут выходить все пути, 
+использующиеся при работе (если она не указана, то будет использоваться 
+текущая директория, в которой находится build-файл), этот атрибут не 
+обязателен.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каждый
+ проект содержит одну или несколько целей. Цель представляет собой набор
+ задач, которые необходимо выполнить. При запуске Ant можно выбрать 
+цель, которую(ые) следует выполнить. Если цель не указывать, будет 
+выполнена установленная по умолчанию.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><b style="font-family: arial, helvetica, sans-serif;"><span style="font-size: small;">Что вы знаете о теге Target.</span></b></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ файле build.xml должно быть хотя бы одно задание (цель). Задания могут 
+зависеть от других заданий. Например, имеются два задания: для 
+компиляции и для изъятия файлов с базы данных. Соответственно 
+скомпилировать файлы можно только после того, как они будут извлечены. 
+Ant учитывает такие зависимости.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Target имеет следующие атрибуты:</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">name - имя цели, это обязательный атрибут.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">depends - разделённый запятыми список имён целей, от которых эта цель зависит, этот атрибут не обязателен.&nbsp;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">if - имя параметра, который должен быть установлен, чтобы эта цель выполнялась, это не обязательный атрибут.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">unless - имя параметра, который не должен быть установлен, чтобы эта цель выполнялась, этот атрибут не обязателен.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">description - небольшое описание функции function цели, это не обязательный атрибут.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">extensionOf - добавляет текущую цель в список зависимостей extension-point, это не обязательный атрибут.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">onMissingExtensionPoint
+ - что делать, если эта цель пытается расширить отсутствующею в 
+extension-point списоке. Не допускается, если extensionOf не 
+присутствует. это не обязательный атрибут.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ не установлены if и unless атрибуты, цель будет выполняться всегда. 
+Опциональный атрибут description может быть использован как описание 
+цели и будет выводиться при команде - projecthelp.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В каком порядке выполняются цели объявление в атрибуте depends?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Следует
+ отметить, что depends-атрибут Ant только обозначает порядок, в котором 
+цели должны быть выполнены. Ant пробует выполнить цели в порядке, 
+соответствующем порядку их появления в атрибуте depends (слева направо).
+ Пример:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-7N9LdHGs6vU/V6F9ZhnbwbI/AAAAAAAABAU/1r5b8rMkQ0Uu2xt1gXYvnp9ixe9s2h8eQCLcB/s1600/q007_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q007_p01.jpg" height="82" border="0" width="640"></a></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пусть
+ нужно выполнить цель D. Из её атрибута depends можно узнать, что первой
+ выполнится цель C, затем B и, наконец, A. Неверно: C зависит от B, a B 
+зависит от A, таким образом, первой выполнится цель A, затем B, потом C,
+ а после D.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Цель будет исполнена только один раз, даже если более чем одна цель зависит от неё.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что вы знаете о теге Property.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Свойства
+ в Ant задаются с помощью тега &lt;property&gt;. Свойства очень похожи 
+на константы в языках программирования: задав один раз, вы больше не 
+сможете поменять их во время исполнения сценария. Обращаться к свойствам
+ следует через конструкцию ${property_name}. Свойства можно задавать не 
+только внутри &lt;project&gt;, но и внутри &lt;target&gt;.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Установка
+ значения может происходить в самом файле build.xml или во внешнем 
+properties-файле, что очень удобно и позволяет менять процесс сборки не 
+изменяя build.xml.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Являются ли имена свойств чувствительными к регистру?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Да.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как использовать ant-contrib задачи?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Просто
+ скопируйте ant-contrib.jar &nbsp;в ваш ant*/lib каталог, и добавьте эту
+ строку в ваш &nbsp;ant-скрипт, все ant-contrib задачи теперь будут 
+доступны для вас.</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-3k6-u0FQHng/V6F9iCi14vI/AAAAAAAABAY/Km8Ql4YJRJ44exXPoEOiuVNk-9V-v4OvACLcB/s1600/q010_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q010_p01.jpg" height="24" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие символы разделители используются в path-like структурах в ant?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно
+ определить типы ссылок path и classpath, используя как «:» 
+(unix-style), так и «;» (windows-style) как разделитель символов. Ant 
+скорректирует их в требуемые текущей операционной системой.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как установить classpath в ant скрипт?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Следующий фрагмент кода демонстрирует как установить classpath в ant:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-5hBKauNHonA/V6F913UZC-I/AAAAAAAABAg/zZCA39gF7pIn-vVjoi6d4IQKvwyH-DN2QCLcB/s1600/q012_p02.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q012_p02.jpg" height="310" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите о задачах в ant.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Задачи представляют действия, которые могут осуществляться с какими-либо ресурсами или без их участия.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ниже приведу простейшие примеры использования задач.</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создание каталога:</span></li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-NKoZjJNp28w/V6F97ZlFquI/AAAAAAAABAo/N57yfV3gbkolG8SyI_utMzr3yMl5bRpxACLcB/s1600/q013_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q013_p01.jpg" height="28" border="0" width="640"></a></div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Копирование файла:</span></li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-FtCetjnpMGA/V6F-EF5AqzI/AAAAAAAABAs/2L-y7BeV-uoo7UF90lSXbjlOEPvfvNXxgCLcB/s1600/q013_p02.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q013_p02.jpg" height="24" border="0" width="640"></a></div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Компиляция файлов с кодом java:</span></li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-xY3mlEChKvQ/V6F-KPseeaI/AAAAAAAABAw/83UNEFnuF4kGHSWqubbEMIAzevxZ9l4hACLcB/s1600/q013_p03.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Ant%20p1_files/q013_p03.jpg" height="20" border="0" width="640"></a></div>
+<div class="MsoNormal" style="margin-bottom: 0.0001pt; text-indent: 14.2pt;">
+<span style="font-family: &quot;arial&quot; , sans-serif; font-size: 12.0pt;">Иногда
+ для выполнения некоторых задач хватает лишь указания правильных 
+атрибутов, но кроме этого внутри тега задачи могут находиться и 
+вложенные элементы, которые, могут описывать ресурсы с которыми 
+необходимо работать задаче. <o:p></o:p></span></div>
+<div class="MsoNormal" style="margin-bottom: 0.0001pt; text-indent: 14.2pt;">
+<span style="font-family: &quot;arial&quot; , sans-serif; font-size: 12.0pt;">Ant
+ предоставляет слишком много задач, чтобы дать полное описание того, что
+ каждая из них делает. Следующий список дает представление о категориях,
+ на которые можно разделить все задачи:</span></div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Archive Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Audit/Coverage Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Compile Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Deployment Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Documentation Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">EJB Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Execution Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">File Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Java2 Extensions Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Logging Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Mail Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Miscellaneous Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Pre-process Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Property Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Remote Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">SCM Tasks</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Testing Tasks</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<ul>
+</ul>
+
+<div style="text-align: justify;">
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/08/apache-ant-2.html">Apache Ant (часть 2).</a></span></h3>
+</div>
+
+</body></html>

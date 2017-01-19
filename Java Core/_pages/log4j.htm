@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>log4j</title>
+</head>
+<body>
+
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Из чего состоит логгер?</span></li>
+</ul>
+</h3>
+
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Любой регистратор событий состоит из трех элементов:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">cобственно регистрирующего - logger;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">направляющего вывод - appender;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">форматирующего вывод - layout.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие есть уровни сообщении в log4j?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Приоритетов может быть ШЕСТЬ (log4j1.2.*):</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">FATAL - произошла фатальная ошибка - у этого сообщения наивысший приоритет<a name="more"></a></span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ERROR - в программе произошла ошибка</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">WARN - предупреждение в программе что-то не так</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">INFO - информация.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DEBUG - детальная информация для отладки</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">TRACE– трассировка всех сообщений в указанный аппендер</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">OFF&lt; TRACE&lt; DEBUG&lt; INFO&lt; WARN&lt; ERROR&lt; FATAL&lt; ALL</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Appender?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Вывод
+ регистратора может быть направлен в различные места назначения: файл, 
+консоль и т. д. Каждому из них соответствует класс, реализующий 
+интерфейс org.apache.log4j.Appender. Кроме того, вывод в базу данных 
+можно произвести с помощью класса JDBCAppender, в журнал событий ОС - 
+NTEventLogAppender, на SMTP-сервер - SMTPAppender.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ логгер - это та точка, откуда уходят сообщения в коде, то аппендер - 
+это та точка, куда они приходят в конечном итоге. Например, файл или 
+консоль.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Список таких точек, поддерживаемых Log4J:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">консоль;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">файлы (несколько различных типов);</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JDBC;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">темы (topics) JMS;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">NT Event Log;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">SMTP;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сокет;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Syslog;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Telnet;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">любой java.io.Writer или java.io.OutputStream.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие основные аппендеры Log4j?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основными аппендерами, использующимися наиболее широко, являются файловые аппендеры. Их есть несколько типов:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.FileAppender</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.RollingFileAppender</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.DailyRollingFileAppender</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Layout?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Вывод
+ регистратора может иметь различный формат. Каждый формат представлен 
+классом, производным от Layout. Все методы класса Layout предназначены 
+только для создания подклассов.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.SimpleLayout - наиболее простой вариант. На выходе читается уровень вывода и сообщение.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.HTMLLayout - данный компоновщик форматирует сообщения в виде HTML-страницы.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.xml.XMLLayout - формирует сообщения в виде XML.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">org.apache.log4j.PatternLayout
+ и org.apache.log4j.EnhancedPatternLayout используют шаблонную строку 
+для форматирования выводимого сообщения.</span></li>
+</ul>
+</div>
+<link href="https://plus.google.com/105527202953364202368" rel="author">
+
+<p></p>
+	
+
+</body></html>

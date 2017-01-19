@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Collection p3</title>
+</head>
+<body>
+<h3>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ чем разница между HashMap и IdentityHashMap? Для чего нужна 
+IdentityHashMap? Как может быть полезна для реализации сериализации или 
+клонирования?&nbsp;</span></li>
+</ul>
+</h3>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">IdentityHashMap
+ - это структура данных, реализующая интерфейс Map, но использующая 
+сравнение ссылок вместо метода equals() при сравнении ключей (значений).
+ Другими словами, в IdentityHashMap два ключа k1 и k2 будут 
+рассматриваться равными, если выполняется условие k1 == k2.</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">IdentityHashMap не использует метод hashCode(), вместо которого применяется метод System.identityHashCode(Object).</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">Другое
+ отличие (как следствие) заключается в более высокой производительности 
+IdentityHashMap по сравнению с HashMap, если последний хранит объекты с 
+дорогостоящими методами equals() и hashCode().</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">Одним из основных требований к использованию HashMap является неизменяемость</span></span></div>
+<a name="more"></a><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;"> ключа, однако это требование не распространяется на IdentityHashMap, который не использует методы equals() и hashCode().</span></span></div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">Согласно
+ документации, такая структура данных может применяться для реализации 
+сериализации/клонирования. Для выполнения подобных алгоритмов программе 
+необходимо обслуживать таблицу со всеми ссылками на объекты, которые уже
+ были обработаны. Такая таблица не должна рассматривать уникальные 
+объекты как равные, даже если метод equals() возвращает true.</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;"><br></span></span></div>
+</div>
+<h3>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В чем разница между HashMap и WeakHashMap? Для чего нужна WeakHashMap?</span></li>
+</ul>
+</h3>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">Перед
+ рассмотрением WeakHashMap кратко напомню, что такое WeakReference. В 
+Java существует 4 типа ссылок: 
+<ol>
+	<li>сильные (strong reference)</li>
+	<li>мягкие (SoftReference)</li>
+	<li>слабые (WeakReference)</li>
+	<li>фантомные (PhantomReference)</li>
+</ol>
+
+Особенности каждого типа ссылок связаны с работой Garbage Collector. 
+<br>
+Если объект можно достичь только с помощью цепочки WeakReference (то 
+есть на него не ссылаются сильные и мягкие ссылки), то данный объект 
+будет отмечен для удаления.</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">WeakHashMap
+ - это структура данных, реализующая интерфейс Map и основанная на 
+использовании WeakReference для хранения ключей. Таким образом, пара 
+"ключ-значение" будет удалена из WeakHashMap, если на объект-ключ более 
+не имеется сильных ссылок.</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;">В
+ качестве примера использования такой структуры данных можно привести 
+следующую ситуацию: допустим имеются объекты, которые необходимо 
+расширить дополнительной информацией, при этом изменение класса этих 
+объектов нежелательно либо невозможно. В этом случае добавляем каждый 
+объект в WeakHashMap в качестве ключа, а в качестве значения - нужную 
+информацию. Таким образом, пока на объект имеется сильная ссылка (либо 
+мягкая), можно проверять хэш-таблицу и извлекать информацию. Как только 
+объект будет удален, то WeakReference для этого ключа будет помещен в 
+ReferenceQueue и затем соответствующая запись для этой слабой ссылки 
+будет удалена из WeakHashMap.</span></span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В WeakHashMap используются WeakReferences. А почему бы не создать SoftHashMap на SoftReferences?</span></li>
+</ul>
+</h3>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">SoftHashMap представлена в стронних библиотеках, например, в Apache Commons.</span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;"><br></span></span></div>
+</div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><b style="font-family: Arial, Helvetica, sans-serif;">В WeakHashMap используются WeakReferences. А почему бы не создать PhantomHashMap на PhantomReferences</b><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; font-weight: normal;">?</span></li>
+</ul>
+</h3>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PhantomReference
+ при вызове метода get() возвращает всегда null, поэтому, я думаю, 
+создание PhantomHashMap просто невозможно. Плюс назначение такой 
+структуры данных тяжело представить.</span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-weight: normal;"><br></span></span></div>
+</div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сделайте HashSet из HashMap (используйте только множество ключей, но не множество значений).</span></li>
+</ul>
+</h3>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+</ul>
+</h3>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://4.bp.blogspot.com/-Sv0pX1KyJko/VpJCYIJfVjI/AAAAAAAAAJE/US-yTOA3rzA/s1600/hashSet%2B_from_hashMap.jpg"><img src="collection%20p3_files/hashSet_from_hashMap.jpg" border="0"></a></span></div>
+<div style="text-align: left;">
+<br></div>
+</div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><ul>
+<li style="text-align: justify;">Сделайте HashMap из HashSet (HashSet&lt;Map.Entry&lt;K, V&gt;&gt;).&nbsp;</li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<img src="collection%20p3_files/hashMap_from_hashSet.jpg" height="77" border="0" width="400"></div>
+</span></h3>
+<h3 style="text-align: left;">
+<div>
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сравните интерфейсы java.util.Queue и java.util.Deque.</span></li>
+</ul>
+</div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Согласно
+ документации Deque ("дек", Double Ended Queue) - это линейная 
+коллекция, поддерживающая вставку/извлечение элементов с обоих концов. 
+Помимо этого реализации интерфейса Deque могут строится по принципу 
+FIFO, либо LIFO.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Queue
+ - это очередь, обычно (но необязательно) строится по принципу FIFO 
+(First-In-First-Out) - соответственно извлечение элемента осуществляется
+ с начала очереди, вставка элемента - в конец очереди. Этот принцип 
+нарушает, к примеру, приоритетная очередь (PriorityQueue), использующая 
+переданный comparator при вставке нового элемента, либо расстановка 
+элементов осуществляется согласно естественному упорядочиванию (natural 
+ordering).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Deque расширяет Queue.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Реализации
+ и Deque, и Queue обычно не переопределяют методы equals() и hashCode(),
+ основанные на сравнении хранящихся элементов. Вместо этого используются
+ унаследованные методы класса Object, основанные на сравнении ссылок.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Кто кого расширяет: Queue расширяет Deque, или Deque расширяет Queue?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Deque расширяет Queue.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Почему LinkedList реализует и List, и Deque?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-weight: normal;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">LinkedList
+ позволяет добавлять элементы в начало и конец списка за константное 
+время, что хорошо подходит для реализации интерфейса Deque (в отличие, 
+например, от ArrayList).</span></span></div>
+<div style="text-align: justify;">
+<span style="font-weight: normal;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></span>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span>
+</span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><ul>
+<li>В чем разница между классами java.util.Arrays и java.lang.reflect.Array?</li>
+</ul>
+</span></h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">java.util.Arrays
+ - класс, содержащий статические методы для работы с массивами, таких 
+как, например, поиск по массиву и его сортировка.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">java.lang.reflect.Array
+ - класс для работы с массивами при использовании рефлексии. Рефлексия -
+ это механизм, позволяющий исследовать данные о программе во время её 
+выполнения.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><ul>
+<li>В чем разница между классами java.util.Collection и java.util.Collections?</li>
+</ul>
+</span></h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Класс
+ java.util.Collections содержит исключительно статические методы для 
+работы с коллекциями. В них входят методы, реализующие полиморфные 
+алгоритмы (такие алгоритмы, использование которых возможно с разными 
+видами структур данных), "оболочки", возвращающие новую коллекцию с 
+инкапсулированной указанной структурой данных и некоторые другие методы.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">java.util.Collection
+ - это корневой интерфейс Java Collections Framework. Этот интерфейс в 
+основном применяется там, где требуется высокий уровень абстракции, 
+например, в классе java.util.Collections.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><ul>
+<li>Напишите НЕмногопоточную программу, которая заставляет коллекцию выбросить ConcurrentModificationException.<strike style="text-align: center;"><img src="collection%20p3_files/ConcurrentModificationException.jpg" border="0"></strike></li>
+</ul>
+</span></h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span>
+<br>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+<ul>
+<li>Что такое “fail-fast поведение”?&nbsp;</li>
+</ul>
+</span></h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span>
+<br>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Fail-fast
+ поведение означает, что при возникновении ошибки или состояния, которое
+ может привести к ошибке, система немедленно прекращает дальнейшую 
+работу и уведомляет об этом.&nbsp;</span></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ Java Collections API итераторы могут использовать либо fail-fast, либо 
+fail-safe поведение, либо быть weakly consistent. Итератор с fail-fast 
+поведением выбросит исключение ConcurrentModificationException, если 
+после его создания была произведена модификация коллекции, т.е. добавлен
+ или удален элемент (без использования метода remove() итератора). 
+Реализация такого поведения осуществляется за счет подсчета количества 
+модификаций коллекции (modification count):&nbsp;</span></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+<div style="text-align: justify;">
+<ul>
+<li>при изменении коллекции (удаление/добавление элемента) счетчик увеличивается;&nbsp;</li>
+<li>при создании итератора ему передается текущее значение счетчика;&nbsp;</li>
+<li>при каждом обращении к итератору сохраненное значение счетчика 
+сравнивается с текущим, и, если они не совпадают, возникает 
+исключение.&nbsp;</li>
+</ul>
+<ul>
+</ul>
+</div>
+<div style="text-align: justify;">
+Использование fail-fast подхода позволяет избежать недетерминированного 
+поведения программы в течение времени. Также стоит отметить, что 
+fail-fast поведение не может быть абсолютно гарантировано.&nbsp;</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Для множеств еnum-ов есть специальный класс java.util.EnumSet? Зачем? Чем авторов не устраивал HashSet или TreeSet?&nbsp;</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+EnumSet - это одна из разновидностей реализации интерфейса Set для 
+использования с перечислениями (Enum). EnumSet использует массив битов 
+для хранения значений (bit vector), что позволяет получить высокую 
+компактность и эффективность. В структуре данных хранятся объекты только
+ одного типа Enum, который указывается при создании экземпляра EnumSet. 
+Все основные операции выполняются за константное время (O(1)) и в 
+основном несколько быстрее (хотя и негарантированно), чем их аналоги в 
+реализации HashSet. Пакетные операции (bulk operations, например, 
+containsAll()  и retainAll()) выполняются очень быстро, если их 
+аргументом является экземпляр типаEnum.&nbsp;</div>
+<div style="text-align: justify;">
+Помимо этого класс EnumSet предоставляет множество статических методов 
+инициализации для упрощенного и удобного создания экземпляров.&nbsp;</div>
+<div style="text-align: justify;">
+Итерация по EnumSet осуществляется согласно порядку объявления элементов перечисления.&nbsp;</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>java.util.Stack - считается «устаревшим». Чем его рекомендуют заменять? Почему?&nbsp;</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Рекомендуется использовать интерфейс Deque ("дек", Double Ended Queue) и его реализации. Например:&nbsp;</div>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<img src="collection%20p3_files/deque.jpg" border="0"></div>
+</div>
+<div style="text-align: justify;">
+Стек - это структура данных, построенная на принципе LIFO 
+(Last-In-First-Out, либо по-другому FILO). Каждое новое значение 
+добавляется на "вершину" стека, а извлекается последний добавленный 
+элемент (с "вершины" стека). При извлечении элемента он удаляется из 
+структуры данных.</div>
+<div style="text-align: justify;">
+Класс Stack появился в JDK 1.0 и расширяет класс Vector, наследуя его 
+функционал, что несколько нарушает понятие стека (например, класс Vector
+ предоставляет возможность обращаться к любому элементу по индексу). 
+Также использование Deque позволяет следовать принципу программирования 
+на уровне интерфейсов, а не конкретных реализаций, что облегчает 
+дальнейшую поддержку разрабатываемого класса и повышает его гибкость, 
+позволяя при необходимости менять реализацию дека на нужную.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Какая коллекция реализует дисциплину обслуживания FIFO?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+FIFO - First-In-First-Out (первый пришел, первым ушел). По этому 
+принципу обычно построена такая структура данных как очередь 
+(java.util.Queue).</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Какая коллекция реализует дисциплину обслуживания FILO?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+FILO - First-In-Last-Out (первый пришел, последним ушел). По этому 
+принципу построена такая структура данных как стек (java.util.Stack).</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Приведите пример, когда какая-либо коллекция выбрасывает  UnsupportedOperationException.</li>
+</ul>
+</h3>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<img src="collection%20p3_files/UnsupportedOperationException.jpg" border="0"></div>
+</div>
+<div style="text-align: justify;">
+В данном примере возникнет исключение UnsupportedOperationException, 
+поскольку метод asList() возвращает список фиксированной длины, т.е. 
+удаление/добавление элементов в такой список не поддерживается.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Почему нельзя написать “ArrayList&lt;List&gt; numbers = new 
+ArrayList&lt;ArrayList&gt;();” но можно “List&lt;ArrayList&gt; numbers =
+ new ArrayList&lt;ArrayList&gt;();”?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Это связано с ограничениями использования generic types (обобщенных 
+типов).  ArrayList&lt;ArrayList&gt; не является подтипом 
+ArrayList&lt;List&gt;, соответственно использование такой записи 
+запрещено.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>LinkedHashMap - что это еще за «зверь»? Что в нем от LinkedList, а что от HashMap?&nbsp;</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Реализация LinkedHashMap отличается от HashMap поддержкой двухсвязанного
+ списка, определяющего порядок итерации по элементам структуры данных. 
+По умолчанию элементы списка упорядочены согласно их порядку добавления в
+ LinkedHashMap (insertion-order). Однако порядок итерации можно 
+изменить, установив параметр конструктора accessOrder в значение true. В
+ этом случае доступ осуществляется по порядку последнего обращения к 
+элементу (access-order). Это означает, что при вызове методов get() или 
+put() элемент, к которому обращаемся, перемещается в конец списка.</div>
+<div style="text-align: justify;">
+При добавлении элемента, который уже присутствует в LinkedHashMap (т.е. с
+ одинаковым ключом), порядок итерации по элементам не изменяется.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>LinkedHashSet - что это еще за «зверь»? Что в нем от LinkedList, а что от HashSet?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Реализация LinkedHashSet отличается от HashSet поддержкой двухсвязанного
+ списка, определяющего порядок итерации по элементам структуры данных. 
+Элементы списка упорядочены согласно их порядку добавления в 
+LinkedHashSet (insertion-order).</div>
+<div style="text-align: justify;">
+При добавлении элемента, который уже присутствует в LinkedHashSet (т.е. с
+ одинаковым ключом), порядок итерации по элементам не изменяется.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Говорят, на LinkedHashMap легко сделать простенький кэш c “invalidation policy”, знаете как?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Необходимо использовать LRU-алгоритм (Least Recently Used algorithm) и 
+LinkedHashMap с access-order. В этом случае при обращении к элементу он 
+будет перемещаться в конец списка, а наименее используемые элементы 
+будут постепенно группироваться в начале списка.</div>
+<div style="text-align: justify;">
+Для этого в стандартной реализации LinkedHashMap (source) есть метод</div>
+<div style="text-align: justify;">
+removeEldestEntries(), который возвращает true, если текущий объект LinkedHashMap</div>
+<div style="text-align: justify;">
+должен удалить наименее используемый элемент из коллекции. Метод вызывается при использовании методов put() и putAll():</div>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<img src="collection%20p3_files/LinkedHashMap_removeEldestEntries.jpg" height="193" border="0" width="640"></div>
+</div>
+<div style="text-align: justify;">
+Простой пример реализации кэша с очисткой старых значений при превышении указанного порога:</div>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<img src="collection%20p3_files/LRUcache.jpg" height="226" border="0" width="640"></div>
+</div>
+<div style="text-align: justify;">
+Стоит заметить, что LinkedHashMap не позволяет полностью реализовать 
+LRU-алгоритм, поскольку при вставке уже имеющегося в коллекции элемента 
+порядок итерации не меняется.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>Что позволяет сделать PriorityQueue?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+PriorityQueue - это структура данных, располагающая элементы в порядке 
+натурального упорядочивания, либо используя переданный конструктору 
+Comparator.</div>
+<div style="text-align: justify;">
+Используя PriorityQueue, можно, например, реализовать алгоритм Дейкстры 
+для поиска кратчайшего пути от одной вершины графа к другой. Либо 
+применять для хранения объектов согласно их приоритету: например, 
+сортировка пациентов врача - экстренные пациенты перемещаются в начало 
+очереди, менее срочные пациенты - ближе к концу очереди.</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li>В чем заключаются отличия java.util.Comparator от java.lang.Comparable?</li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+Interface Comparable задает свойство сравнения объекту реализующему его.
+ То есть делает объект сравнимым (по правилам разработчика).</div>
+<div style="text-align: justify;">
+Interface Comparator позволяет создавать объекты, которые будут управлять процессом сравнения (например при сортировках).</div>
+<div style="text-align: justify;">
+<h3 style="text-align: justify;">
+</h3>
+</div>
+</span><br>
+
+</body></html>

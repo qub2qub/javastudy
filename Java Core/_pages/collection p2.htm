@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Collection p2</title>
+</head>
+<body>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какое худшее время работы метода contain() для элемента, который есть в LinkedList (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?</span></li>
+</ul>
+</h3>
+
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N). Время поиска элемента линейно пропорционально количеству элементов с списке.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какое худшее время работы метода contain() для элемента, который есть в ArrayList (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N). Время поиска элемента линейно пропорционально количеству элементов с списке.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+
+
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какое худшее время работы метода add() для LinkedList (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?<a name="more"></a></span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N).
+ Здесь стоит заметить, что добавление элемента в конец списка с помощью 
+методом add(value), addLast(value) и добавление в начало списка с 
+помощью addFirst(value) выполняется за время O(1).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N)
+ - будет при добавление элемента в отсортированный список, а также при 
+добавлении элемента с помощью метода add(index, value).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какое худшее время работы метода add() для ArrayList (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N).
+ Вставка элемента в конец списка осуществляется за время O(1), но если 
+вместимость массива недостаточна, то происходит создание нового массива с
+ увеличенным размером и копирование всех элементов из старого массива в 
+новый.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сколько выделяется элементов в памяти при вызове ArrayList.add()?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ в массиве достаточно места для размещения нового элемента, то 
+дополнительное место в памяти не выделяется. Иначе происходит создание 
+нового массива с размером:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-UNyV-9oBSTU/VpI68-iVjEI/AAAAAAAAAII/hav8p8WE44Q/s1600/arrayList_capacity.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/arrayList_capacity.jpg" border="0"></span></a></div>
+<div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Другими
+ словами, создается новый массив, размер которого вычисляется как 
+умножение старого размера на 1.5 (это верно для JDK 1.7, в более ранних 
+версиях вычисления отличаются).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сколько выделяется элементов в памяти при вызове LinkedList.add()?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создается один новый экземпляр вложенного класса Node.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Оцените количество памяти на хранение одного примитива типа byte в &nbsp;LinkedList?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каждый
+ элемент LinkedList хранит ссылку на предыдущий элемент, следующий 
+элемент и ссылку на данные. Для x32 систем каждая ссылка занимает 32 
+бита (4 байта). Сам объект типа Node занимает приблизительно 8 байт. 
+Размер каждого объекта в Java кратен 8, соответственно получаем 24 
+байта. Примитив типа byte занимает 1 байт памяти, но в списке примитивы 
+упаковываются, соответственно получаем еще 8 байт. Таким образом, в x32 
+JVM около 32 байтоввыделяется для хранения одного значения типа byte в 
+LinkedList.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для 64-битной JVM каждая ссылка занимает 64 бита (8 байт). Вычисления аналогичны.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
+</span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Оцените количество памяти на хранение одного примитива типа byte в ArrayList?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ArrayList основан на массиве. Каждый элемент массива хранит примитивный тип данных - byte, размер которого 1 байт.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
+</span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Я
+ добавляю элемент в середину List-а: list.add(list.size()/2, newElem). 
+Для кого эта операция медленнее — для ArrayList или для LinkedList?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для ArrayList:</span></div>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">проверка
+ массива на вместимость. Если вместимости недостаточно, то увеличение 
+размера массива и копирование всех элементов в новый массив ( O(N) );</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">копирование всех элементов, расположенных правее от позиции вставки, на одну позицию вправо ( O(N/2));</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">вставка элемента ( O(1) ).</span></li>
+</ul>
+</div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для LinkedList:</span></div>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">поиск позиции вставки ( O(N/2) );</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">вставка элемента ( O(1) ).</span></li>
+</ul>
+</div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ худшем случае вставка в середину списка эффективнее для LinkedList. В 
+остальных - скорее всего, для ArrayList, поскольку копирование элементов
+ осуществляется за счет системного метода System.arraycopy().</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
+</span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как перебрать элементы LinkedList в обратном порядке, не используя медленный get(index)?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Использовать обратный итератор. Для этого в LinkedList есть метод descendingIterator().</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
+</span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как одним вызовом из List получить List со всеми элементами, кроме первых и последних 3-х?</span></li>
+</ul>
+</h3>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-mVQ17yKfz9I/VpI78CxFKhI/AAAAAAAAAIU/UaNOFZ-0mCc/s1600/list_sublist.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/list_sublist.jpg" height="36" border="0" width="640"></span></a></div>
+<div class="separator" style="clear: both; text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div>
+<h3>
+<ul style="font-family: Arial, Helvetica, sans-serif;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Могут ли у разных объектов в памяти (ref0 != ref1) быть ref0.hashCode() == ref1.hashCode()?</span></li>
+</ul>
+</h3>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Да, могут. Метод hashCode() не гарантирует уникальность возвращаемого значения.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: Arial, Helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Могут ли у разных объектов в памяти (ref0 != ref1) быть ref0.equals(ref1) == true?</span></li>
+</ul>
+</h3>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Да, могут. Для этого в классе этих объектов должен быть переопределен метод equals().</span></div>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ используется метод Object.equals(), то для двух ссылок x и y метод 
+вернет true тогда и только тогда, когда обе ссылки указывают на один и 
+тот же объект (т.е. x == y возвращает true).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: Arial, Helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Могут ли у разных ссылок на один объект в памяти (ref0 == ref1) быть &nbsp;ref0.equals(ref1) == false?</span></li>
+</ul>
+</h3>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Нет,
+ не может. Метод equals() должен гарантировать свойство рефлексивности: 
+для любых ненулевых ссылок xметод x.equals(x) должен возвращать true</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">.</span></span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: Arial, Helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Есть класс Point{int x, y;}. Почему хэш-код в виде 31 * x + y предпочтительнее чем x + y?</span></li>
+</ul>
+</h3>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Множитель создает зависимость значения хэш-кода от очередности обработки полей, а это дает гораздо лучшую хэш-функцию.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: Arial, Helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ у класса Point{int x, y;} «правильно» реализовать метод equals (return 
+ref0.x == ref1.x &amp;&amp; ref0.y == ref1.y), но сделать хэш-код в виде
+ int hashCode() {return x;}, то будут ли корректно такие точки 
+помещаться и извлекаться из HashSet?</span></li>
+</ul>
+</h3>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HashSet
+ использует HashMap для хранения элементов (в качестве ключа 
+используется сам объект). При добавлении элемента в HashMap вычисляется 
+хэшкод и позиция в массиве, куда будет вставлен новый элемент. У всех 
+экземпляров класса Point одинаковый хэшкод, что приводит в вырождению 
+хэш-таблицы в список. При возникновении коллизии осуществляется проверка
+ на наличие уже такого элемента в текущем списке:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-tX6NemzaD-M/VpI8j7riCNI/AAAAAAAAAIc/vTlrq4bYHes/s1600/point_hashCode.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/point_hashCode.jpg" height="36" border="0" width="640"></span></a></div>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ элемент найден, то его значение перезаписывается. В нашем случае для 
+разных объектов метод equals() будет возвращать false. Соответственно 
+новый элемент будет добавлен в HashSet. Извлечение элемента также будет 
+осуществляться успешно.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Но производительность такого кода будет низкой и преимущества хэш-таблиц использоваться не будут.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">equals()
+ порождает отношение эквивалентности. Какими из свойств обладает такое 
+отношение: коммутативность, симметричность, рефлексивность, 
+дистрибутивность, ассоциативность, транзитивность?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод equals() должен обеспечивать:</span></div>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">симметричность
+ (для любых ненулевых ссылок x и y метод x.equals(y) должен возвращать 
+true тогда и только тогда, когда y.equals(x) возвращает true);</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">рефлексивность (для любых ненулевых ссылок x метод x.equals(x) должен возвращать true.);</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">транзитивность
+ (для любых ненулевых ссылок x, y и z, если x.equals(y) возвращает true и
+ y.equals(z)возвращает true, тогда и x.equals(z) должен возвращать 
+true).</span></li>
+</ul>
+</div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Также есть ещё два свойства: постоянство и неравенство null.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно ли так реализовать equals(Object that) {return this.hashCode() == that.hashCode()}?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Строго
+ говоря нельзя, поскольку метод hashCode() не гарантирует уникальность 
+значения для каждого объекта. Однако для сравнения экземпляров класса 
+Object такой код допустим, т.к. метод &nbsp;hashCode() в классе Object 
+возвращает уникальные значения для разных объектов (вычисления основаны 
+на использовании адреса объекта в памяти).</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ equals требуется проверять, что аргумент (equals(Object that)) такого 
+же типа как и сам объект. В чем разница между this.getClass() == 
+that.getClass() и that instanceof MyClass?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Оператор
+ instanceof сравнивает объект и указанный тип. Его можно использовать 
+для проверки является ли данный объект экземпляром некоторого класса, 
+либо экземпляром его дочернего класса, либо экземпляром класса, который 
+реализует указанный интерфейс.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">getClass() = ... проверяет два типа на идентичность.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для корректной реализации контракта метода equals() необходимо использовать точное сравнение с помощью getClass().</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно
+ ли реализовать метод equals класса MyClass вот так: class MyClass 
+{public boolean equals(MyClass that) {return this == that;}}?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Реализовать можно, но данный метод не переопределяет метод equals() класса Object, а перегружает его.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Будет ли работать HashMap, если все ключи будут возвращать int hashCode() {return 42;}?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Да, будет. Но тогда хэш-таблица вырождается в связный список и теряет свои преимущества.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Зачем добавили HashMap, если уже был Hashtable?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Класс
+ Hashtable был введен в JDK 1.0 и не является частью Java Collection 
+Framework. Методы класса Hashtable синхронизированы, что обеспечивает 
+потокобезопасность, но это приводит к снижению производительности, 
+поэтому и был введен класс HashMap, методы которого не синхронизированы.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Помимо
+ этого класс HashMap обладает некоторыми другими отличиями: например, 
+позволяет хранить один null ключ и множество null значений.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Согласно
+ Кнуту и Кормену существует две основных реализации хэш-таблицы: на 
+основе открытой адресацией и на основе метода цепочек. Как реализована 
+HashMap? Почему так сделали (по вашему мнению)? В чем минусы и плюсы 
+каждого подхода?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Класс
+ HashMap реализован с использованием метода цепочек, т.е. каждой ячейке 
+массива соответствует свой связный список и при возникновении коллизии 
+осуществляется добавление нового элемента в этот список.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ метода цепочек коэффициент заполнения может быть больше 1, с 
+увеличением числа элементов производительность убывает линейно. Такие 
+таблицы удобно использовать, если заранее неизвестно количество хранимых
+ элементов, либо их может быть достаточно много, что приводит к большим 
+значениям коэффициента заполнения.</span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Среди методов открытой реализации различают:</span></div>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">линейное пробирование;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">квадратичное пробирование;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">двойное хеширование.</span></li>
+</ul>
+</div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основные недостатки структур с методом открытой адресации:</span></div>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Количество
+ элементов в таблице не может превышать размера массива. По мере 
+увеличения числа элементов в таблице и повышения коэффициента заполнения
+ (load factor) производительность структуры резко падает, поэтому 
+необходимо проводить перехеширование.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сложно организовать удаление элемента.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Также первые два метода открытой адресации приводят к проблеме первичной и вторичной группировок.</span></li>
+</ul>
+</div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основное
+ преимущество хэш-таблицы с открытой адресацией - это отсутствие затрат 
+на создание и хранение объектов списка. Также проще организовать 
+сериализацию/десериализацию объекта.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="font-family: arial, helvetica, sans-serif;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сколько переходов по ссылкам происходит, когда вы делаете HashMap.get(key) по ключу, который есть в таблице?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Возможно, я неправильно понял этот вопрос. За переходы по ссылке в данном ответе я считаю вызовы методов.</span></div>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-vlEmE7DfsW8/VpI9_vCw8jI/AAAAAAAAAIo/CBxcqn8lw9g/s1600/hashMap_get_key.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/hashMap_get_key.jpg" border="0"></span></a></div>
+<div style="font-family: Arial, Helvetica, sans-serif;">
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; font-size: 12.0pt;" lang="RU">Рассмотрим первый случай, когда ключ равен&nbsp;null: выполняем метод&nbsp;getForNullKey().<o:p></o:p></span></div>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-pvizqQ6DCgQ/VpI-IM0hVuI/AAAAAAAAAIw/RX-bzsvXG28/s1600/hashMap_getForNullKey.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/hashMap_getForNullKey.jpg" border="0"></span></a></div>
+<div>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; font-size: 12.0pt;" lang="RU">В
+ цикле&nbsp;foreach&nbsp;проходимся по списку значений для ключа и 
+возвращаем нужное значение. Таким образом, получаем&nbsp;1 переход.<o:p></o:p></span></div>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-size: 12.0pt;" lang="RU">Второй случай: ключ не равен&nbsp;null. Выполняем метод&nbsp;getEntry(key).</span><span style="font-size: 12.0pt;" lang="EN-US"><o:p></o:p></span></span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-n79J0T7rwbM/VpI-RHFVWwI/AAAAAAAAAI4/1iwEdCDpkVU/s1600/hashMap_getEntry.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="collection%20p2_files/hashMap_getEntry.jpg" height="189" border="0" width="640"></span></a></div>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Вычисляется
+ хэш-код ключа (метод hash(key)), затем определяется индекс ячейки 
+массива, в которой будем искать значение (метод indexFor(hash, 
+table.length)).</span></div>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">После
+ того, как нашли нужную пару "ключ-значение" возвращаем значение (метод 
+entry.getValue()). Таким образом, получаем 4 перехода.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">Сколько создается новых объектов, когда вы добавляете новый элемент в HashMap?</span></li>
+</ul>
+</div>
+</h3>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Один новый объект статического вложенного класса Entry&lt;K,V&gt;.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">Как работает HashMap при попытке сохранить в нее два элемента по ключам с одинаковым hashCode, но для которых equals == false?</span></li>
+</ul>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">По
+ значению hashCode вычисляется индекс ячейки массива, в список которой 
+будет происходить добавление элемента. Перед добавлением осуществляется 
+проверка на наличие уже элементов в этой ячейке. Если элементов нет, то 
+происходит добавление. Если возникает коллизия, то итеративно 
+осуществляется обход списка в поисках элемента с таким же ключом и 
+хэш-кодом. Если такой элемент найден, то его значение перезаписывается, а
+ старое - возвращается. Поскольку в условии сказано, что добавляемые 
+ключи - разные, то второй элемент будет добавлен в начало списка.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">HashMap может выродиться в список даже для ключей с разным hashCode. Как это возможно?</span></li>
+</ul>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Это возможно в случае, если метод, определяющий номер ячейки массива по hashCode будет возвращать одинаковое значение.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">Какое худшее время работы метода get(key) для ключа, которого нет в таблице (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?</span></li>
+</ul>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N).
+ Худший случай - это поиск ключа в таблице, вырожденной в список, 
+перебор ключей которой занимает линейно пропорциональное время 
+количеству хранимых элементов.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">Какое худшее время работы метода get(key) для ключа, который есть в таблице (O(1), O(log(N)), O(N), O(N*log(N)), O(N*N))?</span></li>
+</ul>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">O(N). Аналогичные рассуждения, что и для предыдущего вопроса.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-indent: 7.1pt;">Объясните смысл параметров в конструкторе HashMap(int initialCapacity, float loadFactor).</span></li>
+</ul>
+</h3>
+<div class="MsoNormal" style="margin: 0cm 0cm 0.0001pt -7.1pt; text-indent: 7.1pt;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">int
+ initialCapacity - исходный размер HashMap (количество корзин в 
+хэш-таблице в момент её создания), по умолчанию имеет значение 16.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="text-indent: 7.1pt;">&nbsp;float
+ loadFactor - коэффициент заполнения HashMap. Равен отношению числа 
+хранимых элементов в таблице к её размеру. loadFactor - является мерой 
+заполнения таблицы элементами,&nbsp;</span><span style="text-indent: 7.1pt;">при
+ превышении количества хранимых таблицей значений , происходит 
+автоматическое перехеширование. Значение по умолчанию 0.75 является 
+хорошим компромиссом между временем доступа и объемом хранимых данных.</span></span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="text-indent: 7.1pt;"></span></span><br>
+<h3 style="text-indent: 0px;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/01/java-collections-framework-3.html">Java Collections Framework (часть 3).</a></span></h3>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

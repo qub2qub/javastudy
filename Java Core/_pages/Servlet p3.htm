@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Servlet p3</title>
+</head>
+<body>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Зачем нужны и чем отличаются методы encodeUrl() и encodeRedirectUrl()?</span></li>
+</ul>
+</h3>
+
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HttpServletResponse
+ предоставляет методы преобразования URL в HTML гиперссылки с 
+преобразованием спец символов и пробелов, а так же добавления session id
+ к URL. Такое поведение аналогично URLEncoder encode(), но с добавлением
+ дополнительного параметра jsessionid в конец URL.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод
+ HttpServletResponse encodeRedirectUrl() применяется для преобразования 
+redirect URL в ответе. Таким образом при предоставлении поддержки URL 
+rewriting для HTML гиперссылок необходимо использовать encodeURL(), а 
+для редирект URL’ов использовать encodeRedirectUrl().</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие различные методы управления сессией в сервлетах вы знаете?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сессия
+ является обычным состоянием взаимодействия сервера и клиента и может 
+содержать в себе множество запросов и ответов клиент-сервер. Т.к. HTTP и
+ веб сервер не запоминают состояния (stateless), то единственным</span><br>
+<a name="more"></a><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+ способом поддерживать сессию является пересылка уникальной информации 
+(session id) в каждом запросе и ответе между клиентом и сервером.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существуют несколько распространенных способов управления сессией в сервлетах:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аутентификация пользователя</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HTML hidden field (скрытое поле)</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Cookies</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">URL Rewriting</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Session Management API</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что означает URL Rewriting?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ управления сессией в сервлетах мы можем использовать HTTPSession, но он
+ работает с Cookies, а их иногда отключают. Для этого случая в сервлетах
+ предусмотрена возможность URL Rewriting. С точки зрения 
+программирования необходимо всего одно действие - кодирование URL. 
+Другим достоинством является то, что этот метод является как бы запасным
+ и включается только при выключенных куках.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Применяя
+ метод HttpServletResponse encodeURL() мы можем закодировать URL. Если 
+необходим редирект к другому ресурсу, то для предоставления информации о
+ сессии применяется метод encodeRedirectURL().</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Cookie?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Cookie
+ - это небольшие блоки текстовой информации, которые сервер посылает 
+клиенту для сохранения в файлах cookies. Клиент может запретить браузеру
+ прием файлов cookies. Браузер возвращает информацию обратно на сервер 
+как часть заголовка HTTP, когда клиент повторно заходит на тот же 
+веб-ресурс.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как применяются Cookies в сервлетах?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Cookies
+ (куки) используются в клиент-серверном взаимодействии и они не являются
+ чем-то конкретным в Java. Servlet API предоставляет поддержку cookies 
+через класс javax.servlet.http.Cookie implements Serializable, 
+Cloneable. Для получения массива cookies из запроса необходимо 
+воспользоваться методом HttpServletRequest getCookies(). Для добавления 
+cookies в запрос методов не предусмотрено.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аналогично
+ HttpServletResponse addCookie(Cookie c) - может добавить cookie в 
+response header, но не существует геттера для этого типа передачи 
+данных.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как уведомить объект в сессии, что сессия недействительна или закончилась?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Чтобы
+ быть уверенным об оповещение объекта о прекращении сессии, объект 
+должен реализовывать интерфейс 
+javax.servlet.http.HttpSessionBindingListener. Два метода этого 
+интерфейса: valueBound() и valueUnbound() применяются для реализации 
+логики при добавлении объекта в качестве атрибута к сессии и при 
+уничтожения сессии.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой существует эффективный способ удостоверится, что все сервлеты доступны только для пользователя с валидной сессией?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сервлет
+ фильтры используются для перехвата всех запросов между контейнером 
+сервлетов и сервлетом. Поэтому логично использовать фильтр для проверки 
+необходимой информации (например валидности сессии) в запросе.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как мы можем обеспечить transport layer security для нашего веб приложения?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ этого необходимо настроить SSL для вашего сервлет контейнера. Как это 
+сделать описано в мануалах для конкретной реализации контейнера.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как организовать подключение к базе данных и обеспечить логирование log4j в сервлете?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">При
+ работе с большим количеством подключений к базе данных рекомендуется 
+инициализировать их в servlet context listener и установить в качестве 
+атрибута контекста для возможности использования другими сервлетами. 
+Логирование Log4j подключается с помощью конфигурации XML (или файла 
+property) и далее эта информация используется при конфигурировании 
+context listener’а.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие особенности Servlet 3?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , sans-serif; font-size: 12.0pt; line-height: 115%;" lang="RU">Особенности Servlet 3.0:</span></span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Servlet
+ Annotations. До Servlet 3 весь маппинг был в web.xml, что приводило к 
+ошибкам и банально неудобно при большом количестве сервлетов. Примеры 
+аннотаций: &nbsp;@WebServlet, @WebInitParam, @WebFilter, @WebListener.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Web
+ Fragments. С появлением веб фрагментов мы можем содержать множество 
+модулей в одностраничном веб приложении. Все модули прописываются в 
+fragment.xml в META-INF директории. Это позволяет разделять веб 
+приложение на отдельные модули, включенные как JAR файлы в отдельной lib
+ директории.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Динамическое
+ добавление веб компонентов. Используя ServletContext объект, мы можем 
+программно добавлять фильтры и слушатели. Это помогает построить 
+динамическую систему, в которой необходимый объект будет вызван только 
+по необходимости. Для этого применяются методы addServlet(), 
+addFilter(), addListener().</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Асинхронное
+ выполнение. Поддержка асинхронной обработки позволяет передать 
+выполнение запроса в другой поток без удержания всего сервера занятым.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы различные способы аутентификации сервлета?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Контейнер сервлетов предоставляет различные способы аутентификации:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HTTP Basic Authentication</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HTTP Digest Authentication</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HTTPS Authentication</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Form Based Login</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Java Server Pages (JSP)?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JSP
+ (Java Server Pages) - технология, позволяющая веб-разработчикам 
+динамически генерировать HTML, XML и другие веб-страницы. JSP был 
+включен в состав Java EE - программной платформы для программирования 
+веб-приложений. Технология позволяет вставлять Java-код, в статический 
+содержимое страницы. Также могут использоваться библиотеки JSP тегов для
+ вставки их в JSP-страницы. Страницы компилируются JSP-компилятором в 
+сервлеты, которые являются Java-классами, и выполняются на сервере. 
+Сервлеты также могут быть написаны разработчиком, не используя 
+JSP-страницы. Эти технологии дополняют друг друга.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Опишите, как обрабатываются JSP страницы, начиная от запроса к серверу, заканчивая ответом пользователю.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Когда
+ пользователь переходит по ссылке, назовем ее index.jsp, он отправляет 
+http запрос на сервер в виде "GET /index.jsp". Затем на основе этой 
+страницы, сервер генерирует, компилирует и выполняет Java сервлет, 
+который приходит ответом пользователю в виде отображения этой страницы. 
+Такой жизненный цикл можно разделить на 6 шагов:</span></div>
+<div style="text-align: justify;">
+<ol>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Запрос от пользователя.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Чтение .jsp страницы сервером.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Генерация java класса на основе этой .jsp страницы.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Компиляция в class файл.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Выполнение class файла.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Отправка ответа пользователю в виде html страницы.</span></li>
+</ol>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите об этапах (фазах) жизненного цикла jsp.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ посмотреть код внутри созданной JSP страницы, то он будет выглядеть как
+ HTML и не будет похож на java класс. Конвертацией JSP страниц в HTML 
+код занимается контейнер, который так же создает сервлет для 
+использования в веб приложении. Жизненный цикл JSP состоит из нескольких
+ фаз:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Translation
+ - JSP контейнер проверяет код JSP страницы, парсит ее для создания кода
+ сервлета. К примеру, в Tomcat вы можете найти классы сервлетов в 
+директории TOMCAT/work/Catalina/localhost/WEBAPP/org/apache/jsp. Если 
+страница JSP называется home.jsp, то созданный сервлет обычно будет 
+иметь имя home_jsp и имя файла - home_jsp.java.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Compilation - JSP контейнер компилирует исходный код jsp класса и создает класс на этой фазе.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Class Loading - контейнер загружает классы в память на этой фазе.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Instantiation - внедрение конструкторов без параметров созданных классов для инициализации в памяти классов.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Initialization
+ - в контейнере вызывается init метод объекта JSP класса и 
+инициализируется конфигурация сервлета с init параметрами, которые 
+указаны в дескрипторе развертывания (web.xml). После этой фазы JSP 
+способен обрабатывать запросы клиентов.Обычно эти фазы происходят после 
+первого запроса клиента (т.е. ленивая загрузка), но можно настроить 
+загрузку и инициализацию JSP на старте приложения по аналогии с 
+сервлетами.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Request
+ Processing - длительный жизненный цикл &nbsp;обработки запросов клиента
+ JSP страницей. Обработка является многопоточной и аналогична сервлетам -
+ для каждого запроса создается новая нить, создаются объекты 
+ServletRequest и ServletResponse и происходит внедрение сервис методов 
+JSP.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Destroy
+ - последняя фаза жизненного цикла JSP на которой JSP класс удаляется из
+ памяти. Обычно это происходит при выключении сервера или андеплое 
+приложения.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите о методах жизненного цикла jsp.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Методы жизненного цикла JSP:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">jspInit()
+ - метод объявлен в JSP странице &nbsp;и реализуется с помощью 
+реализаций контейнера. Этот метод вызывается один раз в жизненном цикле 
+JSP для того, чтобы инициализировать конфигурационные параметры, 
+указанные в дескрипторе развертывания. Этот метод можно переопределить с
+ помощью определения элемента JSP scripting и указания необходимых 
+параметров для инициализации.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">_jspService()
+ - этот JSP метод внедряется JSP контейнером для каждого запроса клиента
+ с помощью передачи объекта запроса и ответа. Отметьте, что имя метода 
+начинается с нижнего подчеркивания и отличается от других методов 
+жизненного цикла тем, что его невозможно переопределить. Весь JSP код 
+проходит через этот метод и он переопределен по умолчанию. Этот метод 
+определен в HttpJspPage интерфейсе.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">jspDestroy()
+ - метод вызывается контейнером JSP для удаления объекта из памяти (на 
+последней фазе жизненного цикла JSP - Destroy). Метод вызывается только 
+один раз и мы можем его переопределить для очищения любых ресурсов, 
+которые были созданы в JSP init методе.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие методы жизненного цикла JSP могут быть переопределены?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Мы
+ можем переопределить jspInit() и jspDestroy() методы с помощью 
+использования скриптов JSP. Метод jspInit() переопределяется для 
+создания общих ресурсов, которые мы хотели бы использовать в методе 
+обслуживания JSP, а jspDestroy() метод переопределяется, чтобы 
+освободить общие ресурсы на фазе уничтожения.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как можно предотвратить прямой доступ к JSP странице из браузера?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Директория
+ WEB-INF не имеет прямого доступа из веб приложения. Поэтому мы можем 
+положить JSP страницы внутри этой папки и тем самым запретить доступ к 
+странице из браузера. Однако в этом случае необходимо настраивать 
+дескриптор развертывания наподобие сервлетов. Простая конфигурация 
+дескриптора web.xml показана ниже.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-IKuNgyeYWnU/V0HSQ1MbHWI/AAAAAAAAAuw/e2Ppzys5J-cINGcgOtS7TscWj9XQhoNMgCLcB/s1600/q058_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Servlet%20p3_files/q058_p01.jpg" border="0"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какая разница между динамическим и статическим содержимым JSP?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Динамические
+ ресурсы. Результаты их деятельности изменяются во время выполнения 
+приложения. Обычно представлены в виде выражений Expression Language, 
+библиотек тегов и тегов разработчика.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Статические ресурсы. Не изменяются сами в процессе работы (HTML, JavaScript, изображения и т. д.).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как закомментировать код в jsp?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JSP предоставляет две возможности закомментировать код:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HTML комментарии - &lt;-- HTML Comment --&gt; . Такие комментарии будут видны клиенту при просмотре кода страницы.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JSP
+ комментарии - &lt;%-- JSP Comment --%&gt;. Такие комментарии создаются в
+ созданном сервлете и не посылаются клиенту. Для любых комментариев по 
+коду или отладочной информации необходимо использовать этот тип 
+комментариев.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие основные теги в JSP?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В спецификации JSP 1.2 были объявлены только пять основных тегов:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&lt;%@ директива %&gt; - используется для установки параметров серверной страницы JSP;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&lt;%!
+ объявление %&gt; - (нежелателен в современном программировании) 
+содержит поля и методы, которые вызываются в expression-блоке и 
+становятся полями и методами генерируемого сервлета.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&lt;%
+ скриптлет %&gt; - (нежелателен) вживление java-кода в JSP-страницу. 
+Скриптлеты обычно используют маленькие блоки кода и выполняются во время
+ обработки запроса клиента.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&lt;%=
+ вычисляемое выражение %&gt; - (нежелателен) содержит операторы языка 
+Java, которые вычисляются, после чего результат вычисления преобразуется
+ в строку String и посылается в поток out;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&lt;%-- JSP-комментарий --%&gt; - комментарий, который не отображается в исходных кодах JSP-страницы после этапа выполнения.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие типы EL операторов вы знаете?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Стандартные операторы отношения:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">== (или eq), != (или ne), &lt; (или lt), &gt; (или gt), &lt;= (или le), &gt;= (или ge).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Арифметические операторы: +, -, *, / (или div), % (или mod).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Логические операторы: &amp;&amp; (или and), || (или or), ! (или not).</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Взаимодействие JSP - сервлет - JSP.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Такая
+ архитектура построения приложений носит название MVC 
+(Model/View/Controller). Model - классы бизнес-логики и длительного 
+хранения, View - страницы JSP, Controller - сервлет.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое сессия?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сессия
+ &nbsp;- это сеанс между клиентом и сервером, устанавливаемая на 
+определенное время, за которое клиент может отправить на сервер сколько 
+угодно запросов. Сеанс устанавливается непосредственно между клиентом и 
+веб-сервером в момент получения первого запроса к веб-приложению. Каждый
+ клиент устанавливает с сервером свой собственный сеанс, который 
+сохраняется до окончания работы с приложением.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/05/jsp-servlets-jstl-4.html">JSP, Servlets, JSTL (часть 4).</a></span></h3>
+</div>	
+
+</body></html>

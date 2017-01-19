@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>JMS p1</title>
+</head>
+<body>
+
+<h3 style="text-align: justify;">
+<ul>
+<li><b style="font-family: arial, helvetica, sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое JNDI?</span></b></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JNDI
+ - это API-интерфейс для доступа к службам каталогов, позволяющий 
+клиентам осуществлять привязку и поиск объектов по имени. JNDI 
+определяется в Java SE и не зависит от базовой реализации, то есть вы 
+можете выполнять поиск объектов в каталоге Lightweight Directory Access 
+Protocol (LDAP) или системе доменных имен (DNS), используя стандартный 
+API-интерфейс.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое JMS?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMS,
+ Java Message Service - это Java API (то есть набор интерфейсов и 
+классов) для работы с Message-Oriented Middleware, изначально 
+разработанная компанией Sun, чтобы предоставить разработчикам создавать 
+гибкие и слабосвязанные приложения с использованием асинхронного обмена 
+данными между приложениями (клиентами/серверами) через посредника. 
+Асинхронность - это главная причина создания и использования JMS.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Данный
+ набор определен в пакете javax.jms в дереве пакетов J2EE. JMS 
+поддерживает две модели обмена сообщениями: point-to-point(точка - 
+точка) и publish-subscribe(издатель-подписчик).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое MOM?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MOM,
+ Message-Oriented Middleware (промежуточное программное обеспечение) - 
+подпрограммное обеспечение промежуточного слоя, ориентированное на обмен
+ сообщениями в распределённом окружении. Прежде всего предназначено для 
+реализации отложенного обмена сообщениями, на основе которого и строится
+ Messaging System.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ отличие от традиционных систем, &nbsp;в Messaging System приложения 
+общаются не напрямую, а посредством MOM. Если один компонент системы 
+хочет послать сообщение другому компоненту, он посылает данное сообщение
+ MOM, а MOM затем пересылает его адресату.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Из каких компонентов состоит архитектура обмена сообщениями?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">На высоком уровне архитектура обмена сообщениями состоит из следующих компонентов.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Поставщик.
+ JMS - это только API, поэтому он нуждается в реализации способа обмена 
+сообщениями, то есть в поставщике (также известном как брокер 
+сообщений). Поставщик обрабатывает буферизацию и доставку сообщений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Клиенты.
+ Клиентом является любое приложение Java или компонент, который 
+производит или потребляет сообщение с помощью поставщика. "Клиент" - это
+ общий термин для производителя, отправителя, издателя, потребителя, 
+приемника и подписчика.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сообщения. Это объект, которые клиенты отправляют или получают от поставщика.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Администрируемые
+ объекты. Брокер сообщений должен предоставить клиенту администрируемые 
+объекты (фабрики подключений и места назначения) с помощью поиска JNDI 
+или внедрения (как вы увидите далее).</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие модели обмена сообщениями в JMS вы знаете? Опишите их.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует две "основных" модели обмена сообщениями:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Модель
+ Точка-Точка (Point-to-Point, P2P) - в этой модели место назначения, 
+используемое для хранения сообщений, называется очередью. Объект Queue. В
+ этой модели один клиент помещает сообщение в очередь, а другой получает
+ сообщение. Как только получение сообщения подтверждено, поставщик 
+сообщений удаляет его из очереди.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Модель
+ Подписчик-Издатель (Publisher-Subscriber) - место назначения называется
+ темой. Объект Topic. При использовании данной модели клиент публикует 
+сообщение в теме и все абоненты этой темы получают сообщение.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></h3>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Назовите основные интерфейсы JMX, для чего они предназначены.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Рассмотрим главные интерфейсы:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ConnectionFactory
+ - это обьект, ответственный за создание JMS Connection. Администратор 
+МОМ создает данный обьект и связывает его с деревом JNDI, так что клиент
+ JMS может получить доступ к ConnectionFactory используя стандартный 
+JNDI lookup-механизм. В параметре инициализации нужно передавать данные 
+вашего JMS сервера. В случае point-to-point модели используется 
+javax.jms.QueueConnectionFactory, в случае pub-sub модели - 
+javax.jms.TopicConnectionFactor</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Connection
+ - абстрактное представление реального соединения между клиентом JMS и 
+MOM. Создает объект Session. В случае point-to-point модели используется
+ javax.jms.QueueConnection, в случае pub-sub модели - 
+javax.jms.TopicConnection.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Session
+ - обьект, создаваемый JMS Connection и используемый клиентами для 
+посылки и принятия сообщений. В случае point-to-point используется 
+javax.jms.QueueSession, в случае pub-sub - javax.jms.TopicSession. 
+Фактически, это главная "рабочая лошадка" JMS.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Destination
+ - это либо queue, либо topic - в зависимости от используемой модели: 
+javax.jms.Queue или javax.jms.Topic. Как и ConnectionFactory, 
+destination связывается с деревом JNDI.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MessageProducer
+ - обьект, который, собственно, и посылает сообщения. В случае 
+point-to-point модели это javax.jms.QueueSender, в случае pub-sub - 
+javax.jms.TopicPublisher.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MessageConsumer
+ - обьект, принимающий сообщения. В случае point-to-point модели это 
+javax.jms.QueueReceiver, в случае pub-sub - javax.jms.TopicSubscriber.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Message - сообщение. О типах сообщений будет сказано ниже.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br><ul>
+<li>Как выглядит алгоритм создания программ, работающих с JMS?</li>
+</ul>
+</span></h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Весь алгоритм, можно просчитать по таблице интерфейсов. Выглядит он так:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Подключаемся к серверу, используя ConnectionFactory.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Получаем соединение Connection из ConnectionFactory.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создаем однопоточный контекст Session из соединения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Получаем буфер Destination привязанный к определенному адресу для создания интерфейсов отправки и получения сообщений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создание объектов MessageProducer для отправки или MessageConsumer для получения сообщений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Отдельно идет этап создания сообщения для отправки.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие стандартные типы сообщений определены JMX?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В JMX определены следующие стандартные типы сообщений:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">StreamMessage - это поток примитивных типов Java. Считывать можно со стандартных интерфейсов ввода/вывода.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MapMessage - содержит информацию на подобии коллекций в виде ключ-значение (String, Object).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">TextMessage - обычное текстовое сообщение содержащее строку</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ObjectMessage - для передачи Serializable-объектов.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ByteMessage - список не интерпретированных байт. С его помощью можно передавать файлы.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Кроме того, некоторые имплементации (например, OpenFusion и WebLogic) предоставляют еще один "почти стандартный" тип:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">XMLMessage - расширение TextMessage, используется для доставки XMLсообщений</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Все типы сообщений являются подклассами javax.jms.Message.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Из каких частей JMS сообщение?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Любое JMS сообщение имеет в себе 3 составные части:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Заголовок
+ (header). Набор свойств, поставляемый по умолчанию для любого 
+сообщения, содержит стандартную информацию для идентификации и 
+маршрутизации сообщений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Свойства
+ (properties). Пары «имя/значение», которые приложение может установить 
+или считать; свойства также позволяют месту назначения фильтровать 
+сообщения на основе их значений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Тело (body). фактически содержит сообщение и может иметь один из нескольких форматов (текст, байты, объект и т. д.)</span>.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие параметры может содержать заголовок сообщения?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Заголовок
+ сообщения содержит дополнительную информацию, которую разработчик может
+ использовать в своем приложении. JMS предоставляет get и set методы для
+ каждого поля заголовка. Некоторые из них устанавливаются автоматически,
+ другие могут быть использованы разработчиком приложения.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSDestination(тип String) - содержит имя destination, в который посылается сообщение.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSDeliveryMode
+ (тип int) - определяет, является ли сообщение сохраняемым или нет. 
+Может иметь только два значения: DeliveryMode.PERSISTENT и 
+DeliveryMode.NON_PERSISTENT. Персистентное сообщение доставляется "один 
+раз и только один раз"; не персистентное сообщение доставляется "не 
+более одного раза". "Не более одного раза" подразумевает возможность 
+отсутствия доставки.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSExpiration
+ (тип long) - определяет, когда сообщение устареет и будет удалено из 
+системы. 0 - означает что сообщение будет жить пока оно не будет 
+доставлено.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSPriority (тип int) - как и следует из названия, определяет приоритет сообщения (от 0 до 9). По умолчанию равно 4.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSMessageID (тип String) - уникальный идентификатор сообщения</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSTimestamp (тип long)- содержит информацию, когда именно MOM приняла сообщение от producer.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSCorrelationID
+ (тип String) - может быть использовано разработчиком для согласования 
+сообщений: например, если вы хотите переслать ряд сообщений, 
+обьединенных в одну логическую группу (такую как набор товаров в заказе,
+ при этом в каждое сообщение о товаре вы можете добавить в данное поле 
+заголовка номер заказа).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSReplyTo
+ (тип Destination) - может быть использовано разработчиком для того, 
+чтобы consumer знал, кому (то есть в какой destination) при желании 
+отсылать ответ.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSType
+ (тип String) - поле может быть использовано разработчиком для того, 
+чтобы дать приложению информацию, как обращаться с данным сообщением. 
+Тип здесь понимается как application-specific type, а не тот, что 
+использован выше в разделе "типы сообщений".</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMSRedelivered (тип Boolean) - означает, что сообщение было доставлено получателю, но он не подтвердил прием сообщения.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br><ul>
+<li>Какие модели подтверждения получения сообщения вы знаете?</li>
+</ul>
+</span></h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMS поддерживает три "основных" модели подтверждения получения сообщения.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AUTO_ACKNOWLEDGE
+ - в случае синхронного получения сообщений, подтверждение получения 
+будет произведено автоматически, когда метод receive() возвратит 
+значение не вызвав никакой исключительной ситуации. В случае 
+асинхронного получения сообщений, подтверждение получения будет 
+произведено, когда метод onMessage() вернет значение.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DUPS_OK_ACKNOWLEDGE
+ - работа по подтверждению получения сообщения перекладывается на 
+Session. Сообщения будут вновь доставлены в случае возникновения ошибки 
+или "гибели" системы.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">CLIENT_ACKNOWLEDGE
+ - клиент должен вызвать метод acknowledge() интерфейса 
+javax.jms.Message для того, чтобы явно подтвердить получение сообщения. 
+При вызове данного метода будет подтверждено получение текущего и всех 
+предадущих полученных сообщений.</span></li>
+</ul>
+</div>
+<link href="https://plus.google.com/105527202953364202368" rel="author">
+
+<p></p>
+	
+
+</body></html>

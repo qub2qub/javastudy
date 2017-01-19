@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>jdbc p1</title>
+</head>
+<body>
+
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Что такое JDBC?</span></li>
+</ul>
+</h3>
+
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">API JDBC (Java 
+DataBase Connectivity) - стандартный прикладной интерфейс языка Java для
+ организации взаимодействия между приложением и СУБД. Взаимодействие 
+осуществляется с помощью драйверов JDBC, обеспечиваю щих реализацию 
+общих интерфейсов для конкретных СУБД и конкретних протоколов. В JDBC 
+определяются четыре типа драйверов.</span><br>
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Этапы работы с базой данных с использованием JDBC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Этапы работы с базой данных с использованием JDBC:</span><br>
+<ol>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Подключение библиотеки с классом-драйвером базы данных.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Установка соединения с БД.<a name="more"></a></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Создание объекта для передачи запросов.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Выполнение запроса.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Обработка результатов выполнения запроса.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Закрытие соединения, statement</span></li>
+</ol>
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Как создать Connection?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Для установки 
+соединения с БД вызывается статический метод getConnection() класса 
+java.sql.DriverManager. В качестве параметров методу передаються URL 
+базы данных, логин пользователя БД и пароль доступа. Загрузка класса 
+драйвера базы данных при отсутствии ссылки на экземпляр этого класса в 
+JDBC 4.1 происходит автоматически при установке соединения екземпляром 
+DriverManager. Метод возвращает объект Connection. URL базы данных, 
+состоящий из типа и адреса физического расположения БД, может 
+создаваться в виде отдельной строки или извлекаться из файла ресурсов. 
+Соответственно:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-8lgYElPXZ8c/V1BRpV9dIzI/AAAAAAAAAy4/HGwyiCmZikYgOWiog8HZRmZV2m8khov5wCLcB/s1600/q003_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="jdbc%20p1_files/q003_p01.jpg" height="65" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">В результате 
+будет возвращен объект Connection и будет одно установленное соединение с
+ БД с именем testphones. Класс DriverManager предоставляет средства для 
+управления набором драйверов баз данных.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Чем отличается Statement от PreparedStatement?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Объект 
+Statement используется для выполнения SQL-запросов к БД. Существует три 
+типа объектов Statement. Все три служат как бы конейнерами для 
+выполнения SQL-выражений через данное соединение: Statement, 
+PreparedStatement, наследующий от Statement, и CallableStatement, 
+наследующий от PreparedStatement. Они специализируются на различных 
+типах запросов: Statement используется для выполнения простых 
+SQL-запросов без параметров; PreparedStatement используется для 
+выполнения прекомпилированных SQL-запросов с или без входных (IN) 
+параметров; CallableStatement используется для вызовов хранимых 
+процедур.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Интерфейс 
+Statement предоставляет базовые методы для выполнения запросов и 
+извлечения результатов. Интерфейс PreparedStatement добавляет методы 
+управления входными (IN) параметрами; CallableStatement добавляет методы
+ для манипуляции выходними (OUT) параметрами.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Интерфейс PreparedStatement наследует от Statement и отличается от последнего следующим:</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Экземпляры 
+PreparedStatement "помнят" скомпилированные SQL-выражения. Именно 
+поэтому они называются "prepared" ("подготовленные").</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">SQL-выражения в
+ PreparedStatement могут иметь один или более входной (IN) параметр. 
+Входной параметр - это параметр, чье значение не указывается при 
+создании SQL-выражения. Вместо него в выражении на месте каждого 
+входного параметра ставится знак ("?"). Значение каждого вопросительного
+ знака устанавливается методами setXXX перед выполнением запроса.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Как вызвать хранимую процедуру?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Хранимые 
+процедуры – это именованный набор операторов Transact-SQL хранящийся на 
+сервере. Такую процедуру можно легко вызвать из Java-класса с помощью 
+специального синтаксиса. При вызове такой процедуры необходимо указать 
+ее имя и определить список параметров. Имя и список параметров 
+посылаются по JDBC-соединению в СУБД, которая выполняет вызываемую 
+процедуру и возвращает результат (если таковой имеется) обратно, 
+используя это же соединение.</span><br>
+<span style="font-family: Arial, Helvetica, sans-serif;">JDBC Java-код для выполнения хранимой процедуры, использующий объект Statement без параметров.</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-xjvPBIPLdGA/V1BTElY1ZjI/AAAAAAAAAzE/i1QbBs4u1rYTrXK15bHgZ4ustpznzbjGQCLcB/s1600/q005_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="jdbc%20p1_files/q005_p01.jpg" height="240" border="0" width="640"></span></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Как правильно закрыть Connection?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-ztzFnRlbAF4/V1BYHhOR0aI/AAAAAAAAAzU/K0HheYxbxQkd07iduBpi_-_mmWRRuu3pwCLcB/s1600/q006_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="jdbc%20p1_files/q006_p01.jpg" border="0"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">После того, как
+ база больше не нужна, соединение закрывается. Для того, чтобы правильно
+ пользоваться приведенными методами, программисту требуется знать типы 
+полей БД. В распределенных системах это знание предполагается 
+изначально. В Java 7 для объектов-ресурсов, требующих закрытия, 
+реализована технология try with resources.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Какие есть уровни изоляции транзакций?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Уровни изоляции транзакций определены в виде констант интерфейса</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Connection (по возрастанию уровня ограничения):</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">TRANSACTION_NONE - информирует о том, что драйвер не поддерживает транзакции;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">TRANSACTION_READ_UNCOMMITTED
+ - позволяет транзакциям видеть несохраненные изменения данных, что 
+разрешает грязное, неповторяющееся и фантомное чтения;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">TRANSACTION_READ_COMMITTED
+ - означает, что любое изменение, сделанное в транзакции, не видно вне 
+ее, пока она не сохранена. Это предотвращает грязное чтение, но 
+разрешает неповторяющееся и фантомное;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">TRANSACTION_REPEATABLE_READ - запрещает грязное и неповторяющееся чтение, но фантомное разрешено;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">TRANSACTION_SERIALIZABLE - определяет, что грязное, неповторяющееся и фантомное чтения запрещены.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Какие есть типов чтения транзакций?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Для транзакций существует несколько типов чтения:</span><br>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">грязное 
+чтение (dirty reads) происходит, когда транзакциям разрешено видеть 
+несохраненные изменения данных. Иными словами, изменения, сделанные в 
+одной транзакции, видны вне ее до того, как она была сохранена. Если 
+изменения не будут сохранены, то, вероятно, другие транзакции выполняли 
+работу на основе некорректных данных;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">неповторяющееся
+ чтение (nonrepeatable reads) происходит, когда транзакция А читает 
+строку, транзакция Б изменяет эту строку, транзакция А читает ту же 
+строку и получает обновленные данные;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">фантомное 
+чтение (phantom reads) происходит, когда транзакция А считывает все 
+строки, удовлетворяющие WHERE-условию, транзакция Б вставляет новую или 
+удаляет одну из строк, которая удовлетворяет этому условию, транзакция А
+ еще раз считывает все строки, удовлетворяющие WHERE-условию, уже вместе
+ с новой строкой или недосчитавшись старой.</span></li>
+</ul>
+</div>
+
+</body></html>

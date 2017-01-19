@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Multithreading p2</title>
+</head>
+<body>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое ThreadLocal переменная?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ThreadLocal
+ переменные - специальный вид переменных, доступных Java программисту. 
+Так же, как для состояний есть переменная состояния, для нитей есть 
+ThreadLocal переменные. Это неплохой способ достичь ните-безопасности 
+для затратных-для-создания объектов, например вы можете сделать 
+SimpleDateFormat ните-безопасным, используя ThreadLocal. Так как это 
+затратный класс, его нежелательно использовать в локальной области, 
+которая требует отдельных экземпляров на каждый вызов. Предоставляя 
+каждой нити её собственную копию, вы убиваете двух зайцев. Во-первых, вы
+ уменьшаете количество экземпляров затратных объектов, используя по 
+новой фиксированное количество экземпляров, и во-вторых, вы достигаете 
+ните-безопасности, без потерь синхронизации и неизменяемости. Ещё один 
+хороший пример локальной переменной у нити - класс ThreadLocalRandom, 
+который уменьшает количество экземпляров затратных-для-создания объектов
+ Random в много-нитиевой среде.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<a name="more"></a></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое FutureTask?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">FutureTask
+ представляет собой отменяемое асинхронное вычисление в параллельном 
+Java приложении. Этот класс предоставляет базовую реализацию Future, с 
+методами для запуска и остановки вычисления, методами для запроса 
+состояния вычисления и извлечения результатов. Результат может быть 
+получен только когда вычисление завершено, метод получения будет 
+заблокирован, если вычисление ещё не завершено. Объекты FutureTask могут
+ быть использованы для обёртки объектов Callable и Runnable. Так как 
+FutureTask реализует Runnable, его можно передать Executor’у на 
+выполнение.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Различие между interrupted и isInterrupted?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основное
+ различие между interrupted() и isInterrupted() в том, что первый 
+сбрасывает статус прерывания, а второй нет. Механизм прерывания в Java 
+реализован с использованием внутреннего флага, известного как статус 
+прерывания. Прерывание нити вызовом Thread.interrupt() устанавливает 
+этот флаг. Когда прерванная нить проверяет статус прерывания, вызывая 
+статический метод Thread.interrupted(), статус прерывания сбрасывается. 
+Нестатический метод isInterrupted(), который используется нитью для 
+проверки статуса прерывания у другой нити, не изменяет флаг прерывания. 
+Условно, любой метод, который завершается, выкинув InterruptedException 
+сбрасывает при этом флаг прерывания. Однако, всегда существует 
+возможность того, что флаг тут же снова установится, если другая нить 
+вызовет interrupt().</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Почему методы wait и notify вызываются в синхронизированном блоке?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основная
+ причина вызова wait и notify из статического блока или метода в том, 
+что Java API обязательно требует этого. Если вы вызовете их не из 
+синхронизированного блока, ваш код выбросит 
+IllegalMonitorStateException. Более хитрая причина в том, чтобы избежать
+ состояния гонки между вызовами wait и notify.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое пул нитей?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создание
+ нити затратно в плане времени и ресурсов. Если вы создаёте нить во 
+время обработки запроса, это замедлит время отклика, также процесс может
+ создать только ограниченное число нитей. Чтобы избежать этих проблем, 
+во время запуска приложения создаётся пул нитей и нити повторно 
+используются для обработки запросов. Этот пул нитей называется "thread 
+pool", а нити в нём – рабочая нить. Начиная с Java 1.5 Java API 
+предоставляет фреймворк Executor, который позволяет вам создавать 
+различные пулы нитей, например single thread pool, который обрабатывает 
+только одно задание за единицу времени, fixed thread pool, пул с 
+фиксированным количеством нитей, и cached thread pool, расширяемый пул, 
+подходящий для приложений с множеством недолгих заданий.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Различия между livelock и deadlock?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Livelock
+ схож с deadlock, только в livelock состояния нитей или вовлечённых 
+процессов постоянно изменяются в зависимости друг от друга. Livelock - 
+особый случай нехватки ресурсов. Реальный пример livelock'а - когда два 
+человека встречаются в узком коридоре и каждый, пытаясь быть вежливым, 
+отходит в сторону, и так они бесконечно двигаются из стороны в сторону.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как проверить, удерживает ли нить lock?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Я
+ и не подозревал, что можно проверять, удерживает ли нить lock в данный 
+момент, до тех пор, пока не столкнулся с этим вопросом в одном 
+телефонном интервью. В java.lang.Thread есть метод holdsLock(), он 
+возвращает true, тогда и только тогда, когда текущая нить удерживает 
+монитор у определённого объекта.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как получить дамп нити?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Дамп
+ нити позволяет узнать, чем нить занимается в данный момент. Существует 
+несколько способов получения дампа нити, зависящих от операционной 
+системы. В Windows вы можете использовать комбинацию ctrl + Break, в 
+Linux - команду kill -3. Также вы можете воспользоваться утилитой 
+jstack, она оперирует над id процесса, который вы можете узнать с 
+помощью другой утилиты jps.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой JVM параметр используется для контроля размера стека нити?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Это один из простых, -Xss параметер используется для контроля размера стека нити в Java.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Различия между synchronized и ReentrantLock?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Были
+ времена, когда единственный способ достижения взаимного исключения был 
+через ключевое слово synchronized, но он имеет несколько недостатков, 
+например нельзя расширить lock за пределами метода или блока кода и т.д.
+ Java 5 решает эту проблему, предоставляя более утончённый контроль 
+через интерфейс Lock. ReentrantLock – распространённая реализация Lock, 
+которая предоставляет Lock с таким же базовым поведением и семантикой, 
+как у неявного монитора, достигаемый использованием синхронизированных 
+методов, но с расширенными возможностями.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Semaphore?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Semaphore
+ - это новый тип синхронизатора. Это семафор со счётчиком. 
+Концептуально, семафор управляет набором разрешений. Каждый acquire() 
+блокируется, если необходимо, до того, как разрешение доступно, затем 
+получает его. Каждый release() добавляет разрешение, потенциально 
+освобождая блокирующий получатель (acquirer). Однако при этом не 
+используются фактические объекты разрешений; Semaphore просто хранит 
+количество доступных и действует соответственно. Semaphore используется 
+для защиты дорогих ресурсов, которые доступны в ограниченном количестве,
+ например подключение к базе данных в пуле.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что будет, если очередь пула нитей уже заполнена, а вы подадите задачу?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ очередь пула нитей заполнилась, то поданная задача будет "отклонена". 
+Метод submit() у ThreadPoolExecutor'а выкидывает 
+RejectedExecutionException, после чего вызывается 
+RejectedExecutionHandler.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Различия между методами submit() и execute() у пула нитей?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Оба
+ метода являются способами подачи задачи в пул нитей, но между ними есть
+ небольшая разница. Execute(Runnable command) определён в интерфейсе 
+Executor и выполняет поданную задачу в будущем, но, что более важно, 
+ничего не возвращает. С другой стороны submit() – перегруженный метод, 
+он может принимать задачи типов Runnable и Callable и может возвращать 
+объект Future, который можно использовать для отмены выполнения и/или 
+ожидания результата вычислений. Этот метод определён в интерфейсе 
+ExecutorService, который наследуется от интерфейса Executor, и каждый 
+класс пула нитей, например ThreadPoolExecutor или 
+ScheduledThreadPoolExecutor, наследует эти методы.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое блокирующий метод?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Блокирующий
+ метод - метод, который блокируется, до тех пор, пока не выполнится 
+задание, например метод accept() у ServerSocket блокируется в ожидании 
+подключения клиента. Здесь блокирование означает, что контроль не 
+вернётся к вызывающему методу до тех пор, пока не выполнится задание. С 
+другой стороны, существуют асинхронные или не блокирующиеся методы, 
+которые завершаются до выполнения задачи.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое ReadWriteLock?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ целом, ReadWriteLock - это результат техники разбора lock'а для 
+улучшения производительности параллельных приложений. Это интерфейс, 
+который был добавлен в Java 5. Он оперирует парой связанных lock’ов, 
+один для операций чтения, один для записи. Читающий lock может 
+удерживаться одновременно несколькими читающими нитями, до тех пор пока 
+не будет записывающих. Записывающий lock эксклюзивен. Если хотите, вы 
+можете реализовать интерфейс с вашим набором правил, или вы можете 
+использовать ReentrantReadWriteLock, который поддерживает максимум 65535
+ рекурсивных записывающих lock'ов и 65535 читающих lock'ов.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое double checked locking Синглтона?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Это
+ старый способ создания ните-безопасного синглтона, который пытается 
+оптимизировать производительность, блокируясь только когда экземпляр 
+синглтона создаётся впервые.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое фреймворк Fork/Join?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Фреймворк
+ Fork/Join, представленный в JDK 7, - это мощная утилита, позволяющая 
+разработчику пользоваться преимуществами нескольких процессоров у 
+современных серверов. Он разработан для работы, которую можно рекурсивно
+ разбить на маленькие частицы. Цель - использовать всю доступную 
+вычислительную мощь, для увеличения производительности вашего 
+приложения. Одного значительное преимущество этого фреймворка в том, что
+ он использует work-stealing алгоритм (от work - работа и steal - 
+красть). Рабочие нити, у которых закончились свои задания, могут 
+"своровать" задания у других нитей, которые всё ещё заняты.</span></div>
+
+</body></html>
