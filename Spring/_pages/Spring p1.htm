@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+</head>
+
+<body>
+<h3>
+<ul style="text-align: left;">
+<li><b style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; font-size: small;">Объясните суть паттерна DI или IoC.</span></b></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Dependency
+ injection (DI) - паттерн проектирования и архитектурная модель, так же 
+известная как Inversion of Control (IoC). DI описывает ситуацию, когда 
+один объект реализует свой функционал через другой объект. Например, 
+соединение с базой данных передается конструктору объекта через 
+аргумент, вместо того чтобы конструктор сам устанавливал соединение. 
+Существуют три формы внедрения (но не типа) зависимостей: сэттер, 
+конструктор и внедрение путем интерфейса.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DI
+ - это способ достижения слабой связанности. IoC предоставляет 
+возможность объекту получать ссылки на свои зависимости. Обычно это 
+реализуется через lookup-метод. Преимущество IoC в том, что эта модель 
+позволяет отделить объекты от реализации механизмов, которые он 
+использует. В результате мы получаем большую гибкость как при разработке
+ приложений, так и при их тестировании.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие преимущества применения Dependency Injection (DI)?<a name="more"></a></span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">К преимуществам DI можно отнести:</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Сокращение
+ объема связующего кода. Одним из самых больших плюсов DI является 
+возможность значительного сокращения объема кода, который должен быть 
+написан для связывания вместе различных компонентов приложения. Зачастую
+ этот код очень прост - при создании зависимости должен создаваться 
+новый экземпляр соответствующего объекта.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Упрощенная
+ конфигурация приложения. За счет применения DI процесс конфигурирования
+ приложения значительно упрощается. Для конфигурирования классов, 
+которые могут быть внедрены в другие классы, можно использовать 
+аннотации или XML-файлы.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Возможность
+ управления общими зависимостями в единственном репозитории. При 
+традиционном подходе к управлению зависимостями в общих службах, к 
+которым относятся, например, подключение к источнику данных, транзакция,
+ удаленные службы и т.п., вы создаете экземпляры (или получаете их из 
+определенных фабричных классов) зависимостей там, где они нужны - внутри
+ зависимого класса. Это приводит к распространению зависимостей по 
+множеству классов в приложении, что может затруднить их изменение. В 
+случае использования DI вся информация об общих зависимостях содержится в
+ единственном репозитории (в Spring есть возможность хранить эту 
+информацию в XML-файлах или Java классах).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Улучшенная
+ возможность тестирования. Когда классы проектируются для DI, становится
+ возможной простая замена зависимостей. Это особенно полезно при 
+тестировании приложения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Стимулирование
+ качественных проектных решений для приложений. Вообще говоря, 
+проектирование для DI означает проектирование с использованием 
+интерфейсов. Используя Spring, вы получаете в свое распоряжение целый 
+ряд средств DI и можете сосредоточиться на построении логики приложения,
+ а не на поддерживающей DI платформе</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<ul></ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие IoC контейнеры вы знаете?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring является IoC контейнером. Помимо него существуют HiveMind, Avalon, PicoContainer и т.д.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как реализуется DI в Spring Framework?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Реализация
+ DI в Spring основана на двух ключевых концепциях Java - компонентах 
+JavaBean и интерфейсах. При использовании Spring в качестве поставщика 
+DI вы получаете гибкость определения конфигурации зависимостей внутри 
+своих приложений разнообразными путями (т.е. внешне в XML-файлах, с 
+помощью конфигурационных Java классов Spring или посредством аннотаций 
+Java в коде). Компоненты JavaBean (также называемые POJO (Plain Old Java
+ Object — простой старый объект Java)) предоставляют стандартный 
+механизм для создания ресурсов Java, которые являются конфигурируемыми 
+множеством способов. За счет применения DI объем кода, который необходим
+ при проектировании приложения на основе интерфейсов, снижается почти до
+ нуля. Кроме того, с помощью интерфейсов можно получить максимальную 
+отдачу от DI, потому что бины могут использовать любую реализацию 
+интерфейса для удовлетворения их зависимости.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие существуют виды DI? Приведите примеры.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует два типа DI: через сэттер и через конструктор.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Через сэттер: обычно во всех java beans используются гэттеры и сэттеры для их свойств:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-HgckIIT12tA/VtC53jHB2rI/AAAAAAAAAPU/xC8jbFR_G4Q/s1600/NameBean.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/NameBean.jpg" height="195" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Мы создаем экземпляр бина NameBean (например, bean1) и устанавливаем нужное свойство, например:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-YHBer8a_k5Y/VtC6IsoELGI/AAAAAAAAAPY/KD15P9S1vZU/s1600/bean.setName.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/bean_002.jpg" height="39" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Используя Spring реализация была бы такой:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-7bG6ps5cDD0/VtC6f4BDTtI/AAAAAAAAAPc/TY8FBkMXEbQ/s1600/NameBean_prop.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/NameBean_prop.jpg" height="118" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Это и называет DI через сэттер. Пример внедрения зависимости между объектами:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-FZh64uKnwvA/VtC62T8uk_I/AAAAAAAAAPk/0fvyaRTXqak/s1600/NameBean_setter.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/NameBean_setter.jpg" height="134" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Через конструктор: используется конструктор с параметрами. Например:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-YjmaGbNqIb0/VtC7arng_tI/AAAAAAAAAPw/8vYaBO6e_9s/s1600/NameBean_constructor.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/NameBean_constructor.jpg" height="133" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Теперь мы внедряем объект на этапе создания экземпляра класса, т.е.</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-lLKbT0QGpDU/VtC7qPQwuLI/AAAAAAAAAP4/MvgdA2Arcso/s1600/bean.setCon.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/bean.jpg" height="35" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Используя Spring это выглядело бы так:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-1A6OFQtwWq0/VtC8J_zlFoI/AAAAAAAAAQA/WkNoiA2rLQs/s1600/NameBean_propperty_construtor.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/NameBean_propperty_construtor.jpg" height="116" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+</div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Spring? Из каких частей состоит Spring Framework?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ - фреймворк с открытым исходным кодом, предназначеный для упрощения 
+разработки enterprise-приложений. Одним из главным преимуществом Spring 
+является его слоистая архитектура, позволяющая вам самим определять 
+какие компоненты будут использованы в вашем приложении. Модули Spring 
+построены на базе основного контейнера, который определяет создание, 
+конфигурация и менеджмент бинов.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основные модули:</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основной
+ контейнер - предоставляет основной функционал Spring. Главным 
+компонентом контейнера является BeanFactory - реализация паттерна 
+Фабрика. BeanFactory позволяет разделить конфигурацию приложения и 
+информацию о зависимостях от кода.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ context - конфигурационный файл, который предоставляет информация об 
+окружающей среде для Spring. Сюда входят такие enterprise-сервисы, как 
+JNDI, EJB, интернационализация, валиадция и т.п.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ AOP - отвечает за интеграцию аспектно-ориентированного программирования
+ во фреймворк. Spring AOP обеспечивает сервис управления транзакциями 
+для Spring-приложения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ DAO - абстрактный уровень Spring JDBC DAO предоставляет иерархию 
+исключений и множество сообщений об ошибках для разных БД. Эта иерархия 
+упрощает обработку исключений и значительно уменьшает количество кода, 
+которое вам нужно было бы написать для таких операций, как, например, 
+открытие и закрытие соединения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring ORM - отвечает за интеграцию Spring и таких популярных ORM-фреймворков, как Hibernate, iBatis и JDO.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring Web module - классы, которые помогают упростить разработку Web (авторизация, доступ к бинам Spring-а из web).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring MVC framework - реализация паттерна MVC для построения Web-приложений.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<ul></ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Назовите некоторые из шаблонов проектирования, используемых в Spring Framework?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring Framework использует множество шаблонов проектирования, например:</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Singleton Pattern: Creating beans with default scope.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Factory Pattern: Bean Factory classes</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Prototype Pattern: Bean scopes</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Adapter Pattern: Spring Web and Spring MVC</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Proxy Pattern: Spring Aspect Oriented Programming support</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Template Method Pattern: JdbcTemplate, HibernateTemplate etc</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Front Controller: Spring MVC DispatcherServlet</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Data Access Object: Spring DAO support</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Dependency Injection and Aspect Oriented Programming</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<ul></ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы некоторые из важных особенностей и преимуществ Spring Framework?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ Framework обеспечивает решения многих задач, с которыми сталкиваются 
+Java-разработчики и организации, которые хотят создать информационную 
+систему, основанную на платформе Java. Из-за широкой функциональности 
+трудно определить наиболее значимые структурные элементы, из которых он 
+состоит. Spring Framework не всецело связан с платформой Java 
+Enterprise, несмотря на его масштабную интеграцию с ней, что является 
+важной причиной его популярности.</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Относительная легкость в изучении и применении фреймворка в разработке и поддержке приложения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Внедрение
+ зависимостей (DI) и инверсия управления (IoC) позволяют писать 
+независимые друг от друга компоненты, что дает преимущества в командной 
+разработке, переносимости модулей и т.д..</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring IoC контейнер управляет жизненным циклом Spring Bean и настраивается наподобие JNDI &nbsp;lookup (поиска).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Проект
+ Spring содержит в себе множество подпроектов, которые затрагивают 
+важные части создания софта, такие как вебсервисы, веб программирование,
+ работа с базами данных, загрузка файлов, обработка ошибок и многое 
+другое. Всё это настраивается в едином формате и упрощает поддержку 
+приложения.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<ul></ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы преимущества использования Spring Tool Suite?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ упрощения процесса разработки основанных на Spring приложений в Eclipse
+ (наиболее часто используемая IDE-среда для разработки Java-приложений),
+ в рамках Spring создан проект Spring IDE. Проект бесплатный. Он 
+интегрирован в Eclipse IDE, Spring IDE, Mylyn (среда разработки в 
+Eclipse, основанная на задачах), Maven for Eclipse, AspectJ Development 
+Tool.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое AOP? Как это относиться к IoC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аспектно-ориентированное
+ программирование (АОП) - парадигма программирования, основанная на идее
+ разделения функциональности для улучшения разбиения программы на 
+модули. AOP и Spring - взаимодополняющие технологии, которые позволяют 
+решать сложные проблемы путем разделения функционала на отдельные 
+модули. АОП предоставляет возможность реализации сквозной логики - т.е. 
+логики, которая применяется к множеству частей приложения - в одном 
+месте и обеспечения автоматического применения этой логики по всему 
+приложению. Подход Spring к АОП заключается в создании "динамических 
+прокси" для целевых объектов и "привязывании" объектов к 
+конфигурированному совету для выполнения сквозной логики.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Aspect, Advice, Pointcut, JointPoint и Advice Arguments в АОП?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основные понятия АОП:</span></div>
+<div style="text-align: justify;">
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аспект
+ (англ. aspect) - модуль или класс, реализующий сквозную 
+функциональность. Аспект изменяет поведение остального кода, применяя 
+совет в точках соединения, определённых некоторым срезом.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Совет
+ (англ. advice) - фрагмент кода, который должен выполняться в отдельной 
+точке соединения. Существует несколько типов советов, совет может быть 
+выполнен до, после или вместо точки соединения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Точка
+ соединения (англ. joinpoint) - это четко определенная точка в 
+выполняемой программе, где следует применить совет. Типовые примеры 
+точек соединения включают обращение к методу, собственно Method 
+Invocation, инициализацию класса и создание экземпляра объекта. Многие 
+реализации АОП позволяют использовать вызовы методов и обращения к полям
+ объекта в качестве точек соединения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Срез
+ (англ. pointcut) - набор точек соединения. Срез определяет, подходит ли
+ данная точка соединения к данному совету. Самые удобные реализации АОП 
+используют для определения срезов синтаксис основного языка (например, в
+ AspectJ применяются Java-сигнатуры) и позволяют их повторное 
+использование с помощью переименования и комбинирования.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Связывание(англ.
+ weaving) представляет собой процесс действительной вставки аспектов в 
+определенную точку кода приложения. Для решений АОП времени компиляции 
+это делается на этапе компиляции, обычно в виде дополнительного шага 
+процесса сборки. Аналогично, для решений АОП времени выполнения 
+связывание происходит динамически во время выполнения. В AspectJ 
+поддерживается еще один механизм связывания под названием связывание во 
+время загрузки (load-time weaving - LTW), который перехватывает лежащий в
+ основе загрузчик классов JVM и обеспечивает связывание с байт-кодом, 
+когда он загружается загрузчиком классов.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Цель(англ.
+ target) - это объект, поток выполнения которого изменяется каким-то 
+процессом АОП. На целевой объект часто ссылаются как на объект, 
+снабженный советом.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Внедрение
+ (англ. introduction, введение) - представляет собой процесс, 
+посредством которого можно изменить структуру объекта за счет введения в
+ него дополнительных методов или полей, изменение иерархии наследования 
+для добавления функциональности аспекта в инородный код. Обычно 
+реализуется с помощью некоторого метаобъектного протокола (англ. 
+metaobject protocol, MOP).</span></li>
+</ul>
+</div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>В чем разница между Spring AOP и AspectJ АОП?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AspectJ де-факто является стандартом реализации АОП. Реализация АОП от Spring имеет некоторые отличия:</span></div>
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring AOP немного проще, т.к. нет необходимости следить за процессом связывания.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring AOP поддерживает аннотации AspectJ, таким образом мы можем работать в спринг проекте похожим образом с AspectJ проектом.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ AOP поддерживает только proxy-based АОП и может использовать только 
+один тип точек соединения - Method Invocation. AspectJ поддерживает все 
+виды точек соединения.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Недостатком Spring AOP является работа только со своими бинами, которые существуют в Spring Context.</span></li>
+</ul>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое IoC контейнер Spring?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">По
+ своей сути IoC, а, следовательно, и DI, направлены на то, чтобы 
+предложить простой механизм для предоставления зависимостей компонента 
+(часто называемых коллабораторами объекта) и управления этими 
+зависимостями на протяжении всего их жизненного цикла. Компонент, 
+который требует определенных зависимостей, зачастую называют зависимым 
+объектом или, в случае IoC, целевым объектом. IoC предоставляет службы, 
+через которые компоненты могут получать доступ к своим зависимостям, и 
+службы для взаимодействия с зависимостями в течение их времени жизни. В 
+общем случае IoC может быть расщеплена на два подтипа: инверсия 
+управления (Dependency Injection) и инверсия поиска (Dependency Lookup).
+ Инверсия управления — это крупная часть того, делает Spring, и ядро 
+реализации Spring основано на инверсии управления, хотя также 
+предоставляются и средства Dependency Lookup. Когда платформа Spring 
+предоставляет коллабораторы зависимому объекту автоматически, она делает
+ это с использованием инверсии управления (Dependency Injection). В 
+приложении, основанном на Spring, всегда предпочтительнее применять 
+Dependency Injection для передачи коллабораторов зависимым объектам 
+вместо того, чтобы заставлять зависимые объекты получать коллабораторы 
+через поиск.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Что такое Spring бин?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Термин
+ бин (англ. Bean) - в Spring используется для ссылки на любой компонент,
+ управляемый контейнером. Обычно бины на определенном уровне 
+придерживаются спецификации JavaBean, но это не обязательно особенно 
+если для связывания бинов друг с другом планируется применять 
+Constructor Injection. Для получения экземпляра бина используется 
+ApplicationContext. IoC контейнер управляет жизненным циклом спринг 
+бина, областью видимости и внедрением.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul></ul>
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какое значение имеет конфигурационный файл Spring Bean?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Конфигурационный
+ файл спринг определяет все бины, которые будут инициализированы в 
+Spring Context. При создании экземпляра Spring ApplicationContext будет 
+прочитан конфигурационный xml файл и выполнены указанные в нем 
+необходимые инициализации. Отдельно от базовой конфигурации, в файле 
+могут содержаться описание перехватчиков (interceptors), view resolvers,
+ настройки локализации и др...</span></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></span> </div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Каковы различные способы настроить класс как Spring Bean?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует несколько способов работы с классами в Spring:</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">XML конфигурация:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-9QKiM6S6J1s/VtC8sdwMTgI/AAAAAAAAAQI/svtjgkW755g/s1600/MyBean_bean.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/MyBean_bean.jpg" height="32" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Java based конфигурация. Все настройки и указания бинов прописываются в java коде:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-8W39s9TmHaQ/VtC9IFDmR-I/AAAAAAAAAQQ/c2sjDlTR1aI/s1600/MyConfiguration.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/MyConfiguration.jpg" height="230" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для извлечения бина из контекста используется следующий подход:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-KIde9_Crj3U/VtC9huA0edI/AAAAAAAAAQY/bc5bgNiTZfE/s1600/Annotation_config.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/Annotation_config.jpg" height="39" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Annotation
+ based конфигурация. Можно использовать внутри кода аннотации 
+@Component, @Service, @Repository, @Controller для указания классов в 
+качестве спринг бинов. Для их поиска и управления контейнером 
+прописывается настройка в xml файле:</span></span></div>
+<div style="text-align: justify;">
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span></div>
+<div style="text-align: justify;">
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></span> </div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-MFdkLTluLRM/VtMZiFMrSGI/AAAAAAAAAUo/ykODqnPxW48/s1600/component-scan.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p1_files/component-scan.jpg" height="32" border="0" width="640"></a></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие вы знаете различные scope у Spring Bean?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В Spring предусмотрены различные области времени действия бинов:</span></div>
+<ul style="text-align: justify;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">singleton <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">-</span>
+ может быть создан только один экземпляр бина. Этот тип используется 
+спрингом по умолчанию, если не указано другое. Следует осторожно 
+использовать публичные свойства класса, т.к. они не будут 
+потокобезопасными.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">prototype <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">-</span> создается новый экземпляр при каждом запросе.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">request <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">-</span>&nbsp;
+ аналогичен prototype, но название служит пояснением к использованию 
+бина в веб приложении. Создается новый экземпляр при каждом HTTP 
+request.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">session <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">-</span> новый бин создается в контейнере при каждой новой HTTP сессии.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">global-session: используется для создания глобальных бинов на уровне сессии для Portlet &nbsp;приложений.</span></li>
+</ul>
+<span style="font-family: arial, helvetica, sans-serif;"><br></span><h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/03/spring-framework-2.html">
+Spring Framework (часть 2).
+</a></span></h3>
+
+</body></html>

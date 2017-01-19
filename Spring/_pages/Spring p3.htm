@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+</head><body><h3>
+
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Что такое контроллер в Spring MVC?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ключевым
+ интерфейсом в Spring MVC является Controller. Контроллер обрабатывает 
+запросы к действиям, осуществляемые пользователями в пользовательском 
+интерфейсе, взаимодействуя с уровнем обслуживания, обновляя модель и 
+направляя пользователей на соответствующие представления в зависимости 
+от результатов выполнения. Controller - управление, связь между моделью и
+ видом.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-VTA7EvauZkk/VtE4Z7VNmxI/AAAAAAAAATU/jdzVVoKhghA/s1600/SpringMVCController.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/SpringMVCController.jpg" height="283" border="0" width="400"></a></div>
+<a name="more"></a><div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Основным
+ контроллером в Spring MVC является 
+org.springframework.web.servlet.DispatcherServlet. Задается аннотацией 
+@Controller и часто используется с аннотацией @RequestMapping, которая 
+указывает какие запросы будут обрабатываться этим контроллером.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></div>
+<div style="text-align: justify;">
+<h3>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какая разница между аннотациями @Component, @Repository и @Service в Spring?</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Component
+ - используется для указания класса в качестве компонента spring. При 
+использовании поиска аннотаций, такой класс будет сконфигурирован как 
+spring bean.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Controller
+ - специальный тип класса, применяемый в MVC приложениях. Обрабатывает 
+запросы и часто используется с аннотацией @RequestMapping.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Repository
+ - указывает, что класс используется для работы с поиском, получением и 
+хранением данных. Аннотация может использоваться для реализации шаблона 
+DAO.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Service
+ - указывает, что класс является сервисом для реализации бизнес логики 
+(на самом деле не отличается от Component, но просто помогает 
+разработчику указать смысловую нагрузку класса).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ указания контейнеру на класс-бин можно использовать любую из этих 
+аннотаций. Но различные имена позволяют различать назначение того или 
+иного класса.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></div>
+<div style="text-align: justify;">
+<h3>
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите, что вы знаете о DispatcherServlet и ContextLoaderListener.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DispatcherServlet
+ - сервлет диспатчер. Этот сервлет анализирует запросы и направляет их 
+соответствующему контроллеру для обработки. В Spring MVC класс 
+DispatcherServlet является центральным сервлетом, который получает 
+запросы и направляет их соответствующим контроллерам. В приложении 
+Spring MVC может существовать произвольное количество экземпляров 
+DispatcherServlet, предназначенных для разных целей (например, для 
+обработки запросов пользовательского интерфейса, запросов веб-служб REST
+ и т.д.). Каждый экземпляр DispatcherServlet имеет собственную 
+конфигурацию WebApplicationContext, которая определяет характеристики 
+уровня сервлета, такие как контроллеры, поддерживающие сервлет, 
+отображение обработчиков, распознавание представлений, 
+интернационализация, оформление темами, проверка достоверности, 
+преобразование типов и форматирование и т.п.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ContextLoaderListener
+ - слушатель при старте и завершении корневого класса Spring 
+WebApplicationContext. Основным назначением является связывание 
+жизненного цикла ApplicationContext и ServletContext, а так же 
+автоматического создания ApplicationContext. Можно использовать этот 
+класс для доступа к бинам из различных контекстов спринг. Настраивается в
+ web.xml:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-SmwaaOGXb20/VtE43pW35uI/AAAAAAAAATY/R4DikZgnz3Y/s1600/ContextLoaderListener_.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/ContextLoaderListener_.jpg" height="114" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое ViewResolver в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ViewResolver
+ - распознаватель представлений. Интерфейс ViewResolver в Spring MVC (из
+ пакета org.springframework.web.servlet) поддерживает распознавание 
+представлений на основе логического имени, возвращаемого контроллером. 
+Для поддержки различных механизмов распознавания представлений 
+предусмотрено множество классов реализации. Например, класс 
+UrlBasedViewResolver поддерживает прямое преобразование логических имен в
+ URL. Класс ContentNegotiatingViewResolver поддерживает динамическое 
+распознавание представлений в зависимости от типа медиа, поддерживаемого
+ клиентом (XML, PDF, JSON и т.д.). Существует также несколько реализаций
+ для интеграции с различными технологиями представлений, такими как 
+FreeMarker (FreeMarkerViewResolver), Velocity (VelocityViewResolver) и 
+JasperReports (JasperReportsViewResolver).</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">&nbsp;</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-3PtDJM-RKQ4/VtE5UhucMdI/AAAAAAAAATg/_iZoxaRbe2g/s1600/InternalResourceViewResolver.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/InternalResourceViewResolver.jpg" height="101" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">InternalResourceViewResolver
+ - реализация ViewResolver, которая позволяет находить представления, 
+которые возвращает контроллер для последующего перехода к нему. Ищет по 
+заданному пути, префиксу, суффиксу и имени.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое MultipartResolver и когда его использовать?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Интерфейс
+ MultipartResolver используется для загрузки файлов. Существуют две 
+реализации: CommonsMultipartResolver и StandardServletMultipartResolver,
+ которые позволяют фреймворку загружать файлы. По умолчанию этот 
+интерфейс не включается в приложении и необходимо указывать его в файле 
+конфигурации. После настройки любой запрос о загрузке будет отправляться
+ этому интерфейсу.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-m_8R0DSrX3o/VtE5j9T2PKI/AAAAAAAAATo/H1REpZtwtyY/s1600/CommonsMultipartResolver.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/CommonsMultipartResolver.jpg" height="53" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как загрузить файл в Spring MVC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Внутри
+ спринг предусмотрен интерфейс MultipartResolver для обеспечения 
+загрузки файлов. Фактически нужно настроить файл конфигурации для 
+указания обработчика загрузки файлов, а затем задать необходимый метод в
+ контроллере spring.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как обрабатывать исключения в Spring MVC Framework?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ Spring MVC интерфейс HandlerExceptionResolver (из пакета 
+org.springframework.web.servlet) предназначен для работы с 
+непредвиденными исключениями, возникающими во время выполнения 
+обработчиков. По умолчанию DispatcherServlet регистрирует класс 
+DefaultHandlerExceptionResolver (из пакета 
+org.springframework.web.servlet.mvc.support). Этот распознаватель 
+обрабатывает определенные стандартные исключения Spring MVC, 
+устанавливая специальный код состояния ответа. Можно также реализовать 
+собственный обработчик исключений, аннотировав метод контроллера с 
+помощью аннотации @ExceptionHandler и передав ей в качестве атрибута тип
+ исключения. В общем случае обработку исключений можно описать таким 
+образом:</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Controller
+ Based - указать методы для обработки исключения в классе контроллере. 
+Для этого нужно пометить такие методы аннотацией @ExceptionHandler.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Global Exception Handler - для обработки глобальных исключений spring предоставляет аннотацию @ControllerAdvice.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">HandlerExceptionResolver
+ implementation – общие исключений большая часть времени обслуживают 
+статические страницы. Spring Framework предоставляет интерфейс 
+HandlerExceptionResolver, который позволяет задать глобального 
+обработчика исключений. Реализацию этого интерфейса можно использовать 
+для создания собственных глобальных обработчиков исключений в 
+приложении.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы минимальные настройки, чтобы создать приложение Spring MVC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для создания простого Spring MVC приложения необходимо пройти следующие шаги:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавить зависимости spring-context и spring-webmvc в проект.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Указать DispatcherServlet в web.xml для обработки запросов внутри приложения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Задать определение spring bean (аннотацией или в xml).</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Добавить определение view resolver для представлений.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Настроить класс контроллер для обработки клиентских запросов.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как бы вы связали Spring MVC Framework и архитектуру MVC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Модель
+ (Model) - выступает любой Java bean в Spring. Внутри класса могут быть 
+заданы различные атрибуты и свойства для использования в представлении.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Преставление
+ (View) - JSP страница, HTML файл и т.п. служат для отображения 
+необходимой информации пользователю. Представление передает обработку 
+запросов к диспетчеру сервлетов (контроллеру).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DispatcherServlet
+ (Controller) - это главный контроллер в приложении Spring MVC, который 
+обрабатывает все входящие запросы и передает их для обработки в 
+различные методы в контроллеры.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как добиться локализации в приложениях Spring MVC?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring MVC предоставляет очень простую и удобную возможность локализации приложения. Для этого необходимо сделать следующее:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Создать файл resource bundle, в котором будут заданы различные варианты локализированной информации.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Определить messageSource в конфигурации Spring используя классы ResourceBundleMessageSource или ResourceBundleMessageSource.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Определить localceResolver класса CookieLocaleResolver для включения возможности переключения локали.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">С
+ помощью элемента spring:message DispatcherServlet будет определять в 
+каком месте необходимо подставлять локализированное сообщение в ответе.</span></li>
+</ul>
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-67yeunguXm4/VtE6AG67VmI/AAAAAAAAATw/3di9vLnwtoI/s1600/LocaleChangeInterceptor.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/LocaleChangeInterceptor.jpg" height="178" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как мы можем использовать Spring для создания веб-службы RESTful, возвращающей JSON?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ Framework позволяет создавать Resful веб сервисы и возвращать данные в 
+формате JSON. Spring обеспечивает интеграцию с Jackson JSON API для 
+возможности отправки JSON ответов в resful web сервисе. Для отправки 
+ответа в формате JSON из Spring MVC приложения необходимо произвести 
+следующие настройки:</span></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Добавить зависимости Jackson JSON. С помощью maven это делается так:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-gWAk00x-UBE/VtE6SCVTkGI/AAAAAAAAAT4/ln-Pq_KLwvA/s1600/jackson-databind.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/jackson-databind.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Настроить
+ бин RequestMappingHandlerAdapter в файле конфигурации Spring и задать 
+свойство messageConverters на использование бина 
+MappingJackson2HttpMessageConverter.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-clQe4xD7KJo/VtE6jPmB0_I/AAAAAAAAAUA/oBEB1woEr0E/s1600/RequestMappingHandlerAdapter.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/RequestMappingHandlerAdapter.jpg" height="127" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В контроллере указать с помощью аннотации @ResponseBody возвращение Object:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-JvOlSjBiQ1Q/VtE62KIjrsI/AAAAAAAAAUE/hTPArUq84GM/s1600/ResponseBody_example.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/ResponseBody_example.jpg" height="100" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span></span> </div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как проверить (валидировать) данные формы в Spring Web MVC Framework?</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Spring
+ поддерживает аннотации валидации из JSR-303, а так же возможность 
+создания своих реализаций классов валидаторов. Пример использования 
+аннотаций:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-hVvvjWWrGig/VtE7RZjuk1I/AAAAAAAAAUM/CR4irOIRyaA/s1600/validation_annotation.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/validation_annotation.jpg" height="230" border="0" width="320"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Что вы знаете Spring MVC Interceptor и как он используется?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Перехватчики
+ в Spring (Spring Interceptor) являются аналогом Servlet Filter и 
+позволяют перехватывать запросы клиента и обрабатывать их. Перехватить 
+запрос клиента можно в трех местах: preHandle, postHandle и 
+afterCompletion.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">preHandle
+ - метод используется для обработки запросов, которые еще не были 
+переданы в метода обработчик контроллера. Должен вернуть true для 
+передачи следующему перехватчику или в handler method. False укажет на 
+обработку запроса самим обработчиком и отсутствию необходимости 
+передавать его дальше. Метод имеет возможность выкидывать исключения и 
+пересылать ошибки к представлению.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">postHandle
+ - вызывается после handler method, но до обработки DispatcherServlet 
+для передачи представлению. Может использоваться для добавления 
+параметров в объект ModelAndView.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">afterCompletion - вызывается после отрисовки представления.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ создания обработчика необходимо расширить абстрактный класс 
+HandlerInterceptorAdapter или реализовать интерфейс HandlerInterceptor. 
+Так же нужно указать перехватчики в конфигурационном файле Spring.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-yzOojDT-Vqk/VtE7qU4A9QI/AAAAAAAAAUU/c26Eudaf5Ks/s1600/Interceptors.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p3_files/Interceptors.jpg" height="104" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Расскажите о Spring Security.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Проект
+ Spring Security предоставляет широкие возможности для защиты 
+приложения. Кроме стандартных настроек для аутентификации, авторизации и
+ распределения ролей и маппинга доступных страниц, ссылок и т.п., 
+предоставляет защиту от различных вариантов атак (например CSRF). Имеет 
+множество различных настроек, но остается легким в использовании.</span></div>
+<link href="https://plus.google.com/105527202953364202368" rel="author">
+<p></p>
+
+</body></html>

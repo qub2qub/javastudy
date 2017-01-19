@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+</head>
+
+<body>
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Что такое жизненный цикл Spring Bean?</span></h3>
+</li>
+</ul>
+
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Жизненный цикл Spring бина <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">-</span>
+ время существования класса. Spring бины инициализируются при 
+инициализации Spring контейнера и происходит внедрение всех 
+зависимостей. Когда контейнер уничтожается, то уничтожается и всё 
+содержимое. Если нам необходимо задать какое-либо действие при 
+инициализации и уничтожении бина, то нужно воспользоваться методами 
+init() и destroy(). Для этого можно использовать аннотации 
+@PostConstruct и @PreDestroy().</span></div>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-Qd1yNeWaNoI/VtC_evevBvI/AAAAAAAAAQo/sRROCmU5stk/s1600/PostConstructor.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/PostConstructor.jpg" height="205" border="0" width="640"></a></div>
+</div>
+<a name="more"></a><span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Или через xml конфигурацию:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-7zUQyCcD5x4/VtC_7DxS-iI/AAAAAAAAAQs/eT1x240NxOY/s1600/xml_config.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/xml_config.jpg" height="45" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Объясните работу BeanFactory в Spring.</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">BeanFactory
+ - это реализация паттерна Фабрика, его функицональность покрывает 
+создание бинов. Так как эта фабрика знает многие об объектах приложения,
+ то она может создавать связи между объектами на этапе создания 
+экземпляра. Существует несколько реализаций BeanFactory, самая 
+используемся - 
+&nbsp;"org.springframework.beans.factory.xml.XmlBeanFactory". Она 
+загружает бины на основе конфигурационного XML-файла. Чтобы создать 
+XmlBeanFactory передайте конструктору InputStream, например:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-AROYzC0C8NU/VtDAt26sH6I/AAAAAAAAAQ8/j1KcPyPiYSI/s1600/BeanFactory.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/BeanFactory.jpg" height="29" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">После
+ этой строки фабрика знает о бинах, но их экземпляры еще не созданы. 
+Чтобы инстанцировать бин нужно вызвать метод getBean(). Например:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-bFSY71jLd3Q/VtDBCTwgqSI/AAAAAAAAARA/cRX7XlDXv-o/s1600/factory_getBean.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/factory_getBean.jpg" border="0"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div>
+</div>
+<ul style="text-align: left;">
+<li><h3 style="text-align: left;">
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></span> <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Как получить объекты ServletContext и ServletConfig внутри Spring Bean?</span></h3>
+</li>
+</ul>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Доступны два способа для получения основных объектов контейнера внутри бина:</span></div>
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Реализовать один из Spring*Aware (ApplicationContextAware, ServletContextAware, ServletConfigAware и др.) интерфейсов.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Использовать автоматическое связывание @Autowired в спринг. Способ работает внутри контейнера спринг.</span></li>
+</ul>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-6zAk3HOeHtA/VtDBXU0UOVI/AAAAAAAAARI/8cTbrt5LDFI/s1600/Autowired.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/Autowired.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В чем роль ApplicationContext в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ то время, как BeanFactory используется в простых приложениях, 
+Application Context - это более сложный контейнер. Как и BeanFactory он 
+может быть использован для загрузки и связывания бинов, но еще он 
+предоставляет:</span></div>
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>возможность получения текстовых сообщений, в том числе поддержку интернационализации;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>общий механизм работы с ресурсами;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>события для бинов, которые зарегестрированы как слушатели.</span></li>
+</ul>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Из-за
+ большей функциональности рекомендуется использование Application 
+Context вместо BeanFactory. Последний используется только в случаях 
+нехватки ресурсов, например при разработке для мобильных устройств</span></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<ul>
+<li><h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как выглядит типичная реализция метода используя Spring?</span></h3>
+</li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для типичного Spring-приложения нам необходимы следующие файлы:</span></div>
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Интерфейс, описывающий функционал приложения</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Реализация интерфейса, содержащая свойства, сэттеры-гэттеры, функции и т.п.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Конфигурационный XML-файл Spring'а.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"></span>Клиентское приложение, которое использует функцию.</span></li>
+</ul>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое связывание в Spring и расскажите об аннотации @Autowired?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Процесс
+ внедрения зависимостей в бины при инициализации называется Spring Bean 
+Wiring. Считается хорошей практикой задавать явные связи между 
+зависимостями, но в Spring предусмотрен дополнительный механизм 
+связывания @Autowired. Аннотация может использоваться над полем или 
+методом для связывания по типу. Чтобы аннотация заработала, необходимо 
+указать небольшие настройки в конфигурационном файле спринг с помощью 
+элемента context:annotation-config.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каковы различные типы автоматического связывания в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует четыре вида связывания в спринг:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">autowire byName,</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">autowire byType,</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">autowire by constructor,</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">autowiring by @Autowired and @Qualifier annotations</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Приведите пример часто используемых аннотаций Spring.</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Controller - класс фронт контроллера в проекте Spring MVC.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@RequestMapping - позволяет задать шаблон маппинга URI в методе обработчике контроллера.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@ResponseBody - позволяет отправлять Object в ответе. Обычно используется для отправки данных формата XML или JSON.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@PathVariable - задает динамический маппинг значений из URI внутри аргументов метода обработчика.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Autowired - используется для автоматического связывания зависимостей в spring beans.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Qualifier
+ - используется совместно с @Autowired для уточнения данных связывания, 
+когда возможны коллизии (например одинаковых имен\типов).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Service - указывает что класс осуществляет сервисные функции.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Scope - указывает scope у spring bean.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Configuration, @ComponentScan и @Bean - для java based configurations.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AspectJ аннотации для настройки aspects и advices, @Aspect, @Before, @After,@Around, @Pointcut и др.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можем ли мы послать объект как ответ метода обработчика контроллера?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Да,
+ это возможно. Для этого используется аннотация @ResponseBody. Так можно
+ отправлять ответы в виде JSON, XML в restful веб сервисах.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Является ли Spring bean потокобезопасным?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">По
+ умолчанию бин задается как синглтон в Spring. Таким образом все 
+публичные &nbsp;переменные класса могут быть изменены одновременно из 
+разных мест. Так что - нет, не является. Однако поменяв область действия
+ бина на request, prototype, session он станет потокобезопасным, но это 
+скажется на производительности.</span><br>
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как создать ApplicationContext в программе Java?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В независимой Java программе ApplicationContext можно создать следующим образом:</span></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">AnnotationConfigApplicationContext
+ - при использовании Spring в качестве автономного приложения можно 
+создать инициализировать контейнер с помощью аннотаций. Пример:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-aiNAbWbC4YE/VtDB_7NljRI/AAAAAAAAARQ/WKOnGM_Kb6o/s1600/Annotation_config_.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/Annotation_config_.jpg" height="24" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ClassPathXmlApplicationContext - получает информацию из xml-файла, находящегося в classpath. Пример:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-mND19Zd0wB0/VtDCPPXznyI/AAAAAAAAARU/HLJmMJ1ZjTc/s1600/ClassPathXml.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/ClassPathXml.jpg" height="30" border="0" width="640"></a></div>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">FileSystemXmlApplicationContext
+ - получает информацию из xml-файла, но с возможностью загрузки файла 
+конфигурации из любого места файловой системы. Пример:</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-ivMVF9t4GR4/VtDCjL7C2EI/AAAAAAAAARc/9xM-m9y_StU/s1600/FileSystemXml.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/FileSystemXml.jpg" height="29" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">XmlWebApplicationContext - получает информацию из xml-файла за пределами web-приложения.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можем ли мы иметь несколько файлов конфигурации Spring?</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">С
+ помощью указания contextConfigLocation можно задать несколько файлов 
+конфигурации Spring. Параметры указываются через запятую или пробел:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-0oTSxX28fCk/VtDEJhEFoyI/AAAAAAAAARs/iTjoWaLzptc/s1600/contextConfigLocation.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/contextConfigLocation.jpg" height="97" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Поддерживается возможность указания нескольких корневых файлов конфигурации Spring:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-2Uxo4RM6A54/VtDExLa9fmI/AAAAAAAAAR0/d3JF5B9QP90/s1600/contextConfigLocation_.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/contextConfigLocation_.jpg" height="61" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Файл конфигурации можно импортировать:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-8bhCJvaRZUk/VtDFXgiNFbI/AAAAAAAAAR4/NmPL-ZCk2Nc/s1600/bean_import.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/bean_import.jpg" border="0"></a></div>
+<br>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как внедрить java.util.Properties в Spring Bean?</span></li>
+</ul>
+</h3>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Для
+ возможности использования Spring EL для внедрения свойств (properties) в
+ различные бины необходимо определить propertyConfigure bean, который 
+будет загружать файл свойств.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-p1Cpe2mSo6E/VtDF1dU9eoI/AAAAAAAAASA/7MyVTkS6OsM/s1600/propertyConfigurer.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/propertyConfigurer.jpg" height="84" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Или через аннотации:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-FXm7EWgJ_Qc/VtDGHL4fUFI/AAAAAAAAASE/nFjjx8SnmrY/s1600/property_annotation_configurer.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/property_annotation_configurer.jpg" border="0"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как настраивается соединение с БД в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Используя datasource "org.springframework.jdbc.datasource.DriverManagerDataSource". Пример:</span><br>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-anvkcCEigu8/VtE02iqoMQI/AAAAAAAAASY/W9IPUl2N9xQ/s1600/DriverManagerDataSource.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/DriverManagerDataSource.jpg" height="143" border="0" width="640"></a></div>
+<br></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Как сконфигурировать JNDI не через datasource в applicationContext.xml?</span></li>
+</ul>
+</h3>
+<span style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Используя "org.springframework.jndi.JndiObjectFactoryBean". Пример</span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-HL_lhsqv_oI/VtE1QUsGPzI/AAAAAAAAASc/cEZVEPEBG5M/s1600/JndiObjectFactoryBean.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/JndiObjectFactoryBean.jpg" height="87" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каким образом можно управлять транзакциями в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Транзакциями
+ в Spring управляют с помощью Declarative Transaction Management 
+(программное управление). Используется аннотация @Transactional для 
+описания необходимости управления транзакцией. В файле конфигурации 
+нужно добавить настройку transactionManager для DataSource.</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-nPHY0R8mK3k/VtE1pKo5KSI/AAAAAAAAASk/0X8T_hRNXn4/s1600/DataSourceTransactionManager.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/DataSourceTransactionManager.jpg" height="42" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каким образом Spring поддерживает DAO?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Spring
+ DAO предоставляет возможность работы с доступом к данным с помощью 
+технологий вроде JDBC, Hibernate в удобном виде. Существуют специальные 
+классы: JdbcDaoSupport, HibernateDaoSupport, JdoDaoSupport, 
+JpaDaoSupport.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Класс
+ HibernateDaoSupport является подходящим суперклассом для Hibernate DAO.
+ Он содержит методы для получения сессии или фабрики сессий. Самый 
+популярный метод - getHibernateTemplate(), который возвращает 
+HibernateTemplate. Этот темплейт оборачивает checked-исключения 
+Hibernate в runtime-исключения, позволяя вашим DAO оставаться 
+независимыми от исключений Hibernate.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пример:</span></div>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-jGIM9Zm6FuI/VtE17cKZm4I/AAAAAAAAASs/-kxAZ8nPoiQ/s1600/HibernateDaoSupport.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/HibernateDaoSupport.jpg" height="283" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как интегрировать Spring и Hibernate?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+ интеграции Hibernate в Spring необходимо подключить зависимости, а так 
+же настроить файл конфигурации Spring. Т.к. настройки несколько 
+отличаются между проектами и версиями, то смотрите официальную 
+документацию Spring и Hibernate для уточнения настроек для конкретных 
+технологий.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
+</div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как задаются файлы маппинга Hibernate в Spring?</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Через applicationContext.xml в web/WEB-INF. Например:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-7gQYC2XxYT4/VtE2VfVsnJI/AAAAAAAAAS0/ufAoHjmwnCQ/s1600/mappingResources.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/mappingResources.jpg" height="105" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как добавить поддержку Spring в web-приложение</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Достаточно просто указать ContextLoaderListener в web.xml файле приложения:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-xd58jtMGsok/VtE2lez0JrI/AAAAAAAAAS8/57V4td6V5Sg/s1600/ContextLoaderListener.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/ContextLoaderListener.jpg" height="46" border="0" width="640"></a></div>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно ли использовать xyz.xml вместо applicationContext.xml?</span></li>
+</ul>
+</h3>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">ContextLoaderListener
+ - это ServletContextListener, который инициализируется когда ваше 
+web-приложение стартует. По-умолчанию оно загружает файл 
+WEB-INF/applicationContext.xml. Вы можете изменить значение 
+по-умолчанию, указав параметр contextConfigLocation. Пример:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-QaU8cAoyKro/VtE3E4VViVI/AAAAAAAAATE/xHOXorrK_pI/s1600/ContextLoaderListener_example.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="Spring%20p2_files/ContextLoaderListener_example.jpg" height="136" border="0" width="640"></a></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/03/spring-framework-3.html">Spring Framework (часть 3).</a></span></h3>
+</body></html>
