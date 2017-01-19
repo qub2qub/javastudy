@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Core p3</title>
+</head>
+<body>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Опишите иерархию исключений.</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Все классы-исключения расширяют класс Throwable - непосредственное расширение класса object.&nbsp;</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">У класса Throwable и у всех его расширений по традиции два конструктора: &nbsp;</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Throwable о - конструктор по умолчанию;&nbsp;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Throwable (String message) - создаваемый объект будет содержать произвольное сообщение message.&nbsp;</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Записанное
+ в конструкторе сообщение можно получить затем методом getMessage (). 
+Если объект создавался конструктором по умолчанию, то данный метод 
+возвратит null.&nbsp;</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод toString возвращает краткое описание события, именно он работал в предыдущих листингах.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Три метода выводят сообщения обо всех методах, встретившихся по пути "полета" исключения:&nbsp;</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">printstackTrace() -</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;выводит сообщения в стандартный вывод, как правило, это <a name="more"></a>консоль;&nbsp;</span></span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">printStackTrace(PrintStream stream) - выводит сообщения в байтовый поток stream;&nbsp;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">printStackTrace(PrintWriter stream) - выводит сообщения в символьный поток stream.&nbsp;</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">У
+ класса Throwable два непосредственных наследника - классы Error и 
+Exception. Они не добавляют новых методов, а служат для разделения 
+классов-исключений на два больших семейства - семейство классов-ошибок 
+(error) и семейство собственно классов-исключений (exception).&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Классы-ошибки,
+ расширяющие класс Error, свидетельствуют о возникновении сложных 
+ситуаций в виртуальной машине Java. Их обработка требует глубокого 
+понимания всех тонкостей работы JVM. Ее не рекомендуется выполнять в 
+обычной программе. Не советуют даже выбрасывать ошибки оператором throw.
+ He следует делать свои классы-исключения расширениями класса Error или 
+какого-то его подкласса.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Имена классов-ошибок, по соглашению, заканчиваются словом Error.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Классы-исключения,
+ расширяющие класс Exception, отмечают возникновение обычной нештатной 
+ситуации, которую можно и даже нужно обработать. Такие исключения 
+следует выбросить оператором throw. Классов-исключений очень много, 
+более двухсот. Они разбросаны буквально по всем пакетам J2SDK. В 
+большинстве случаев вы способны подобрать готовый класс-исключение для 
+обработки исключительных ситуаций в своей программе. При желании можно 
+создать и свой класс-исключение, расширив класс Exception или любой его 
+подкласс.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Среди
+ классов-исключений выделяется класс RuntimeException - прямое 
+расширение класса Exception. В нем и его подклассах отмечаются 
+исключения, возникшие при работе JVM, но не столь серьезные, как ошибки.
+ Их можно обрабатывать и выбрасывать, расширять своими классами, но 
+лучше доверить это JVM, поскольку чаще всего это просто ошибка в 
+программе, которую надо исправить. Особенность исключений данного класса
+ в том, что их не надо отмечать в заголовке метода пометкой 
+throws.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Имена классов-исключений, по соглашению, заканчиваются словом Exception.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: left;">
+<div>
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие виды исключений в Java вы знаете, чем они отличаются?&nbsp;</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Все исключительные ситуации можно разделить на две категории: проверяемые(checked) и непроверяемые(unchecked).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Все
+ исключения, порождаемые от Throwable, можно разбить на три группы. Они 
+определяются тремя базовыми типами: наследниками Throwable - классами 
+Errorи Exception, а также наследником Exception - RuntimeException.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ошибки,
+ порожденные от Exception (и не являющиеся наследниками RuntimeException
+ ), являются проверяемыми. Т.е. во время компиляции проверяется, 
+предусмотрена ли обработка возможных исключительных ситуаций. Как 
+правило, это ошибки, связанные с окружением программы (сетевым, файловым
+ вводом-выводом и др.), которые могут возникнуть вне зависимости от 
+того, корректно написан код или нет. Например, открытие сетевого 
+соединения или файла может привести к возникновению ошибки и компилятор 
+требует от программиста предусмотреть некие действия для обработки 
+возможных проблем. Таким образом повышается надежность программы, ее 
+устойчивость при возможных сбоях.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Исключения, порожденные от RuntimeException, являются непроверяемыми и компилятор не требует обязательной их обработки.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как
+ правило, это ошибки программы, которые при правильном кодировании 
+возникать не должны (например, IndexOutOfBoundsException- выход за 
+границы массива, java.lang.ArithmeticException- деление на ноль). 
+Поэтому, чтобы не загромождать программу, компилятор оставляет на 
+усмотрение программиста обработку таких исключений с помощью блоков 
+try-catch.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Исключения,
+ порожденные от Error, также не являются проверяемыми. Они предназначены
+ для того, чтобы уведомить приложение о возникновении фатальной 
+ситуации, которую программным способом устранить практически невозможно 
+(хотя формально обработчик допускается). Они могут свидетельствовать об 
+ошибках программы, но, как правило, это неустранимые проблемы на уровне 
+JVM. В качестве примера можно привести StackOverflowError (переполнение 
+стека), OutOfMemoryError (нехватка памяти).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Методы,
+ код которых может порождать проверяемые исключения, должны либо сами их
+ обрабатывать, либо в заголовке метода должно быть указано ключевое 
+слово throws с перечислением необрабатываемых проверяемых исключений. На
+ непроверяемые ошибки это правило не распространяется.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Переопределенный (overridden) метод не может расширять список возможных исключений исходного метода.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое checked и unchecked Exception?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Checked
+ исключения, это те, которые должны обрабатываться блоком catch или 
+описываться в сигнатуре метода. Unchecked могут не обрабатываться и не 
+быть описанными.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Unchecked исключения в Java - наследованные от RuntimeException, Checked - от Exception.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">&nbsp;Пример unchecked исключения - NullPointerException, checked исключения - IOException.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как создать свой unchecked Exception?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Унаследоваться от RuntimeException.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие есть Unchecke exeption?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-QlWwhPtfQ4E/V53E6Oyx4bI/AAAAAAAAA_w/VDXBUiPjDBwW39LaPJ6ZqL7fmzhHUPviACLcB/s1600/q049_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="core%20p3_files/q049_p01.jpg" height="282" border="0" width="640"></span></a></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Error?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Исключения,
+ порожденные от Error, не являются проверяемыми. Они предназначены для 
+того, чтобы уведомить приложение о возникновении фатальной ситуации, 
+которую программным способом устранить практически невозможно (хотя 
+формально обработчик допускается). Они могут свидетельствовать об 
+ошибках программы, но, как правило, это неустранимые проблемы на уровне 
+JVM. В качестве примера можно привести StackOverflowError (переполнение 
+стека), OutOfMemoryError (нехватка памяти).</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Методы,
+ код которых может порождать проверяемые исключения, должны либо сами их
+ обрабатывать, либо в заголовке метода должно быть указано ключевое 
+слово throws с перечислением необрабатываемых проверяемых исключений. На
+ непроверяемые ошибки это правило не распространяется.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div style="text-align: justify;">
+</div>
+<h3 style="text-align: left;">
+<span style="font-size: small;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; font-weight: normal;"></span></span><div>
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Опишите работу блока try-catch-finally.</span></li>
+</ul>
+</div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если срабатывает один из блоков catch, то остальные блоки в данной конструкции try-catch выполняться не будут.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Cвойством
+ транзакционности исключения не обладают - действия, произведенные в 
+блоке try до возникновения исключения, не отменяются поcле его 
+возникновения.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+</div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Возможно ли использование блока try-finally (без catch)?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">try
+ может быть в паре с finally, без catch. Работает это точно так же - 
+после выхода из блока try выполняется блок finally. Это может быть 
+полезно, например, в следующей ситуации. При выходе из метода вам надо 
+произвести какое-либо действие. А return в этом методе стоит в 
+нескольких местах. Писать одинаковый код перед каждым return 
+нецелесообразно. Гораздо проще и эффективнее поместить основной код в 
+try, а код, выполняемый при выходе - в finally.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+</div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Всегда ли исполняется блок finally?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Не всегда например в следующих ситуациях:</span></div>
+<div style="text-align: justify;">
+<ol>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существуют
+ потоки-демоны - потоки предоставляющие некие сервисы, работая в фоновом
+ режиме во время выполнения программы, но при этом не являются ее 
+неотъемлеммой частью.Таким образом когда все потоки не демоны 
+завершаются, программа завершает свою работу. В потоках демонах блок 
+finally не выполняеться, они прерываются внезапно.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">System.exit(0)</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">если в блоке finally произошло исключение и нет обработчика, то оставшийся код в блоке finally может не выполнятся.</span></li>
+</ol>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<div>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие есть оссобенности класса String? что делает метод intern().</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<ol>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Внутреннее
+ состояние класса String нельзя изменить после его создания, т.е. этот 
+класс неизменяемый (immutable) поэтому когда вы пишете String str = 
+"One" + "Two"; создается три! объекта класса String.&nbsp;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">От него нельзя унаследоваться, потому что класс String объявлен как final: public final class String</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Метод hashCode класса String переписан и возвращает: s[0]*31^(n-1) + s[1]*31^(n-2) + ... + s[n-1]&nbsp;</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">У
+ класса String есть метод public String intern(), который возвращает 
+строку в каноническом ее представлении из внутреннего пула строк, 
+поддерживаемого JVM,&nbsp;</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">он нужен чтобы вместо String.equals() использовать ==.</span></span></li>
+</ol>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Понятно, что оператор сравнения ссылок выполняется гораздо быстрее, чем посимвольное сравнение строк.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Используют в основном, где приходится сравнивать много строк, например в каких нибудь XML парсерах.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">А
+ вообще по увеличению производительности ещё вопрос. Ибо метод intern() 
+тогда должен выполняться быстрее чем equals(), каждый раз когда вы 
+вызываете метод intern() просматривается пул строк на наличие такой 
+строки и если такая уже есть в пуле, то возвращается ссылка на 
+нее.Сравниваются они через equal().</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно ли наследовать строковый тип, почему?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Классы объявлены final, поэтому наследоваться не получится.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Почему строка является популярным ключом в HashMap в Java?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Поскольку
+ строки неизменны, их хэшкод кэшируется в момент создания, и не требует 
+повторного пересчета. Это делает строки отличным кандидатом для ключа в 
+Map и они обрабатываются быстрее, чем другие объекты-ключи HashMap. Вот 
+почему строки преимущественно используются в качестве ключей HashMap.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Дайте определение понятию конкатенация строк.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Конкатенация
+ - операция объединения строк. Результатом является объединения второй 
+строки с окончанием первой. Операция конкатенации могут быть выполнены 
+так:<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; margin-left: 1em; margin-right: 1em;"><a href="https://1.bp.blogspot.com/-j6GwZqFaVKY/WFZbyLVzAXI/AAAAAAAABY8/Wn1_LKFH4a0FGPQFsYPmXO-qHeri4Is8ACLcB/s1600/q057_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="core%20p3_files/q057_p01.jpg" height="226" border="0" width="640"></a></span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как перевернуть строку?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Один из способов как это можно сделать:<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; margin-left: 1em; margin-right: 1em;"><a href="https://4.bp.blogspot.com/-7T2vD56wZr0/WFZcEe_m8cI/AAAAAAAABZA/YPq6RKUA23Eqv0Lrp2_m0MFMhUc1ulO5gCLcB/s1600/q058_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="core%20p3_files/q058_p01.jpg" height="74" border="0" width="640"></a></span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как сравнить значение двух строк?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Строка
+ в Java - это отдельный объект, который может не совпадать с другим 
+объектом, хотя на экране результат выводимой строки может выглядеть 
+одинаково. Оператор == (а также !=) работает с ссылками объекта String. 
+Если две переменные String указывают на один и тот же объект в памяти, 
+сравнение вернет результат true. В противном случае результат будет 
+false, несмотря на то что текст может содержать в точности такие же 
+символы.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для сравнения посимвольно на эквивалентность необходимо использовать метод equals().<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; margin-left: 1em; margin-right: 1em;"><a href="https://2.bp.blogspot.com/-IhaS3Rh2C0o/WFZcWWrf8bI/AAAAAAAABZE/Au4NbI-_r6UxFWQCAJoEJIOBXly3sicrgCLcB/s1600/q059_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="core%20p3_files/q059_p01.jpg" height="256" border="0" width="640"></a></span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как обрезать пробелы в начале и конце строки?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Небольшой пример:<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; margin-left: 1em; margin-right: 1em;"><a href="https://3.bp.blogspot.com/-hA19Kfjr_cs/WFZcnECbZNI/AAAAAAAABZM/Y2EX8uo9qTcCcaZWXq7ARwlhCcJKJF0AwCLcB/s1600/q060_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img src="core%20p3_files/q060_p01.jpg" height="62" border="0" width="640"></a></span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Дайте определение понятию "пул строк".</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пул
+ строк - это набор строк, который хранится в памяти Java heap. Мы знаем,
+ что String это специальный класс в Java, и мы можем создавать объекты 
+этого класса, используя оператор new точно так же, как и создавать 
+объекты, предоставляя значение строки в двойных кавычках.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Диаграмма
+ ниже объясняет, как пул строк размещается в памяти Java heap и что 
+происходит, когда мы используем различные способы создания строк.</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-OfL0KRTcM_0/WFZc9dMhJ0I/AAAAAAAABZU/FCpwxFTKfMMqgJtf_2z701AzYBAZ1sv3QCLcB/s1600/q061_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="core%20p3_files/q061_p01.jpg" height="354" border="0" width="640"></span></a></div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пул строк возможен исключительно благодаря неизменяемости строк в Java и реализации идеи интернирования строк.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пул строк помогает экономить большой объем памяти, но с другой стороны создание строки занимает больше времени.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Когда
+ мы используем двойные кавычки для создания строки, сначала ищется 
+строка в пуле с таким же значением, если находится, то просто 
+возвращается ссылка, иначе создается новая строка в пуле, а затем 
+возвращается ссылка.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Тем
+ не менее, когда мы используем оператор new, мы принуждаем класс String 
+создать новый объект строки, а затем мы можем использовать метод 
+intern() для того, чтобы поместить строку в пул, или получить из пула 
+ссылку на другой объект String с таким же значением.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Можно ли синхронизировать доступ к строке?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">String сам по себе потокобезопасный класс. Если мы мы работаем с изменяемыми строками, то нужно использовать StringBuffer.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как правильно сравнить значения строк двух различных объектов типа String и StringBuffer?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Привести их к одному типу и сравнить.</span><br>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Почему строка неизменная и финализированная в Java?</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Есть несколько преимуществ в неизменности строк:</span><br>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Строковый
+ пул возможен только потому, что строка неизменна в Java, таким образом 
+виртуальная машина сохраняет много места в памяти(heap space), поскольку
+ разные строковые переменные указывают на одну переменную в пуле. Если 
+бы строка не была неизмененяемой, тогда бы интернирование строк не было 
+бы возможным, потому что если какая-либо переменная изменит значение, 
+это отразится также и на остальных переменных, ссылающихся на эту 
+строку.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Если
+ строка будет изменяемой, тогда это станет серьезной угрозой 
+безопасности приложения. Например, имя пользователя базы данных и пароль
+ передаются строкой для получения соединения с базой данных и в 
+программировании сокетов реквизиты хоста и порта передаются строкой. Так
+ как строка неизменяемая, её значение не может быть изменено, в 
+противном случае любой хакер может изменить значение ссылки и вызвать 
+проблемы в безопасности приложения.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Строки
+ используются в Java classloader и неизменность обеспечивает 
+правильность загрузки класса при помощи Classloader. К примеру, 
+задумайтесь об экземпляре класса, когда вы пытаетесь загрузить 
+java.sql.Connection класс, но значение ссылки изменено на 
+myhacked.Connection класс, который может осуществить нежелательные вещи с
+ вашей базой данных.</span></li>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Поскольку
+ строка неизменная, её hashcode кэшируется в момент создания и нет 
+необходимости рассчитывать его снова. Это делает строку отличным 
+кандидатом для ключа в Map и его обработка будет быстрее, чем других 
+ключей HashMap. Это причина, почему строка наиболее часто используемый 
+объект, используемый в качестве ключа HashMap.</span></li>
+</ul>
+<span style="font-family: arial, helvetica, sans-serif;"><br></span><ul>
+</ul>
+<h3>
+<ul>
+<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Напишите метод удаления данного символа из строки.</span></li>
+</ul>
+</h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Мы
+ можем использовать метод replaceAll для замены всех вхождений в строку 
+другой строкой. Обратите внимание на то, что метод получает в качестве 
+аргумента строку, поэтому мы используем класс Character для создания 
+строки из символа, и используем её для замены всех символов на пустую 
+строку.</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-n592gK_Is_M/WFZdeeHj6sI/AAAAAAAABZc/du3_P4z7Bs4SwgIYKGOzVlzCx_D2gsTEwCLcB/s1600/q065_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="core%20p3_files/q065_p01.jpg" height="54" border="0" width="640"></span></a></div>
+<br>
+<h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><a href="https://jsehelper.blogspot.com/2016/12/java-core-4.html">Java core (часть 4).</a></span></h3>	
+
+</div></body></html>

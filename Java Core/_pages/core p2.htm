@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Core p2</title>
+</head>
+<body>
+
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><b style="font-family: Arial, Helvetica, sans-serif;"><span style="font-family: Arial, Helvetica, sans-serif;">Возможно ли при переопределении (override) метода изменить:&nbsp;</span></b></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<ol><ol>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><b>Модификатор доступа</b></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><b>Возвращаемый тип</b></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><b>Тип аргумента или количество</b></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><b>Имя аргументов</b></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><b>Изменять порядок, количество или вовсе убрать секцию throws?</b></span></li>
+</ol>
+</ol>
+<ol>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Да, если расширять (package -&gt; protected -&gt; public)</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Да, если выполняется Upcasting (восходящее преобразование, преобразование вверх по иерархии)</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Нет, в таком случае происходит Overload(перегрузка)</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Да</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Возможно 
+изменять порядок. Возможно вовсе убрать секцию throws в методе, так как 
+она уже определена. Так же возможно добавлять новые исключения, которые 
+наследуются от объявленных или исключения времени выполнения.<a name="more"></a></span></li>
+</ol>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Переопределение
+ методов действует при наследовании классов, т.е. в классе наследнике 
+объявлен метод с такой же сигнатурой что и в классе родителе. Значит 
+этот метод переопределил метод своего суперкласса.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Несколько нюансов по этому поводу:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Модификатор доступа в методе класса наследника должен быть НЕ уже чем в классе родителе, иначе будет ошибка компиляции.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Описание 
+исключения в переопределенном методе класса наследника должен быть НЕ 
+шире чем в классе родителе, иначе ошибка компиляции.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Метод обьявленный как "private" в классе родителе нельзя переопределить!</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><b style="font-family: Arial, Helvetica, sans-serif;"><span style="font-family: Arial, Helvetica, sans-serif;">Что такое autoboxing?</span></b></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Autoboxing/Unboxing
+ - автоматическое преобразование между скалярными типами Java и 
+соответствующими типами-врапперами (например, между int - Integer). 
+Наличие такой возможности сокращает код, поскольку исключает 
+необходимость выполнения явных преобразований типов в очевидных случаях.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: Arial, Helvetica, sans-serif;">Что такое Generics?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">"Java Generics"
+ - это технический термин, обозначающий набор свойств языка позволяющих 
+определять и использовать обобщенные типы и методы. Обобщенные типы или 
+методы отличаются от обычных тем, что имеют типизированные 
+параметры.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Примером 
+дженериков или обобщенных типов может служить библитека с коллекциями в 
+Java. Например, класс LinkedList&lt;E&gt; - типичный обобщенный тип. Он 
+содержит параметр E, который представляет тип элементов, которые будут 
+храниться в коллекции. Вместо того, чтобы просто использовать 
+LinkedList, ничего не говоря о типе элемента в списке, мы можем 
+использовать LinkedList&lt;String&gt; или LinkedList&lt;Integer&gt;. 
+&nbsp;Создание объектов обобщенных типов происходит посредством замены 
+параметризированных типов реальными типами данных. Класс типа 
+LinkedList&lt;E&gt; - &nbsp;обобщенный тип, который содержит параметр E.
+ Создание объектов, типа LinkedList&lt;String&gt; или 
+LinkedList&lt;Integer&gt; называются параметризированными типами, а 
+String и Integer - реальные типы аргументов.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: Arial, Helvetica, sans-serif;">Какова истинная цель использования обобщенных типов в Java?&nbsp;</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Обобщенные типы в Java были изобретены, в первую очередь, для реализации обобщенных коллекций.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: left;">
+<ul style="text-align: left;">
+<li style="text-align: justify;"><span style="font-family: Arial, Helvetica, sans-serif;">Каким образом передаются переменные в методы, по значению или по ссылке?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">В java 
+параметры в методы передаются по значению, тоесть создаются копии 
+параметров и с ними ведется работа в методе. В случае с примитивными 
+типами, то при передачи параметра сама переменная не будет меняться так 
+как в метод просто копируется ее значение.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">А вот при 
+передачи объекта копируется ссылка на объект, тоесть если в методе мы 
+поменяем состояние объекта, то и за методом состояние объекта тоже 
+поменяется. Но если мы этой копии ссылки попытаемся присвоить новую 
+ссылку на обьект, то старая ссылка у нас не изменится.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;В случае передачи по значению параметр копируется. Изменение параметра не будет заметно на вызывающей стороне.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;В Java объекты всегда передаются по ссылке, а примитивы - по значениюю.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Какие методы есть у класса Object?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Object это 
+базовый класс для всех остальных объектов в Java. Каждый класс 
+наследуется от Object. Соответственно все классы наследуют методы класса
+ Object.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Методы класса Object:</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final native Class getClass()</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public native int hashCode()</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public boolean equals(Object obj)</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">protected native Object clone() throws CloneNotSupportedException</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public String toString()</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final native void notify()</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final native void notifyAll()</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final native void wait(long timeout) throws InterruptedException</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final void wait(long timeout, int nanos) throws InterruptedException</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">public final void wait() throws InterruptedException</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">protected void finalize() throws Throwable</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<div>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Правила переопределения метода Object.equals().</span></li>
+</ul>
+<span style="font-family: Arial, Helvetica, sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<ol>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Используйте
+ оператор == что бы проверить ссылку на объект, переданную в метод 
+equals. Если ссылки совпадают - вернуть true. Это не обязательно, нужно 
+скорее для оптимизации, но может сэкономить время в случае "тяжёлых" 
+сравнений.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Используйте оператор instanceof для проверки типа аргумента. Если типы не совпадают, вернуть false.&nbsp;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Преобразуйте аргумент к корректному типу. Так как на предыдущем шаге мы выполнили проверку, преобразование корректно.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;"><span class="Apple-tab-span" style="white-space: pre;"> </span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Пройтись
+ по всем значимым полям объектов и сравнить их друг с другом. Если все 
+поля равны - вернуть true. Для сравнения простых типов использовать ==. 
+Для полей со ссылкой на объекты использовать equals. float 
+преобразовывать в int &nbsp;с помощью Float.floatToIntBits и сравнить с 
+помощью ==. double преобразовывать в long &nbsp;с помощью 
+Double.doubleToLongBits и сравнить с помощью ==. Для коллекций 
+вышеперечисленные правила применяются к каждому элементу коллекции. 
+Нужно учитывать возможность null полей/объектов. Очерёдность сравнения 
+полей может существенно влиять на производительность.</span></span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Закончив реализацию equals задайте себе вопрос, является ли метод симметричным, транзитивным и непротиворечивым.</span></li>
+</ol>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">И ещё несколько дополнительных правил.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Переопределив equals, всегда переопределять hashCode.</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Не использовать сложную семантику в equals (типа определения синонимов). equals должен сравнивать поля объектов, не более.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Если вы хотите переопределить equals(), какие условия должны удовлетворяться для переопределенного метода?</span></li>
+</ul>
+<span style="font-family: Arial, Helvetica, sans-serif;"></span></div>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Метод equals() 
+обозначает отношение эквивалентности объектов. Эквивалентным называется 
+отношение, которое является симметричным, транзитивным и рефлексивным.</span></div>
+<div style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Рефлексивность: для любого ненулевого x, x.equals(x) вернет true;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Транзитивность: для любого ненулевого x, y и z, если x.equals(y) и y.eqals(z) вернет true, тогда и x.equals(z) вернет true;</span></li>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Симметричность:
+ для любого ненулевого x и y, x.equals(y) должно вернуть true, тогда и 
+только тогда, когда y.equals(x) вернет true.</span></li>
+</ul>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Также для любого ненулевого x, x.equals(null) должно вернуть false.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Какая связь между hashCode и equals?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">
+<ol>
+	<li>у равных объектов равны и хэшкоды 
+	<br>
+	[если a.equals(b) = true, тои a.hashCode == b.hashcode]
+	</li>
+	<li>если хэш коды равны - объекты могут быть разные (не равны)</li>
+</ol>
+Но необязательно что при равных хэшкодах, будут равны и объекты.
+<br>
+Т.е. два различных(не равных) объекта могут вернуть одинаковые хэш коды (такая ситуация называется <b>коллизией</b>).</span>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<h3 style="text-align: justify;">
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Каким образом реализованы методы hashCode и equals в классе Object?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Реализация метода equals в классе Object сводится к проверке на равенство двух ссылок:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://1.bp.blogspot.com/-5SRDB4axCyg/V52iqtKtUMI/AAAAAAAAA-k/jzSn4sS6Cb0thMqMRy0uwCw66aDAqW2cACLcB/s1600/q034_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q034_p01.jpg" height="67" border="0" width="640"></span></a></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Реализация же метода hashCode класса Object сделана нативной, т.е. определенной не с помощью Java-кода:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-WRFZ5qRDdoQ/V52iz-DOgcI/AAAAAAAAA-o/Pl2DW5dJOOcTg09J57HbJqSNF2pnGlZ2wCLcB/s1600/q034_p02.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q034_p02.jpg" height="26" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">Он обычно возвращает адрес объекта в памяти.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Что будет, если переопределить equals не переопределяя hashCode? Какие могут возникнуть проблемы?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Они будут неправильно хранится в контейнерах, использующих хэш коды, таких как HashMap, HashSet.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Например 
+HashSet хранит элементы в случайном (на первый взгляд) порядке. Дело в 
+том, что для быстрого поиска HashSet расчитывает для каждлого элемента 
+hashCode и именно по этому ключу ищет и упорядочивает элементы внутри 
+себя</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Есть ли какие-либо рекомендации о том, какие поля следует использовать при подсчете hashCode?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Есть. 
+Необходимо использовать уникальные, лучше примитивные поля, такие как 
+id, uuid, например. Причем, если эти поля задействованы при вычислении 
+hashCode, то нужно их задействовать при выполнении equals.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Общий совет: выбирать поля, которые с большой долью вероятности будут различаться.</span><br>
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<span style="font-family: Arial, Helvetica, sans-serif;"></span><div>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Для чего нужен метод hashCode()?</span></li>
+</ul>
+<span style="font-family: Arial, Helvetica, sans-serif;"></span></div>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Существуют 
+коллекции(HashMap, HashSet), которые используют хэш код, как основу при 
+работе с объектами. А если хэш для равных объектов будет разным, то в 
+HashMap <strike>будут два равных значения, что является ошибкой</strike> [чел погнал. 
+в этом случае они просто попадут в 1 бакет и в линкед лист]. <br>
+Поэтому 
+необходимо соответствующим образом переопределить метод hashCode().</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Х &nbsp; 
+<b>Хеширование</b> - преобразование входного массива данных произвольной длины в
+ выходную битовую строку фиксированной длины. Такие преобразования также
+ называются хеш-функциями или функциями свёртки, а их результаты 
+называют <b>хешем или хеш-кодом</b>.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"> <b>Хеш-таблица</b> -
+ это структура данных, реализующая интерфейс ассоциативного массива, а 
+именно, она позволяет хранить пары (ключ, значение) и выполнять три 
+операции: операцию добавления новой пары, операцию поиска и операцию 
+удаления пары по ключу.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Выполнение 
+операции в хеш-таблице начинается с вычисления хеш-функции от ключа. 
+Получающееся хеш-значение i = hash(key) играет роль индекса в массиве H.
+ Затем выполняемая операция (добавление, удаление или поиск) 
+перенаправляется объекту, который хранится в соответствующей ячейке 
+массива H[i].</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Одним из 
+методов построения хеш-функции есть метод деления с остатком (division 
+method) состоит в том, что ключу k ставится в соответствие остаток от 
+деления k на m, где m - число возможных хеш-значений.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Правила переопределения метода Object.hashCode().</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">При реализации 
+hashCode используется несколько простых правил. Прежде всего, при 
+вычислении хеш-кода следует использовать те же поля, которые 
+сравниваются в equals. Это, во-первых, даст равенство хеш-кодов для 
+равных обектов, во-вторых, распределено полученное значение будет точно 
+так же, как и исходные данные. Теоретически, можно сделать так, чтобы 
+хеш-код всегда был равен 0, и это будет абсолютно легальная реализация. 
+Другое дело, что ее ценность будет равна тому же самому нулю.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Далее. Несмотря
+ на то, что хеш-коды равных объектов должны быть равны, обратное 
+неверно! Два неравных объекта могут иметь равные хеш-коды. Решающее 
+значение имеет не уникальность, а скорость вычисления, потому как это 
+приходится делать очень часто. Потому, в некоторых случаях имеет смысл 
+посчитать хеш-код заранее и просто выдавать его по запросу. Прежде всего
+ это стоит делать тогда, когда вычисление трудоемко, а объект неизменен.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Расскажите про клонирование объектов. В чем отличие между поверхностным и глубоким клонированием?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Чтобы объект 
+можно было клонировать, он должен реализовать интерфейс 
+Cloneable(маркер). Использование этого интерфейса влияет на поведение 
+метода "clone" класс Object. Таким образом&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">myObj.clone() создаст нам клон нашего объекта, но этот клон будет поверхностный.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Что значит поверхностным? Это значит что клонируется только примитивные поля класса, ссылочные поля не клонируются!</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Для того, чтоб 
+произвести глубокое клонирование, необходимо в клонируемом классе 
+переопределить метод clone() и в нем произвести клонирование изменяемых 
+полей объекта.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Правила переопределения метода Object.clone().</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Метод clone() в
+ Java используется для клонирования объектов. Т.к. Java работает с 
+объектами с помощью ссылок, то простым присваиванием тут не обойдешься, 
+ибо в таком случае копируется лишь адрес, и мы получим две ссылки на 
+один и тот же объект, а это не то, что нам нужно. Механизм копирования 
+обеспечивает метод clone() класса Object.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;clone() 
+действует как конструктор копирования. Обычно он вызывает метод clone() 
+суперкласса и т.д. пока не дойдет до Object.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Метод 
+clone() класса Object создает и возвращает копию объекта с такими же 
+значениями полей. Object.clone() кидает исключение 
+CloneNotSupportedException если вы пытаетесь клонировать объект не 
+реализующий интерфейс Cloneable. Реализация по умолчанию метода 
+Object.clone() выполняет неполное/поверхностное (shallow) копирование. 
+Если вам нужно полное/глубокое (deep) копирование класса то в методе 
+clone() этого класса, после получения клона суперкласса, необходимо 
+скопировать нужные поля.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Синтаксис вызова clone() следующий:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://2.bp.blogspot.com/-VS9Ph1WJaZk/V52j7dRvZ_I/AAAAAAAAA-0/l3tDDk1rsu45f8EjzU-AZzikmVvp-Wk-ACLcB/s1600/q040_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q040_p01.jpg" height="30" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;или чаще:</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-_8ET5OheTHg/V52kSd45rWI/AAAAAAAAA-8/kvWvrCEq0VgAj0afvsl08xC2V30Y5OicwCLcB/s1600/q040_p02.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q040_p02.jpg" height="26" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Один из 
+недостатков метода clone(), это тот факт, что возвращается тип Object, 
+поэтому требуется нисходящее преобразование типа. Однако начиная с 
+версии Java 1.5 при переопределении метода вы можете сузить возвращаемый
+ тип.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Пару слов о clone() и final полях.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Метод 
+clone() несовместим с final полями. Если вы попробуете клонировать final
+ поле компилятор остановит вас. Единственное решение - отказаться от 
+final.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Ну и пример использования clone():</span><br>
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://4.bp.blogspot.com/-kNerO5PAWMI/V52kxm5A_fI/AAAAAAAAA_U/sh1UHOUbMyEYikGPvbMM-X_U_QZqQCEGgCEw/s1600/q040_p03.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q040_p03.jpg" height="354" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Консоль:</span></div>
+<div style="text-align: justify;">
+<div class="separator" style="clear: both; text-align: center;">
+<a href="https://3.bp.blogspot.com/-4jznYjVR3CE/V52lLdqcWyI/AAAAAAAAA_Q/c1UgZdztQvwZFi6S4iwGOeAMl7dqudHlQCLcB/s1600/q040_p04.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: Arial, Helvetica, sans-serif;"><img src="core%20p2_files/q040_p04.jpg" height="46" border="0" width="640"></span></a></div>
+<span style="font-family: Arial, Helvetica, sans-serif;">&nbsp;Как видите, изменение объекта a повлекло за собой изменение объекта c, а вот с b всё в порядке.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Где и как вы можете использовать &nbsp;закрытый конструктор?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Например в 
+качестве паттерна Синглетон. В том же классе создается статический 
+метод. Где и создается экземпляр класса, конечно если он уже не создан, 
+тогда он просто возвращается методом.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Что такое конструктор по умолчанию?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">В Java если нет
+ явным образом опредёленных конструкторов в классе, то компилятор 
+использует конструктор по умолчанию, опредёленный неявным способом, 
+который аналогичен "чистому", конструктору по умолчанию. Конструктор по 
+умолчанию - это довольно простая конструкция, которая сводится к 
+созданию для типа конструктора без параметров. Так, например, если при 
+объявлении нестатического класса не объявить пользовательский 
+конструктор (не важно, с параметрами или без них), то компилятор 
+самостоятельно сгенерирует конструктор без параметров. Некоторые 
+программисты явным образом задают конструктор по умолчанию по привычке, 
+чтобы не забыть в дальнейшем, но это не обязательно</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">В Java если 
+производный класс не вызывает явным образом конструктор базового класса 
+(в Java используя super() в первой строчке), то конструктор по умолчанию
+ вызывается неявно. Если базовый класс не имеет конструктора по 
+умолчанию, то это считается ошибкой.</span><br>
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Опишите метод Object.finalize().</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Метод 
+finalize(). Java обеспечивает механизм, который является аналогичным 
+использованию деструкторов в С ++, который может использоваться для 
+того, чтобы произвести процесс очистки перед возвращением управления 
+операционной системе.&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Применяя метод 
+finalize(), можно определять специальные действия, которые будут 
+выполняться тогда, когда объект будет использоваться сборщиком мусора. 
+Данный метод вызывается при уничтожении объекта автоматическим сборщиком
+ мусора (garbage collector). В классе Object он ничего не делает, однако
+ в классе-наследнике позволяет описать все действия, необходимые для 
+корректного удаления объекта, такие как закрытие соединений с БД, 
+сетевых соединений, снятие блокировок на файлы и т.д. В обычном режиме 
+напрямую этот метод вызывать не нужно, он отработает автоматически. Если
+ необходимо, можно обратиться к нему явным образом.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Его синтаксис:&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">protected void finalize( ) throws Throwable&nbsp;</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">Ссылки не являются собранным мусором; только объекты - собранный мусор.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;"><br></span></div>
+<div style="text-align: justify;">
+<h3>
+<ul>
+<li><span style="font-family: Arial, Helvetica, sans-serif;">Чем отличаются слова final, finally и finalize?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">final - Нельзя наследоваться от файнал класса. Нельзя переопределить файнал метод. Нельзя изменить сначение файнал поля.</span></div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">finally - 
+используется при обработке ошибок, вызывается всегда, даже если 
+произошла ошибка(кроме System.exit(0)). Удобно использовать для 
+освобождения ресурсов.</span></div>
+<div>
+<div style="text-align: justify;">
+<span style="font-family: Arial, Helvetica, sans-serif;">finalize() - 
+вызывается перед тем как сборщик мусора будет проводить освобождение 
+памяти. Не рекомендуется использовать для освобождения системных 
+ресурсов, так как не известно когда сборщик мусора будет производить 
+свою очистку. Вообще данный метод мало кто использует. Единственно что 
+можно использовать этот метод для закрытия ресурса что должен работать 
+на протяжении всей работы программы и закрываться по ее окончанию. Еще 
+можно использовать метод для защиты от так называемых «дураков», 
+проверять, освобождены ли ресурсы, если нет, то закрыть их.</span><br>
+<span style="font-family: Arial, Helvetica, sans-serif;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br></span>
+<h3>
+<span style="font-family: Arial, Helvetica, sans-serif;"><a href="https://jsehelper.blogspot.nl/2016/01/java-core-3.html">Java core (часть 3).</a></span></h3>
+	
+
+</div></div></body></html>

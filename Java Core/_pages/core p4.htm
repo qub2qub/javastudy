@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<title>Core p4</title>
+</head>
+<body>
+<h3>
+<ul style="text-align: left;">
+<li style="text-align: left;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Что такое рефлексия?</span></li>
+</ul>
+</h3>
+
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Рефлексия
+ используется для получения или модификации информации о типах во время 
+выполнения программы. Этот механизм позволяет получить сведения о 
+классах, интерфейсах, полях, методах, конструкторах во время исполнения 
+программы. При этом не нужно знать имена классов, методов или 
+интерфейсов. Также этот механизм позволяет создавать новые объекты, 
+выполнять методы и получать и устанавливать значения полей.</span></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+</div>
+<div>
+<h3>
+<ul style="text-align: left;">
+<li style="text-align: left;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Что произойдет со сборщиком мусора (GC), если во время выполнения метода finalize() некоторого объекта произойдет исключение?</span></li>
+</ul>
+</h3>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Во
+ время старта JVM запускается поток finalizer, который работает в фоне. 
+Этот поток имеет метод runFinalizer, который игнорирует все исключения 
+методов finalize объектов перед сборкой мусора.</span></div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">То
+ есть если во время выполнения метода finalize возникнет исключительная 
+ситуация, его выполнение будет остановлено и это никак не скажется на 
+работоспособности самого сборщика мусора (garbage collector).</span></div>
+</div>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+</div>
+<div style="text-align: justify;">
+</div>
+<h3>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое интернационализация, локализация?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Интернационализация
+ (internationalization, а для краткости - i18n) - такой способ создания 
+приложений, при котором их можно легко адаптировать для разных 
+аудиторий, говорящих на разных языках.</span></div>
+</div>
+<div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Локализацияlocalization
+ а для краткости - l10n) - &nbsp;адаптация интерфейса приложения под 
+несколько языков. Добавление нового языка может внести определенные 
+сложности в локализацию интерфейса.</span></div>
+</div>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span><br>
+<h3 style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+<ul>
+<li style="text-align: justify;">Что такое Аннотации в Java?</li>
+</ul>
+</span></h3>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+</span>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аннотации
+ - это своего рода метатеги, которые добавляются к коду и применяются к 
+объявлению пакетов, классов, конструкторов, методов, полей, параметров и
+ локальных переменных. Аннотации всегда обладают некоторой информацией и
+ связывают эти "дополнительные данные" и все перечисленные конструкции 
+языка.</span></div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Фактически
+ аннотации представляют собой их дополнительные модификаторы, применение
+ которых не влечет за собой изменений ранее созданного кода.</span></div>
+<div style="text-align: justify;">
+<br></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие функции выполняет Аннотации?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Аннотация выполняет следующие функции:</span></div>
+<div style="text-align: justify;">
+</div>
+<ol>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">дает необходимую информацию для компилятора;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">дает информацию различным инструментам для генерации другого кода, конфигураций и т. д.;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">может использоваться во время работы кода;</span></li>
+</ol>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Самая часто встречаемая аннотация, которую встречал любой программист, даже начинающий это @Override.</span></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<br></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие встроенные аннотации в Java вы знаете?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ языке Java SE определено несколько встроенных аннотаций, большинство из
+ их являются специализированными. Четыре типа @Retention, @Documented, 
+@Target и @Inherited - из пакета java.lang.annotation.</span></div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Из
+ оставшиеся выделяются - @Override, @Deprecated, @SafeVarargs и 
+@SuppressWarnings - из пакета java.lang. Широкое использование аннотаций
+ в различных технологиях и фреймворках обуславливается возможностью 
+сокращения кода и снижения его связанности.</span></div>
+</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что делают аннотации @Retention, @Documented, @Target и @Inherited?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Эти аннотации, имеют следующее значение:</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Retention
+ - эта аннотация предназначена для применения только в качестве 
+аннотации к другим аннотациям, позволяет указать жизненный цикл 
+аннотации: будет она присутствовать только в исходном коде, в 
+скомпилированном файле, или она будет также видна и в процессе 
+выполнения. Выбор нужного типа зависит от того, как вы хотите 
+использовать аннотацию.&nbsp;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Documented - это маркер-интерфейс, который сообщает инструменту, что аннотация должна быть документирована.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target
+ - эта аннотация задает тип объявления, к которым может быть применима 
+аннотация. Принимает один аргумент, который должен быть константой из 
+перечисления ElementType, это может быть поле, метод, тип и т.д. 
+Например, чтобы указать, что аннотация применима только к полям и 
+локальным переменным: @Targer({ ElementType.FIELD, 
+ElementTyle.LOCAL_VARIABLE } )</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Inherited
+ - это аннотация-маркер, которая может применяться в другом объявление 
+аннотации, она касается только тех аннотаций, что будут использованы в 
+объявлениях классов. Эта аннотация позволяет аннотации супер класса быть
+ унаследованной в подклассе.</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что делают аннотации @Override, @Deprecated, @SafeVarargs и @SuppressWarnings?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Эти аннотации предназначены для:</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Override
+ - аннотация-маркер, которая может применяться только к методам. Метод, 
+аннотированный как @Override, должен переопределять метод супер класса.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Deprecated - указывает, что объявление устарело и должно быть заменено более новой формой.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@SafeVarargs
+ - аннотация-маркер, применяется к методам и конструкторам. Она 
+указывает, что никакие небезопасные действия, связанные с параметром 
+переменного количества аргументов, недопустимы. Применяется только к 
+методам и конструкторам с переменным количеством аргументов, которые 
+объявлены как static или final.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@SuppressWarnings
+ - эта аннотация указывает, что одно или более предупреждений, которые 
+могут быть выданы компилятором следует подавить.</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой жизненный цикл аннотации можно указать с помощью @Retention?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Существует
+ 3 возможные варианты чтобы указать где аннотация будет жить. Они 
+инкапсулированы в перечисление java.lang.annotation.RetentionPolicy. Это
+ SOURSE, CLASS, RUNTIME.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">SOURCE - содержаться только в исходном файле и отбрасываются при компиляции.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">CLASS - сохраняются в файле, однако они недоступны JVM во время выполнения.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">RUNTIME - сохраняются в файле во время компиляции и остаются доступными JVM во время выполнения.</span></li>
+</ul>
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">К каким элементам можно применять аннотацию, как это указать?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Для того чтобы ограничить использование аннотации её нужно проаннотировать. Для этого существует аннотация @Target.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.PACKAGE) - только для пакетов;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.TYPE) - только для классов;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.CONSTRUCTOR) - только для конструкторов;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.METHOD) - только для методов;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.FIELD) - только для атрибутов(переменных) класса;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.PARAMATER) - только для параметров метода;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@Target(ElementType.LOCAL_VARIABLE) - только для локальных переменных.</span></li>
+</ul>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">В
+ случае если вы хотите, что бы ваша аннотация использовалась больше чем 
+для одного типа параметров, то можно указать @Target следующим образом:</span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<a href="https://2.bp.blogspot.com/-CboLSOAq738/WFZe2IHPu4I/AAAAAAAABZo/8Ve01jYOIbs51q2u9k7HeflD1H5PMTm5wCLcB/s1600/q075_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="core%20p4_files/q075_p01.jpg" height="26" border="0" width="640"></span></a></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">тут мы говорим, аннотацию можно использовать только для параметров метода и для локальных переменных.</span></div>
+</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как создать свою Аннотацию?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Написать свою аннотацию не так сложно, как могло бы казаться. В следующем коде приведено объявление аннотации.</span></div>
+<div class="separator" style="clear: both; text-align: justify;">
+<a href="https://3.bp.blogspot.com/-uWMuBQOhugI/WFZfBrgWBjI/AAAAAAAABZs/x8RThSF9YOAcsF2FYKWk4m8wU9i149MpgCLcB/s1600/q076_p01.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><img src="core%20p4_files/q076_p01.jpg" height="64" border="0" width="640"></span></a></div>
+<div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">как вы видите на месте где обычно пишут class или interface у нас написано @interface.</span></div>
+</div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Структура практически та же, что и у интерфейсов, только пишется @interface.</span></div>
+</div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">@interface - указывает на то, что это аннотация</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">default - говорит про то, что метод по умолчанию будет возвращать определённое значение.</span></li>
+</ul>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аннотация готова теперь ею можно пользоваться, также аннотацию можно сконфигурировать.</span></div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Атрибуты каких типов допустимы в аннотациях?</span></li>
+</ul>
+</h3>
+<div style="text-align: left;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Атрибуты могут иметь только следующие типы:</span></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">примитивы</span></div>
+</div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">String</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Class или «any parameterized invocation of Class»</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">enum</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">annotation</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">массив элементов любого из вышеперечисленных типов</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Последний пункт надо понимать как то, что допустимы только одномерные массивы.</span></div>
+</div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое &nbsp;JMX?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Управленческие
+ расширения Java (Java Management Extensions, JMX) - &nbsp;API при 
+помощи которого можно контролировать работу приложений и управлять 
+различными параметрами удаленно в реальном времени. Причем управлять 
+можно фактически чем угодно - лишь бы это было написано на Java. Это 
+может быть микро-устройство типа считывателя отпечатка или система, 
+включающая тысячи машин, каждая из которых предоставляет определенные 
+сервисы. Данные ресурсы представляются MBean-объектами (управляемый Java
+ Bean). JMX вошла в поставку Java начиная с версии 5.</span></div>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие выгоды предлагает JMX?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Вот как эти выгоды описывает Sun</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Простота
+ реализации. Архитектура JMX основана на понятии "сервера управляемых 
+объектов" который выступает как управляющий агент и может быть запущен 
+на многих устройствах/компьютерах, которые поддерживают JAVA.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Масштабируемость.
+ Службы агентов JXM являются независимыми и могут быть встроены 
+наподобие plug-in’ов в агента JMX. Компонентно-основанаая система 
+позволяет создавать масштабируемые решения от крохотных устройств до 
+очень крупных систем.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Возможность
+ расширять концепцию в будущем. JMX позволяет создавать гибкие решения. 
+Например, JMX позволяет создавать удобные решения, которые могут 
+находить различные сервисы.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Концентрация
+ на управлении. JMX предоставляет сервися, разработанные для работы в 
+распределенных средах и его API спроектировано для решений, которые 
+управляют приложениями, сетями, сервисами и т.д.&nbsp;</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что еще умеет JMX кроме дистанционного управления?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JMX
+ делает гораздо больше, чем просто предоставляет рабочую оболочку для 
+дистанционного управления. Она обеспечивает дополнительные услуги 
+(services), способные занять ключевое место в процессе разработки. 
+Приведу лишь краткое описание:</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Event
+ notification: Интерфейсы оповещают исполнителей и слушателей о событиях
+ типа изменения атрибута, что позволяет MBean-компонентам общаться с 
+другими MBean-компонентами или удалённым "командным пунктом" и 
+докладывать об изменениях своего состояния</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Monitor
+ service: Monitor MBeans может посылать уведомления о событиях 
+зарегистрированным слушателям. Слушателем может выступать другой MBean 
+или управляющее приложение. В качестве основных атрибутов, для которых 
+используется данное свойство, являются counter, gauge или string.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Timer
+ service: Timer MBean будет посылать уведомления зарегистрированным 
+слушателям, с учётом определённого числа или временного промежутка.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">M-let
+ service: М-let service может создавать и регистрировать экземпляры 
+MBean-серверов. Список MBean-компонентов и имён из классов определяются в
+ m-let-файле с помощью MLET -меток. URL указывает на месторасположения 
+m-let-файла.</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое MBean?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MBeans - это Java-объекты, которые реализуют определенный интерфейс. Интерфейс включает:</span></div>
+<div style="text-align: justify;">
+</div>
+<ol>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">некие величины, которые могут быть доступны;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">операции, которые могут быть вызваны;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">извещения, которые могут быть посланы;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">конструкторы.</span></li>
+</ol>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие типы MBeans существуют?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Существует 4 типа MBeans:</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Standard MBeans. Самые простые бины. Их управляющий интерфейс определяется набором методов</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Dynamic MBeans. Они реализуют специализированный интерфейс, который делают доступным во время исполнения.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Open MBeans. Это Dynamic MBeans, которые используют только основные типы данных для универсального управления.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Model
+ MBeans. Это Dynamic MBeans, которые полностью конфигурируемы и могут 
+показать свое описание во время исполнения (нечто вроде Reflection)</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое MBean Server?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">MBean
+ Server - это реестр объектов, которые используются для управления. 
+Любой объект зарегистрированный на сервере становится доступным для 
+приложений. Надо отметить, что сервер публикует только интерфейсы и не 
+дает прямых ссылок на объекты. Любые ресурсы, которыми вы хотите 
+управлять должны быть зарегистрированы на сервере как MBean. Сервер 
+предоставляет стандартный интерфейс для доступа к MBean. Интересно, что 
+регистрировать MBean может любой другой MBean, сам агент или удаленное 
+приложение через распределенные сервисы. Когда вы регистрируете MBean вы
+ должны дать ему уникальное имя, которое будет использовано для 
+обращения к даному объекту.</span></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие механизмы обеспечивают безопасность в технологии Java?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В технологии Java безопасность обеспечивают следующие три механизма:</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">структурные
+ функциональные возможности языка (например, проверка границ массивов, 
+запрет на преобразования непроверенных типов, отсутствие указателей и 
+т.д.).</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">средства
+ контроля доступа, определяющие действия, которые разрешается или 
+запрещается выполнять в коде (например, может ли код получать доступ к 
+файлам, передавать данные по сети и т.д.).</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">механизм
+ цифровой подписи, предоставляющий авторам возможность применять 
+стандартные алгоритмы для аутентификации своих программ, а пользователям
+ - точно определять, кто создал код и изменился ли он с момента его 
+подписания.</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Назовите несколько видов проверок которые выполняет верификатор байт-кода Java?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Ниже приведены некоторые виды проверок, выполняемых верификатором.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">инициализация переменных перед их использованием.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">согласование типов ссылок при вызове метода.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">соблюдение правил доступа к закрытым данным и методам.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">доступ к локальным переменным в стеке во время выполнения.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">отсутствие переполнения стека.</span></li>
+</ul>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">При невыполнении какой-нибудь из этих проверок класс считается поврежденным и загружаться не будет.</span></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что вы знаете о "диспетчере защиты" в Java?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В
+ качестве диспетчера защиты служит класс, определяющий, разрешено ли 
+коду выполнять ту или иную операцию. Ниже перечислены операции, 
+подпадающие под контроль диспетчера защиты. Существует немало других 
+проверок, выполняемых диспетчером защиты в библиотеке Java.</span></div>
+<div style="text-align: justify;">
+</div>
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">создание нового загрузчика классов.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">выход из виртуальной машины.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">получение доступа к члену другого класса с помощью рефлексии.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">получение доступа к файлу.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">установление соединения через сокет.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">запуск задания на печать.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">получение доступа к системному буферу обмена.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">получение доступа к очереди событий в AWT.</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">обращение к окну верхнего уровня.</span></li>
+</ul>
+<div style="text-align: justify;">
+<br></div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое JAAS?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JAAS
+ (Java Authentication and Authorization Service - служба аутентификации и
+ авторизации Java ) - служба JAAS, по существу, представляет собой 
+встраиваемый прикладной интерфейс API, отделяющий прикладные программы 
+на Java от конкретной технологии, применяемой для реализации средств 
+аутентификации. Помимо прочего, эта служба поддерживает механизмы 
+регистрации в UNIX и NT, механизм аутентификации Kerberos и механизмы 
+аутентификации по сертификатам.</span></div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">После
+ аутентификации за пользователем может быть закреплен определенный набор
+ полномочий. Входит в состав платформы Java начиная с версии Java SE 
+1.4.</span></div>
+</div>
+<div style="text-align: justify;">
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br></span></div>
+</div>
+<h3 style="text-align: justify;">
+<ul>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое Рефакторинг?</span></li>
+</ul>
+</h3>
+<div style="text-align: justify;">
+<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Рефакторинг
+ - процесс изменения внутренней структуры программы, не затрагивающий её
+ внешнего поведения и имеющий целью облегчить понимание её работы. В 
+основе рефакторинга лежит последовательность небольших эквивалентных (то
+ есть сохраняющих поведение) преобразований..</span></div>
+</div>	
+
+</body></html>
