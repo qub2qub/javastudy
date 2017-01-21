@@ -109,6 +109,7 @@ the newCachedThreadPool factory sets the maximum pool size to Integer.MAX_VALUE 
 Bounded thread pools limit the number of tasks that can be executed concurrently. (The single-threaded executors are a notable special case: they guarantee that no tasks will execute concurrently, offering the possibility of achieving thread safety through thread confinement.)
 
 If the arrival rate for new requests exceeds the rate at which they can be handled, requests will still queue up. И это создаст доп. нагрузку на ресурсы и приложение. И чтобы избежать out of memory придётся просто прекращать обслуживать запросы, например.
+ ...сглаживаем пик когда есть очередь.
 
 ThreadPoolExecutor allows you to supply a BlockingQueue to hold tasks awaiting execution. 
 There are three basic approaches to task queueing: 
@@ -120,7 +121,11 @@ The choice of queue interacts with other configuration parameters such as pool s
 
 newFixedThreadPool and newSingleThreadExecutor используют unbounded LinkedBlockingQueue. 
 
- -- A more stable resource management strategy is to use a bounded queue, such as an ArrayBlockingQueue or a bounded LinkedBlockingQueue or PriorityBlockingQueue. Bounded queues help prevent resource exhaustion but introduce the question of what to do with new tasks when the queue is full. (There are a number of possible SATURATION [ˏsæʧə`reıʃ(ə)n] (насыщение, перегрузка\превышение имеющейся (доступной) пропускной способности) POLICIES for addressing this problem; see Section 8.3.3.)
+** какие ограниченные очереди а какие нет, примеры из java?
+** что такое heap структура данных?
+
+ -- A more stable resource management strategy is to use a bounded queue, such as an ArrayBlockingQueue or a bounded LinkedBlockingQueue or PriorityBlockingQueue. 
+ Bounded queues help prevent resource exhaustion but introduce the question of what to do with new tasks when the queue is full. (There are a number of possible SATURATION [ˏsæʧə`reıʃ(ə)n] (насыщение, перегрузка\превышение имеющейся (доступной) пропускной способности) POLICIES for addressing this problem; see Section 8.3.3.)
    WITH A BOUNDED WORK QUEUE, THE QUEUE SIZE AND POOL SIZE MUST BE TUNED TOGETHER. 
    A large queue coupled with a small pool can help reduce memory usage, CPU usage, and context switching, at the cost of potentially constraining throughput.
 
@@ -163,16 +168,19 @@ Several implementations of RejectedExecutionHandler are provided, each implement
 4) CallerRunsPolicy
   The caller-runs policy implements a form of throttling that neither discards tasks nor throws an exception, but instead tries to slow down the flow of new tasks by pushing some of the work back to the caller. 
   It executes the newly submitted task not in a pool thread, but in the thread that calls execute.
-  В этом слечае тот поток, который давал задания сам начнёт их выполнять, при этом он перестанет посылать новые задачи, за это время потоки может быть разгребутся.
-  Но в этом случае есть проблема, что сам главный поток тоже не сможет обрабатывать запросы, которые к нему приходят. Если это веб-сервер -- то запросы будут складироваться(добавляться в очередь) на уровне TCP. И потом уже TCP начнёт отказывать в обработке запросам. Т.е. при сверх-нагрузке перегрузка постепенно будет просачивать от потоков в приложение, от него в TCP, и от TCP к клиенту.
+  В этом случае тот поток, который давал задания сам начнёт их выполнять, при этом он перестанет посылать новые задачи, за это время потоки может быть разгребутся.
+  Но в этом случае есть проблема, что сам главный поток тоже не сможет обрабатывать запросы, которые к нему приходят. Если это веб-сервер -- то запросы будут складироваться(добавляться в очередь) на уровне TCP. И потом уже TCP начнёт отказывать в обработке запросам. Т.е. при сверх-нагрузке перегрузка постепенно будет просачиваться от потоков в приложение, от него в TCP, и от TCP к клиенту.
 
 По умолчанию нету такой политики, чтобы метод execute() блокировался, если очередь заполнилась. Можно сделать кастомный, с ис-ем семафора.
 !!!  semaphore is bounding the number of tasks both currently executing and
 awaiting execution.
+см BoundedExecutor.java
 
 *** 8.3.4 Thread factories ***
 Whenever a thread pool needs to create a thread, it does so through a thread factory (see Listing 8.5). The default thread factory creates a new, nondaemon thread with no special configuration. 
-Specifying a thread factory allows you to customize the configuration of pool threads. ThreadFactory has a single method, newThread() , that is called whenever a thread pool needs to create a new thread.
+Specifying a thread factory allows you to customize the configuration of pool threads. 
+
+ThreadFactory has a single method, newThread() , that is called whenever a thread pool needs to create a new thread.
 
 Можно создать свою custom thread factory, и в ней задать UncaughtExceptionHandler, или создавать instance of a custom Thread class.
 
@@ -194,7 +202,7 @@ Most of the options passed to the ThreadPoolExecutor constructors can also be mo
 It can be used to release resources allocated by the Executor during its lifecycle, perform notification or logging, or finalize statistics gathering.
 
 *** 8.4.1 Example: adding statistics to a thread pool *** 
-Because execution hooks are called in the thread that executes the task, a value placed in a ThreadLocal by beforeExecute can be retrieved by afterExecute.
+Because execution hooks are called in the thread that executes the task, a value placed in a ThreadLocal by beforeExecute() can be retrieved by afterExecute().
 
 *** 8.5 Parallelizing recursive algorithms ***
 If we have a loop whose iterations are independent and we don't need to wait for all of them to complete before proceeding, we can use an Executor to transform a sequential loop into a parallel one.
@@ -222,5 +230,6 @@ the rejected execution handler should be set to discard submitted tasks. Then, a
 
 The sequential version terminated when it had exhausted the search space, but getting concurrent programs to terminate can sometimes be more difficult. One possible solution is to keep a count of active solver tasks and set the solution to null when the count drops to zero
 
-Finding the solution may also take longer than we are willing to wait; there are several additional termination conditions we could impose on the solver. One is a time limit; this is easily done by implementing a timed getValue in Val-ueLatch (which would use the timed version of await), and shutting down the Executor and declaring failure if getValue times out. Another is some sort of puzzle-specific metric such as searching only up to a certain number of positions. Or we can provide a cancellation mechanism and let the client make its own decision about when to stop searching.
-
+Finding the solution may also take longer than we are willing to wait; there are several additional termination conditions we could impose on the solver. 
+One is a time limit; this is easily done by implementing a timed getValue() in ValueLatch (which would use the timed version of await()), and shutting down the Executor and declaring failure if getValue() times out. 
+Another is some sort of puzzle-specific metric such as searching only up to a certain number of positions. Or we can provide a cancellation mechanism and let the client make its own decision about when to stop searching.
