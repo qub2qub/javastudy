@@ -1,0 +1,37 @@
+http://docs.spring.io/spring/docs/current/spring-framework-reference/html/beans.html#beans-factory-extension-bpp
+
+http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/beans/factory/config/BeanPostProcessor.html#postProcessAfterInitialization-java.lang.Object-java.lang.String-
+**************************************************
+The BeanPostProcessor interface defines callback methods that you can implement to provide your own instantiation logic, dependency-resolution logic etc. 
+You can also implement some custom logic after the Spring container finishes instantiating, configuring, and initializing a bean by plugging in one or more BeanPostProcessor implementations.
+
+You can configure multiple BeanPostProcessor interfaces and you can control the order in which these BeanPostProcessor interfaces execute by setting the ORDER property provided the BeanPostProcessor implements the Ordered interface.
+
+The BeanPostProcessors operate on bean (or object) instances which means that the Spring IoC container instantiates a bean instance and then BeanPostProcessor interfaces do their work.
+
+An ApplicationContext AUTOMATICALLY DETECTS any beans that are defined with implementation of the BeanPostProcessor interface and registers these beans as post-processors, to be then called appropriately by the container upon bean creation.
+
+-----------------------
+
+Spring doc explains the BPPs under Customizing beans using BeanPostProcessor. BPP beans are a special kind of beans that get created before any other beans and interact with newly created beans. With this construct, Spring gives you means to hook-up to and customize the lifecycle behavior simply by implementing a BeanPostProcessor yourself. 
+
+To undersand how the method fit the bean's lifecycle, and when exactly the method's get called check the docs:
+
+    postProcessBeforeInitialization(Object bean, String beanName) Apply this BeanPostProcessor to the given new bean instance before any bean initialization callbacks (like InitializingBean's afterPropertiesSet or a custom init-method).
+
+    postProcessAfterInitialization(Object bean, String beanName) Apply this BeanPostProcessor to the given new bean instance after any bean initialization callbacks (like InitializingBean's afterPropertiesSet or a custom init-method).
+
+The important bit is also that:
+    The bean will already be populated with property values.
+
+For what concerns the relation with the @PostConstruct note that this annotation is a convenient way of declaring a postProcessAfterInitialization method, and Spring becomes aware of it when you either by registerCommonAnnotationBeanPostProcessor or specify the <context:annotation-config /> in bean configuration file. Whether the @PostConstruct method will execute before or after any other postProcessAfterInitialization depends on the order property
+    You can configure multiple BeanPostProcessor instances, and you can control the order in which these BeanPostProcessors execute by setting the order property.
+
+-------------------
+
+
+The typical example for a bean post processor is when you want to wrap the original bean in a proxy instance, e.g. when using the @Transactional annotation.
+
+The bean post processor will be handed the original instance of the bean, it may call any methods on the target, but it also gets to return the actual bean instance that should be bound in the application context, which means that it can actually return any object it wants. The typical scenario when this is useful is when the bean post processor wraps the target in a proxy instance. All invocations on the bean bound in application context will pass through the proxy, and the proxy then gets to perform some magic before and/or after invocations on the target bean, e.g. AOP or transaction management.
+
+-----------------------

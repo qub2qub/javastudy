@@ -1,0 +1,50 @@
+Spring Bean LifeCycle
+www.journaldev.com/2637/spring-bean-life-cycle
+http://howtodoinjava.com/spring/spring-core/spring-bean-life-cycle/
+https://www.tutorialspoint.com/spring/spring_bean_life_cycle.htm
+*****************************
+Spring framework provides following 4 ways for controlling life cycle events of bean:
+1 - InitializingBean and DisposableBean callback interfaces
+2 - Other Aware interfaces for specific behavior
+3 - custom init() and destroy() methods in bean configuration file
+4 - JSR-250 annotations: @PostConstruct and @PreDestroy 
+5 - BeanPostProcessors ?
+*****************************
+
+Sometimes we want to initialize resources in the bean classes, for example creating database connections or validating third party services at the time of initialization before any client request.
+
+1) By IMPLEMENTING InitializingBean and DisposableBean interfaces – 
+This approach is simple to use but it’s not recommended because it will create tight coupling with the Spring framework in our bean implementations.
+
+2) Other Aware interfaces for specific behavior
+Spring offers a range of Aware interfaces that allow beans to indicate to the container that they require a certain infrastructure dependency. Each interface will require you to implement a method to inject the dependency in bean.
+
+3) PROVIDING init-method and destroy-method attribute values for the bean in the spring bean configuration file. 
+The default init and destroy methods in bean configuration file can be defined in two ways: 
+  3.1 - Bean local definition applicable to a single bean 
+  3.2 - Global definition applicable to all beans defined in beans contex
+This is the recommended approach because of no direct dependency to spring framework and we can create our own methods.
+Note that both post-init and pre-destroy methods should have no arguments but they can throw Exceptions. We would also require to get the bean instance from the spring application context for these methods invocation.
+
+4) ANNOTATIONS - Spring 2.5 onwards support @PostConstruct and @PreDestroy --
+annotations for defining post-init and pre-destroy methods. 
+   4.1 - @PostConstruct annotated method will be invoked after the bean has been constructed using default constructor and just before it’s instance is returned to requesting object.
+   4.2 - @PreDestroy annotated method is called just before the bean is about be destroyed inside bean container.
+These annotations are part of javax.annotation package.
+However for these annotations to work, we need to configure our spring application to look for annotations. We can do this either by defining bean of type org.springframework.context.annotation.CommonAnnotationBeanPostProcessor or by context:annotation-config element in spring bean configuration file.
+
+*****************************************************
+
+SPRING AWARE INTERFACES
+
+Sometimes we need Spring Framework objects in our beans to perform some operations, for example reading ServletConfig and ServletContext parameters or to know the bean definitions loaded by the ApplicationContext. That’s why spring framework provides a bunch of *Aware interfaces that we can implement in our bean classes.
+
+Spring Aware interfaces are similar to servlet listeners with callback methods and implementing OBSERVER DESIGN PATTERN.
+
+Some of the important Aware interfaces are:
+1 ApplicationContextAware – to inject ApplicationContext object, example usage is to get the array of bean definition names.
+2 BeanFactoryAware – to inject BeanFactory object, example usage is to check scope of a bean.
+3 BeanNameAware – to know the bean name defined in the configuration file.
+4 ResourceLoaderAware – to inject ResourceLoader object, example usage is to get the input stream for a file in the classpath.
+5 ServletContextAware – to inject ServletContext object in MVC application, example usage is to read context parameters and attributes.
+6 ServletConfigAware – to inject ServletConfig object in MVC application, example usage is to get servlet config parameters.

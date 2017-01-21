@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>app ctx init steps</title>
+    <style type="text/css">
+        pre {
+            font-family: "Trebuchet MS",Tahoma,Arial;
+            font-size: 18px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #999;
+            padding: 5px;
+        }
+        body {
+            font-size: 22px;
+            background-color: #bbb;
+        }
+    </style>
+</head>
+<body>
+<div class="post__body post__body_full">
+    <div class="content html_format">
+<br>
+<a href="https://habrahabr.ru/post/222579/">src habr</a>
+<br>
+Доброго времени суток уважаемые хабравчане. Уже 3 года я работаю на проекте в котором мы используем Spring. Мне всегда было интересно разобраться с тем, как он устроен внутри. Я поискал статьи про внутреннее устройство Spring, но, к сожалению, ничего не нашел.<br>
+<br>
+Всех, кого интересует внутреннее устройство Spring, прошу под кат.<br>
+<a name="habracut"></a><br>
+На схеме изображены основные этапы поднятия ApplicationContext. В этом посте мы остановимся на каждом из этих этапов. Какой-то этап будет рассмотрен подробно, а какой-то будет описан в общих чертах.<br>
+<br>
+<img src="pics/step1.png"><br>
+<br>
+<h4>1. Парсирование конфигурации и создание BeanDefinition</h4><br>
+После выхода четвертой версии спринга, у нас появилось четыре способа конфигурирования контекста:<br>
+<ol>
+<li>Xml конфигурация &mdash; ClassPathXmlApplicationContext(“context.xml”)</li>
+<li>Конфигурация через аннотации с указанием пакета для сканирования &mdash; AnnotationConfigApplicationContext(“package.name”)</li>
+<li>Конфигурация через аннотации с указанием класса (или массива классов) помеченного аннотацией  @Configuration -AnnotationConfigApplicationContext(JavaConfig.class). Этот способ конфигурации называется &mdash; JavaConfig.</li>
+<li>Groovy конфигурация &mdash; GenericGroovyApplicationContext(“context.groovy”)</li>
+</ol><br>
+Про все четыре способа очень хорошо написано <a href="http://habrahabr.ru/company/codefreeze/blog/218203/">тут</a>.<br>
+<br>
+Цель первого этапа &mdash; это создание всех <i>BeanDefinition</i>. <i>BeanDefinition</i> &mdash; это специальный интерфейс, через который можно получить доступ к метаданным будущего бина. В зависимости от того, какая у вас конфигурация, будет использоваться тот или иной механизм парсирования конфигурации.<br>
+<br>
+<h5>Xml конфигурация</h5><br>
+Для Xml конфигурации используется класс &mdash; <i>XmlBeanDefinitionReader</i>, который реализует интерфейс <i>BeanDefinitionReader</i>. Тут все достаточно прозрачно. <i>XmlBeanDefinitionReader</i> получает <i>InputStream</i> и загружает <i>Document</i> через <i>DefaultDocumentLoader</i>. Далее обрабатывается каждый элемент документа и если он является бином, то создается <i>BeanDefinition</i> на основе заполненных данных (id, name, class, alias, init-method, destroy-method и др.). Каждый <i>BeanDefinition</i> помещается в Map. Map хранится в классе <i>DefaultListableBeanFactory</i>. В коде Map выглядит вот так.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-comment">/** Map of bean definition objects, keyed by bean name */</span>
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, BeanDefinition&gt; beanDefinitionMap = <span class="hljs-keyword">new</span> ConcurrentHashMap&lt;String, BeanDefinition&gt;(<span class="hljs-number">64</span>);
+</code></pre><br>
+<h5>Конфигурация через аннотации с указанием пакета для сканирования или JavaConfig</h5><br>
+Конфигурация через аннотации с указанием пакета для сканирования или JavaConfig в корне отличается от конфигурации через xml. В обоих случаях используется класс <i>AnnotationConfigApplicationContext</i>.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">new</span> AnnotationConfigApplicationContext(JavaConfig.class);</code></pre><br>
+или<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">new</span> AnnotationConfigApplicationContext(“<span class="hljs-keyword">package</span>.name”);</code></pre><br>
+Если заглянуть во внутрь AnnotationConfigApplicationContext, то можно увидеть два поля.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AnnotatedBeanDefinitionReader reader;
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ClassPathBeanDefinitionScanner scanner;
+</code></pre><br>
+<i>ClassPathBeanDefinitionScanner</i> сканирует указанный пакет на наличие классов помеченных аннотацией <i>@Component</i> (или любой другой аннотацией которая включает в себя <i>@Component</i>). Найденные классы парсируются и для них создаются <i>BeanDefinition</i>.<br>
+Чтобы сканирование было запущено, в конфигурации должен быть указан пакет для сканирования.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@ComponentScan</span>({<span class="hljs-string">"package.name"</span>})</code></pre><br>
+или<br>
+<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">context:component-scan</span> <span class="hljs-attr">base-package</span>=<span class="hljs-string">"package.name"</span>/&gt;</span></code></pre><br>
+<i>AnnotatedBeanDefinitionReader</i> работает в несколько этапов.<br>
+<ol>
+<li>Первый этап &mdash; это регистрация всех <i> @Configuration</i> для дальнейшего парсирования. Если в конфигурации используются <i>Conditional</i>, то будут зарегистрированы только те конфигурации, для которых <i>Condition</i> вернет true. Аннотация <i>Conditional</i> появилась в четвертой версии спринга. Она используется в случае, когда на момент поднятия контекста нужно решить, создавать бин/конфигурацию или нет. Причем решение принимает специальный класс, который обязан реализовать интерфейс <i>Condition</i>.</li>
+<li>Второй этап &mdash; это регистрация специального <i>BeanFactoryPostProcessor</i>, а именно <i>BeanDefinitionRegistryPostProcessor</i>, который при помощи класса <i>ConfigurationClassParser</i> парсирует JavaConfig и создает <i>BeanDefinition</i>.</li>
+</ol><br>
+<h5>Groovy конфигурация</h5><br>
+Данная конфигурация очень похожа на конфигурацию через Xml, за исключением того, что в файле не XML, а Groovy. Чтением и парсированием groovy конфигурации занимается класс <i>GroovyBeanDefinitionReader</i>.<br>
+<br>
+<h4>2. Настройка созданных BeanDefinition</h4><br>
+После первого этапа у нас имеется Map, в котором хранятся <i>BeanDefinition</i>. Архитектура спринга построена таким образом, что у нас есть возможность повлиять на то, какими будут наши бины еще до их фактического создания, иначе говоря мы имеем доступ к метаданным класса. Для этого существует специальный интерфейс <i>BeanFactoryPostProcessor</i>, реализовав который, мы получаем доступ к созданным <i>BeanDefinition</i> и можем их изменять. В этом интерфейсе всего один метод.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">BeanFactoryPostProcessor</span> </span>{
+	<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">postProcessBeanFactory</span><span class="hljs-params">(ConfigurableListableBeanFactory beanFactory)</span> <span class="hljs-keyword">throws</span> BeansException</span>;
+}
+</code></pre><br>
+<br>
+Метод <b>postProcessBeanFactory</b> принимает параметром <i>ConfigurableListableBeanFactory</i>. Данная фабрика содержит много полезных методов, в том числе <b>getBeanDefinitionNames</b>, через который мы можем получить все BeanDefinitionNames, а уже потом по конкретному имени получить <i>BeanDefinition</i> для дальнейшей обработки метаданных.<br>
+<br>
+Давайте разберем одну из родных реализаций интерфейса <i>BeanFactoryPostProcessor</i>. Обычно, настройки подключения к базе данных выносятся в отдельный property файл, потом при помощи <i>PropertySourcesPlaceholderConfigurer</i> они загружаются и делается inject этих значений в нужное поле. Так как inject делается по ключу, то до создания экземпляра бина нужно заменить этот ключ на само значение из property файла. Эта замена происходит в классе, который реализует интерфейс <i>BeanFactoryPostProcessor</i>. Название этого класса &mdash; <i>PropertySourcesPlaceholderConfigurer</i>. Весь этот процесс можно увидеть на рисунке ниже.<br>
+<br>
+<img src="pics/step2.png"><br>
+<br>
+Давайте еще раз разберем что же у нас тут происходит. У нас имеется <i>BeanDefinition</i> для класса ClassName. Код класса приведен ниже.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Component</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClassName</span> </span>{
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"${host}"</span>)
+    <span class="hljs-keyword">private</span> String host;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"${user}"</span>)
+    <span class="hljs-keyword">private</span> String user;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"${password}"</span>)
+    <span class="hljs-keyword">private</span> String password;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"${port}"</span>)
+    <span class="hljs-keyword">private</span> Integer port;
+} 
+</code></pre><br>
+<br>
+Если <i>PropertySourcesPlaceholderConfigurer</i> не обработает этот <i>BeanDefinition</i>, то после создания экземпляра ClassName, в поле host проинжектится значение &mdash; "${host}" (в остальные поля проинжектятся соответсвующие значения). Если <i>PropertySourcesPlaceholderConfigurer</i> все таки обработает этот <i>BeanDefinition</i>, то после обработки, метаданные этого класса будут выглядеть следующим образом.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Component</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClassName</span> </span>{
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"127.0.0.1"</span>)
+    <span class="hljs-keyword">private</span> String host;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"root"</span>)
+    <span class="hljs-keyword">private</span> String user;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"root"</span>)
+    <span class="hljs-keyword">private</span> String password;
+
+    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"27017"</span>)
+    <span class="hljs-keyword">private</span> Integer port;
+} 
+</code></pre><br>
+<br>
+Соответственно в эти поля проинжектятся правильные значения.<br>
+<br>
+Для того что бы <i>PropertySourcesPlaceholderConfigurer</i> был добавлен в цикл настройки созданных <i>BeanDefinition</i>, нужно сделать одно из следующих действий.<br>
+<br>
+Для XML конфигурации.<br>
+<br>
+<pre><code class="xml hljs">
+<span class="hljs-tag">&lt;<span class="hljs-name">context:property-placeholder</span> <span class="hljs-attr">location</span>=<span class="hljs-string">"property.properties"</span> /&gt;</span>
+</code></pre><br>
+Для JavaConfig.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Configuration</span>
+<span class="hljs-meta">@PropertySource</span>(<span class="hljs-string">"classpath:property.properties"</span>)
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DevConfig</span> </span>{
+	<span class="hljs-meta">@Bean</span>
+	<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> PropertySourcesPlaceholderConfigurer <span class="hljs-title">configurer</span><span class="hljs-params">()</span> </span>{
+	    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> PropertySourcesPlaceholderConfigurer();
+	}
+}
+</code></pre><br>
+<br>
+<i>PropertySourcesPlaceholderConfigurer</i> обязательно должен быть объявлен как static. Без static у вас все будет работать до тех пор, пока вы не попробуете использовать <i>@ Value</i> внутри класса <i> @Configuration</i>.<br>
+<br>
+<h4>3. Создание кастомных FactoryBean</h4><br>
+<i>FactoryBean</i> &mdash; это generic интерфейс, которому можно делегировать процесс создания бинов типа . В те времена, когда конфигурация была исключительно в xml, разработчикам был необходим механизм с помощью которого они бы могли управлять процессом создания бинов. Именно для этого и был сделан этот интерфейс. Для того что бы лучше понять проблему, приведу пример xml конфигурации.<br>
+<br>
+<pre><code class="xml hljs">
+<span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">beans</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans"</span>
+       <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+       <span class="hljs-attr">xmlns:context</span>=<span class="hljs-string">"http://www.springframework.org/schema/context"</span>
+       <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"redColor"</span> <span class="hljs-attr">scope</span>=<span class="hljs-string">"prototype"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"java.awt.Color"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"r"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"255"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"g"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"b"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>
+    
+<span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span>
+</code></pre><br>
+<br>
+На первый взгляд, тут все нормально и нет никаких проблем. А что делать если нужен другой цвет? Создать еще один бин? Не вопрос.<br>
+<br>
+<pre><code class="xml hljs">
+<span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">beans</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans"</span>
+       <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+       <span class="hljs-attr">xmlns:context</span>=<span class="hljs-string">"http://www.springframework.org/schema/context"</span>
+       <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"redColor"</span> <span class="hljs-attr">scope</span>=<span class="hljs-string">"prototype"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"java.awt.Color"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"r"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"255"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"g"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"b"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"green"</span> <span class="hljs-attr">scope</span>=<span class="hljs-string">"prototype"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"java.awt.Color"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"r"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"g"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"255"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"b"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"0"</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>
+    
+<span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span>
+</code></pre> <br>
+<br>
+А что делать если я хочу каждый раз случайный цвет? Вот тут то и приходит на помощь интерфейс <i>FactoryBean</i>.<br>
+<br>
+Создадим фабрику которая будет отвечать за создание всех бинов типа &mdash; <i>Color</i>.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">package</span> com.malahov.factorybean;
+
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.FactoryBean;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Component;
+
+<span class="hljs-keyword">import</span> java.awt.*;
+<span class="hljs-keyword">import</span> java.util.Random;
+
+<span class="hljs-comment">/**
+ * User: malahov
+ * Date: 18.04.14
+ * Time: 15:59
+ */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ColorFactory</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">FactoryBean</span>&lt;<span class="hljs-title">Color</span>&gt; </span>{
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> Color <span class="hljs-title">getObject</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>{
+        Random random = <span class="hljs-keyword">new</span> Random();
+        Color color = <span class="hljs-keyword">new</span> Color(random.nextInt(<span class="hljs-number">255</span>), random.nextInt(<span class="hljs-number">255</span>), random.nextInt(<span class="hljs-number">255</span>));
+        <span class="hljs-keyword">return</span> color;
+    }
+
+    <span class="hljs-meta">@Override</span> 
+    <span class="hljs-keyword">public</span> Class&lt;?&gt; getObjectType() {
+        <span class="hljs-keyword">return</span> Color.class;
+    }
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isSingleton</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+    }
+}
+</code></pre><br>
+<br>
+Добавим ее в xml и удалим объявленные до этого бины типа &mdash; <i>Color</i>.<br>
+<br>
+<pre><code class="xml hljs">
+<span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">beans</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans"</span>
+       <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+       <span class="hljs-attr">xmlns:context</span>=<span class="hljs-string">"http://www.springframework.org/schema/context"</span>
+       <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"</span>&gt;</span>
+	
+	<span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"colorFactory"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"com.malahov.temp.ColorFactory"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span>
+</code></pre> <br>
+<br>
+Теперь создание бина типа <i>Color.class</i> будет делегироваться ColorFactory, у которого при каждом создании нового бина будет вызываться метод <b>getObject</b>.<br>
+<br>
+Для тех кто пользуется JavaConfig, этот интерфейс будет абсолютно бесполезен.<br>
+<br>
+<h4>4. Создание экземпляров бинов</h4><br>
+Созданием экземпляров бинов занимается <i>BeanFactory</i> при этом, если нужно, делегирует это кастомным <i>FactoryBean</i>. Экземпляры бинов создаются на основе ранее созданных <i>BeanDefinition</i>.<br>
+<br>
+<img src="pics/step3.png"><br>
+<br>
+<h4>5. Настройка созданных бинов</h4><br>
+Интерфейс <i>BeanPostProcessor</i> позволяет вклиниться в процесс настройки ваших бинов до того, как они попадут в контейнер. Интерфейс несет в себе несколько методов.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">BeanPostProcessor</span> </span>{
+	<span class="hljs-function">Object <span class="hljs-title">postProcessBeforeInitialization</span><span class="hljs-params">(Object bean, String beanName)</span> <span class="hljs-keyword">throws</span> BeansException</span>;
+	<span class="hljs-function">Object <span class="hljs-title">postProcessAfterInitialization</span><span class="hljs-params">(Object bean, String beanName)</span> <span class="hljs-keyword">throws</span> BeansException</span>;
+}
+</code></pre><br>
+<br>
+Оба метода вызываются для каждого бина. У обоих методов параметры абсолютно одинаковые. Разница только в порядке их вызова. Первый вызывается до init-метода, воторой, после. Важно понимать, что на данном этапе экземпляр бина уже создан и идет его донастройка. Тут есть два важных момента:<br>
+<ol>
+<li>Оба метода в итоге должны вернуть бин. Если в методе вы вернете null, то при получении этого бина из контекста вы получите null, а поскольку через бинпостпроцессор проходят все бины, после поднятия контекста, при запросе любого бина вы будете получать фиг, в смысле null.</li>
+<li>Если вы хотите сделать прокси над вашим объектом, то имейте ввиду, что это принято делать после вызова init метода, иначе говоря это нужно делать в методе <b>postProcessAfterInitialization</b>.</li>
+</ol><br>
+<br>
+Процесс донастройки показан на рисунке ниже. Порядок в котором будут вызваны <i>BeanPostProcessor</i> не известен, но мы точно знаем что выполнены они будут последовательно.<br>
+<br>
+<img src="pics/step4.png"><br>
+<br>
+Для того, что бы лучше понять для чего это нужно, давайте разберемся на каком-нибудь примере. <br>
+<br>
+При разработке больших проектов, как правило, команда делится на несколько групп. Например первая группа разработчиков занимается написанием инфраструктуры проекта, а вторая группа, используя наработки первой группы, занимается написанием бизнес логики. Допустим второй группе понадобился функционал, который позволит в их бины инжектить некоторые значения, например случайные числа.<br>
+<br>
+На первом этапе будет создана аннотация, которой будут помечаться поля класса, в которые нужно проинжектить значение.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Retention</span>(RetentionPolicy.RUNTIME)
+<span class="hljs-meta">@Target</span>(ElementType.FIELD)
+<span class="hljs-keyword">public</span> <span class="hljs-meta">@interface</span> InjectRandomInt {
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">min</span><span class="hljs-params">()</span> <span class="hljs-keyword">default</span> 0</span>;
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">max</span><span class="hljs-params">()</span> <span class="hljs-keyword">default</span> 10</span>;
+}
+</code></pre> <br>
+<br>
+По умолчанию, диапазон случайных числе будет от 0 до 10.<br>
+<br>
+Затем, нужно создать обработчик этой аннотации, а именно реализацию <i>BeanPostProcessor</i> для обработки аннотации <i>InjectRandomInt</i>.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Component</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">InjectRandomIntBeanPostProcessor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BeanPostProcessor</span> </span>{
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Logger LOGGER = LoggerFactory.getLogger(InjectRandomIntBeanPostProcessor.class);
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">postProcessBeforeInitialization</span><span class="hljs-params">(Object bean, String beanName)</span> <span class="hljs-keyword">throws</span> BeansException </span>{
+
+        LOGGER.info(<span class="hljs-string">"postProcessBeforeInitialization::beanName = {}, beanClass = {}"</span>, beanName, bean.getClass().getSimpleName());
+
+        Field[] fields = bean.getClass().getDeclaredFields();
+
+        <span class="hljs-keyword">for</span> (Field field : fields) {
+            <span class="hljs-keyword">if</span> (field.isAnnotationPresent(InjectRandomInt.class)) {
+                field.setAccessible(<span class="hljs-keyword">true</span>);
+                InjectRandomInt annotation = field.getAnnotation(InjectRandomInt.class);
+                ReflectionUtils.setField(field, bean, getRandomIntInRange(annotation.min(), annotation.max()));
+            }
+        }
+
+        <span class="hljs-keyword">return</span> bean;
+    }
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">postProcessAfterInitialization</span><span class="hljs-params">(Object bean, String beanName)</span> <span class="hljs-keyword">throws</span> BeansException </span>{
+        <span class="hljs-keyword">return</span> bean;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getRandomIntInRange</span><span class="hljs-params">(<span class="hljs-keyword">int</span> min, <span class="hljs-keyword">int</span> max)</span> </span>{
+        <span class="hljs-keyword">return</span> min + (<span class="hljs-keyword">int</span>)(Math.random() * ((max - min) + <span class="hljs-number">1</span>));
+    }
+}
+</code></pre><br>
+<br>
+Код данного <i>BeanPostProcessor</i> достаточно прозрачен, поэтому мы не будем на нем останавливаться, но тут есть один важный момент.<br>
+<br>
+<i>BeanPostProcessor</i> обязательно должен быть бином, поэтому мы его либо помечаем аннотацией <i>@Component</i>, либо регестрируем его в xml конфигурации как обычный бин.<br>
+<br>
+Первая группа разработчиков свою задачу выполнила. Теперь вторая группа может использовать эти наработки.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta">@Component</span>
+<span class="hljs-meta">@Scope</span>(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyBean</span> </span>{
+
+    <span class="hljs-meta">@InjectRandomInt</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> value1;
+
+    <span class="hljs-meta">@InjectRandomInt</span>(min = <span class="hljs-number">100</span>, max = <span class="hljs-number">200</span>)
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> value2;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> value3;
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">toString</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-string">"MyBean{"</span> +
+                <span class="hljs-string">"value1="</span> + value1 +
+                <span class="hljs-string">", value2="</span> + value2 +
+                <span class="hljs-string">", value3="</span> + value3 +
+                <span class="hljs-string">'}'</span>;
+    }
+}
+</code></pre><br>
+<br>
+В итоге, все бины типа <i>MyBean</i>, получаемые из контекста, будут создаваться с уже проинициализированными полями value1 и value2. Также тут стоить отметить, этап на котором будет происходить инжект значений в эти поля будет зависеть от того какой <i>@ Scope</i> у вашего бина. <i>SCOPE_SINGLETON</i> &mdash; инициализация произойдет один раз на этапе поднятия контекста. <i>SCOPE_PROTOTYPE</i> &mdash; инициализация будет выполняться каждый раз по запросу. Причем во втором случае ваш бин будет проходить через все BeanPostProcessor-ы что может значительно ударить по производительности.<br>
+<br>
+Полный код программы вы можете найти <a href="https://github.com/amalahov/InjectRandomIntBeanPostProcessor">тут</a>.<br>
+<br>
+Хочу сказать отдельное спасибо <a class="user_link" href="https://habrahabr.ru/users/evgenyborisov/">EvgenyBorisov</a>. Благодаря его <a href="http://xpinjection.com/trainings/spring-3/">курсу</a>, я решился на написание этого поста.<br>
+<br>
+Также советую посмотреть его <a href="https://www.youtube.com/watch?v=hDpa6m48eC4&amp;index=15&amp;list=PLVe-2wcL84b8qDFSA2rpbpuE3OTkEbAwe">доклад</a> с JPoint 2014.</div>
+    
+    <div class="post__tags">
+  <ul class="tags icon_tag">
+      <li><a rel="tag" href="https://habrahabr.ru/search/?q=%5Bjava%5D&amp;target_type=posts">java</a>, </li>
+      <li><a rel="tag" href="https://habrahabr.ru/search/?q=%5Bspring%5D&amp;target_type=posts">spring</a></li>
+  </ul>
+</div>
+  </div>
+</body>
+</html>

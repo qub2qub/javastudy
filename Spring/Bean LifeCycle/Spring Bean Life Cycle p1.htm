@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <title>Spring Bean Life Cycle</title>
+	<style type="text/css">
+		pre {
+            font-family: "Trebuchet MS",Tahoma,Arial;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #999;
+            padding: 5px;
+        }
+        body {
+        	background-color: #bbb;
+        }
+    	table {
+    		table-layout:fixed;
+    		width: 100%; 
+    		border-collapse: collapse;
+    		border-spacing: 0;
+    		line-height: 2;
+			}
+
+td {
+    border: 1px solid;
+	 word-wrap:break-word;
+}
+
+    </style>
+</head>
+<body>
+
+<h1 class="entry-title" itemprop="headline">Spring Bean Life Cycle</h1><p class="entry-meta"><time class="entry-modified-time" itemprop="dateModified" datetime="2016-07-06T12:04:22+00:00">July 6, 2016</time> by <span class="entry-author" itemprop="author" itemscope="" itemtype="http://schema.org/Person"><a href="http://www.journaldev.com/author/pankaj" class="entry-author-link" itemprop="url" rel="author"><span class="entry-author-name" itemprop="name">Pankaj</span></a></span> <span class="entry-comments-link"><a href="http://www.journaldev.com/2637/spring-bean-life-cycle#comments">21 Comments</a></span></p><div class="entry-content" itemprop="text"><div style="float:none;margin:10px 0 10px 0;text-align:center;"><div data-type="ad" data-publisher="journaldev.com" data-format="728x90" data-zone="jd_leaderboard_728x90"></div></div><p>Today we will look into Spring Bean Life Cycle. <a href="http://www.journaldev.com/2461/spring-ioc-bean-example-tutorial" title="Spring IoC Container and Spring Bean Example Tutorial">Spring Beans</a> are the most important part of any Spring application. Spring <strong>ApplicationContext</strong> is responsible to initialize the Spring Beans defined in spring bean configuration file.</p><h2>Spring Bean Life Cycle</h2><p><a href="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg"><img srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg 560w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-450x253.jpg 450w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-150x84.jpg 150w" src="Spring%20Bean%20Life%20Cycle%20p1_files/spring-bean-life-cycle.jpg" data-lazy-type="image" data-lazy-src="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg" alt="spring bean life cycle" class="lazy aligncenter size-full wp-image-10919 lazy-loaded" data-lazy-srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg 560w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-450x253.jpg 450w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-150x84.jpg 150w" sizes="(max-width: 560px) 100vw, 560px" height="315" width="560"><noscript><img
+src="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg" alt="spring bean life cycle" width="560" height="315" class="aligncenter size-full wp-image-10919" srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle.jpg 560w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-450x253.jpg 450w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-150x84.jpg 150w" sizes="(max-width: 560px) 100vw, 560px" /></noscript></a><br>
+Spring Context is also responsible for <a href="http://www.journaldev.com/2410/spring-dependency-injection" title="Spring Dependency Injection Example with Annotations and XML Configuration">injection dependencies</a> in the bean, either through setter or constructor methods or by <a href="http://www.journaldev.com/2623/spring-autowired-annotation" title="Spring bean autowire by name, type, constructor, Autowired and Qualifier annotations example">spring autowiring</a>.</p><p>Sometimes
+ we want to initialize resources in the bean classes, for example 
+creating database connections or validating third party services at the 
+time of initialization before any client request. <a href="http://www.journaldev.com/2888/spring-tutorial-spring-core-tutorial">Spring framework</a> provide different ways through which we can provide post-initialization and pre-destroy methods in a spring bean life cycle.</p><div style="float:none;margin:10px 0 10px 0;text-align:center;"><div data-type="ad" data-publisher="journaldev.com" data-format="728x90" data-zone="jd_post_start_728x90"></div></div><ol><li>By implementing <strong>InitializingBean</strong> and <strong>DisposableBean</strong>
+ interfaces – Both these interfaces declare a single method where we can
+ initialize/close resources in the bean. For post-initialization, we can
+ implement <code>InitializingBean</code> interface and provide implementation of <code>afterPropertiesSet()</code> method. For pre-destroy, we can implement <code>DisposableBean</code> interface and provide implementation of <code>destroy()</code> method. These methods are the callback methods and similar to servlet listener implementations.<p>This
+ approach is simple to use but it’s not recommended because it will 
+create tight coupling with the Spring framework in our bean 
+implementations.</p></li><li>Providing <strong>init-method</strong> and <strong>destroy-method</strong>
+ attribute values for the bean in the spring bean configuration file. 
+This is the recommended approach because of no direct dependency to 
+spring framework and we can create our own methods.</li></ol><p>Note that both <em>post-init</em> and <em>pre-destroy</em>
+ methods should have no arguments but they can throw Exceptions. We 
+would also require to get the bean instance from the spring application 
+context for these methods invocation.</p><h3>Spring Bean Life Cycle – @PostConstruct, @PreDestroy Annotations</h3><p>Spring framework also support <code>@PostConstruct</code> and <code>@PreDestroy</code> annotations for defining post-init and pre-destroy methods. These annotations are part of <code>javax.annotation</code>
+ package. However for these annotations to work, we need to configure 
+our spring application to look for annotations. We can do this either by
+ defining bean of type <code>org.springframework.context.annotation.CommonAnnotationBeanPostProcessor</code> or by <code>context:annotation-config</code> element in spring bean configuration file.</p><p>Let’s
+ write a simple Spring application to showcase the use of above 
+configurations for spring bean life cycle management. Create a Spring 
+Maven project in Spring Tool Suite, final project will look like below 
+image.</p><div style="float:none;margin:10px 0 10px 0;text-align:center;"><div data-type="ad" data-publisher="journaldev.com" data-format="300x250" data-zone="jd_post_mid_300x250"></div></div><p><a href="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project.png"><img srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project-411x450.png 411w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project.png 624w" src="Spring%20Bean%20Life%20Cycle%20p1_files/spring-bean-life-cycle-project-411x450.png" data-lazy-type="image" data-lazy-src="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project-411x450.png" alt="spring bean life cycle example methods" class="lazy aligncenter size-medium wp-image-2640 lazy-loaded" data-lazy-srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project-411x450.png 411w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project.png 624w" sizes="(max-width: 411px) 100vw, 411px" height="450" width="411"><noscript><img
+src="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project-411x450.png" alt="spring bean life cycle example methods" width="411" height="450" class="aligncenter size-medium wp-image-2640" srcset="http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project-411x450.png 411w, http://cdn.journaldev.com/wp-content/uploads/2014/04/spring-bean-life-cycle-project.png 624w" sizes="(max-width: 411px) 100vw, 411px" /></noscript></a></p><h3>Spring Bean Life Cycle – Maven Dependencies</h3><p>We
+ don’t need to include any extra dependencies for configuring spring 
+bean life cycle methods, our pom.xml file is like any other standard 
+spring maven project.</p><pre style="" class="prettyprint prettyprinted"><span class="tag">&lt;project</span><span class="pln"> </span><span class="atn">xmlns</span><span class="pun">=</span><span class="atv">"http://maven.apache.org/POM/4.0.0"</span><span class="pln"> </span><span class="atn">xmlns:xsi</span><span class="pun">=</span><span class="atv">"http://www.w3.org/2001/XMLSchema-instance"</span><span class="pln"> </span><span class="atn">xsi:schemaLocation</span><span class="pun">=</span><span class="atv">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="tag">&gt;</span><span class="pln">
+  </span><span class="tag">&lt;modelVersion&gt;</span><span class="pln">4.0.0</span><span class="tag">&lt;/modelVersion&gt;</span><span class="pln">
+  </span><span class="tag">&lt;groupId&gt;</span><span class="pln">org.springframework.samples</span><span class="tag">&lt;/groupId&gt;</span><span class="pln">
+  </span><span class="tag">&lt;artifactId&gt;</span><span class="pln">SpringBeanLifeCycle</span><span class="tag">&lt;/artifactId&gt;</span><span class="pln">
+  </span><span class="tag">&lt;version&gt;</span><span class="pln">0.0.1-SNAPSHOT</span><span class="tag">&lt;/version&gt;</span><span class="pln">
+  
+  </span><span class="tag">&lt;properties&gt;</span><span class="pln">
+
+		</span><span class="com">&lt;!-- Generic properties --&gt;</span><span class="pln">
+		</span><span class="tag">&lt;java.version&gt;</span><span class="pln">1.7</span><span class="tag">&lt;/java.version&gt;</span><span class="pln">
+		</span><span class="tag">&lt;project.build.sourceEncoding&gt;</span><span class="pln">UTF-8</span><span class="tag">&lt;/project.build.sourceEncoding&gt;</span><span class="pln">
+		</span><span class="tag">&lt;project.reporting.outputEncoding&gt;</span><span class="pln">UTF-8</span><span class="tag">&lt;/project.reporting.outputEncoding&gt;</span><span class="pln">
+
+		</span><span class="com">&lt;!-- Spring --&gt;</span><span class="pln">
+		</span><span class="tag">&lt;spring-framework.version&gt;</span><span class="pln">4.0.2.RELEASE</span><span class="tag">&lt;/spring-framework.version&gt;</span><span class="pln">
+
+		</span><span class="com">&lt;!-- Logging --&gt;</span><span class="pln">
+		</span><span class="tag">&lt;logback.version&gt;</span><span class="pln">1.0.13</span><span class="tag">&lt;/logback.version&gt;</span><span class="pln">
+		</span><span class="tag">&lt;slf4j.version&gt;</span><span class="pln">1.7.5</span><span class="tag">&lt;/slf4j.version&gt;</span><span class="pln">
+
+	</span><span class="tag">&lt;/properties&gt;</span><span class="pln">
+	
+	</span><span class="tag">&lt;dependencies&gt;</span><span class="pln">
+		</span><span class="com">&lt;!-- Spring and Transactions --&gt;</span><span class="pln">
+		</span><span class="tag">&lt;dependency&gt;</span><span class="pln">
+			</span><span class="tag">&lt;groupId&gt;</span><span class="pln">org.springframework</span><span class="tag">&lt;/groupId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;artifactId&gt;</span><span class="pln">spring-context</span><span class="tag">&lt;/artifactId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;version&gt;</span><span class="pln">${spring-framework.version}</span><span class="tag">&lt;/version&gt;</span><span class="pln">
+		</span><span class="tag">&lt;/dependency&gt;</span><span class="pln">
+		</span><span class="tag">&lt;dependency&gt;</span><span class="pln">
+			</span><span class="tag">&lt;groupId&gt;</span><span class="pln">org.springframework</span><span class="tag">&lt;/groupId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;artifactId&gt;</span><span class="pln">spring-tx</span><span class="tag">&lt;/artifactId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;version&gt;</span><span class="pln">${spring-framework.version}</span><span class="tag">&lt;/version&gt;</span><span class="pln">
+		</span><span class="tag">&lt;/dependency&gt;</span><span class="pln">
+
+		</span><span class="com">&lt;!-- Logging with SLF4J &amp; LogBack --&gt;</span><span class="pln">
+		</span><span class="tag">&lt;dependency&gt;</span><span class="pln">
+			</span><span class="tag">&lt;groupId&gt;</span><span class="pln">org.slf4j</span><span class="tag">&lt;/groupId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;artifactId&gt;</span><span class="pln">slf4j-api</span><span class="tag">&lt;/artifactId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;version&gt;</span><span class="pln">${slf4j.version}</span><span class="tag">&lt;/version&gt;</span><span class="pln">
+			</span><span class="tag">&lt;scope&gt;</span><span class="pln">compile</span><span class="tag">&lt;/scope&gt;</span><span class="pln">
+		</span><span class="tag">&lt;/dependency&gt;</span><span class="pln">
+		</span><span class="tag">&lt;dependency&gt;</span><span class="pln">
+			</span><span class="tag">&lt;groupId&gt;</span><span class="pln">ch.qos.logback</span><span class="tag">&lt;/groupId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;artifactId&gt;</span><span class="pln">logback-classic</span><span class="tag">&lt;/artifactId&gt;</span><span class="pln">
+			</span><span class="tag">&lt;version&gt;</span><span class="pln">${logback.version}</span><span class="tag">&lt;/version&gt;</span><span class="pln">
+			</span><span class="tag">&lt;scope&gt;</span><span class="pln">runtime</span><span class="tag">&lt;/scope&gt;</span><span class="pln">
+		</span><span class="tag">&lt;/dependency&gt;</span><span class="pln">
+
+	</span><span class="tag">&lt;/dependencies&gt;</span><span class="pln">	
+</span><span class="tag">&lt;/project&gt;</span></pre><h3>Spring Bean Life Cycle – Model Class</h3><p>Let’s create a simple java bean class that will be used in service classes.</p><div style="float:none;margin:10px 0 10px 0;text-align:center;"><div id="125661118"> <script type="text/javascript">try{window._mNHandle.queue.push(function(){window._mNDetails.loadTag("125661118","336x280","125661118");});}
+catch(error){}</script> </div></div><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">bean</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">Employee</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+	</span><span class="kwd">private</span><span class="pln"> </span><span class="typ">String</span><span class="pln"> name</span><span class="pun">;</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">String</span><span class="pln"> getName</span><span class="pun">()</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">return</span><span class="pln"> name</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setName</span><span class="pun">(</span><span class="typ">String</span><span class="pln"> name</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">name </span><span class="pun">=</span><span class="pln"> name</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+	
+</span><span class="pun">}</span></pre><h3>Spring Bean Life Cycle – InitializingBean, DisposableBean</h3><p>Let’s create a service class where we will implement both the interfaces for post-init and pre-destroy methods.</p><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">DisposableBean</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">InitializingBean</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">bean</span><span class="pun">.</span><span class="typ">Employee</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">EmployeeService</span><span class="pln"> </span><span class="kwd">implements</span><span class="pln"> </span><span class="typ">InitializingBean</span><span class="pun">,</span><span class="pln"> </span><span class="typ">DisposableBean</span><span class="pun">{</span><span class="pln">
+
+	</span><span class="kwd">private</span><span class="pln"> </span><span class="typ">Employee</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">Employee</span><span class="pln"> getEmployee</span><span class="pun">()</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">return</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setEmployee</span><span class="pun">(</span><span class="typ">Employee</span><span class="pln"> employee</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">employee </span><span class="pun">=</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+	
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">EmployeeService</span><span class="pun">(){</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"EmployeeService no-args constructor called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> destroy</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">Exception</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"EmployeeService Closing resources"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> afterPropertiesSet</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">Exception</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"EmployeeService initializing to dummy value"</span><span class="pun">);</span><span class="pln">
+		</span><span class="kwd">if</span><span class="pun">(</span><span class="pln">employee</span><span class="pun">.</span><span class="pln">getName</span><span class="pun">()</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="kwd">null</span><span class="pun">){</span><span class="pln">
+			employee</span><span class="pun">.</span><span class="pln">setName</span><span class="pun">(</span><span class="str">"Pankaj"</span><span class="pun">);</span><span class="pln">
+		</span><span class="pun">}</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+</span><span class="pun">}</span></pre><h3>Spring Bean Life Cycle – Custom post-init, pre-destroy</h3><p>Since
+ we don’t want our services to have direct spring framework dependency, 
+let’s create another form of Employee Service class where we will have 
+post-init and pre-destroy spring life cycle methods and we will 
+configure them in the spring bean configuration file.</p><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">bean</span><span class="pun">.</span><span class="typ">Employee</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">MyEmployeeService</span><span class="pun">{</span><span class="pln">
+
+	</span><span class="kwd">private</span><span class="pln"> </span><span class="typ">Employee</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">Employee</span><span class="pln"> getEmployee</span><span class="pun">()</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">return</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setEmployee</span><span class="pun">(</span><span class="typ">Employee</span><span class="pln"> employee</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">employee </span><span class="pun">=</span><span class="pln"> employee</span><span class="pun">;</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+	
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">MyEmployeeService</span><span class="pun">(){</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyEmployeeService no-args constructor called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="com">//pre-destroy method</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> destroy</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">Exception</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyEmployeeService Closing resources"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="com">//post-init method</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> init</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">Exception</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyEmployeeService initializing to dummy value"</span><span class="pun">);</span><span class="pln">
+		</span><span class="kwd">if</span><span class="pun">(</span><span class="pln">employee</span><span class="pun">.</span><span class="pln">getName</span><span class="pun">()</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="kwd">null</span><span class="pun">){</span><span class="pln">
+			employee</span><span class="pun">.</span><span class="pln">setName</span><span class="pun">(</span><span class="str">"Pankaj"</span><span class="pun">);</span><span class="pln">
+		</span><span class="pun">}</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+</span><span class="pun">}</span></pre><p>We will look into the spring 
+bean configuration file in a bit. Before that let’s create another 
+service class that will use @PostConstruct and @PreDestroy annotations.</p><h3>Spring Bean Life Cycle – @PostConstruct, @PreDestroy</h3><p>Below
+ is a simple class that will be configured as spring bean and for 
+post-init and pre-destroy methods, we are using @PostConstruct and 
+@PreDestroy annotations.</p><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> javax</span><span class="pun">.</span><span class="pln">annotation</span><span class="pun">.</span><span class="typ">PostConstruct</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> javax</span><span class="pun">.</span><span class="pln">annotation</span><span class="pun">.</span><span class="typ">PreDestroy</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">MyService</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+	</span><span class="lit">@PostConstruct</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> init</span><span class="pun">(){</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyService init method called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+	
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="typ">MyService</span><span class="pun">(){</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyService no-args constructor called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+	
+	</span><span class="lit">@PreDestroy</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> destory</span><span class="pun">(){</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"MyService destroy method called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+</span><span class="pun">}</span></pre><h3>Spring Bean Life Cycle – Configuration File</h3><p>Let’s see how we will configure our beans in spring context file.</p><pre style="" class="prettyprint prettyprinted"><span class="pun">&lt;?</span><span class="pln">xml version</span><span class="pun">=</span><span class="str">"1.0"</span><span class="pln"> encoding</span><span class="pun">=</span><span class="str">"UTF-8"</span><span class="pun">?&gt;</span><span class="pln">
+</span><span class="tag">&lt;beans</span><span class="pln"> </span><span class="atn">xmlns</span><span class="pun">=</span><span class="atv">"http://www.springframework.org/schema/beans"</span><span class="pln">
+	</span><span class="atn">xmlns:xsi</span><span class="pun">=</span><span class="atv">"http://www.w3.org/2001/XMLSchema-instance"</span><span class="pln">
+	</span><span class="atn">xsi:schemaLocation</span><span class="pun">=</span><span class="atv">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"</span><span class="tag">&gt;</span><span class="pln">
+
+</span><span class="com">&lt;!-- Not initializing employee name variable--&gt;</span><span class="pln">
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"employee"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.bean.Employee"</span><span class="pln"> </span><span class="tag">/&gt;</span><span class="pln">
+
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"employeeService"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.service.EmployeeService"</span><span class="tag">&gt;</span><span class="pln">
+	</span><span class="tag">&lt;property</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"employee"</span><span class="pln"> </span><span class="atn">ref</span><span class="pun">=</span><span class="atv">"employee"</span><span class="tag">&gt;&lt;/property&gt;</span><span class="pln">
+</span><span class="tag">&lt;/bean&gt;</span><span class="pln">
+
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"myEmployeeService"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.service.MyEmployeeService"</span><span class="pln">
+		</span><span class="atn">init-method</span><span class="pun">=</span><span class="atv">"init"</span><span class="pln"> </span><span class="atn">destroy-method</span><span class="pun">=</span><span class="atv">"destroy"</span><span class="tag">&gt;</span><span class="pln">
+	</span><span class="tag">&lt;property</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"employee"</span><span class="pln"> </span><span class="atn">ref</span><span class="pun">=</span><span class="atv">"employee"</span><span class="tag">&gt;&lt;/property&gt;</span><span class="pln">
+</span><span class="tag">&lt;/bean&gt;</span><span class="pln">
+
+</span><span class="com">&lt;!-- initializing CommonAnnotationBeanPostProcessor is same as context:annotation-config --&gt;</span><span class="pln">
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"org.springframework.context.annotation.CommonAnnotationBeanPostProcessor"</span><span class="pln"> </span><span class="tag">/&gt;</span><span class="pln">
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"myService"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.service.MyService"</span><span class="pln"> </span><span class="tag">/&gt;</span><span class="pln">
+</span><span class="tag">&lt;/beans&gt;</span></pre><p>Notice that I am 
+not initializing employee name in it’s bean definition. Since 
+EmployeeService is using interfaces, we don’t need any special 
+configuration here.</p><div style="float:none;margin:10px 0 10px 0;text-align:center;"><div id="482285384"> <script type="text/javascript">try{window._mNHandle.queue.push(function(){window._mNDetails.loadTag("482285384","336x280","482285384");});}
+catch(error){}</script> </div></div><p>For MyEmployeeService bean, we 
+are using init-method and destroy-method attributes to let spring 
+framework know our custom methods to execute.</p><p>MyService bean 
+configuration doesn’t have anything special, but as you can see that I 
+am enabling annotation based configuration for this.</p><p>Our application is ready, let’s write a test program to see how different methods get executed.</p><h3>Spring Bean Life Cycle – Test Program</h3><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">main</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">.</span><span class="typ">EmployeeService</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">.</span><span class="typ">MyEmployeeService</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">SpringMain</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">static</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> main</span><span class="pun">(</span><span class="typ">String</span><span class="pun">[]</span><span class="pln"> args</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> ctx </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">ClassPathXmlApplicationContext</span><span class="pun">(</span><span class="str">"spring.xml"</span><span class="pun">);</span><span class="pln">
+
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"Spring Context initialized"</span><span class="pun">);</span><span class="pln">
+		
+		</span><span class="com">//MyEmployeeService service = ctx.getBean("myEmployeeService", MyEmployeeService.class);</span><span class="pln">
+		</span><span class="typ">EmployeeService</span><span class="pln"> service </span><span class="pun">=</span><span class="pln"> ctx</span><span class="pun">.</span><span class="pln">getBean</span><span class="pun">(</span><span class="str">"employeeService"</span><span class="pun">,</span><span class="pln"> </span><span class="typ">EmployeeService</span><span class="pun">.</span><span class="kwd">class</span><span class="pun">);</span><span class="pln">
+
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"Bean retrieved from Spring Context"</span><span class="pun">);</span><span class="pln">
+		
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"Employee Name="</span><span class="pun">+</span><span class="pln">service</span><span class="pun">.</span><span class="pln">getEmployee</span><span class="pun">().</span><span class="pln">getName</span><span class="pun">());</span><span class="pln">
+		
+		ctx</span><span class="pun">.</span><span class="pln">close</span><span class="pun">();</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"Spring Context Closed"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+</span><span class="pun">}</span></pre><p>When we run above test program, we get below output.</p><pre style="" class="prettyprint prettyprinted"><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">10</span><span class="pun">:</span><span class="lit">50</span><span class="pun">:</span><span class="lit">50</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> prepareRefresh
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Refreshing</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext@c1b9b03</span><span class="pun">:</span><span class="pln"> startup date </span><span class="pun">[</span><span class="typ">Tue</span><span class="pln"> </span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pln"> </span><span class="lit">22</span><span class="pun">:</span><span class="lit">50</span><span class="pun">:</span><span class="lit">50</span><span class="pln"> PDT </span><span class="lit">2014</span><span class="pun">];</span><span class="pln"> root of context hierarchy
+</span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">10</span><span class="pun">:</span><span class="lit">50</span><span class="pun">:</span><span class="lit">50</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="pln">xml</span><span class="pun">.</span><span class="typ">XmlBeanDefinitionReader</span><span class="pln"> loadBeanDefinitions
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Loading</span><span class="pln"> XML bean definitions </span><span class="kwd">from</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> path resource </span><span class="pun">[</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">xml</span><span class="pun">]</span><span class="pln">
+</span><span class="typ">EmployeeService</span><span class="pln"> </span><span class="kwd">no</span><span class="pun">-</span><span class="pln">args constructor called
+</span><span class="typ">EmployeeService</span><span class="pln"> initializing to dummy value
+</span><span class="typ">MyEmployeeService</span><span class="pln"> </span><span class="kwd">no</span><span class="pun">-</span><span class="pln">args constructor called
+</span><span class="typ">MyEmployeeService</span><span class="pln"> initializing to dummy value
+</span><span class="typ">MyService</span><span class="pln"> </span><span class="kwd">no</span><span class="pun">-</span><span class="pln">args constructor called
+</span><span class="typ">MyService</span><span class="pln"> init method called
+</span><span class="typ">Spring</span><span class="pln"> </span><span class="typ">Context</span><span class="pln"> initialized
+</span><span class="typ">Bean</span><span class="pln"> retrieved </span><span class="kwd">from</span><span class="pln"> </span><span class="typ">Spring</span><span class="pln"> </span><span class="typ">Context</span><span class="pln">
+</span><span class="typ">Employee</span><span class="pln"> </span><span class="typ">Name</span><span class="pun">=</span><span class="typ">Pankaj</span><span class="pln">
+</span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">10</span><span class="pun">:</span><span class="lit">50</span><span class="pun">:</span><span class="lit">50</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> doClose
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Closing</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext@c1b9b03</span><span class="pun">:</span><span class="pln"> startup date </span><span class="pun">[</span><span class="typ">Tue</span><span class="pln"> </span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pln"> </span><span class="lit">22</span><span class="pun">:</span><span class="lit">50</span><span class="pun">:</span><span class="lit">50</span><span class="pln"> PDT </span><span class="lit">2014</span><span class="pun">];</span><span class="pln"> root of context hierarchy
+</span><span class="typ">MyService</span><span class="pln"> destroy method called
+</span><span class="typ">MyEmployeeService</span><span class="pln"> </span><span class="typ">Closing</span><span class="pln"> resources
+</span><span class="typ">EmployeeService</span><span class="pln"> </span><span class="typ">Closing</span><span class="pln"> resources
+</span><span class="typ">Spring</span><span class="pln"> </span><span class="typ">Context</span><span class="pln"> </span><span class="typ">Closed</span></pre><p><strong>Spring Bean Life Cycle Important Points</strong>:</p><ul><li>From
+ the console output it’s clear that Spring Context is first using 
+no-args constructor to initialize the bean object and then calling the 
+post-init method.</li><li>The order of bean initialization is same as it’s defined in the spring bean configuration file.</li><li>The context is returned only when all the spring beans are initialized properly with post-init method executions.</li><li>Employee name is printed as “Pankaj” because it was initialized in the post-init method.</li><li>When
+ context is getting closed, beans are destroyed in the reverse order in 
+which they were initialized i.e in LIFO (Last-In-First-Out) order.</li></ul><p>You can uncomment the code to get bean of type <code>MyEmployeeService</code> and confirm that output will be similar and follow all the points mentioned above.</p><h2>Spring Aware Interfaces</h2><p>Sometimes
+ we need Spring Framework objects in our beans to perform some 
+operations, for example reading ServletConfig and ServletContext 
+parameters or to know the bean definitions loaded by the 
+ApplicationContext. That’s why spring framework provides a bunch of 
+*Aware interfaces that we can implement in our bean classes.</p><p><code>org.springframework.beans.factory.Aware</code>
+ is the root marker interface for all these Aware interfaces. All of the
+ *Aware interfaces are sub-interfaces of Aware and declare a single 
+setter method to be implemented by the bean. Then spring context uses 
+setter-based dependency injection to inject the corresponding objects in
+ the bean and make it available for our use.</p><p>Spring Aware interfaces are similar to <a href="http://www.journaldev.com/1945/servletcontextlistener-servlet-listener-example" title="Servlet Listener Example – ServletContextListener, HttpSessionListener and ServletRequestListener">servlet listeners</a> with callback methods and implementing <a href="http://www.journaldev.com/1739/observer-design-pattern-in-java" title="Observer Design Pattern in Java – Example Tutorial">observer design pattern</a>.</p><p>Some of the important Aware interfaces are:</p><ul><li><strong>ApplicationContextAware</strong> – to inject ApplicationContext object, example usage is to get the array of bean definition names.</li><li><strong>BeanFactoryAware</strong> – to inject BeanFactory object, example usage is to check scope of a bean.</li><li><strong>BeanNameAware</strong> – to know the bean name defined in the configuration file.</li><li><strong>ResourceLoaderAware</strong> – to inject ResourceLoader object, example usage is to get the input stream for a file in the classpath.</li><li><strong>ServletContextAware</strong> – to inject ServletContext object in MVC application, example usage is to read context parameters and attributes.</li><li><strong>ServletConfigAware</strong> – to inject ServletConfig object in MVC application, example usage is to get servlet config parameters.</li></ul><p>Let’s see these Aware interfaces usage in action by implementing few of them in a class that we will configure as spring bean.</p>
+
+<table><tbody><tr><th>Aware interface</th><th>Method to override</th><th>Purpose</th></tr><tr><td>ApplicationContextAware</td><td>void setApplicationContext(ApplicationContext applicationContext) throws BeansException;</td><td>Interface to be implemented by any object that wishes to be notified of the ApplicationContext that it runs in.</td></tr><tr><td>ApplicationEventPublisherAware</td><td>void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher);</td><td>Set the ApplicationEventPublisher that this object runs in.</td></tr><tr><td>BeanClassLoaderAware</td><td>void setBeanClassLoader(ClassLoader classLoader);</td><td>Callback that supplies the bean class loader to a bean instance.</td></tr><tr><td>BeanFactoryAware</td><td>void setBeanFactory(BeanFactory beanFactory) throws BeansException;</td><td>Callback that supplies the owning factory to a bean instance.</td></tr><tr><td>BeanNameAware</td><td>void setBeanName(String name);</td><td>Set the name of the bean in the bean factory that created this bean.</td></tr><tr><td>BootstrapContextAware</td><td>void setBootstrapContext(BootstrapContext bootstrapContext);</td><td>Set the BootstrapContext that this object runs in.</td></tr><tr><td>LoadTimeWeaverAware</td><td>void setLoadTimeWeaver(LoadTimeWeaver loadTimeWeaver);</td><td>Set the LoadTimeWeaver of this object’s containing ApplicationContext.</td></tr><tr><td>MessageSourceAware</td><td>void setMessageSource(MessageSource messageSource);</td><td>Set the MessageSource that this object runs in.</td></tr><tr><td>NotificationPublisherAware</td><td>void setNotificationPublisher(NotificationPublisher notificationPublisher);</td><td>Set the NotificationPublisher instance for the current managed resource instance.</td></tr><tr><td>PortletConfigAware</td><td>void setPortletConfig(PortletConfig portletConfig);</td><td>Set the PortletConfig this object runs in.</td></tr><tr><td>PortletContextAware</td><td>void setPortletContext(PortletContext portletContext);</td><td>Set the PortletContext that this object runs in.</td></tr><tr><td>ResourceLoaderAware</td><td>void setResourceLoader(ResourceLoader resourceLoader);</td><td>Set the ResourceLoader that this object runs in.</td></tr><tr><td>ServletConfigAware</td><td>void setServletConfig(ServletConfig servletConfig);</td><td>Set the ServletConfig that this object runs in.</td></tr><tr><td>ServletContextAware</td><td>void setServletContext(ServletContext servletContext);</td><td>Set the ServletContext that this object runs in.</td></tr></tbody></table>
+
+
+ <pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> java</span><span class="pun">.</span><span class="pln">util</span><span class="pun">.</span><span class="typ">Arrays</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="typ">BeansException</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">BeanClassLoaderAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">BeanFactory</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">BeanFactoryAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="typ">BeanNameAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">ApplicationContext</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">ApplicationContextAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">ApplicationEventPublisher</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">ApplicationEventPublisherAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">EnvironmentAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="typ">ResourceLoaderAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">annotation</span><span class="pun">.</span><span class="typ">ImportAware</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">core</span><span class="pun">.</span><span class="pln">env</span><span class="pun">.</span><span class="typ">Environment</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">core</span><span class="pun">.</span><span class="pln">io</span><span class="pun">.</span><span class="typ">Resource</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">core</span><span class="pun">.</span><span class="pln">io</span><span class="pun">.</span><span class="typ">ResourceLoader</span><span class="pun">;</span><span class="pln">
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">core</span><span class="pun">.</span><span class="pln">type</span><span class="pun">.</span><span class="typ">AnnotationMetadata</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">MyAwareService</span><span class="pln"> </span><span class="kwd">implements</span><span class="pln"> </span><span class="typ">ApplicationContextAware</span><span class="pun">,</span><span class="pln">
+		</span><span class="typ">ApplicationEventPublisherAware</span><span class="pun">,</span><span class="pln"> </span><span class="typ">BeanClassLoaderAware</span><span class="pun">,</span><span class="pln"> </span><span class="typ">BeanFactoryAware</span><span class="pun">,</span><span class="pln">
+		</span><span class="typ">BeanNameAware</span><span class="pun">,</span><span class="pln"> </span><span class="typ">EnvironmentAware</span><span class="pun">,</span><span class="pln"> </span><span class="typ">ImportAware</span><span class="pun">,</span><span class="pln"> </span><span class="typ">ResourceLoaderAware</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setApplicationContext</span><span class="pun">(</span><span class="typ">ApplicationContext</span><span class="pln"> ctx</span><span class="pun">)</span><span class="pln">
+			</span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">BeansException</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setApplicationContext called"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setApplicationContext:: Bean Definition Names="</span><span class="pln">
+				</span><span class="pun">+</span><span class="pln"> </span><span class="typ">Arrays</span><span class="pun">.</span><span class="pln">toString</span><span class="pun">(</span><span class="pln">ctx</span><span class="pun">.</span><span class="pln">getBeanDefinitionNames</span><span class="pun">()));</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setBeanName</span><span class="pun">(</span><span class="typ">String</span><span class="pln"> beanName</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanName called"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanName:: Bean Name defined in context="</span><span class="pln">
+				</span><span class="pun">+</span><span class="pln"> beanName</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setBeanClassLoader</span><span class="pun">(</span><span class="typ">ClassLoader</span><span class="pln"> classLoader</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanClassLoader called"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanClassLoader:: ClassLoader Name="</span><span class="pln">
+				</span><span class="pun">+</span><span class="pln"> classLoader</span><span class="pun">.</span><span class="pln">getClass</span><span class="pun">().</span><span class="pln">getName</span><span class="pun">());</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setResourceLoader</span><span class="pun">(</span><span class="typ">ResourceLoader</span><span class="pln"> resourceLoader</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setResourceLoader called"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">Resource</span><span class="pln"> resource </span><span class="pun">=</span><span class="pln"> resourceLoader</span><span class="pun">.</span><span class="pln">getResource</span><span class="pun">(</span><span class="str">"classpath:spring.xml"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setResourceLoader:: Resource File Name="</span><span class="pln">
+				</span><span class="pun">+</span><span class="pln"> resource</span><span class="pun">.</span><span class="pln">getFilename</span><span class="pun">());</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setImportMetadata</span><span class="pun">(</span><span class="typ">AnnotationMetadata</span><span class="pln"> annotationMetadata</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setImportMetadata called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setEnvironment</span><span class="pun">(</span><span class="typ">Environment</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setEnvironment called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setBeanFactory</span><span class="pun">(</span><span class="typ">BeanFactory</span><span class="pln"> beanFactory</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">throws</span><span class="pln"> </span><span class="typ">BeansException</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanFactory called"</span><span class="pun">);</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setBeanFactory:: employee bean </span><a href="http://www.journaldev.com/1377/java-singleton-design-pattern-best-practices-examples"><span class="str">singleton</span></a><span class="str">="</span><span class="pln">
+				</span><span class="pun">+</span><span class="pln"> beanFactory</span><span class="pun">.</span><span class="pln">isSingleton</span><span class="pun">(</span><span class="str">"employee"</span><span class="pun">));</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+	</span><span class="lit">@Override</span><span class="pln">
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> setApplicationEventPublisher</span><span class="pun">(</span><span class="pln">
+			</span><span class="typ">ApplicationEventPublisher</span><span class="pln"> applicationEventPublisher</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">System</span><span class="pun">.</span><span class="kwd">out</span><span class="pun">.</span><span class="pln">println</span><span class="pun">(</span><span class="str">"setApplicationEventPublisher called"</span><span class="pun">);</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+</span><span class="pun">}</span></pre><h3>Spring *Aware Example Configuration File</h3><p>Very simple spring bean configuration file.</p><pre style="" class="prettyprint prettyprinted"><span class="pun">&lt;?</span><span class="pln">xml version</span><span class="pun">=</span><span class="str">"1.0"</span><span class="pln"> encoding</span><span class="pun">=</span><span class="str">"UTF-8"</span><span class="pun">?&gt;</span><span class="pln">
+</span><span class="tag">&lt;beans</span><span class="pln"> </span><span class="atn">xmlns</span><span class="pun">=</span><span class="atv">"http://www.springframework.org/schema/beans"</span><span class="pln">
+	</span><span class="atn">xmlns:xsi</span><span class="pun">=</span><span class="atv">"http://www.w3.org/2001/XMLSchema-instance"</span><span class="pln">
+	</span><span class="atn">xsi:schemaLocation</span><span class="pun">=</span><span class="atv">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"</span><span class="tag">&gt;</span><span class="pln">
+
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"employee"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.bean.Employee"</span><span class="pln"> </span><span class="tag">/&gt;</span><span class="pln">
+
+</span><span class="tag">&lt;bean</span><span class="pln"> </span><span class="atn">name</span><span class="pun">=</span><span class="atv">"myAwareService"</span><span class="pln"> </span><span class="atn">class</span><span class="pun">=</span><span class="atv">"com.journaldev.spring.service.MyAwareService"</span><span class="pln"> </span><span class="tag">/&gt;</span><span class="pln">
+
+</span><span class="tag">&lt;/beans&gt;</span></pre><h3>Spring *Aware Test Program</h3><pre style="" class="prettyprint prettyprinted"><span class="kwd">package</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">main</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> com</span><span class="pun">.</span><span class="pln">journaldev</span><span class="pun">.</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">service</span><span class="pun">.</span><span class="typ">MyAwareService</span><span class="pun">;</span><span class="pln">
+
+</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="typ">SpringAwareMain</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+	</span><span class="kwd">public</span><span class="pln"> </span><span class="kwd">static</span><span class="pln"> </span><span class="kwd">void</span><span class="pln"> main</span><span class="pun">(</span><span class="typ">String</span><span class="pun">[]</span><span class="pln"> args</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+		</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> ctx </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">ClassPathXmlApplicationContext</span><span class="pun">(</span><span class="str">"spring-aware.xml"</span><span class="pun">);</span><span class="pln">
+
+		ctx</span><span class="pun">.</span><span class="pln">getBean</span><span class="pun">(</span><span class="str">"myAwareService"</span><span class="pun">,</span><span class="pln"> </span><span class="typ">MyAwareService</span><span class="pun">.</span><span class="kwd">class</span><span class="pun">);</span><span class="pln">
+		
+		ctx</span><span class="pun">.</span><span class="pln">close</span><span class="pun">();</span><span class="pln">
+	</span><span class="pun">}</span><span class="pln">
+
+</span><span class="pun">}</span></pre><p>Now when we execute above class, we get following output.</p><pre style="" class="prettyprint prettyprinted"><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">11</span><span class="pun">:</span><span class="lit">27</span><span class="pun">:</span><span class="lit">05</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> prepareRefresh
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Refreshing</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext@60a2f435</span><span class="pun">:</span><span class="pln"> startup date </span><span class="pun">[</span><span class="typ">Tue</span><span class="pln"> </span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pln"> </span><span class="lit">23</span><span class="pun">:</span><span class="lit">27</span><span class="pun">:</span><span class="lit">05</span><span class="pln"> PDT </span><span class="lit">2014</span><span class="pun">];</span><span class="pln"> root of context hierarchy
+</span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">11</span><span class="pun">:</span><span class="lit">27</span><span class="pun">:</span><span class="lit">05</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">beans</span><span class="pun">.</span><span class="pln">factory</span><span class="pun">.</span><span class="pln">xml</span><span class="pun">.</span><span class="typ">XmlBeanDefinitionReader</span><span class="pln"> loadBeanDefinitions
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Loading</span><span class="pln"> XML bean definitions </span><span class="kwd">from</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> path resource </span><span class="pun">[</span><span class="pln">spring</span><span class="pun">-</span><span class="pln">aware</span><span class="pun">.</span><span class="pln">xml</span><span class="pun">]</span><span class="pln">
+setBeanName called
+setBeanName</span><span class="pun">::</span><span class="pln"> </span><span class="typ">Bean</span><span class="pln"> </span><span class="typ">Name</span><span class="pln"> </span><span class="kwd">defined</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> context</span><span class="pun">=</span><span class="pln">myAwareService
+setBeanClassLoader called
+setBeanClassLoader</span><span class="pun">::</span><span class="pln"> </span><span class="typ">ClassLoader</span><span class="pln"> </span><span class="typ">Name</span><span class="pun">=</span><span class="pln">sun</span><span class="pun">.</span><span class="pln">misc</span><span class="pun">.</span><span class="typ">Launcher$AppClassLoader</span><span class="pln">
+setBeanFactory called
+setBeanFactory</span><span class="pun">::</span><span class="pln"> employee bean singleton</span><span class="pun">=</span><span class="kwd">true</span><span class="pln">
+setEnvironment called
+setResourceLoader called
+setResourceLoader</span><span class="pun">::</span><span class="pln"> </span><span class="typ">Resource</span><span class="pln"> </span><span class="typ">File</span><span class="pln"> </span><span class="typ">Name</span><span class="pun">=</span><span class="pln">spring</span><span class="pun">.</span><span class="pln">xml
+setApplicationEventPublisher called
+setApplicationContext called
+setApplicationContext</span><span class="pun">::</span><span class="pln"> </span><span class="typ">Bean</span><span class="pln"> </span><span class="typ">Definition</span><span class="pln"> </span><span class="typ">Names</span><span class="pun">=[</span><span class="pln">employee</span><span class="pun">,</span><span class="pln"> myAwareService</span><span class="pun">]</span><span class="pln">
+</span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2014</span><span class="pln"> </span><span class="lit">11</span><span class="pun">:</span><span class="lit">27</span><span class="pun">:</span><span class="lit">05</span><span class="pln"> PM org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext</span><span class="pln"> doClose
+INFO</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Closing</span><span class="pln"> org</span><span class="pun">.</span><span class="pln">springframework</span><span class="pun">.</span><span class="pln">context</span><span class="pun">.</span><span class="pln">support</span><span class="pun">.</span><span class="typ">ClassPathXmlApplicationContext@60a2f435</span><span class="pun">:</span><span class="pln"> startup date </span><span class="pun">[</span><span class="typ">Tue</span><span class="pln"> </span><span class="typ">Apr</span><span class="pln"> </span><span class="lit">01</span><span class="pln"> </span><span class="lit">23</span><span class="pun">:</span><span class="lit">27</span><span class="pun">:</span><span class="lit">05</span><span class="pln"> PDT </span><span class="lit">2014</span><span class="pun">];</span><span class="pln"> root of context hierarchy</span></pre><p>Console output of the test program is simple to understand, I won’t go into much detail about that.</p><p>That’s
+ all for the Spring Bean Life Cycle methods and injecting framework 
+specific objects into the spring beans. Please download sample project 
+from below link and analyze it to learn more about them.</p>
+</div></body></html>

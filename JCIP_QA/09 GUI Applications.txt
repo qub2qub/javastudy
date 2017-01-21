@@ -9,7 +9,7 @@ And Swing data structures are not thread-safe, so you must be careful to confine
 2) event thread
 
 *** 9.1 Why are GUIs single-threaded? ***
-In the old days, GUI applications were single-threaded and GUI events were processed from a "main event loop". 
+In the old days, GUI applications were single-threaded and GUI events were processed from a "main event loop".
 Modern GUI frameworks use a model that is only slightly different: 
 they create a dedicated EVENT DISPATCH THREAD (EDT) for handling GUI events.
 
@@ -58,9 +58,10 @@ ListenerExamples.java
 This example gets the long-running task out of the event thread in a "fire and forget" manner, which is probably not very useful.
 You cannot access presentation objects from the background thread, so on completion the task must submit another task to run in the event thread to update the user interface.
 
-The task triggered when the button is pressed is composed of three sequential subtasks whose execution alternates between the event thread and the background thread. The first subtask updates the user interface to show that a long-running operation has begun and starts the second subtask in a background
-
-thread. Upon completion, the second subtask queues the third subtask to run again in the event thread, which updates the user interface to reflect that the operation has completed. This sort of "thread hopping" is typical of handling long-running tasks in GUI applications.
+The task triggered when the button is pressed is composed of three sequential subtasks whose execution alternates between the event thread and the background thread. 
+The first subtask updates the user interface to show that a long-running operation has begun and starts the second subtask in a background thread. 
+Upon completion, the second subtask queues the third subtask..
+third subtask to run again in the event thread, which updates the user interface to reflect that the operation has completed. This sort of "thread hopping" is typical of handling long-running tasks in GUI applications.
 
 *** 9.3.1 Cancellation ***
 You could implement cancellation directly using thread interruption, but it is much easier to use Future, which was designed to manage cancellable tasks.

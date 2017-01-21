@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>app ctx 3 types</title>
+	<style type="text/css">
+		pre {
+            font-family: "Trebuchet MS",Tahoma,Arial;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #999;
+            padding: 5px;
+        }
+        body {
+        	background-color: #bbb;
+        }
+	</style>
+</head>
+<body>
+<a href="https://habrahabr.ru/company/jugru/blog/218203/">src habr</a>
+<br>
+<div class="post__body post__body_full">
+    <div class="content html_format">Уже много лет работая со спрингом, я заметил забавную закономерность: в каждой новой версии добавляется новый способ конфигурирования контекста. Давайте вспомним, как это было:<br>
+<ul>
+<li>В первом спринге конфигурацию можно было писать исключительно на xml-e. (ClassPathXmlApplicationContext(“context.xml”))</li>
+<li>Во втором (точнее с 2.5) появилось возможность создавать контекст через аннотации. (AnnotationConfigApplicationContext(“package.name”))</li>
+<li>Третий спринг добавил конфигурацию на джаве. (AnnotationConfigApplicationContext(JavaConfig.class))</li>
+<li>Четвёртый тоже сохранил традицию и уже с декабря 2013 года можно конфигурировать при помощи груви скриптов (GenericGroovyApplicationContext(“context.groovy”))</li>
+</ul><br>
+Консультируя и проводя тренинги в различных компаниях, я видел самое разное отношение к этим способам конфигурирования. Крупные компании, зачастую живущие по принципу «работает &ndash; не трогай», до сих пор лелеют старые xml -конфигурации, продолжая их множить и кормить новыми бинами. «Зато у нас все централизовано!» &mdash; кричат их архитекторы, добавляя 100500-тысячную строчку в xml-Бога. <br>
+Компании поменьше, пытающееся угнаться за новшеством технологий, беспощадно сжигают старые XML-ы, переписывая всё что могут, на аннотации, а что не могут на Java-конфиг. И уже потирают руки, пытаясь придумать, а куда бы им теперь приткнуть конфигурацию на грувях.<br>
+<br>
+Видел я и совсем забавные ситуации, когда не очень разбирающийся во всей этой каше конфигураций джуниор, дублировал декларацию бинов, прописывая их и в xml-e и через аннотации (ну так чтобы наверняка).<br>
+<br>
+А где же находится правда? Неужели как всегда посередине? <br>
+Давайте попробуем разобраться…<br>
+<br>
+Для начала давайте сравним стратегии декларации бинов.<br>
+<br>
+<h5>Начнём с классического XML-a:</h5><br>
+<a name="habracut"></a><br>
+ <pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">beans....</span>&gt;</span>
+ <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"com.inwhite.spring.compare.CoolDaoImpl"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"coolDao"</span>/&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span> =<span class="hljs-string">"coolService"</span>  <span class="hljs-attr">class</span>=<span class="hljs-string">"com.inwhite.spring.compare.CoolServiceImpl"</span>
+                             <span class="hljs-attr">init-method</span>=<span class="hljs-string">"init"</span> 
+                             <span class="hljs-attr">destroy-method</span>=<span class="hljs-string">"closeResources"</span>
+                             <span class="hljs-attr">scope</span>=<span class="hljs-string">"prototype"</span>&gt;</span>
+           <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"dao"</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">"coolDao"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span>
+</code></pre><br>
+<br>
+<h5>Теперь тоже самое, но при помощи аннотаций</h5><br>
+<pre><code class="java hljs"><span class="hljs-meta">@Repository</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CoolDaoImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">CoolDao</span> </span>{
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doCRUD</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-comment">//some logic here</span>
+    }
+}
+
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-meta">@Scope</span>(BeanDefinition.SCOPE_PROTOTYPE)
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CoolServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">CoolService</span> </span>{
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> CoolDao dao;
+
+    <span class="hljs-meta">@PostConstruct</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-comment">//init logic here</span>
+    }
+
+    <span class="hljs-meta">@PreDestroy</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">closeResources</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-comment">//close resources here</span>
+    }
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doWork</span><span class="hljs-params">()</span> </span>{
+        dao.doCRUD();       
+    }
+}
+
+</code></pre><br>
+<br>
+<h5>Ещё разок, но с конфигурацией на джаве:</h5><br>
+<pre><code class="java hljs"><span class="hljs-meta">@Configuration</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JavaConfig</span> </span>{
+    <span class="hljs-meta">@Bean</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> CoolDao <span class="hljs-title">dao</span><span class="hljs-params">()</span></span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> CoolDaoImpl();
+    }
+
+    <span class="hljs-meta">@Bean</span>(initMethod = <span class="hljs-string">"init"</span>, destroyMethod = <span class="hljs-string">"closeResources"</span>)
+    <span class="hljs-meta">@Scope</span>(BeanDefinition.SCOPE_PROTOTYPE)
+    <span class="hljs-function"><span class="hljs-keyword">public</span> CoolService <span class="hljs-title">coolService</span><span class="hljs-params">()</span></span>{
+        CoolServiceImpl service = <span class="hljs-keyword">new</span> CoolServiceImpl();
+        service.setDao(dao());
+        <span class="hljs-keyword">return</span> service;
+    }
+}
+
+</code></pre><br>
+<br>
+<h5>И наконец тоже самое на груви:</h5><br>
+<pre><code class="java hljs">beans {
+    coolDao(CoolDaoImpl)
+
+    coolService(CoolService){bean-&gt;
+        bean.scope = <span class="hljs-string">'prototype'</span>
+        bean.initMethod = <span class="hljs-string">'init'</span>
+        bean.destroyMethod = <span class="hljs-string">'closeResources'</span>
+    }
+}
+</code></pre><br>
+<br>
+Если сравнивать затраченные усилия, то для данной конфигурации лидируют аннотации (их всего 6 штук, минус сеттер).<br>
+Но поскольку конфигурация полноценного приложения (а не отдельного модуля), включающее также сторонние библиотеки, не может держаться только на аннотациях, было бы более честно сравнивать между конфигурациями Groovy, Java и XML. Даже без очков видно, что конфигурация на груви лидирует по лаконичности и элегантности, однако мне хотелось бы оставить её на закуску. Тем более, что она пока ещё не допилена до конца.<br>
+<br>
+А пока давайте обсудим недостатки и преимущества того, что было до выхода Spring 4. <br>
+<br>
+<img src="pics/app ctx 3 types.jpg"><br>
+<br>
+Прочитав последнюю строчку, суровые критики уже наверняка сделали себе пометку, мол ага, автор статьи видать не в курсе про Factory Beans, SpEL и всякие хитрые профайлы… Но давайте будем честны, XML в данной таблице заработал и так немало плюсов, и на их фоне этот плюс будет смотреться притянутым за уши. SpEL довольно ограничен, а Factory Beans не являются частью XML-a. И положа руку на сердце, даже самые ярые поклонники XML-a вряд ли выбрали бы его как язык программирования.<br>
+<br>
+Еще один вопрос, который мне часто задают на тренингах: «А почему не перекомпилировать при изменении конфигурации &mdash; это плюс? Кто рискнёт на продакшне менять имплементацию бинов не прогнав после этого тесты? А всякие мелочи типа имён, паролей и портов, можно просто держать в проперти файлах, содержимое которых так же можно менять ничего не перекомпилируя».<br>
+<br>
+Тут будет уместно рассказать один случай из моей практики, которой можно озаглавить как-то так:<br>
+<br>
+<h5>Как XML с JBoss-ом вечеринку спасли</h5><br>
+Несколько лет назад я работал в одной IT компании, в которой, из соображений безопасности, программистам нельзя было подключаться к рабочей среде через удалённый доступ. И вот после очередной трудовой недели, мы пошли отдыхать. Сидим в пабе, время &mdash; начало третьего утра, настроение отличное, и вдруг, звонит наш саппорт. Приезжай, говорит, срочно. Продакшн падает. <br>
+<br>
+Знакомая ситуация? Есть много причин не хотеть ехать на работу в пятницу ночью… На мои попытки уговорить его попробовать решить всё по телефону, он твердит, что он только сапорт и единственное, что он умеет делать, это набирать номер телефона того, кого надо вызвать. В итоге он всё-таки согласился прочитать мне эксепшн. Проблема оказалась тривиальная: один из веб-сервисов начал глючить, и бин, который к нему обращался, выкидывал эксэпшн из-за которого падало всё приложение. Видимо, автор бина не ожидал такой засады, и эксепшн не отлавливался. А поскольку раньше такого не случалось, то QA пропустили этот код в продакшн. <br>
+<br>
+Причем я прекрасно знал, что до понедельника сделать ничего нельзя, так как веб сервис не наш, и разговаривать не с кем. Но и оставить все как есть было нельзя, на сервере было еще много других job'ов, которые могли бы прекрасно работать, если бы выкинуть проблематичный бин из контекста. Я не буду углубляться в детали, но уверен, что вы сами можете продумать похожий сценарий. Вопрос в том, как можно поменять конфигурацию по телефону, разговаривая с человеком, который ничего не понимает в коде.<br>
+<br>
+На моё счастье этот бин был прописан в xml-e. Дальше состоялся следующий диалог:<br>
+«Зайди на комп продакшна, открой папку JBoss/server/default/deploy найди там файл idi.ear и открой его. Что значит, как? Ладно переименуй его в zip и открывай. Отлично, видишь там папка META-INF? В ней есть applicationContext.xml? Зайди в него, найди там SchedulerFactoryBean и чуть ниже есть datacarTrigger. Закомментируй эту строчку. Что значит, как? Неважно, сотри её. Отлично, теперь запиши, закрой, переименуй обратно в ear и включай сервер по-новому.»<br>
+<br>
+Ну и всё, дальше счастливый конец. А теперь представьте, что этот бин был бы прописан в java config… Пришлось бы видимо на работу ехать.<br>
+<br>
+Таких историй можно рассказать много, и возможность поменять конфигурацию, ничего не компилируя и не строя заново, часто является большим плюсом. Начиная от аспектов, которые надо то включать, то выключать, то перенастраивать, и, заканчивая delivery-oriented компаниями, которые кастомизируют один и тот же продукт для разных клиентов.<br>
+<br>
+Такая архитектора изначально подразумевает, что xml будет лежать вне архива (war, ear), причём там, где до него легко добраться. И скорее всего, в компаниях, где используется такой подход существует целая экосистема, заточенная под такой динамизм, со специальными тестами и ролбэками.<br>
+<br>
+С другой стороны, когда речь идёт о сложных конфигурациях, которые не могут быть сугубо декларативными, работать с XML становится крайне неудобно. Все костыли, придуманные для этого еще в первых версиях Спринга, делают конфигурацию очень запутанной, и её трудно поддерживать<br>
+. <br>
+Конфигурация на Java имеет в таких случаях большое преимущество. Все бины, настройки которых требуют определённой бизнес логики, намного правильнее прописывать в ней. Не говоря о том, что для джава разработчика намного приятнее писать Джаву, а не XML.<br>
+ <br>
+Еще одно небольшое, но все же преимущество конфигурации на Java &mdash; это производительность. Все мы знаем, еще со школы, что «рефлекшн тормозит». А бины, прописанные в XML-e или при помощи аннотаций, будут создаваться именно с его помощью. Если все они синглтоны, то это не так важно: просто немного увеличится время бутсрапа. Однако, если ваша программа постоянно создаёт прототайпы, Reflection не желателен. Ну а с конфигурацией на Java, рефлекшн просто не используется. Бины создаются обычным Java-кодом.<br>
+<br>
+Преимущество аннотаций заключается в том, что они позволяют уменьшить конфигурацию. Кроме того, если каждый новый бин, вынуждает разработчика бегать в конфиг, и что-то там править или дописывать, то помимо неудобства и постоянных мёрджей, возникает вероятность, того, что кто-то случайно испортит чужое. Кроме того, как мы прекрасно знаем, если в первом акте на сцене висит ружьё… <br>
+<br>
+Именно поэтому, далеко не в каждой компании архитекторы позволяют всем подряд ковыряться в конфиге и прописывать там свои бины, опасаясь криворуких программистов, которые не ведают, что творят. <br>
+<br>
+Кто-то скажет, мол, а вот мы не пользуемся аннотациями вообще: да это не всегда удобно, зато все централизовано. Ну тут одно из двух, либо ваш проект очень маленький, и спринга в нём кот наплакал, либо вся эта «централизованность», не вносит ясности. Огромные XML-ы или Java-конфиги, разобраться в которых может только гроссмейстер по шахматам, в итоге приводят к ещё большей путанице.<br>
+<br>
+<h4>Итоги</h4><br>
+Все наши классы, которые должны являться бинами Спринга, объявляются и настраиваются аннотациями, красиво раскладываются по пэкэджам и сканируются, по указанию центральной конфигурации. <br>
+Все бины из сторонних библиотек, и то, что нуждается в сложной конфигурации определяется в Java config.<br>
+А та часть конфигурации, которая нуждается в динамизме выносится в XML, который, вдобавок можно еще и хранить, как внешний ресурс.<br>
+<br>
+Зачем же нужно было придумывать конфигурацию на Groovy, когда и без нее уже хватало бардака? Груви, конечно сегодня в моде, но разве это причина добавлять ещё одну конфигурацию, увеличивая путаницу? Давайте разберемся в чем его суть?<br>
+<br>
+<h5>Конфиг на Groovy</h5><br>
+Идея Groovy-конфигурации заключается в том, чтобы заменить всё, кроме аннотаций. Она обладает всеми плюсами XML &ndash; ведь это скрипт, и его так же можно держать как внешний ресурс. Более того динамизму может быть еще больше, в потенциале, изменения конфигурации не будут требовать рестарта.<br>
+С другой стороны, она обладает и всеми плюсами Java-конфига, и более того, код на груви, лаконичней, элегантней и мощнее. <br>
+Правда, на данном этапе, его еще нельзя в полной мере использовать вместо Java-конфигурации, потому что отсутствует поддержка namespac'ов а ля  @EnableAspectJAutoProxy,  @EnableAsync и многое другое. Это, конечно, можно решить, настроив все нужные бины в конфигурации, но чтобы не заморачиваться, проще пока оставить Java-конфиг. А вот XML уже можно выкидывать :)<br>
+<br>
+Чувствуя, как от последней фразы сжались кулаки у сторонников XML-а, я предлагаю устроить батл. <br>
+В синий угол ринга приглашаются все оптимисты, которые не боятся новых технологий, а наоборот пытаются их внедрять, чтобы двигаться вперед самим и двигать свою компанию. Они будут сражаться за максимальный динамизм, за возможность девелоперов делать больше и проще, за Agile-разработку и за технические инновации. <br>
+В красный угол ринга приглашаются наученные горьким опытом реалисты, которые знают, что произойдёт, когда у всех появится сила. Эти люди сегодня, ценят то, что конфигурация на джаве &mdash; Type Safe, а XML не даёт никому возможность наломать дров.<br>
+<br></div></div>
+</body>
+</html>

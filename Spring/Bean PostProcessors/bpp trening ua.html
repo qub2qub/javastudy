@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>trening ua</title>
+
+	<style type="text/css">
+		pre {
+            font-family: "Trebuchet MS",Tahoma,Arial;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #999;
+            padding: 5px;
+        }
+        body {
+        	background-color: #bbb;
+        }
+	</style>
+</head>
+<body>
+<div class="entry-content">
+		<a title="" data-rel="lightbox-0" href="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430d9000779111d8ed87cc.png"><img width="525" height="349" class="aligncenter size-large wp-image-8719" alt="Блог DataArt, Апрель 2014, Маленькие секреты Spring" src="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430d9000779111d8ed87cc-525x349.png"></a>
+<p>В киевском офисе DataArt прошел тренинг <a target="_blank" href="http://xpinjection.com/trainings/spring-3">«Spring 3 &mdash; копаем до самого ядра»</a>, нацеленный на Java-разработчиков, которые хотели бы получить теоретические и практические навыки работы с популярным фреймворком Spring и разобраться в принципах и деталях его устройства.</p><span id="more-8716"></span>
+
+<p>Маленькие секреты Spring.</p>
+
+<p>У Spring есть четкий порядок инициализации объектов:</p>
+
+<ol>
+	<li>Формируется Configuration Metadata, она может быть создана из XML-контекста, из конфигурации с помощью Annotations либо Java Configuration.</li>
+	<li>Все объекты, которые имплементируют интерфейс BeanFactoryPostProcessor, читают Metadata и изменяют ее в соответствии со своим предназначением.</li>
+	<li>Вся Metadata, которую модифицировали и нет, передается в BeanFactory, которая непосредственно и создает spring beans.</li>
+	<li>Все объекты, которые имплементируют интерфейс BeanPostProcessor, производят pre initializing- и post initialization-действия.</li>
+	<li>Все бины, которые уже были инициализированы, отдаются в IoC Container.</li>
+</ol>
+
+<p>Spring &mdash; довольно гибкая система, позволяющая вмешиваться в многие внутренние процессы, конкретно сейчас мы будем говорить о шагах 2 и 4.</p>
+
+<p>Сразу оговорюсь, что последующие примеры будут сильно надуманы и не сильно применимы практически, но дадут понимание о самом процессе работы Spring и, вполне возможно, ответы на некоторые ваши вопросы.
+</p>
+ 
+<h3>Пример 1. Простой инжект.</h3>
+
+<p><b>Задача: нужно написать аннотацию которая бы в поле типа Integer инжектила рандомное число от min до max;</b></p>
+
+<p>Все, что для этого понадобится:</p>
+
+<blockquote>
+<p>	<b>1)    Написать аннотацию.</b><br>
+
+<code></code></p><pre><code>@Retention(RetentionPolicy.RUNTIME)<br>
+@Target(ElementType.FIELD)<br>
+public @interface InjectRandomInt {<br>
+    int min();<br>
+    int max();}<p></p></code></pre>
+
+<p>	<b>2)    Написать свой BeanPostProcessor </b><br>
+<code></code></p><pre><code>public class InjectRandomIntBeanPostProcessor implements BeanPostProcessor {<br>
+    private Random random = new Random();<br>
+    @Override<br>
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {<br>
+        Field[] fields = bean.getClass().getDeclaredFields();<br>
+        for (Field field : fields) {<br>
+            InjectRandomInt annotation = field.getAnnotation(InjectRandomInt.class);<br>
+            if (annotation != null) {<br>
+                if(!field.getType().equals(int.class))<br>
+                    throw new RuntimeException("don't put @InjectRandomInt above " + field.getType());<br>
+                if (Modifier.isFinal(field.getModifiers())) {<br>
+                    throw new RuntimeException("can't inject to final fields");<br>
+                }<br>
+                int min = annotation.min();<br>
+                int max = annotation.max();<br>
+                int randomInt = min + random.nextInt(max - min);<br>
+                try {<br>
+                    field.setAccessible(true);<br>
+                    field.set(bean,randomInt);<br>
+                } catch (IllegalAccessException e) {<br>
+                    throw new RuntimeException(e);<br>
+                }<br>
+            }<br>
+        }<br>
+        return bean;<br>
+    }<br>
+    @Override<br>
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {<br>
+        return bean;<br>
+    }}<p></p></code></pre>
+
+<p><b>3)    Зарегистрировать свой InjectRandomIntBeanPostProcessor в контексте (если используем XML конфигурацией ).</b><br>
+
+<bean class="bpp.InjectRandomIntBeanPostProcessor"></bean></p></blockquote>
+
+<h3>Пример 2. Магия с использованием proxy.</h3> 
+
+<p>Всем известно, что Spring возвращает proxy-объекты, чтобы на ходу модифицировать бин и добавить в него свою функциональность. Но, т. к. Spring довольно гибкий, мы можем проделать то же самое.</p>
+
+<p><b>Задача: нужно написать аннотацию для измерения времени, за которое исполнялся бы аннотированный метод, и вывода информацию в консоль.</b></p>
+
+<p>Все, что для этого понадобится:</p>
+
+<blockquote>
+<p>	<b>1.     Написать аннотацию.</b><br>
+<code></code></p><pre><code>@Retention(RetentionPolicy.RUNTIME)<br>
+public @interface Benchmark {<br>
+}<p></p>
+</code></pre>
+<p><b>2.     Написать свой BeanPostProcessor  где мы будем делать “proxy magic”</b><br><code></code></p><pre><code>public class BenchmarkBeanPostProcessor implements BeanPostProcessor {<br>
+    @Override<br>
+    public Object postProcessBeforeInitialization(final Object bean, String beanName) throws BeansException {<br>
+        Class<!--?--> type = bean.getClass();<br>
+        if (type.isAnnotationPresent(Benchmark.class)) {<br>
+            Object proxy = Proxy.newProxyInstance(type.getClassLoader(),type.getInterfaces(),new InvocationHandler() {<br>
+                @Override<br>
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {<br>
+                    long before = System.nanoTime();<br>
+                    Object retVal = method.invoke(bean, args);<br>
+                    long after = System.nanoTime();<br>
+                    System.out.println("метод работал: "+(after-before)+" наносекунд");<br>
+                    return retVal;<br>
+                }<br>
+            });<br>
+            return proxy;<br>
+        } else {<br>
+            return bean;<br>
+        }<br>
+    }<br>
+    @Override<br>
+    public Object postProcessAfterInitialization(final Object bean, String beanName) throws BeansException {<br>
+      return bean;<br>
+    }<br>
+}<p></p></code></pre>
+ 
+<p><b>3.     Зарегистрировать свой BenchmarkBeanPostProcessor</b></p></blockquote>
+
+<h3>Пример 3. «Хачим» bean definition в рантайме.</h3> 
+
+<p>Еще до BeanPostProcessor который возвращает обьект, есть возможность изменить bean definition с которого и будет создаваться конечный обьект.</p>
+
+<p><b>Задача: нужно написать аннотацию которая бы помечала класс как устаревший и подменяла его новым который подается в аннотации;</b></p>
+
+<blockquote><p><b>1.     Написать аннотацию </b><br><code></code></p><pre><code>
+@Retention(RetentionPolicy.RUNTIME)<br>
+public @interface MyDeprecated {<br>
+    public Class newImpl() default Class.class;<br>
+}<p></p></code></pre>
+
+<p><b>2.     Написать свой BeanFactoryPostProcessor</b><br>
+<code></code></p><pre><code>public class MyDeprecatedBeanFactoryPostProcessor implements BeanFactoryPostProcessor {<br>
+   @Override<br>
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory) throws BeansException {<br>
+        String[] names = configurableListableBeanFactory.getBeanDefinitionNames();<br>
+        for (String name : names) {<br>
+            BeanDefinition beanDefinition = configurableListableBeanFactory.getBeanDefinition(name);<br>
+            String className = beanDefinition.getBeanClassName();<br>
+            try {<br>
+                Class<!--?--> originalClass = Class.forName(className);<br>
+                MyDeprecated annotation = originalClass.getAnnotation(MyDeprecated.class);<br>
+                if(annotation != null){<br>
+                    Class newClass = annotation.newImpl();<br>
+                    beanDefinition.setBeanClassName(newClass.getName());<br>
+                }<br>
+            } catch (ClassNotFoundException e) {<br>
+                throw new RuntimeException(e);<br>
+           }<br>
+        }<br>
+    }<br>
+}<p></p></code></pre>
+
+<p><b>3.     Зарегистрировать BeanFactoryPostProcessor как bean в конфигурации.</b></p></blockquote>
+
+<p>После тренинга участники смогли пообщаться, обсудить услышанное и задать вопросы. Спасибо DataArt за возможность получения полезных знаний.</p> <br>
+
+<table width="525" cellspacing="2" cellpadding="0"><tbody><tr>
+            <td><a data-rel="lightbox-1" rel="lightbox" title="Блог DataArt, Апрель 2014, Маленькие секреты Spring" href="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430d7338d38774e413d708.png"><img height="286.66357308584685" title="Блог DataArt, Апрель 2014, Маленькие секреты Spring" alt="Блог DataArt, Апрель 2014, Маленькие секреты Spring" src="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430d7338d38774e413d708-325x215.png"></a></td>
+                <td><a data-rel="lightbox-2" rel="lightbox" title="Блог DataArt, Апрель 2014, Маленькие секреты Spring" href="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430df000779111cfbde5ad.png"><img height="286.66357308584685" title="Блог DataArt, Апрель 2014, Маленькие секреты Spring" alt="Блог DataArt, Апрель 2014, Маленькие секреты Spring" src="http://static.dataart.ru/blog/wp-content/uploads/2014/04/53430df000779111cfbde5ad-325x216.png"></a></td>
+                
+        </tr></tbody></table><div style="clear: both"></div><div super-socializer-data-href="http://www.dataart.ru/blog/2014/04/malen-kie-sekrety-spring/" class="the_champ_sharing_container the_champ_horizontal_sharing"><div style="font-weight:bold">Поделиться:</div><ul class="the_champ_sharing_ul"><li class="theChampSharingRound"><i onclick=" theChampPopup(&quot;http://vkontakte.ru/share.php?&amp;url=http%3A%2F%2Fwww.dataart.ru%2Fblog%2F2014%2F04%2Fmalen-kie-sekrety-spring%2F&quot;)" class="theChampSharing theChampVkontakteBackground" title="Vkontakte" alt="Vkontakte" style="width:30px;height:30px;border-radius:999px;"><ss class="theChampSharingSvg theChampVkontakteSvg" style="display:block;border-radius:999px;"></ss></i></li><li class="theChampSharingRound"><i onclick=" theChampPopup(&quot;https://www.facebook.com/sharer/sharer.php?u=http://www.dataart.ru/blog/2014/04/malen-kie-sekrety-spring/&quot;)" class="theChampSharing theChampFacebookBackground" title="Facebook" alt="Facebook" style="width:30px;height:30px;border-radius:999px;"><ss class="theChampSharingSvg theChampFacebookSvg" style="display:block;border-radius:999px;"></ss></i></li><li class="theChampSharingRound"><i onclick=" theChampPopup(&quot;http://twitter.com/intent/tweet?text=%D0%9C%D0%B0%D0%BB%D0%B5%D0%BD%D1%8C%D0%BA%D0%B8%D0%B5+%D1%81%D0%B5%D0%BA%D1%80%D0%B5%D1%82%D1%8B+Spring&amp;url=http://www.dataart.ru/blog/2014/04/malen-kie-sekrety-spring/&quot;)" class="theChampSharing theChampTwitterBackground" title="Twitter" alt="Twitter" style="width:30px;height:30px;border-radius:999px;"><ss class="theChampSharingSvg theChampTwitterSvg" style="display:block;border-radius:999px;"></ss></i></li><li class="theChampSharingRound"><i onclick=" theChampPopup(&quot;https://plus.google.com/share?url=http://www.dataart.ru/blog/2014/04/malen-kie-sekrety-spring/&quot;)" class="theChampSharing theChampGoogleBackground" title="Google Plus" alt="Google Plus" style="width:30px;height:30px;border-radius:999px;"><ss class="theChampSharingSvg theChampGoogleSvg" style="display:block;border-radius:999px;"></ss></i></li></ul><div style="clear:both"></div></div><div style="clear: both"></div>            <div class="clearfix"></div>
+	</div>
+</body>
+</html>
