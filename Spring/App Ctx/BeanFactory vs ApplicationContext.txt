@@ -1,0 +1,23 @@
+BeanFactory vs ApplicationContext
+***********************************
+The BeanFactory interface provides an advanced configuration mechanism capable of managing any type of object. 
+ApplicationContext is a sub-interface of BeanFactory. It adds easier integration with Spring’s AOP features; message resource handling (for use in internationalization), event publication; and application-layer specific contexts such as the WebApplicationContext for use in web applications.
+
+In short, the BeanFactory provides the configuration framework and basic functionality, and the ApplicationContext adds more enterprise-specific functionality. The ApplicationContext is a complete superset of the BeanFactory.
+*********************************
+http://docs.spring.io/spring/docs/current/spring-framework-reference/html/beans.html#context-introduction-ctx-vs-beanfactory
+
+Use an ApplicationContext unless you have a good reason for not doing so.
+
+Because the ApplicationContext includes all functionality of the BeanFactory, it is generally recommended over the BeanFactory, except for a few situations such as in embedded applications running on resource-constrained devices where memory consumption might be critical and a few extra kilobytes might make a difference. 
+However, for most typical enterprise applications and systems, the ApplicationContext is what you will want to use. 
+
+Spring makes heavy use of the BeanPostProcessor extension point (to effect proxying and so on). If you use only a plain BeanFactory, a fair amount of support such as transactions and AOP will not take effect, at least not without some extra steps on your part. This situation could be confusing because nothing is actually wrong with the configuration.
+
+	Feature		|| 						BeanFactory || ApplicationContext
+1 Bean instantiation/wiring							Yes | Yes
+2 Automatic BeanPostProcessor registration			No	| Yes
+3 Automatic BeanFactoryPostProcessor registration	No	| Yes
+4 Convenient MessageSource access (for i18n)		No	| Yes
+5 ApplicationEvent publication						No	| Yes
+

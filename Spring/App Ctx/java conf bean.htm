@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>java conf bean</title>
+    <link rel="stylesheet" href="grey.css">
+</head>
+<body>
+<a href="http://www.ibm.com/developerworks/ru/library/ws-springjava/">
+	<h4 id="overview">Общие сведения</h4>
+</a>
+<p>Как вы знаете, среда Spring реализует и продвигает принцип инверсии управления (IOC) или внедрения зависимости (DI) и является по сути IOC-контейнером. Традиционно Spring позволяет разработчику осуществлять управление зависимостями bean-компонентов с помощью конфигурирования на основе XML путем использования XML-файла контекста приложения. Этот файл является внешним для приложения, и в нем содержатся определения bean-компонентов и их зависимостей для этого приложения. Несмотря на то, что подход с использованием XML-конфигурирования прост и удобен, существует и альтернативный способ, с помощью которого можно определять bean-компоненты и их зависимости. Этот способ – конфигурирование на основе Java. В отличие от XML-подхода, конфигурирование на основе Java позволяет осуществлять управление bean-компонентами программными средствами. С этой целью применяются различные аннотации. В данной статье мы сравним Java-конфигурирование и традиционный подход к конфигурированию на основе XML, что позволит разработчику лучше понять суть дела. В статье описаны основы Java-конфигурирования и рассмотрены следующие темы: 
+			</p><ul class="ibm-bullet-list"><li>Введение в аннотации @Configuration и @Bean</li><li>Регистрация класса конфигурации с помощью AnnotationConfigApplicationContext</li><li>Конфигурирование Web-приложения</li><li>Реализация методов обратного вызова (callback) для извещения о событиях жизненного цикла и область действия bean-компонента</li></ul><p>В качестве примера мы рассмотрим сценарий создания курса (Create Course) для некоторого онлайн-университета. В процессе создания курса вы также формируете тематические разделы или модули, при этом каждый тематический раздел может иметь различные назначения. Таким образом, мы создаем три bean-компонента: Course (Курс), Module (Модуль) и Assignment (Назначение). Bean-компонент <code>Course</code> будет ссылаться на bean-компонент <code>Module</code>, который, в свою очередь, будет иметь ссылку на bean-компонент <code>Assignment</code>. </p><h2 id="head1">Введение в аннотации @Configuration и @Bean</h2><p>В идеале вы бы определили bean-компоненты в XML-файле, который содержит конфигурацию контекста приложения. Нижеследующий программный код показывает XML-файл контекста приложения с определениями bean-компонентов для сценария <em>create course</em>:</p><h5 id="listing1">Листинг 1. XML-файл с определениями bean-компонентов</h5><div class="codesection"><pre class="displaycode">&lt;beans&gt;
+	&lt;bean id="course" class="demo.Course"&gt;
+		&lt;property name="module" ref="module"/&gt;
+  	&lt;/bean&gt;
+	
+	&lt;bean id="module" class="demo.Module"&gt;
+		&lt;property name="assignment" ref="assignment"/&gt;
+  	&lt;/bean&gt;
+	
+	&lt;bean id="assignment" class="demo.Assignment" /&gt;
+&lt;/beans&gt;</pre></div><p>Представленный выше XML-файл — это то, что вы обычно пишете для конфигурирования bean-компонентов в среде разработки Spring. Данный XML-файл определяет bean-компонент <code>Course</code>, который ссылается на bean-компонент <code>Module</code>, а bean-компонент <code>Module</code> ссылается на bean-компонент <code>Assignment</code>. Давайте отставим в сторону этот XML-файл и напишем вместо него эквивалентный программный код Java. Мы определим указанные выше bean-компоненты с использованием конфигурирования на основе Java. XML-файл мы заменим классом Java, который теперь будет играть роль платформы для конфигурирования bean-компонентов. Назовем этот класс <code>AppContext.java</code>. Следующий фрагмент кода показывает класс <code>AppContext</code>.</p><h5 id="listing2">Листинг 2. Класс конфигурации AppContext, содержащий определения bean-компонентов</h5><div class="codesection"><pre class="displaycode">@Configuration
+public class AppContext {
+	@Bean
+	public Course course() {
+		Course course = new Course();
+		course.setModule(module());
+		return course;
+	}
+
+	@Bean
+	public Module module() {
+		Module module = new Module();
+		module.setAssignment(assignment());
+		return module;
+	}
+
+	@Bean
+	public Assignment assignment() {
+		return new Assignment();
+	}
+}</pre></div><p>Как видно из приведенного выше программного кода, теперь bean-компоненты определены программными средствами в рамках конфигурирования на основе Java. Теперь класс <code>AppContext</code> представляет собой класс конфигурации, совсем как XML-файл. Это достигается путем использования аннотации <code>@Configuration</code>, которая размещается над классом. Она сообщает контейнеру Spring, что это класс конфигурации, содержащий определения и зависимости bean-компонентов. Для определения bean-компонентов используется аннотация <code>@Bean</code>. Данная аннотация размещается над методом, который создает экземпляр bean-компонента и устанавливает зависимость. По умолчанию имя этого метода совпадает с идентификатором или именем bean-компонента. В результате вызова метода возвращается bean-компонент, зарегистрированный в контексте приложения Spring. Для установления зависимостей используются методы setter bean-компонента, и контейнер будет вызывать их для «прокладки» связей. Конфигурирование на основе Java также можно рассматривать как конфигурирование на основе аннотаций.</p><h2 id="head2">Регистрация класса конфигурации с помощью AnnotationConfigApplicationContext</h2><p>В традиционном XML-подходе для загрузки внешнего XML-файла контекста приложения вы использовали бы класс <code>ClassPathXmlApplicationContext</code>. Однако при конфигурировании на основе Java у нас имеется класс <code>AnnotationConfigApplicationContext</code>. Класс <code>AnnotationConfigApplicationContext</code> является реализацией интерфейса <code>ApplicationContext</code>, которая позволяет регистрировать аннотированные классы конфигурации. В данном случае классом конфигурации является класс <code>AppContext</code>, объявленный с помощью аннотации <code>@Configuration</code>. После того как вы зарегистрируете указанный класс, также регистрируются все типы bean-компонентов, возвращаемые с помощью методов, которые аннотируются с помощью <code>@Bean</code>. Нижеследующий фрагмент программного кода показывает пример использования класса <code>AnnotationConfigApplicationContext</code>:</p><h5 id="listing3">Листинг 3. Регистрация класса AppContext с помощью AnnotationConfigApplicationContext</h5><div class="codesection"><pre class="displaycode">public static void main(String[] args) {
+  ApplicationContext ctx = new AnnotationConfigApplicationContext(AppContext.class);
+  Course course = ctx.getBean(Course.class);
+  course.getName();
+}</pre></div><p>Как видно из приведенного выше программного кода, регистрация класса конфигурации <code>AppContext</code> осуществляется путем его передачи в конструктор <code>AnnotationConfigApplicationContext</code>. В качестве альтернативы для регистрации класса конфигурации вы также можете использовать метод <code>register</code> указанного класса контекста. Этот альтернативный способ показан в нижеследующем фрагменте программного кода.</p><h5 id="listing4">Листинг 4. Регистрация класса AppContext: альтернативный способ </h5><div class="codesection"><pre class="displaycode">public static void main(String[] args) {
+  ApplicationContext ctx = new AnnotationConfigApplicationContext();
+  ctx.register(AppContext.class)
+}</pre></div><p>При регистрации класса конфигурации автоматически регистрируются имена методов, аннотированных с помощью <code>@Bean</code>, и, следовательно, соответствующие bean-компоненты, т. е. <code>Course</code>, <code>Module</code> и <code>Assignment</code>. После этого можно использовать метод <code>getBean</code> для извлечения соответствующего bean-компонента и вызова его бизнес-методов. Как вы видите, создать класс конфигурации на основе Java и зарегистрировать его в контексте Spring очень просто. В следующем разделе мы обсудим конфигурирование на основе Java применительно к Web-приложению.</p><h2 id="head3">Конфигурирование приложения</h2><p>Обычно конфигурирование Web-приложений Spring осуществляется с использованием контекста <code>XmlWebApplicationContext</code> путем указания пути к внешнему XML-файлу контекста в файле дескриптора Web-развертывания web.xml. По умолчанию Web-приложение использует класс контекста <code>XMLWebApplicationContext</code>. В нижеследующем фрагменте программного кода в файле <code>web.xml</code> показан элемент, указывающий на внешний XML-файл контекста приложения, который будет загружаться прослушивающим классом <code>ContextLoaderListener</code>.</p><h5 id="listing5">Листинг 5. Использование внешнего XML-файла контекста приложения в web.xml </h5><div class="codesection"><pre class="displaycode">&lt;web-app&gt;
+	&lt;context-param&gt;
+		&lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;
+		&lt;param-value&gt;/WEB-INF/applicationContext.xml&lt;/param-value&gt;
+	&lt;/context-param&gt;
+	&lt;listener&gt;
+		&lt;listener-class&gt;
+			org.springframework.web.context.ContextLoaderListener
+		&lt;/listener-class&gt;
+	&lt;/listener&gt;
+	&lt;servlet&gt;
+	&lt;servlet-name&gt;sampleServlet&lt;/servlet-name&gt;
+	&lt;servlet-class&gt;
+		org.springframework.web.servlet.DispatcherServlet
+	&lt;/servlet-class&gt;
+	&lt;/servlet&gt;
+
+...
+&lt;/web-app&gt;</pre></div><p>Теперь мы изменим приведенный выше программный код в файле <code>web.xml</code> для применения класса <code>AnnotationConfigApplicationContext</code>. Напомню, что <code>XmlWebApplicationContext</code>— это установленная по умолчанию реализация контекста, используемая средой Spring для Web-приложений, и поэтому данный класс контекста никогда явным образом не указывается в файле web.xml. Поскольку вы будете конфигурировать на основе Java, вам потребуется указать класс <code>AnnotationConfigApplicationContext</code> в своем файле <code>web.xml</code> при его конфигурировании для Web-приложения. Приведенный выше программный код теперь должен выглядеть следующим образом:</p><h5 id="listing6">Листинг 6. Измененный файл web.xml, в котором используется класс AnnotationConfigApplicationContext</h5><div class="codesection"><pre class="displaycode">&lt;web-app&gt;
+	&lt;context-param&gt;
+		&lt;param-name&gt;contextClass&lt;/param-name&gt;
+		&lt;param-value&gt;
+			org.springframework.web.context.
+			support.AnnotationConfigWebApplicationContext
+		&lt;/param-value&gt;
+	&lt;/context-param&gt;
+	&lt;context-param&gt;
+		&lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;
+		&lt;param-value&gt;
+			demo.AppContext
+		&lt;/param-value&gt;
+	&lt;/context-param&gt;
+	&lt;listener&gt;
+		&lt;listener-class&gt;
+			org.springframework.web.context.ContextLoaderListener
+		&lt;/listener-class&gt;
+	&lt;/listener&gt;
+	&lt;servlet&gt;
+	&lt;servlet-name&gt;sampleServlet&lt;/servlet-name&gt;
+	&lt;servlet-class&gt;
+		org.springframework.web.servlet.DispatcherServlet
+	&lt;/servlet-class&gt;
+	&lt;init-param&gt;
+		&lt;param-name&gt;contextClass&lt;/param-name&gt;
+		&lt;param-value&gt;
+			org.springframework.web.context.
+			support.AnnotationConfigWebApplicationContext
+		&lt;/param-value&gt;
+	&lt;/init-param&gt;
+	&lt;/servlet&gt;
+
+...
+&lt;/web-app&gt;</pre></div><p>В приведенном выше измененном файле <code>web.xml</code> теперь определяется класс контекста <code>AnnotationConfigWebApplicationContext</code> как часть параметра контекста и элементов сервлета. Местоположение конфигурации контекста теперь указывает на класс конфигурации <code>AppContext</code>. Это было просто. В следующем разделе будет показана реализация методов обратного вызова для извещения о событиях жизненного цикла и области действия bean-компонента.</p><h2 id="head4">Реализация обратных вызовов для извещения о событиях жизненного цикла и области действия bean-компонента</h2><h3 id="N1015B">Обратные вызовы для извещения о событиях жизненного цикла</h3><p>С помощью конфигурирования на основе Java также можно управлять жизненным циклом bean-компонентов. Аннотация <code>@Bean</code> поддерживает два атрибута (<code>initMethod</code> и <code>destroyMethod</code>), которые могут использоваться для определения методов жизненного цикла. Методы жизненного цикла вызываются контейнером при создании экземпляра bean-компонента и перед его уничтожением. Методы жизненного цикла также называются методами обратного вызова, поскольку они вызываются контейнером. Bean-компонент, зарегистрированный с помощью аннотации <code>@Bean</code>, также поддерживает стандартные аннотации <code>@PostConstruct</code> и <code>@PreDestroy</code> как часть JSR-250. Если вы используете для определения bean-компонентов XML-подход, то для определения методов обратного вызова событий жизненного цикла вы будете использовать элемент &lt;bean&gt;. В приведенном ниже фрагменте программного кода показано, как обычно определяются обратные вызовы с использованием элемента &lt;bean&gt; в XML-конфигурации.</p><h5 id="listing7">Листинг 7. Использование XML-подхода для обратных вызовов событий жизненного цикла</h5><div class="codesection"><pre class="displaycode">&lt;bean id="course" class="demo.Course" init-method="setup" destroy-method="cleanup" &gt;
+	&lt;property name="module" ref="module"/&gt;
+&lt;/bean&gt;</pre></div><p>Нижеследующий фрагмент программного кода показывает порядок использования методов жизненного цикла при конфигурировании на основе Java.</p><h5 id="listing8">Листинг 8. Реализация методов жизненного цикла bean-компонентов с использованием класса конфигурации AppContext</h5><div class="codesection"><pre class="displaycode">@Configuration
+public class AppContext {
+	@Bean(initMethod = "setup", destroyMethod = "cleanup")
+	public Course course() {
+		Course course = new Course();
+		course.setModule(module());
+		return course;
+	}
+
+	@Bean(initMethod = "setup", destroyMethod = "cleanup")
+	public Module module() {
+		Module module = new Module();
+		module.setAssignment(assignment());
+		return module;
+	}
+	
+	...
+}		
+public class Course {
+
+	private Module module;
+	private String name;
+	
+	public Course() {
+	}
+	
+	public void setup() {
+		this.name = "M100 Pythagoras Theorems"
+	}
+	
+	public void setModule(Module module) {
+		this.module = module;
+	}
+	
+	public void cleanup() {
+		module = null;
+	}
+}</pre></div><p>В приведенном выше фрагменте программного кода мы снова возвращаемся к классу конфигурации <code>AppContext</code>. Теперь аннотация <code>@Bean</code> имеет два дополнительных атрибута: <code>initMethod</code> и <code>destroyMethod</code>. Они определяют методы жизненного цикла <code>setup</code> и <code>cleanup</code>. Эти методы реализуются в зарегистрированном bean-компоненте и, в конечном счете, вызываются контейнером при инициализации bean-компонента и перед его уничтожением. Bean-компонент <code>Course</code>, рассматриваемый здесь в качестве примера, иллюстрирует реализацию методов жизненного цикла. Реализованными методами являются <code>setup</code> и <code>cleanup</code>. Аналогичным образом эти методы также можно реализовать в bean-компонентах <code>Module</code> и <code>Assignment</code>.</p><h3 id="N101B9">Области действия bean-компонентов</h3><p>Область действия bean-компонента может быть определена с помощью аннотации <code>@Scope</code>. В XML для этого было принято указывать атрибут области действия в элементе &lt;bean&gt;.</p><h5 id="listing9">Листинг 9. Использование XML-подхода для определения области действия bean-компонента</h5><div class="codesection"><pre class="displaycode">&lt;bean id="course" class="demo.Course" scope="prototype" &gt;
+	&lt;property name="module" ref="module"/&gt;
+&lt;/bean&gt;</pre></div><p>Нижеследующий фрагмент программного кода показывает порядок определения области действия bean-компонента при конфигурации на основе Java.</p><h5 id="listing10">Листинг 10. Использование класса конфигурации AppContext для определения области действия bean-компонента</h5><div class="codesection"><pre class="displaycode">@Configuration
+public class AppContext {
+	@Bean(initMethod = "setup", destroyMethod = "cleanup")
+	@Scope("prototype")
+	public Course course() {
+		Course course = new Course();
+		course.setModule(module());
+		return course;
+	}
+	...
+}</pre></div><p>Как видно из приведенного выше программного кода, определить область действия bean-компонента в классе конфигурации Java достаточно просто. Указанный выше класс конфигурации <code>AppContext</code> определяет область действия <em>prototype</em> для bean-компонента <code>Course</code> с использованием аннотации <code>@Scope</code>. Область действия по умолчанию —<em>singleton</em>.</p><p>Java-конфигурирование позволяет делать множество вещей. В этой статье мы затронули лишь основы. Использование конфигурирования на основе Java не предоставляет никаких существенных преимуществ, это просто альтернатива XML-подходу, предлагаемому средой разработки Spring. Это прекрасный выбор для тех, кто предпочитает не использовать XML в своей среде разработки. Недостатком, разумеется, является то, что при внесении любых изменений в конфигурацию в классе Java вам потребуется перекомпилировать приложение.</p><!--CMA ID: 843742--><!--Site ID: 40--><!--XSLT stylesheet used to transform this file:
+        dw-document-html-7.0.xsl-->
+
+
+</div>
+</div>
+<!-- 1_1_COLUMN_END -->
+
+<!-- SPLIT_COLUMNS_BEGIN -->
+<div class="ibm-columns">
+
+<!-- 6_4_COLUMN_BEGIN -->
+<div class="ibm-col-6-4">
+
+<h2 id="resources" class="ibm-rule">Ресурсы</h2><ul class="ibm-bullet-list"><li> Оригинал статьи: <a href="http://www.ibm.com/developerworks/webservices/library/ws-springjava/index.html?S_TACT=105AGX99&amp;S_CMP=CP">Spring bean management using Java configuration</a>.</li><li><a href="http://www.ibm.com/developerworks/webservices/library/ws-apachecxf/index.html?S_TACT=105AGX99&amp;S_CMP=CP">Разработка Web-сервисов с использованием Apache CXF и Aegis </a>: научитесь разрабатывать Web-сервисы с использованием привязки данных в CXF и Aegis.</li><li><a href="http://www.ibm.com/developerworks/library/ws-pojo-springcxf/?S_TACT=105AGX99&amp;S_CMP=CP" onmouseover="linkQueryAppend(this)">Разработка и реализация Web-сервисов POJO с использованием Spring и Apache CXF, часть 1:</a> Введение в создание Web-сервисов с использованием CXF и Spring.  </li><li><a href="https://www.ibm.com/developerworks/webservices/library/ws-pojo-springcxf2/?S_TACT=105AGX99&amp;S_CMP=CP">Разработка и реализация Web-сервисов POJO с использованием Spring и Apache CXF, часть 2: </a>Создание Web-сервиса RESTful.</li></ul>
+</body>
+</html>

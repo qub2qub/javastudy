@@ -66,31 +66,39 @@ third subtask to run again in the event thread, which updates the user interface
 *** 9.3.1 Cancellation ***
 You could implement cancellation directly using thread interruption, but it is much easier to use Future, which was designed to manage cancellable tasks.
 
-Because runningTask is confined to the event thread, no synchronization is required when setting or checking it, and the start button listener ensures that only one background task is running at a time. However, it would be better to be notified when the task completes so that, for example, the cancel button could be disabled.
+Because runningTask is confined to the event thread, no synchronization is required when setting or checking it, and the start button listener ensures that only one background task is running at a time. 
+However, it would be better to be notified when the task completes so that, for example, the cancel button could be disabled.
 
 *** 9.3.2    Progress and completion indication *** 
-FutureTask also has a done hook that similarly facilitates completion notification. After the background Callable completes, done is called. By having done trigger a completion task in the event thread, we can construct a Back-groundTask class providing an onCompletion hook that is called in the event thread.
+FutureTask also has a done hook that similarly facilitates completion notification. After the background Callable completes, done is called. By having done trigger a completion task in the event thread, we can construct a BackgroundTask class providing an onCompletion() hook that is called in the event thread.
 
-BackgroundTask{..} also supports progress indication. The compute() method can call setProgress(), indicating progress in numerical terms. 
+BackgroundTask{..} also supports progress indication. 
+The compute() method can call setProgress(), indicating progress in numerical terms. 
 This causes onProgress() to be called from the event thread, which can update the user interface to indicate progress visually.
 
 *** 9.3.3    SwingWorker ***
 In Swing, many of the features developed here are provided by the SwingWorker class, including cancellation, completion notification, and progress indication. Various versions of SwingWorker have been published in The Swing Connection and The Java Tutorial, and an updated version is included in Java 6.
 
 *** 9.4 Shared data models ***
-Swing presentation objects, including data model objects such as TableModel or TreeModel, are confined to the event thread. In simple GUI programs, all the mutable state is held in the presentation objects and the only thread besides the event thread is the main thread. In these programs enforcing the single-thread rule is easy: don't access the data model or presentation components from the main thread. More complicated programs may use other threads to move data to or from a persistent store, such as a file system or database, so as not to compromise responsiveness.
+Swing presentation objects, including data model objects such as TableModel or TreeModel, are confined to the event thread. 
+In simple GUI programs, all the mutable state is held in the presentation objects and the only thread besides the event thread is the main thread. 
+In these programs enforcing the single-thread rule is easy: don't access the data model or presentation components from the main thread. 
+More complicated programs may use other threads to move data to or from a persistent store, such as a file system or database, so as not to compromise responsiveness.
 
 *** 9.4.1    Thread-safe data models ***
 If the data model supports fine-grained concurrency, the event thread and background threads should be able to share it without responsiveness problems.
 
-copy-on-write collections offer good performance only when traversals greatly outnumber modifications.
+!!! copy-on-write collections offer good performance only when traversals greatly outnumber modifications.
 
 *** 9.4.2    Split data models ***
-From the perspective of the GUI, the Swing table model classes like TableMod-el and TreeModel are the official repository for data to be displayed. However, these model objects are often themselves "views" of other objects managed by the application. 
+From the perspective of the GUI, the Swing table model classes like TableModel and TreeModel are the official repository for data to be displayed. However, these model objects are often themselves "views" of other objects managed by the application. 
 --A program that has both a presentation-domain and an application-domain data model is said to have a SPLIT-MODEL DESIGN.
 
 In a split-model design, the PRESENTATION MODEL is CONFINED to the EVENT THREAD and the OTHER MODEL, the shared model, IS THREAD-SAFE and may be accessed by both the event thread and application threads. 
-The presentation model registers listeners with the shared model so it can be notified of updates. The presentation model can then be updated from the shared model by embedding a snapshot of the relevant state in the update message or by having the presentation model retrieve the data directly from the shared model when it receives an update event.
+The presentation model registers listeners with the shared model so it can be notified of updates. 
+The presentation model can then be updated from the shared model 
+1) by embedding a snapshot of the relevant state in the update message or 
+2) by having the presentation model retrieve the data directly from the shared model when it receives an update event.
 
 The SNAPSHOT APPROACH is simple, but has limitations. 
 It works well when the data model is small, updates are not too frequent, and the structure of the two models is similar. 
@@ -98,7 +106,10 @@ If the data model is large or updates are very frequent, or if one or both sides
 
 This approach has the effect of serializing updates on the shared model and recreating them in the event thread against the presentation model. Another advantage of incremental updates is that finer-grained information about what changed can improve the perceived quality of the display—if only one vehicle moves, we don't have to repaint the entire display, just the affected regions.
 
-!! Consider a SPLIT-MODEL DESIGN when a data model must be shared by more than one thread and implementing a thread-safe data model would be inadvisable because of blocking, consistency, or complexity reasons.
+!! Consider a SPLIT-MODEL DESIGN when 
+1) a data model must be shared by more than one thread 
+2) and implementing a thread-safe data model would be inadvisable because of blocking, consistency, or complexity reasons.
+--Рассматривайте использование этой split-model design, если дата-модель должна быть расшарена между потоками, или когда сложна сделать одну модель thread-safe.
 
 *** 9.5 Other forms of single-threaded subsystems ***
 ..it can be used whenever a facility is implemented as a single-threaded subsystem.
