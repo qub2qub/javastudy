@@ -442,6 +442,9 @@ java.lang.StackOverflowError, а если память кучи заполнен
 <li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">куча</span></li>
 <li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">стек</span></li>
 </ul>
+<br>
+<img src="core p1_files/java-memory-model-1.png" alt="jmm">
+<br>
 <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Куча &nbsp;состоит из статического контекста &nbsp;и самой кучи</span><br>
 <div style="text-align: justify;">
 <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Перейдем &nbsp;к куче. Куча состоит из двух частей:</span></div>
@@ -459,11 +462,14 @@ java.lang.StackOverflowError, а если память кучи заполнен
 <li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Survival(выжившая) куча</span></li>
 </ul>
 <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif; text-align: justify;">Краткое описание:</span><br>
+<span>Все описанное далее относится к Sun-овской реализации JVM (HotSpot), версий 5.0+, конкретные детали и алгоритмы могут различаться для разных версий.
+<br>
+Итак, память процесса различается на heap (куча) и non-heap (стек) память, и состоит из 5 областей (memory pools, memory spaces):
+</span>
 <div style="text-align: justify;">
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Eden
- Space (heap) - в этой области выделятся память под все создаваемые из 
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Eden Space (heap) - в этой области выделятся память под все создаваемые из 
 программы объекты. Большая часть объектов живет недолго (итераторы, 
 временные объекты, используемые внутри методов и т.п.), и удаляются при 
 выполнении сборок мусора это области памяти, не перемещаются в другие 
@@ -484,6 +490,10 @@ GC выполняет быструю (minor collection) сборку мусор�
 (full, major collection), которая обрабатывает все созданные JVM 
 объекты.</span></li>
 <li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Permanent Generation (non-heap) - Здесь хранится метаинформация, используемая JVM (используемые классы, методы и т.п.).&nbsp;</span></li>
+<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">
+	Code Cache (non-heap) — эта область используется JVM, когда включена JIT-компиляция, в ней кешируется скомпилированный платформенно — зависимый код.
+
+</span></li>
 </ul>
 <div style="text-align: justify;">
 <span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>

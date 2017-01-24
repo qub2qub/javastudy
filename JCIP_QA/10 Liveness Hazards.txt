@@ -1,1 +1,56 @@
 10 Liveness Hazards (205-220 = 15 pages)
+*** 10.1 Deadlock ***
+Обедающие философы, например 5, за круглым столом.
+Между тареками по 1 палочке, всего 5.
+Чтобы есть ему нужны 2 палки.
+
+When thread A holds lock L and tries to acquire lock M, but at the same time thread B holds M and tries to acquire L, both threads will wait forever. (multiple threads wait forever due to a cyclic locking dependency)
+
+Направленный Граф -- это точка со стрелочкой.
+Think of the threads as the nodes of a directed graph whose edges represent the relation "Thread A is waiting for a resource held by thread B". If this graph is cyclical, there is a deadlock.
+
+Database systems are designed to detect and recover from deadlock.
+а в джаве - дэдлок = конец, надо рестартовать прогу.
+
+*** 10.1.1 Lock-ordering deadlocks ***
+The deadlock in LeftRightDeadlock came about because the two threads attempted to acquire the same locks in a different order. If they asked for the locks in the same order, there would be no cyclic locking dependency and therefore no deadlock. If you can guarantee that every thread that needs locks L and M at the same time always acquires L and M in the same order, there will be no deadlock.
+
+!!! A program will be free of lock-ordering deadlocks if all threads acquire the locks they need in a FIXED GLOBAL ORDER.
+
+Verifying consistent lock ordering requires a global analysis of your program's locking behavior. It is not sufficient to inspect code paths that acquire multiple locks individually; both leftRight and rightLeft are "reasonable" ways to acquire the two locks, they are just not compatible. When it comes to locking, the left hand needs to know what the right hand is doing.
+
+*** 10.1.2 Dynamic lock order deadlocks ***
+Sometimes it is NOT OBVIOUS that you have sufficient control over lock ordering to prevent deadlocks. 
+
+Когда лок получается в одном и том же порядке, но всё равно может произойти дэдлок.
+ПО причине что в метод агрументы будут переданы в неудачном порядке:
+A: transferMoney(myAccount, yourAccount, 10);
+B: transferMoney(yourAccount, myAccount, 20);
+With unlucky timing, A will acquire the lock on myAccount and wait for the lock on yourAccount, while B is holding the lock on yourAccount and waiting for the lock on myAccount.
+
+Since the order of arguments is out of our control, to fix the problem we must induce (навести) an ordering on the locks and acquire them according to the induced ordering consistently throughout the application.
+InduceLockOrder.java
+
+..hash collisions with System.identityHashCode() are vanishingly infrequent, this technique provides that last bit of safety at little cost.
+
+If Account has a unique, immutable, comparable key such as an account number, inducing a lock ordering is even easier: order objects by their key, thus eliminating the need for the tie-breaking lock.
+
+*** 10.1.3 Deadlocks between cooperating objects ***
+... не понял я логики... в примере CooperatingDeadlock.java
+It was easy to spot the deadlock possibility in LeftRightDeadlock or transferMoney by looking for methods that acquire two locks. 
+Spotting the deadlock possibility in Taxi and Dispatcher is a little harder: the warning sign is that an alien method (defined on page 40) is being called while holding a lock.
+
+!!! Invoking an alien method with a lock held is asking for liveness trouble. The alien method might acquire other locks (risking deadlock) or block for an unexpectedly long time, stalling other threads that need the lock you hold.
+
+*** 10.1.4 Open calls ***
+Of course, Taxi and Dispatcher didn't know that they were each half of a deadlock waiting to happen. And they shouldn't have to; a method call is an abstraction barrier intended to shield you from the details of what happens on the other side. But because you don't know what is happening on the other side of the call, calling an alien method with a lock held is difficult to analyze and therefore risky.
+
+!!! Calling a method with no locks held is called an open call, and classes that rely on open calls are more well-behaved and composable than classes that make calls with locks held.
+
+Using open calls to avoid deadlock is analogous to using encapsulation to provide thread safety..
+Restricting yourself to open calls makes it far easier to identify the code paths that acquire multiple locks and therefore to ensure that locks are acquired in a consistent order.
+
+CooperatingNoDeadlock.java -- This involves shrinking the synchronized blocks to guard only operations that involve shared state..
+
+Very often, the cause of таких problems is the use of synchronized methods instead of smaller synchronized blocks for reasons of compact syntax or simplicity rather than because the entire method must be guarded by a lock. (As a bonus, shrinking the synchronized block may also improve scalability as well)
+

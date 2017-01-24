@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>duk gc1</title>
+  <link rel="stylesheet" href="grey.css">
+</head>
+<body>
+<br>
+Наверняка вы уже читали не один обзор механизмов сборки мусора в Java и настройка таких опций, как <i>Xmx</i> и <i>Xms</i>,
+ превратилась для вас в обычную рутину. Но действительно ли вы в деталях
+ понимаете, что происходит под капотом вашей виртуальной машины в тот 
+момент, когда приходит время избавиться от ненужных объектов в памяти и 
+ваш идеально оптимизированный метод начинает выполняться в несколько раз
+ дольше положенного? И знаете ли вы, какие возможности предоставляют вам
+ последние версии Java для оптимизации ответственной работы по сборке 
+мусора, зачастую сильно влияющей на производительность вашего 
+приложения?<br>
+<br>
+Попробуем в нескольких статьях пройти путь от описания базовых идей, 
+лежащих в основе всех сборщиков мусора, до разбора алгоритмов работы и 
+возможностей тонкой настройки различных сборщиков Java HotSpot VM (вы 
+ведь знаете, что таких сборщиков четыре?). И самое главное, рассмотрим, 
+каким образом эти знания можно использовать на практике.<br>
+<a name="habracut"></a><br>
+Следует сразу оговориться, что все сказанное ниже относится к 
+виртуальной машине HotSpot. Так что если вы встречаете в тексте 
+упоминание JVM, то речь идет именно об этой реализации. Но базовые 
+принципы распространяются и на виртуальные машины других поставщиков, 
+хотя в некоторых деталях они могут отличаться.<br>
+<br>
+<h1>А оно мне надо?</h1><br>
+Резонный вопрос. Далеко не любой программе для беспроблемной работы 
+требуется тонкая настройка сборщика мусора. Очень часто выделения ей 
+необходимого объема памяти оказывается достаточным. В конце концов, 
+редкий пользователь заметит, что отклик программы время от времени 
+занимает на сотню-другую миллисекунд дольше обычного.<br>
+<br>
+Но возможно, объемы используемой вашей программой памяти таковы, что ее 
+очистка занимает секунды, а то и десятки секунд. Или ваш сервис связан 
+жестким <abbr title="Service Level Agreement, соглашение об уровне услуг">SLA</abbr>,
+ и вы не можете позволить себе раскидываться десятками миллисекунд 
+направо и налево. Или же любознательность не позволяет вам просто так 
+закрывать глаза на то, что ваша программа что-то делает в своих недрах, а
+ вы не знаете что. В этих случаях давайте разбираться.<br>
+<br>
+<h1>Разделяй и властвуй</h1><br>
+Прежде чем приступить непосредственно к решению вопросов очистки наших 
+Авгиевых конюшен, давайте разберемся с их общим устройством и 
+определимся, на чем конкретно нам хотелось бы сосредоточиться.<br>
+<br>
+JVM разделяет используемую ею память на две области: <i>куча (heap)</i>, в которой хранятся данные приложения, и <i>не-куча (non-heap)</i>, в которой хранится код программы и другие вспомогательные данные.<br>
+<br>
+Если ваше приложение при работе самостоятельно не генерирует новые 
+классы и не занимается постоянной подгрузкой / выгрузкой классов, то 
+состояние non-heap в долгосрочной перспективе будет близким к статичному
+ и мало поддающимся оптимизации. В связи с этим, механизмы 
+функционирования области non-heap мы здесь рассматривать не будем, а 
+сосредоточимся на той области, где наши усилия принесут наибольшую 
+выгоду.<br>
+<br>
+Все объекты, которые явно или неявно создаются Java-приложением, 
+размещаются в куче. Над оптимизацией размещения объектов и алгоритмами 
+их обработки разработчики языков с автоматической сборкой мусора бьются с
+ первого дня их создания. И как минимум в ближайшем будущем эта битва 
+будет продолжаться, ведь объемы обрабатываемых данных растут, а 
+требования к сборке мусора у различных приложений сильно отличаются, что
+ делает создание единого идеального сборщика не самым тривиальным делом.
+ Наше же дело &mdash; следить за развитием ситуации и стараться извлекать из 
+имеющихся инструментов как можно больше пользы.<br>
+<br>
+<h1>Из поколения в поколение</h1><br>
+Преследуя свои цели (которые могут варьироваться и которые мы 
+обязательно рассмотрим ниже), различные сборщики мусора используют 
+разные подходы к организации памяти и ее очистке, но их объединяет общая
+ черта &mdash; все они опираются на <i>слабую гипотезу о поколениях</i>. В 
+общем виде, гипотеза о поколениях гласит, что вероятность смерти как 
+функция от возраста снижается очень быстро. Ее приложение к сборке 
+мусора в частности означает, что подавляющее большинство объектов живут 
+крайне недолго. По людским меркам, большинство даже в детский сад не 
+пойдут. Также это означает, что чем дольше прожил объект, тем выше 
+вероятность того, что он будет жить и дальше.<br>
+<a name="LifetimeChart"></a><br>
+Большинство приложений имеют распределение времен жизни объектов, схематично описываемое примерно такой кривой:<br>
+<div style="text-align:center;"><img width="300" height="250" src="duk1_files/9054ad5f8fb541a4acf4095d0847e1b8.png"></div><br>
+Подавляющее большинство объектов создаются на очень короткое время, они 
+становятся ненужными практически сразу после их первого использования. 
+Итераторы, локальные переменные методов, результаты боксинга и прочие 
+временные объекты, которые зачастую создаются неявно, попадают именно в 
+эту категорию, образуя пик в самом начале графика.<br>
+<br>
+Далее идут объекты, создаваемые для выполнения более-менее долгих 
+вычислений. Их жизнь чуть разнообразнее &mdash; они обычно гуляют по различным
+ методам, трансформируясь и обогащаясь в процессе, но после этого 
+становятся ненужными и превращаются в мусор. Благодаря таким объектам 
+возникает небольшой бугорок на графике следом за пиком временных 
+объектов.<br>
+<br>
+И, наконец, объекты-старожилы, переживающие почти всех &mdash; это постоянные 
+данные программы, загружаемые часто в самом начале и проживающие долгую и
+ счастливую жизнь до остановки приложения.<br>
+<br>
+Конечно, каждое приложение по-своему уникально, поэтому в каждом 
+конкретном случае этот график будет варьироваться, изменять пропорции, 
+на нем будут появляться аномалии, но чаще всего форма именно такая. 
+Запомните этот график, он нам еще пригодится при выполнении оптимизаций.<br>
+<br>
+Все это навело разработчиков на мысль, что в первую очередь необходимо 
+сосредотачиваться на очистке тех объектов, которые были созданы совсем 
+недавно. Именно среди них чаще всего находится <nobr>бóльшее</nobr> число тех, кто уже отжил свое, и именно здесь можно получить максимум эффекта при минимуме трудозатрат.<br>
+<br>
+<img width="300" align="right" height="195" src="duk1_files/ecba5b8c99324d059548ac932f72d28a.png"><br>
+<br>
+Вот тут и возникает идея разделения объектов на <i>младшее поколение (young generation)</i> и <i>старшее поколение (old generation)</i>. В соответствии с этим разделением и процессы сборки мусора разделяются на <i>малую сборку (minor GC)</i>, затрагивающую только младшее поколение, и <i>полную сборку (full GC)</i>,
+ которая может затрагивать оба поколения. Малые сборки выполняются 
+достаточно часто и удаляют основную часть мертвых объектов. Полные 
+сборки выполняются тогда, когда текущий объем выделенной программе 
+памяти близок к исчерпанию и малой сборкой уже не обойтись.<br>
+<br>
+При этом разделение объектов по поколениям не просто условное, они 
+физически размещаются в разных регионах памяти. Объекты из младшего 
+поколения по мере выживания в сборках мусора переходят в старшее 
+поколение. В старшем поколении объект может прожить до окончания работы 
+приложения, либо будет удален в процессе одной из полных сборок мусора.<br>
+<br>
+<h1>Вам быстро, дешево или качественно?</h1><br>
+Интуитивно понятно, что желательно иметь сборщик мусора, который как 
+можно быстрее избавлялся бы от ненужных объектов, расчищая дорогу 
+молодым и обеспечивая тихое и спокойное существование долгожителям. Но 
+работа сборщика мусора не бесплатная, она оплачивается ресурсами 
+компьютера и задержками в выполнении программы. Поэтому прежде чем 
+двигаться дальше, давайте разберемся с критериями, используемыми при 
+оценке сборщиков.<br>
+<br>
+Традиционно, при определении эффективности работы сборщика мусора учитываются следующие факторы:<br>
+<br>
+<ul>
+<li>Максимальная задержка &mdash; максимальное время, на которое сборщик 
+приостанавливает выполнение программы для выполнения одной сборки. Такие
+ остановки называются <i>stop-the-world</i> (или <i>STW</i>).</li>
+<li>Пропускная способность &mdash; отношение общего времени работы программы к
+ общему времени простоя, вызванного сборкой мусора, на длительном 
+промежутке времени.</li>
+<li>Потребляемые ресурсы &mdash; объем ресурсов процессора и/или дополнительной памяти, потребляемых сборщиком.</li>
+</ul><br>
+Понятно, что добиться улучшения всех трех параметров одновременно 
+практически невозможно. Уменьшение максимального времени задержки 
+приводит к учащению сборки мусора, уменьшая пропускную способность. Либо
+ приходится использовать более ухищренные алгоритмы для сохранения 
+пропускной способности, что чаще всего увеличивает потребление ресурсов.
+ И так далее.<br>
+<br>
+Поэтому при настройке сборщиков мусора разработчики обычно фокусируются 
+на оптимизации одного или двух параметров, стараясь сильно не ухудшать 
+остальные, но жертвуя ими в случае необходимости.<br>
+<br>
+<h1>Memento Mori</h1><br>
+<blockquote><i>Господи, дай мне места для размещения того, что пока еще нужно,<br>
+Дай мне смелости удалить то, что больше не пригодится,<br>
+И дай мне мудрости, чтобы отличить одно от другого.<br>
+&mdash; Молитва сборщиков мусора</i></blockquote><br>
+Еще один важный вопрос, который хотелось бы разобрать прежде, чем 
+двигаться дальше, это определение самого понятия мусора, то есть <i>мертвых</i> объектов.<br>
+<br>
+Как мы уже выяснили выше, путь большинства объектов от момента создания и
+ исполнения своего предназначения до момента превращения в мусор, 
+достаточно короток. Но существуют факторы, которые могут задержать его в
+ мире живых чуть дольше, чем нам того хотелось бы.<br>
+<br>
+Все мы знаем, что считать объект живым просто по факту наличия на него 
+ссылок из других объектов нельзя. В противном случае рецепт бессмертия в
+ JVM был бы до безобразия прост и заключался бы в наличии взаимных 
+ссылок хотя бы у двух объектов друг на друга, а в общем случае &mdash; в 
+наличии цикла в графе связанности объектов. При таком подходе и 
+ограниченном объеме памяти более-менее серьезная программа долго не 
+проработала бы, поэтому с отслеживанием циклов в графах объектов JVM 
+справляется хорошо.<br>
+<br>
+Но и просто сказать, что объект мертв и может быть удален только на 
+основании того, что в программе не осталось ссылающихся на него 
+(напрямую или опосредованно) еще используемых объектов, нельзя, так как 
+разделение объектов на поколения вносит свои коррективы.<br>
+<a name="ABObjects"></a><br>
+Рассмотрим такую ситуацию: У нас есть молодой объект A и ссылающийся на 
+него объект B, уже заслуживший место в старшем поколении. В какой-то 
+момент времени оба этих объекта стали нам не нужны и мы обнулили все 
+имеющиеся у нас ссылки на них. Очевидно, объект A можно было бы удалить в
+ ближайшую малую сборку мусора, но для того, чтобы получить это знание, 
+сборщику пришлось бы просмотреть всё старшее поколение и понять, что 
+объект B ссылающийся на A, тоже является мусором, а следовательно их оба
+ можно утилизировать. Но анализ старшего поколения не входит в план 
+малой сборки, так как является относительно дорогой процедурой, поэтому 
+объект А во время малой сборки будет считаться живым.<br>
+<br>
+<img width="300" align="right" height="167" src="duk1_files/14400a262c334fd9a43e7e68c1f7773f.png"><br>
+<br>
+Таким образом, чаще всего для целей малой сборки мусора объект считается
+ мертвым и подлежащим утилизации, если до него невозможно добраться по 
+ссылкам ни из объектов старшего поколения, ни из так называемых <i>корней (roots)</i>, к каковым относятся ссылки из стеков потоков, статические члены классов <nobr>и т. п.</nobr> При полной сборке мусора могут анализироваться оба поколения, поэтому здесь сборщик может плясать только от корней.<br>
+<br>
+Кстати, время от момента, когда объект стал нам не нужен, до момента его фактического удаления из памяти называется <i>проворством (promptness)</i> и иногда рассматривается как дополнительный фактор оценки эффективности сборщика.<br>
+<br>
+<h1>Под микроскопом</h1><br>
+Итак, мы уже получили базовые представления о том, чем занимаются 
+сборщики мусора и по каким критериям их можно оценивать. Теперь хотелось
+ бы разобраться, каким образом можно заглянуть внутрь виртуальной 
+машины, чтобы у нас была возможность наблюдать за работой ее скрытых 
+механизмов.<br>
+<br>
+Инструменты мониторинга памяти и процессов сборки мусора целесообразно разделить на две группы:<br>
+<ul>
+<li>внутренние, являющиеся частью той программы, которую мы мониторим,</li>
+<li>внешние, подключаемые к процессу исследуемой программы извне.</li>
+</ul><br>
+Проблема с инструментами мониторинга памяти в том, что они самим фактом 
+наблюдения за памятью и сборками мусора, как в квантовой механике или в 
+психологии, влияют на поведение подопытного. Ниже я приведу пример 
+такого изменения поведения, а пока просто нужно запомнить, что какой бы 
+инструмент вы ни использовали, следует проверить его калибровку хотя бы 
+на простом примере: запустите программу, которая ничего не делает, и 
+помониторьте ее.<br>
+<br>
+<h3>Внутренние инструменты</h3><br>
+Что касается внутренних инструментов мониторинга, то здесь мы можем либо
+ попросить JVM выводить информацию о производимых сборках с различным 
+уровнем детализации (в stdout или в лог-файл), либо самостоятельно 
+обращаться к MXBean’ам, возвращающим информацию о состоянии памяти и о 
+выполняемых сборках мусора, и обрабатывать ее как нам вздумается.<br>
+<br>
+В JVM HotSpot доступны следующие опции, управляющие выводом информации о
+ сборках мусора (это основные опции, работающие для всех сборщиков):<br>
+<br>
+<table>
+<tbody><tr>
+<td><i><nobr>-verbose:gc</nobr></i></td>
+<td>Включает режим логирования сборок мусора в stdout.</td>
+</tr>
+<tr>
+<td><i><nobr>-Xloggc:filename</nobr></i></td>
+<td>Указывает имя файла, в который должна логироваться информация о сборках мусора. Имеет приоритет над <i>-verbose:gc</i>.</td>
+</tr>
+<tr>
+<td><i><nobr>-XX:+PrintGCTimeStamps</nobr></i></td>
+<td>Добавляет к информации о сборках временные метки (в виде количества секунд, прошедших с начала работы программы).</td>
+</tr>
+<tr>
+<td><i><nobr>-XX:+PrintGCDetails</nobr></i></td>
+<td>Включает расширенный вывод информации о сборках мусора.</td>
+</tr>
+<tr>
+<td><i><nobr>-XX:+PrintFlagsFinal</nobr></i></td>
+<td>При старте приложения выводит в stdout значения всех опций, заданных
+ явно или установленных самой JVM. Сюда же попадают опции, относящиеся к
+ сборке мусора. Часто бывает полезно посмотреть на присвоенные им 
+значения.</td>
+</tr>
+</tbody></table><br>
+Если вы хотите собирать данные из своего приложения самостоятельно, то 
+для этого можно использовать соответствующие MXBean’ы. Вот пример 
+простого класса, который позволяет выводить текущее состояние различных 
+регионов памяти, а также информацию о сборках мусора, его можно взять за
+ основу, если хотите разработать свой собственный мониторинг:<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">MemoryUtil.java</b><div class="spoiler_text"><pre><code class="java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MemoryUtil</span> </span>{
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> NORM_NAME_LENGTH = <span class="hljs-number">25</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> SIZE_KB = <span class="hljs-number">1024</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> SIZE_MB = SIZE_KB * <span class="hljs-number">1024</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> SIZE_GB = SIZE_MB * <span class="hljs-number">1024</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> String SPACES = <span class="hljs-string">"                    "</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Map&lt;String, MemRegion&gt; memRegions;
+
+    <span class="hljs-comment">// Вспомогательный класс для хранения информации о регионах памяти</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MemRegion</span> </span>{
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> heap;        <span class="hljs-comment">// Признак того, что это регион кучи</span>
+        <span class="hljs-keyword">private</span> String normName;    <span class="hljs-comment">// Имя, доведенное пробелами до универсальной длины</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MemRegion</span><span class="hljs-params">(String name, <span class="hljs-keyword">boolean</span> heap)</span> </span>{
+            <span class="hljs-keyword">this</span>.heap = heap;
+            normName = name.length() &lt; NORM_NAME_LENGTH ? name.concat(SPACES.substring(<span class="hljs-number">0</span>, NORM_NAME_LENGTH - name.length())) : name;
+        }
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isHeap</span><span class="hljs-params">()</span> </span>{
+            <span class="hljs-keyword">return</span> heap;
+        }
+        <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">getNormName</span><span class="hljs-params">()</span> </span>{
+            <span class="hljs-keyword">return</span> normName;
+        }
+    }
+
+    <span class="hljs-keyword">static</span> {
+        <span class="hljs-comment">// Запоминаем информацию обо всех регионах памяти</span>
+        memRegions = <span class="hljs-keyword">new</span> HashMap&lt;String, MemRegion&gt;(ManagementFactory.getMemoryPoolMXBeans().size());
+        <span class="hljs-keyword">for</span>(MemoryPoolMXBean mBean: ManagementFactory.getMemoryPoolMXBeans()) {
+            memRegions.put(mBean.getName(), <span class="hljs-keyword">new</span> MemRegion(mBean.getName(), mBean.getType() == MemoryType.HEAP));
+        }
+    }
+
+    <span class="hljs-comment">// Обработчик сообщений о сборке мусора</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> NotificationListener gcHandler = <span class="hljs-keyword">new</span> NotificationListener() {
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">handleNotification</span><span class="hljs-params">(Notification notification, Object handback)</span> </span>{
+            <span class="hljs-keyword">if</span> (notification.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
+                GarbageCollectionNotificationInfo gcInfo = GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
+                Map&lt;String, MemoryUsage&gt; memBefore = gcInfo.getGcInfo().getMemoryUsageBeforeGc();
+                Map&lt;String, MemoryUsage&gt; memAfter = gcInfo.getGcInfo().getMemoryUsageAfterGc();
+                StringBuilder sb = <span class="hljs-keyword">new</span> StringBuilder();
+                sb.append(<span class="hljs-string">"["</span>).append(gcInfo.getGcAction()).append(<span class="hljs-string">" / "</span>).append(gcInfo.getGcCause())
+                    .append(<span class="hljs-string">" / "</span>).append(gcInfo.getGcName()).append(<span class="hljs-string">" / ("</span>);
+                appendMemUsage(sb, memBefore);
+                sb.append(<span class="hljs-string">") -&gt; ("</span>);
+                appendMemUsage(sb, memAfter);
+                sb.append(<span class="hljs-string">"), "</span>).append(gcInfo.getGcInfo().getDuration()).append(<span class="hljs-string">" ms]"</span>);
+                System.out.println(sb.toString());
+            }
+        }
+    };
+
+    <span class="hljs-comment">/**
+     * Выводит в stdout информацию о текущем состоянии различных разделов памяти.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">printUsage</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> heapOnly)</span> </span>{
+        <span class="hljs-keyword">for</span>(MemoryPoolMXBean mBean: ManagementFactory.getMemoryPoolMXBeans()) {
+            <span class="hljs-keyword">if</span> (!heapOnly || mBean.getType() == MemoryType.HEAP) {
+                printMemUsage(mBean.getName(), mBean.getUsage());
+            }
+        }
+    }
+
+    <span class="hljs-comment">/**
+     * Запускает процесс мониторинга сборок мусора.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">startGCMonitor</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">for</span>(GarbageCollectorMXBean mBean: ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) mBean).addNotificationListener(gcHandler, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>);
+        }
+    }
+
+    <span class="hljs-comment">/**
+     * Останавливает процесс мониторинга сборок мусора.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">stopGCMonitor</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">for</span>(GarbageCollectorMXBean mBean: ManagementFactory.getGarbageCollectorMXBeans()) {
+            <span class="hljs-keyword">try</span> {
+                ((NotificationEmitter) mBean).removeNotificationListener(gcHandler);
+            } <span class="hljs-keyword">catch</span>(ListenerNotFoundException e) {
+            }
+        }
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">printMemUsage</span><span class="hljs-params">(String title, MemoryUsage usage)</span> </span>{
+        System.out.println(String.format(<span class="hljs-string">"%s%s\t%.1f%%\t[%s]"</span>,
+                memRegions.get(title).getNormName(),
+                formatMemory(usage.getUsed()),
+                usage.getMax() &lt; <span class="hljs-number">0</span> ? <span class="hljs-number">0.0</span> : (<span class="hljs-keyword">double</span>)usage.getUsed() / (<span class="hljs-keyword">double</span>)usage.getMax() * <span class="hljs-number">100</span>,
+                formatMemory(usage.getMax())));
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">formatMemory</span><span class="hljs-params">(<span class="hljs-keyword">long</span> bytes)</span> </span>{
+        <span class="hljs-keyword">if</span> (bytes &gt; SIZE_GB) {
+            <span class="hljs-keyword">return</span> String.format(<span class="hljs-string">"%.2fG"</span>, bytes / (<span class="hljs-keyword">double</span>)SIZE_GB);
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (bytes &gt; SIZE_MB) {
+            <span class="hljs-keyword">return</span> String.format(<span class="hljs-string">"%.2fM"</span>, bytes / (<span class="hljs-keyword">double</span>)SIZE_MB);
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (bytes &gt; SIZE_KB) {
+            <span class="hljs-keyword">return</span> String.format(<span class="hljs-string">"%.2fK"</span>, bytes / (<span class="hljs-keyword">double</span>)SIZE_KB);
+        }
+        <span class="hljs-keyword">return</span> Long.toString(bytes);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">appendMemUsage</span><span class="hljs-params">(StringBuilder sb, Map&lt;String, MemoryUsage&gt; memUsage)</span> </span>{
+        <span class="hljs-keyword">for</span>(Entry&lt;String, MemoryUsage&gt; entry: memUsage.entrySet()) {
+            <span class="hljs-keyword">if</span> (memRegions.get(entry.getKey()).isHeap()) {
+                sb.append(entry.getKey()).append(<span class="hljs-string">" used="</span>)
+                    .append(entry.getValue().getUsed() &gt;&gt; <span class="hljs-number">10</span>)
+                    .append(<span class="hljs-string">"K; "</span>);
+            }
+        }
+    }
+}
+</code></pre><br>
+</div></div><br>
+<h3>Внешние инструменты</h3><br>
+В природе существует огромное количество инструментов, позволяющих 
+подключиться к процессу Java и в удобном виде получить информацию о 
+состоянии памяти и процессах сборки мусора. Это и входящие в поставку 
+JVM HotSpot утилиты VisualVM (с плагином VisualGC) и Java Mission 
+Control и различные инструменты/плагины для IDE и отдельные программы 
+вроде JProfiler или YourKit и еще много чего.<br>
+<br>
+Вы можете выбрать то, чем вам удобнее пользоваться, но как уже было 
+сказано выше, обязательно проверьте, какое влияние оказывает ваш 
+инструмент и его настройки на подопытное приложение. Вот пример того, 
+как VisualVM влияет на поведение программы, весь исполняемый код которой
+ состоит из приостановки выполнения основного потока:<br>
+<br>
+<div style="text-align:center;"><img width="494" height="260" src="duk1_files/e8ae230329164e15b0aca530713f7365.png"></div><br>
+<br>
+Видите этот растущий график в верхней части? Это почти 8 МБ мусорных 
+данных в минуту, привносимых мониторингом. Если вам нужно общее 
+представление о том, как работает сборщик, либо если десяток мегабайт 
+данных в минуту для вашей программы меньше допустимой погрешности 
+измерений, то такое поведение инструменту можно простить. Но если вы 
+проводите тонкую настройку и у вас каждый мегабайт на счету, то лучше 
+выбрать что-нибудь менее прожорливое.<br>
+<br>
+В идеале, ваш инструмент должен отображать график использования памяти коматозной программой как-нибудь так:<br>
+<br>
+<div style="text-align:center;"><img width="700" height="207" src="duk1_files/69ea73f025504cc4a9170b1a2156f965.png"></div><br>
+<br>
+Как вариант, обратите внимание на описанные выше внутренние инструменты 
+мониторинга, они изначально легковесные, а при необходимости добавления 
+расширенных функций вы можете сами влиять на их прожорливость.<br>
+<br>
+<h1>А можно всех посмотреть?</h1><br>
+Ну что ж, раз вы добрались до этого места и вас не остановило даже 
+долгое перечисление очевидных вещей в предыдущих параграфах, то вам и 
+впрямь должно быть интересно. Давайте тогда уже взглянем на то, что же 
+нам предоставляет HotSpot из коробки.<br>
+<br>
+Как уже было сказано, описанные выше принципы сборки мусора являются 
+общими для всех сборщиков. Но при этом между сборщиками существуют и 
+заметные различия, проявляющиеся в ответах на следующие вопросы:<br>
+<br>
+<ol>
+<li>Какое количество регионов кучи используется, каково их назначение и размеры? Как эти размеры изменяются динамически?</li>
+<li>Как устроен перевод объектов из младшего поколения в старшее?</li>
+<li>Какие из работ по сборке мусора выполняются параллельно с работой основной программы, а какие приводят к ее остановке?</li>
+<li>Каким образом сборщик мусора автоматически подстраивается под 
+требуемые параметры производительности? Каким из них отдает приоритет?</li>
+<li>Какие существуют возможности по настройке сборщика?</li>
+</ol><br>
+Java HotSpot VM предоставляет разработчикам на выбор четыре различных сборщика мусора:<br>
+<br>
+<b>Serial (последовательный)</b> &mdash; самый простой вариант для приложений с
+ небольшим объемом данных и не требовательных к задержкам. Редко когда 
+используется, но на слабых компьютерах может быть выбран виртуальной 
+машиной в качестве сборщика по умолчанию.<br>
+<br>
+<b>Parallel (параллельный)</b> &mdash; наследует подходы к сборке от 
+последовательного сборщика, но добавляет параллелизм в некоторые 
+операции, а также возможности по автоматической подстройке под требуемые
+ параметры производительности.<br>
+<br>
+<b>Concurrent Mark Sweep (CMS)</b> &mdash; нацелен на снижение максимальных 
+задержек путем выполнения части работ по сборке мусора параллельно с 
+основными потоками приложения. Подходит для работы с относительно 
+большими объемами данных в памяти.<br>
+<br>
+<b>Garbage-First (G1)</b> &mdash; создан для постепенной замены CMS, особенно в
+ серверных приложениях, работающих на многопроцессорных серверах и 
+оперирующих большими объемами данных.<br>
+<br>
+В следующих статьях мы детально рассмотрим каждый из этих сборщиков, 
+стараясь придерживаться общего плана: краткое описание, принципы работы,
+ ситуации STW (это stop the world, если успели забыть), способы 
+настройки, достоинства и недостатки. Получив эти знания, мы посмотрим, 
+что с ними делать в реальной жизни.<br>
+<br>
+<a href="http://habrahabr.ru/post/269707/">Часть 2 &mdash; Сборщики Serial GC и Parallel GC →</a><br>
+<a href="http://habrahabr.ru/post/269863/">Часть 3 &mdash; Сборщики CMS GC и G1 GC →</a></div>
+</body>
+</html>

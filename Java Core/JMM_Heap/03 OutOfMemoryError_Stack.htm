@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>OutOfMemoryError</title>
+    <link rel="stylesheet" href="grey.css">
+</head>
+<body>
+<div class="post__body post__body_full cye-lm-tag">
+    <div class="content html_format cye-lm-tag">Если вы словили OutOfMemoryError, то это вовсе не значит, что ваше приложение создает много объектов, которые не могут почиститься сборщиком мусора и заполняют всю память, выделенную вами с помощью параметра -Xmx. Я, как минимум, могу придумать два других случая, когда вы можете увидеть эту ошибку. Дело в том, что память java процесса не ограничивается областью -Xmx, где ваше приложение программно создает объекты.<br>
+<br>
+<img src="pics/jmm_full.png" alt="image"><br>
+<br>
+<a name="habracut"></a><br>
+<br>
+Область памяти, занимаемая java процессом, состоит из нескольких частей. Тип OutOfMemoryError зависит от того, в какой из них не хватило места.<br>
+<br>
+<h4>1. java.lang.OutOfMemoryError: Java heap space</h4><br>
+Не хватает место в куче, а именно, в области памяти в которую помещаются объекты, создаваемые программно в вашем приложении. Размер задается параметрами -Xms и -Xmx. Если вы пытаетесь создать объект, а места в куче не осталось, то получаете эту ошибку. Обычно проблема кроется в утечке памяти, коих бывает великое множество, и интернет просто пестрит статьями на эту тему.<br>
+<br>
+<h4>2. java.lang.OutOfMemoryError: PermGen space</h4><br>
+Данная ошибка возникает при нехватке места в Permanent области, размер которой задается параметрами -XX:PermSize и -XX:MaxPermSize. Что там лежит и как бороться с OutOfMemoryError возникающей там, я уже описал подробнейшим образом <a href="http://www.javaspecialist.ru/2011/04/permanent.html">тут</a>. <u>(или читай внизу статьи)</u> <br>
+<br>
+<h4>3. java.lang.OutOfMemoryError: GC overhead limit exceeded</h4><br>
+Данная ошибка может возникнуть как при переполнении первой, так и второй областей. Связана она с тем, что памяти осталось мало и GC постоянно работает, пытаясь высвободить немного места. Данную ошибку можно отключить с помощью параметра -XX:-UseGCOverheadLimit, но, конечно же, её надо не отключать, а либо решать проблему утечки памяти, либо выделять больше объема, либо менять настройки GC.<br>
+<br>
+<h4>4. java.lang.OutOfMemoryError: unable to create new native thread</h4><br>
+Впервые я столкнулся с данной ошибкой несколько лет назад, когда занимался нагрузочным тестированием и пытался выяснить максимальное количество пользователей, которые могут работать с нашим веб-приложением. Я использовал специальную тулзу, которая позволяла логинить пользователей и эмулировать их стандартные действия. На определенном количестве клиентов, я начал получать OutOfMemoryError. Не особо вчитываясь в текст сообщения и думая, что мне не хватает памяти на создание сессии пользователя и других необходимых объектов, я увеличил размер кучи приложения (-Xmx). Каково же было мое удивление, когда после этого количество пользователей одновременно работающих с системой только уменьшилось. Давайте подробно разберемся как же такое получилось.<br>
+<br>
+На самом деле это очень просто воспроизвести на windows на 32-битной машине, так как там процессу выделяется не больше 2Гб.<br>
+<br>
+Допустим у вас есть приложение с большим количеством одновременно работающих пользователей, которое запускается с параметрами -Xmx1024M -XX:MaxPermSize=256M -Xss512K. Если всего процессу доступно 2G, то остается свободным еще коло 768M. Именно в данном остатке памяти и создаются стеки потоков. Таким образом, примерно вы можете создать не больше 768*(1024/512)=1536 (у меня при таких параметрах получилось создать 1316) нитей (см. рисунок в начале статьи), после чего вы получите OutOfMemoryError. Если вы увеличиваете -Xmx, то количество потоков, которые вы можете создать соответственно уменьшается. Вариант с уменьшением -Xss, для возможности создания большего количества потоков, не всегда выход, так как, возможно, у вас существуют в системе потоки требующие довольно больших стеков. Например, поток инициализации или какие-нибудь фоновые задачи. Но все же выход есть. Оказывается при программном создании потока, можно указать размер стека: <a href="http://download.oracle.com/javase/6/docs/api/java/lang/Thread.html#Thread%28java.lang.ThreadGroup,%20java.lang.Runnable,%20java.lang.String,%20long%29">Thread(ThreadGroup group, Runnable target, String name,long stackSize)</a>. Таким образом вы можете выставить -Xss довольно маленьким, а действия требующие больших стеков, выполнять в отдельных потоках, созданных с помощью упомянутого выше конструктора.<br>
+<br>
+Более подробно, что же лежит в стеке потока, и куда уходит эта память, можно прочитать <a href="http://www.javaspecialist.ru/2011/04/java-thread-stack.html">тут (или см. ниже:..)</a>.<br>
+<br>
+Конечно, вам может показаться данная проблема слегка надуманной, так как большинство серверов нынче крутиться на 64-битной архитектуре, но все же считаю данный пример весьма полезным, так как он помогает разобраться из каких частей состоит память java-процесса.</div>
+  
+  </div>
+<br>
+<hr>
+<br>
+
+<div class="post hentry uncustomized-post-template">
+<a name="8769019706761516911"></a>
+<h3 class="post-title entry-title">
+Java thread stack
+</h3>
+<div class="post-header">
+<div class="post-header-line-1"></div>
+</div>
+<div class="post-body entry-content">
+Данная область памяти связана с процессом <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Java</span> и не относится ни к Heap, ни к Prmanent области и, вообще, не отображается JConsole и не входит в Heap dump, т.е. её невозможно увидеть различными анализаторами памяти. Давайте разберемся, что же там лежит и как ею управлять.<br>
+<a name="more"></a><br>
+Данная память выделяется каждому созданному потоку в индивидуальное пользование. Там хранится стек вызова методов, локальные переменные и параметры. Тут я дам небольшое пояснение, так как было время, когда я сам в этом немного путался. Если вы создаете и присваиваете локальную переменную примитивного типа, то все данные полностью хранятся на стеке. Если же вы создаете объект, то ссылка хранится на стеке, сам же объект уже создается в куче. При создании массива примитивных типов происходит то же самое что и с объектами: ссылка на массив храниться на стеке, а сам массив в куче. Однако начиная с <a href="http://www.oracle.com/technetwork/java/javase/6u14-137039.html">Java 6 Update 14</a> можно включить так называемый Escape-Analysis, который будет размещать объекты не покидающие метода тоже на стеке. Сделать это можно выставив параметр <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-XX:+DoEscapeAnalysis</span>. Но он будет работать только в <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-server</span> моде. Подробнее об этом можете почитать <a href="http://dolzhenko.blogspot.com/2011/01/lock-coarsening-biased-locking-escape.html">тут</a>. Кстати в <a href="http://www.oracle.com/technetwork/java/javase/6u18-142093.html">Java 6 Update 18</a> данную опцию отключили, а в <a href="http://www.oracle.com/technetwork/java/javase/6u21-156341.html">Java 6 Update 21</a> (<a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6873799">6873799</a>) вернули и сделали по умолчанию. Таким образом в вашей JVM запущенной на сервере данная оптимизация уже работает, если вы используете java6u21 и выше. Размещение объектов и примитивов на стеке несказанно упрощает жизнь сборщику мусора. Пользуйтесь этим - создавайте небольшие маложивущие immutable объекты вместо часто изменяемых долгоживущих.<br>
+<br>
+Размер стека выделяемого потоку по умолчанию можно поменять параметром JVM <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-Xss</span>. Либо при создании конкретного потока передать параметр в конструкторе <a href="http://download.oracle.com/javase/6/docs/api/java/lang/Thread.html#Thread%28java.lang.ThreadGroup,%20java.lang.Runnable,%20java.lang.String,%20long%29">Thread(ThreadGroup group, Runnable target, String name,long stackSize)</a>. Но перед тем как его использовать, обязательно проверьте поддерживается ли он на вашей платформе, так как данный параметр в конструкторе по спецификации является рекомендательным и может быть не реализован.<br>
+<br>
+Будьте аккуратны с изменением размера стека. При выставлении слишком большого значения и наличии большого количества потоков вы можете получить OutOfMemoryError или какой-нибудь другой internal error. При выставлении же слишком маленького значения вы можете получить StackOverflowError. На самом деле StackOverflowError можно получить и на стеках достаточно больших размеров, если вы используете глубокую рекурсию. <br>
+<br>
+Анализ длины стека можно провести несколькими способами. В любой момент вы можете снять thread dump послав сигнал kill процессу. В UNIX системе это команда "kill -3". Под windows вы можете использовать программку <a href="http://www.latenighthacking.com/projects/2003/sendSignal/">SendSignal</a>. Можете быть спокойны, ваш процесс от этого не умрет и будет работать дальше как и раньше. Так же получить thread dump можно через JMX, как через API так и через JConsole. Правда тут есть небольшое неудобство, так как результаты попадут в stdout и там будут перечислены стеки всех ваших потоков, которых может быть тысячи. Кстати, чтобы среди этих тысяч потоков найти именно тот, который интересует вас, есть хоршая практика задавать имя потока при его создании. Особенно это касается <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Timer </span>и <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Executors</span>. В последнем это можно сделать передав специальную <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">ThreadFactory </span>при создании.<br>
+<br>
+Если же вас интересует только стек конкретного потока в конкретном месте, то вы можете это сделать программно через JMX используя <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">ThreadInfo </span>либо использовать следующий метод:<br>
+<pre class="java" name="code">
+try {
+    throw new Exception("Thread stack printer");
+} catch (Exception e) {
+    PrintWriter os = new PrintWriter(new FileOutputStream("c:/stack.txt"));
+    e.printStackTrace(os);
+    os.close();
+}
+}
+</pre>
+</div>
+</div>
+<br><hr>
+<h3>Permanent область памяти</h3>
+<div class="post-body entry-content">
+Прежде всего замечу, что данная область не входит в часть кучи, выделяемой <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-Xmx</span>. Для увеличения её объема необходимо использовать параметр <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-XX:MaxPermSize</span>. Давайте посмотрим, что же хранится в данной области, и что может приводит к её переполнению.<br>
+<a name="more"></a><h4>Метаданные об объектах</h4>С точки зрения java в этой области лежат те же объекты, что и в основной куче. Только это объекты определенных типов, а именно <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Class, Method, Field и Constructor</span>. Я могу перечислить несколько причин роста числа таких объектов.<br>
+<h5>1. Библиотеки явно генерирующие байткод</h5>Я знаю как минимум две библиотеки, способные генерировать байткод: <a href="http://www.acme.com/java/">acme</a> и <a href="http://cglib.sourceforge.net/">cglib</a>. Так же начиная с java 6, теперь можно напрямую вызывать стандартный компилятор. В общем, раньше тоже можно было это сделать через <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Runtime.getRuntime().exec()</span>. Если вы безудержно генерируете байткод и загружаете новые классы, то рано или поздно вы сталкнетесь с <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">OutOfMemoryError</span>.<br>
+<h5>2. Использование<a href="http://download.oracle.com/javase/6/docs/api/java/lang/reflect/Proxy.html" style="font-family: &quot;Courier New&quot;,Courier,monospace;"> java.lang.reflect.Proxy</a></h5>Данный стандартный JDK класс генерирует и подгружает новый Class. Называются такие классы как правило Proxy${N}, где N - целое число.<br>
+<h5>3. Библиотеки неявно генерирующие байткод</h5><span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Hibernate, Spring, AspectJ</span> и многие другие библиотеки могут генерировать классы или использовать dinamic proxy на лету.<br>
+<h5>4. Java Reflection API</h5>Очевидно, что при использовании <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Reflection </span>создаются объекты типа <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Field </span>и <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">Method</span>, которые как уже упоминалось попадают в Permanent область. Но совсем не очевидно, что после многократного обращения к какому-нибудь полю класса через reflection или вызова его метода, генерируется и загружается новый класс. Дело в том, что в качестве оптимизации, для того чтобы в каждый раз не искать сдвиг в таблице, где лежат данные полей, JVM генерирует специальные классы, ускоряющие этот процесс. Называются они как правило <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">GeneratedMethodAccessor{N}, GeneratedFieldAccessor{N}, GeneratedConstructorAccessor{N}</span> где {N} - целое число. Конечно же такое поведение зависит от реализации JVM и никак не специфицируется, но на данный момент HotSpot JVM так делает.<br>
+<h5>5. Serialization</h5>При использовании стандартной java сериализации используется reflection. С помощью него JVM  считывает поле <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">serialVersionUID</span>, проверяет наличие метода <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">writeObject</span>, ищет все поля в классе, если writeObject не переопределен, считывает структуру родителя. Совет тут очевиден: не используйте интерфейс <a href="http://download.oracle.com/javase/6/docs/api/java/io/Serializable.html">Serializable</a>. Как минимум посмотрите решение <a href="http://download.oracle.com/javase/6/docs/api/java/io/Externalizable.html">Externalizable</a>. Хотя я в последнее время предпочитаю <a href="http://code.google.com/p/protobuf/">Protocol Buffers</a>, как более кросс-платформенное решение.<br>
+<h5>6. RMI</h5>Как вы понимаете, RMI активно использует сериализацию, так что опять получаем reflection со всеми вытекающими отсюда эффектами. <br>
+<h4>Class data sharing (CDS)</h4>В java 5 появилась такая вещь как <a href="http://download.oracle.com/javase/1.5.0/docs/guide/vm/class-data-sharing.html">CDS</a>. Это файл на диске, являющийся частью инсталляции JVM, который содержит дапм JVM памяти, содержащий загруженные классы образующие ядро JVM, т.е. те которые наверняка JVM пришлось бы загрузить сразу при старте. Имею такую область, она сразу мапится при инициализации java машины, тем самым ускоряя время старта приложения. Как вы уже наверное догадались, данная область тоже попадает в Permanent область. По сути она содержит все те же объекты классов Class, только выгрузить их и очистить память JVM&nbsp; уже не может.<br>
+<h4>String pool</h4>Как вы наверняка знаете, в java есть пул строк. Все строчные литералы неявно кладутся в пул. Так же у класса <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">java.lang.String</span> есть метод <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">intern()</span>, который насильно кладет созданную любым способом строку в этот самый пул, который и располагается в нашей Permanent области. Еще я знаю, что имена методов и полей при использовании reflection попадают в пул. И еще говорят, что различные библиотеки по работе с XML, такие как xerces (на самом деле уже чать JDK) и JAXB тоже активно используют данный пул. Если у вас есть подозрение, что слишком много строк попадет в пул, то попробуйте поиграться с параметром <span style="font-family: &quot;Courier New&quot;,Courier,monospace;">-XX:PerfMaxStringConstLength</span>. Я, правда, не смог найти документации на этот параметр, и, возможно, он делает что-то совсем другое. Если кто-нибудь пользовался данным параметром, то, пожалуйста, опишите свой опыт в комментариях.<br>
+<h4>Сборка мусора в PermGen</h4>Когда говорят о сборщике мусора, то чаще всего данную область обозначают PermGen. По названию, казалось бы, что объекты созданные в этой области никогда не очищаются. Но не все и не всегда.<br>
+Например, пул строк никогда не очищается. Так же в случае CDS, Permanent область делится на две: только для чтения и для чтения-записи. Очевидно, что в этом случае область только для чтения не чиститься сборщиком мусора.<br>
+Чтобы диагностировать проблему загрузки большого количества классов и проверить выгружаются ли они или нет, можно использовать следующие параметры JVM<br>
+<pre class="java" name="code">
+-XX:+TraceClassUnloading
+-XX:+TraceClassLoading
+</pre>Чтобы включить/отключить выгрузку классов, можно воспользоваться параметрами<br>
+<pre class="java" name="code">
+-XX:-ClassUnloading
+-XX:+ClassUnloading
+</pre>Если вы используете low pause сборщик мусора(CMS), то чтобы включить сборку в PermGen, нужно выставить два параметра (по крайней мере в java 5 надо было включить обязательно оба параметра, иначе не заработает)<br>
+<pre class="java" name="code">
+-XX:+CMSPermGenSweepingEnabled
+-XX:+CMSClassUnloadingEnabled
+</pre>
+<div style="clear: both;"></div>
+</div>
+</body>
+</html>
