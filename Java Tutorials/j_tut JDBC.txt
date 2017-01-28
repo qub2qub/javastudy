@@ -1,189 +1,189 @@
-JDBC состоит из 4-х компонент:
-1)JDBC API - предоставляет программный доступ к реляционной БД. Через него можно выполнять SQL запросы, получать результаты, вносить изменения обратно в БД. JDBC API может работать с неколькики дата-сорсами.
-2)JDBC Driver Manager - это класс DriverManager, к-й может подключать java приложения к jdbc драйверу. DriverManager - это костяк jdbc архитектуры. Он Довольно маленький и простой.
+JDBC СЃРѕСЃС‚РѕРёС‚ РёР· 4-С… РєРѕРјРїРѕРЅРµРЅС‚:
+1)JDBC API - РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РїСЂРѕРіСЂР°РјРјРЅС‹Р№ РґРѕСЃС‚СѓРї Рє СЂРµР»СЏС†РёРѕРЅРЅРѕР№ Р‘Р”. Р§РµСЂРµР· РЅРµРіРѕ РјРѕР¶РЅРѕ РІС‹РїРѕР»РЅСЏС‚СЊ SQL Р·Р°РїСЂРѕСЃС‹, РїРѕР»СѓС‡Р°С‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹, РІРЅРѕСЃРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РѕР±СЂР°С‚РЅРѕ РІ Р‘Р”. JDBC API РјРѕР¶РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ СЃ РЅРµРєРѕР»СЊРєРёРєРё РґР°С‚Р°-СЃРѕСЂСЃР°РјРё.
+2)JDBC Driver Manager - СЌС‚Рѕ РєР»Р°СЃСЃ DriverManager, Рє-Р№ РјРѕР¶РµС‚ РїРѕРґРєР»СЋС‡Р°С‚СЊ java РїСЂРёР»РѕР¶РµРЅРёСЏ Рє jdbc РґСЂР°Р№РІРµСЂСѓ. DriverManager - СЌС‚Рѕ РєРѕСЃС‚СЏРє jdbc Р°СЂС…РёС‚РµРєС‚СѓСЂС‹. РћРЅ Р”РѕРІРѕР»СЊРЅРѕ РјР°Р»РµРЅСЊРєРёР№ Рё РїСЂРѕСЃС‚РѕР№.
 
-3) JDBC Test Suite - помогает определить что jdbc driver будает работать в ваше программе. 
-4)JDBC-ODBC Bridge - мост, к-й даёт доступ к jdbc через odbc драйвер.
+3) JDBC Test Suite - РїРѕРјРѕРіР°РµС‚ РѕРїСЂРµРґРµР»РёС‚СЊ С‡С‚Рѕ jdbc driver Р±СѓРґР°РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ РІ РІР°С€Рµ РїСЂРѕРіСЂР°РјРјРµ. 
+4)JDBC-ODBC Bridge - РјРѕСЃС‚, Рє-Р№ РґР°С‘С‚ РґРѕСЃС‚СѓРї Рє jdbc С‡РµСЂРµР· odbc РґСЂР°Р№РІРµСЂ.
 
-JDBC API поддерживаеет обе технологии: Two-tier and Three-tier Processing Models
+JDBC API РїРѕРґРґРµСЂР¶РёРІР°РµРµС‚ РѕР±Рµ С‚РµС…РЅРѕР»РѕРіРёРё: Two-tier and Three-tier Processing Models
 
-в 2-х уровневой -- java приложение напрямую обзается с БД через jdbc драйвер.
+РІ 2-С… СѓСЂРѕРІРЅРµРІРѕР№ -- java РїСЂРёР»РѕР¶РµРЅРёРµ РЅР°РїСЂСЏРјСѓСЋ РѕР±Р·Р°РµС‚СЃСЏ СЃ Р‘Р” С‡РµСЂРµР· jdbc РґСЂР°Р№РІРµСЂ.
 
-в 3-х уровневой -- команды посылаются в "средний слой" сервисов, к-й потом шлёт обращения к БД. БД обрабатывает этот запрос и посылает ответ обратно на средний слой, и он уже (сервисы) посылает ответ пользователю.
+РІ 3-С… СѓСЂРѕРІРЅРµРІРѕР№ -- РєРѕРјР°РЅРґС‹ РїРѕСЃС‹Р»Р°СЋС‚СЃСЏ РІ "СЃСЂРµРґРЅРёР№ СЃР»РѕР№" СЃРµСЂРІРёСЃРѕРІ, Рє-Р№ РїРѕС‚РѕРј С€Р»С‘С‚ РѕР±СЂР°С‰РµРЅРёСЏ Рє Р‘Р”. Р‘Р” РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚ СЌС‚РѕС‚ Р·Р°РїСЂРѕСЃ Рё РїРѕСЃС‹Р»Р°РµС‚ РѕС‚РІРµС‚ РѕР±СЂР°С‚РЅРѕ РЅР° СЃСЂРµРґРЅРёР№ СЃР»РѕР№, Рё РѕРЅ СѓР¶Рµ (СЃРµСЂРІРёСЃС‹) РїРѕСЃС‹Р»Р°РµС‚ РѕС‚РІРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ.
 **************
 Relational Database Overview
-Реляционная БД - это такая БД в к-й информация представлена в виде таблиц со строкам и клонками в них. Понятие relation отностельно таблиц значит, что это коллекция объектов одинакового типа.
+Р РµР»СЏС†РёРѕРЅРЅР°СЏ Р‘Р” - СЌС‚Рѕ С‚Р°РєР°СЏ Р‘Р” РІ Рє-Р№ РёРЅС„РѕСЂРјР°С†РёСЏ РїСЂРµРґСЃС‚Р°РІР»РµРЅР° РІ РІРёРґРµ С‚Р°Р±Р»РёС† СЃРѕ СЃС‚СЂРѕРєР°Рј Рё РєР»РѕРЅРєР°РјРё РІ РЅРёС…. РџРѕРЅСЏС‚РёРµ relation РѕС‚РЅРѕСЃС‚РµР»СЊРЅРѕ С‚Р°Р±Р»РёС† Р·РЅР°С‡РёС‚, С‡С‚Рѕ СЌС‚Рѕ РєРѕР»Р»РµРєС†РёСЏ РѕР±СЉРµРєС‚РѕРІ РѕРґРёРЅР°РєРѕРІРѕРіРѕ С‚РёРїР°.
 
-Реляционные БД следует определённым правилам, чтобы инфа всегда оставалась точной и доступной:
-1) каждая строка в таблице должна быть уникальной.
-2) значение в колонках не должны быть повторяющимися группами или массивами.
-3) Null значение. Это когда значение "не доступно", т.е. не задано/отсутствует. Null не равен нулю или пустому значению. It does not equate to a blank or zero. A blank is considered equal to another blank, a zero is equal to another zero, but two null values are not considered equal.
-----когда каждая строка в таблице - уникальная - становится возможным использовать 1 или более колонок чтобы идентифицировать канкретную строку. И такой уникальный набор колонок называется PRIMARY KEY. Любая колонка, к-я входит в primary_key не может быть равна Null. 
+Р РµР»СЏС†РёРѕРЅРЅС‹Рµ Р‘Р” СЃР»РµРґСѓРµС‚ РѕРїСЂРµРґРµР»С‘РЅРЅС‹Рј РїСЂР°РІРёР»Р°Рј, С‡С‚РѕР±С‹ РёРЅС„Р° РІСЃРµРіРґР° РѕСЃС‚Р°РІР°Р»Р°СЃСЊ С‚РѕС‡РЅРѕР№ Рё РґРѕСЃС‚СѓРїРЅРѕР№:
+1) РєР°Р¶РґР°СЏ СЃС‚СЂРѕРєР° РІ С‚Р°Р±Р»РёС†Рµ РґРѕР»Р¶РЅР° Р±С‹С‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕР№.
+2) Р·РЅР°С‡РµРЅРёРµ РІ РєРѕР»РѕРЅРєР°С… РЅРµ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РїРѕРІС‚РѕСЂСЏСЋС‰РёРјРёСЃСЏ РіСЂСѓРїРїР°РјРё РёР»Рё РјР°СЃСЃРёРІР°РјРё.
+3) Null Р·РЅР°С‡РµРЅРёРµ. Р­С‚Рѕ РєРѕРіРґР° Р·РЅР°С‡РµРЅРёРµ "РЅРµ РґРѕСЃС‚СѓРїРЅРѕ", С‚.Рµ. РЅРµ Р·Р°РґР°РЅРѕ/РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚. Null РЅРµ СЂР°РІРµРЅ РЅСѓР»СЋ РёР»Рё РїСѓСЃС‚РѕРјСѓ Р·РЅР°С‡РµРЅРёСЋ. It does not equate to a blank or zero. A blank is considered equal to another blank, a zero is equal to another zero, but two null values are not considered equal.
+----РєРѕРіРґР° РєР°Р¶РґР°СЏ СЃС‚СЂРѕРєР° РІ С‚Р°Р±Р»РёС†Рµ - СѓРЅРёРєР°Р»СЊРЅР°СЏ - СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РІРѕР·РјРѕР¶РЅС‹Рј РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ 1 РёР»Рё Р±РѕР»РµРµ РєРѕР»РѕРЅРѕРє С‡С‚РѕР±С‹ РёРґРµРЅС‚РёС„РёС†РёСЂРѕРІР°С‚СЊ РєР°РЅРєСЂРµС‚РЅСѓСЋ СЃС‚СЂРѕРєСѓ. Р С‚Р°РєРѕР№ СѓРЅРёРєР°Р»СЊРЅС‹Р№ РЅР°Р±РѕСЂ РєРѕР»РѕРЅРѕРє РЅР°Р·С‹РІР°РµС‚СЃСЏ PRIMARY KEY. Р›СЋР±Р°СЏ РєРѕР»РѕРЅРєР°, Рє-СЏ РІС…РѕРґРёС‚ РІ primary_key РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРЅР° Null. 
 ----------------
 A SELECT statement, also called a query.
 The result_set (the set of rows that satisfy the requirement) - 
-result_set - это набор строк, к-й удовлетворяют условиям выборки.
+result_set - СЌС‚Рѕ РЅР°Р±РѕСЂ СЃС‚СЂРѕРє, Рє-Р№ СѓРґРѕРІР»РµС‚РІРѕСЂСЏСЋС‚ СѓСЃР»РѕРІРёСЏРј РІС‹Р±РѕСЂРєРё.
 ---------
 The WHERE clause in a SELECT statement provides the criteria for selecting values. 
-keyword LIKE is used to compare strings и может иметь шаблоны/patterns  с wildcards.
+keyword LIKE is used to compare strings Рё РјРѕР¶РµС‚ РёРјРµС‚СЊ С€Р°Р±Р»РѕРЅС‹/patterns  СЃ wildcards.
 '%' -  zero or more additional characters.
 '_' - any one character.
 ---------------------
 Joins - to get data from more than one table.
-FOREIGN KEY - это общая колонка для двух таблиц, которая в 1-й таблице является primary_key.
-foreign_key может быть null или быть равной существующему значению из primary_key таблицы, на к-ю он ссылается.
-primary_key НЕ может быть NULL.
+FOREIGN KEY - СЌС‚Рѕ РѕР±С‰Р°СЏ РєРѕР»РѕРЅРєР° РґР»СЏ РґРІСѓС… С‚Р°Р±Р»РёС†, РєРѕС‚РѕСЂР°СЏ РІ 1-Р№ С‚Р°Р±Р»РёС†Рµ СЏРІР»СЏРµС‚СЃСЏ primary_key.
+foreign_key РјРѕР¶РµС‚ Р±С‹С‚СЊ null РёР»Рё Р±С‹С‚СЊ СЂР°РІРЅРѕР№ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРјСѓ Р·РЅР°С‡РµРЅРёСЋ РёР· primary_key С‚Р°Р±Р»РёС†С‹, РЅР° Рє-СЋ РѕРЅ СЃСЃС‹Р»Р°РµС‚СЃСЏ.
+primary_key РќР• РјРѕР¶РµС‚ Р±С‹С‚СЊ NULL.
 *************
 Common SQL Commands
-SQL команды разбиты на 2 категории:
-1)Data Manipulation Language (DML) - работают с получением или изменением данных.
-2)Data Definition Language (DDL) - создают или изменяют таблицы или другие объекты (view или индексы) в БД.
+SQL РєРѕРјР°РЅРґС‹ СЂР°Р·Р±РёС‚С‹ РЅР° 2 РєР°С‚РµРіРѕСЂРёРё:
+1)Data Manipulation Language (DML) - СЂР°Р±РѕС‚Р°СЋС‚ СЃ РїРѕР»СѓС‡РµРЅРёРµРј РёР»Рё РёР·РјРµРЅРµРЅРёРµРј РґР°РЅРЅС‹С….
+2)Data Definition Language (DDL) - СЃРѕР·РґР°СЋС‚ РёР»Рё РёР·РјРµРЅСЏСЋС‚ С‚Р°Р±Р»РёС†С‹ РёР»Рё РґСЂСѓРіРёРµ РѕР±СЉРµРєС‚С‹ (view РёР»Рё РёРЅРґРµРєСЃС‹) РІ Р‘Р”.
 ---
-ALTER TABLE —  adds or removes a column from a table. It also adds or drops table constraints and alters column attributes
+ALTER TABLE вЂ”  adds or removes a column from a table. It also adds or drops table constraints and alters column attributes
 ---------------------
 Result Sets and Cursors
 The rows that satisfy the conditions of a query are called the result_set.
-RESULT SET - это строки, к-е удовлетворяют условиям запроса. Пользователь может получить доступ только к 1 строке из result_set в 1 времени. Эту возможность ему предоставляет КУРСОР. 
-Т.е. он как указатель в файле, к-й содержит строки из result_set.
-И этот курсор может сохранять информацию о том, какая строка в данный момент была запрошена. (that pointer has the ability to keep track of which row is currently being accessed)
-Многие БД создают курсор автоматически при генерации result_set.
-JDBC API добавило возможность для курсора двигаться вперёд и назад, переходить к заданной строке, или переместиться относительного другой строки (position is relative to another row).
+RESULT SET - СЌС‚Рѕ СЃС‚СЂРѕРєРё, Рє-Рµ СѓРґРѕРІР»РµС‚РІРѕСЂСЏСЋС‚ СѓСЃР»РѕРІРёСЏРј Р·Р°РїСЂРѕСЃР°. РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РјРѕР¶РµС‚ РїРѕР»СѓС‡РёС‚СЊ РґРѕСЃС‚СѓРї С‚РѕР»СЊРєРѕ Рє 1 СЃС‚СЂРѕРєРµ РёР· result_set РІ 1 РІСЂРµРјРµРЅРё. Р­С‚Сѓ РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РµРјСѓ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РљРЈР РЎРћР . 
+Рў.Рµ. РѕРЅ РєР°Рє СѓРєР°Р·Р°С‚РµР»СЊ РІ С„Р°Р№Р»Рµ, Рє-Р№ СЃРѕРґРµСЂР¶РёС‚ СЃС‚СЂРѕРєРё РёР· result_set.
+Р СЌС‚РѕС‚ РєСѓСЂСЃРѕСЂ РјРѕР¶РµС‚ СЃРѕС…СЂР°РЅСЏС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, РєР°РєР°СЏ СЃС‚СЂРѕРєР° РІ РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ Р±С‹Р»Р° Р·Р°РїСЂРѕС€РµРЅР°. (that pointer has the ability to keep track of which row is currently being accessed)
+РњРЅРѕРіРёРµ Р‘Р” СЃРѕР·РґР°СЋС‚ РєСѓСЂСЃРѕСЂ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРё РіРµРЅРµСЂР°С†РёРё result_set.
+JDBC API РґРѕР±Р°РІРёР»Рѕ РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РґР»СЏ РєСѓСЂСЃРѕСЂР° РґРІРёРіР°С‚СЊСЃСЏ РІРїРµСЂС‘Рґ Рё РЅР°Р·Р°Рґ, РїРµСЂРµС…РѕРґРёС‚СЊ Рє Р·Р°РґР°РЅРЅРѕР№ СЃС‚СЂРѕРєРµ, РёР»Рё РїРµСЂРµРјРµСЃС‚РёС‚СЊСЃСЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕРіРѕ РґСЂСѓРіРѕР№ СЃС‚СЂРѕРєРё (position is relative to another row).
 ---------------------
 Transactions
-Когда пользователь получает доступ к данным в БД, другой юзер может получать доступ к этим же данным в тот же самый момент.
-Чтобы сохранить целостность данных в БД при одновременной работе нескольких юзеров ис-ся механизм транзакций. 
-ТРАНЗАКЦИЯ - это набор из 1 или более SQL statements/выражений, к-й совершает одну логическую единицу работы.
-Транзакция заканчивается только 1 из 2 вариантов (в зависимости от того были ли какие-то проблемы с целостностью данных или параллельностью):
-1) успехом - тогда происходит commit/фиксация результата.
-2) провалом - тогда происходит rollback/откат изменений.
-COMMIT - делает постоянными все те изменения, к-е были получены из выполнения всех sql выражений из транзакции.
-ROLLBACK - откатывает/убирает все изменения, к-е были получены в результате выполнения всех sql выражений входящих в транзакцию.
-LOCK - БЛОКИРОВКА - это механизм, к-й запрещает двум транзакциям одновременно манипулировать одними и теми же данными.
+РљРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕР»СѓС‡Р°РµС‚ РґРѕСЃС‚СѓРї Рє РґР°РЅРЅС‹Рј РІ Р‘Р”, РґСЂСѓРіРѕР№ СЋР·РµСЂ РјРѕР¶РµС‚ РїРѕР»СѓС‡Р°С‚СЊ РґРѕСЃС‚СѓРї Рє СЌС‚РёРј Р¶Рµ РґР°РЅРЅС‹Рј РІ С‚РѕС‚ Р¶Рµ СЃР°РјС‹Р№ РјРѕРјРµРЅС‚.
+Р§С‚РѕР±С‹ СЃРѕС…СЂР°РЅРёС‚СЊ С†РµР»РѕСЃС‚РЅРѕСЃС‚СЊ РґР°РЅРЅС‹С… РІ Р‘Р” РїСЂРё РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕР№ СЂР°Р±РѕС‚Рµ РЅРµСЃРєРѕР»СЊРєРёС… СЋР·РµСЂРѕРІ РёСЃ-СЃСЏ РјРµС…Р°РЅРёР·Рј С‚СЂР°РЅР·Р°РєС†РёР№. 
+РўР РђРќР—РђРљР¦РРЇ - СЌС‚Рѕ РЅР°Р±РѕСЂ РёР· 1 РёР»Рё Р±РѕР»РµРµ SQL statements/РІС‹СЂР°Р¶РµРЅРёР№, Рє-Р№ СЃРѕРІРµСЂС€Р°РµС‚ РѕРґРЅСѓ Р»РѕРіРёС‡РµСЃРєСѓСЋ РµРґРёРЅРёС†Сѓ СЂР°Р±РѕС‚С‹.
+РўСЂР°РЅР·Р°РєС†РёСЏ Р·Р°РєР°РЅС‡РёРІР°РµС‚СЃСЏ С‚РѕР»СЊРєРѕ 1 РёР· 2 РІР°СЂРёР°РЅС‚РѕРІ (РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РѕРіРѕ Р±С‹Р»Рё Р»Рё РєР°РєРёРµ-С‚Рѕ РїСЂРѕР±Р»РµРјС‹ СЃ С†РµР»РѕСЃС‚РЅРѕСЃС‚СЊСЋ РґР°РЅРЅС‹С… РёР»Рё РїР°СЂР°Р»Р»РµР»СЊРЅРѕСЃС‚СЊСЋ):
+1) СѓСЃРїРµС…РѕРј - С‚РѕРіРґР° РїСЂРѕРёСЃС…РѕРґРёС‚ commit/С„РёРєСЃР°С†РёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°.
+2) РїСЂРѕРІР°Р»РѕРј - С‚РѕРіРґР° РїСЂРѕРёСЃС…РѕРґРёС‚ rollback/РѕС‚РєР°С‚ РёР·РјРµРЅРµРЅРёР№.
+COMMIT - РґРµР»Р°РµС‚ РїРѕСЃС‚РѕСЏРЅРЅС‹РјРё РІСЃРµ С‚Рµ РёР·РјРµРЅРµРЅРёСЏ, Рє-Рµ Р±С‹Р»Рё РїРѕР»СѓС‡РµРЅС‹ РёР· РІС‹РїРѕР»РЅРµРЅРёСЏ РІСЃРµС… sql РІС‹СЂР°Р¶РµРЅРёР№ РёР· С‚СЂР°РЅР·Р°РєС†РёРё.
+ROLLBACK - РѕС‚РєР°С‚С‹РІР°РµС‚/СѓР±РёСЂР°РµС‚ РІСЃРµ РёР·РјРµРЅРµРЅРёСЏ, Рє-Рµ Р±С‹Р»Рё РїРѕР»СѓС‡РµРЅС‹ РІ СЂРµР·СѓР»СЊС‚Р°С‚Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ РІСЃРµС… sql РІС‹СЂР°Р¶РµРЅРёР№ РІС…РѕРґСЏС‰РёС… РІ С‚СЂР°РЅР·Р°РєС†РёСЋ.
+LOCK - Р‘Р›РћРљРР РћР’РљРђ - СЌС‚Рѕ РјРµС…Р°РЅРёР·Рј, Рє-Р№ Р·Р°РїСЂРµС‰Р°РµС‚ РґРІСѓРј С‚СЂР°РЅР·Р°РєС†РёСЏРј РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ РјР°РЅРёРїСѓР»РёСЂРѕРІР°С‚СЊ РѕРґРЅРёРјРё Рё С‚РµРјРё Р¶Рµ РґР°РЅРЅС‹РјРё.
 ---------------
 Stored Procedures
-Сохранённые процедуры - это группа sql выражений, к-е можно вызвать по имени. Т.е. это выполняемый код (мини-программа), к-й выполянет определённую задачу,к-ю можно вызвать так же как и функцию/метод.
-Как правило stored_procedures пишутся на языке БД.
+РЎРѕС…СЂР°РЅС‘РЅРЅС‹Рµ РїСЂРѕС†РµРґСѓСЂС‹ - СЌС‚Рѕ РіСЂСѓРїРїР° sql РІС‹СЂР°Р¶РµРЅРёР№, Рє-Рµ РјРѕР¶РЅРѕ РІС‹Р·РІР°С‚СЊ РїРѕ РёРјРµРЅРё. Рў.Рµ. СЌС‚Рѕ РІС‹РїРѕР»РЅСЏРµРјС‹Р№ РєРѕРґ (РјРёРЅРё-РїСЂРѕРіСЂР°РјРјР°), Рє-Р№ РІС‹РїРѕР»СЏРЅРµС‚ РѕРїСЂРµРґРµР»С‘РЅРЅСѓСЋ Р·Р°РґР°С‡Сѓ,Рє-СЋ РјРѕР¶РЅРѕ РІС‹Р·РІР°С‚СЊ С‚Р°Рє Р¶Рµ РєР°Рє Рё С„СѓРЅРєС†РёСЋ/РјРµС‚РѕРґ.
+РљР°Рє РїСЂР°РІРёР»Рѕ stored_procedures РїРёС€СѓС‚СЃСЏ РЅР° СЏР·С‹РєРµ Р‘Р”.
 ----------------------
 Metadata
-БД хранит кроме также и информацию о себе самой.
-Многи БД имеют набор системных таблиц: к-е содержат список имён всех таблиц  в БД, имена колонок в каждой таблце, primary_keys и foreign_keys, stored_procedures и т.д.
+Р‘Р” С…СЂР°РЅРёС‚ РєСЂРѕРјРµ С‚Р°РєР¶Рµ Рё РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ СЃРµР±Рµ СЃР°РјРѕР№.
+РњРЅРѕРіРё Р‘Р” РёРјРµСЋС‚ РЅР°Р±РѕСЂ СЃРёСЃС‚РµРјРЅС‹С… С‚Р°Р±Р»РёС†: Рє-Рµ СЃРѕРґРµСЂР¶Р°С‚ СЃРїРёСЃРѕРє РёРјС‘РЅ РІСЃРµС… С‚Р°Р±Р»РёС†  РІ Р‘Р”, РёРјРµРЅР° РєРѕР»РѕРЅРѕРє РІ РєР°Р¶РґРѕР№ С‚Р°Р±Р»С†Рµ, primary_keys Рё foreign_keys, stored_procedures Рё С‚.Рґ.
 ---------
 Statement is an interface that represents a SQL statement. 
-statement -  это интерфейс, который представляет собой sql выражение.
-statement возвращают result_set, к-й представляет собой таблицу с данными. 
-Чтобы создать statement нужно иметь объект connection.
+statement -  СЌС‚Рѕ РёРЅС‚РµСЂС„РµР№СЃ, РєРѕС‚РѕСЂС‹Р№ РїСЂРµРґСЃС‚Р°РІР»СЏРµС‚ СЃРѕР±РѕР№ sql РІС‹СЂР°Р¶РµРЅРёРµ.
+statement РІРѕР·РІСЂР°С‰Р°СЋС‚ result_set, Рє-Р№ РїСЂРµРґСЃС‚Р°РІР»СЏРµС‚ СЃРѕР±РѕР№ С‚Р°Р±Р»РёС†Сѓ СЃ РґР°РЅРЅС‹РјРё. 
+Р§С‚РѕР±С‹ СЃРѕР·РґР°С‚СЊ statement РЅСѓР¶РЅРѕ РёРјРµС‚СЊ РѕР±СЉРµРєС‚ connection.
 ----
-Есть 3 типа statement:
-1) Statement - для реализации простых sql запросов без параметров.
-2) PreparedStatement - (Extends Statement.) представляет собой прекомпилинный sql statement, к-й может содержать параметры.
-3) CallableStatement - (Extends PreparedStatement.) ис-ся для выполнения stored_procedures, к-е могут содержать одновременно и входные и выходные параметры.
+Р•СЃС‚СЊ 3 С‚РёРїР° statement:
+1) Statement - РґР»СЏ СЂРµР°Р»РёР·Р°С†РёРё РїСЂРѕСЃС‚С‹С… sql Р·Р°РїСЂРѕСЃРѕРІ Р±РµР· РїР°СЂР°РјРµС‚СЂРѕРІ.
+2) PreparedStatement - (Extends Statement.) РїСЂРµРґСЃС‚Р°РІР»СЏРµС‚ СЃРѕР±РѕР№ РїСЂРµРєРѕРјРїРёР»РёРЅРЅС‹Р№ sql statement, Рє-Р№ РјРѕР¶РµС‚ СЃРѕРґРµСЂР¶Р°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹.
+3) CallableStatement - (Extends PreparedStatement.) РёСЃ-СЃСЏ РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ stored_procedures, Рє-Рµ РјРѕРіСѓС‚ СЃРѕРґРµСЂР¶Р°С‚СЊ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ Рё РІС…РѕРґРЅС‹Рµ Рё РІС‹С…РѕРґРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹.
 ----
-Чтобы выполнить Statement надо вызвать его execute method:
-1) execute: Returns true если первый объект, к-й вернулся из запроса - это объект result_set. Можно использовать этот метод тогда, когда запрос может вернуть 1 или более result_set объектов, получить их можно повторно вызывая Statement.getResultSet.
+Р§С‚РѕР±С‹ РІС‹РїРѕР»РЅРёС‚СЊ Statement РЅР°РґРѕ РІС‹Р·РІР°С‚СЊ РµРіРѕ execute method:
+1) execute: Returns true РµСЃР»Рё РїРµСЂРІС‹Р№ РѕР±СЉРµРєС‚, Рє-Р№ РІРµСЂРЅСѓР»СЃСЏ РёР· Р·Р°РїСЂРѕСЃР° - СЌС‚Рѕ РѕР±СЉРµРєС‚ result_set. РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЌС‚РѕС‚ РјРµС‚РѕРґ С‚РѕРіРґР°, РєРѕРіРґР° Р·Р°РїСЂРѕСЃ РјРѕР¶РµС‚ РІРµСЂРЅСѓС‚СЊ 1 РёР»Рё Р±РѕР»РµРµ result_set РѕР±СЉРµРєС‚РѕРІ, РїРѕР»СѓС‡РёС‚СЊ РёС… РјРѕР¶РЅРѕ РїРѕРІС‚РѕСЂРЅРѕ РІС‹Р·С‹РІР°СЏ Statement.getResultSet.
 2) executeQuery: Returns one ResultSet object.
-3) executeUpdate: Returns an integer, показывающее количество строк, на к-е повлияло выполнение sql statement.
+3) executeUpdate: Returns an integer, РїРѕРєР°Р·С‹РІР°СЋС‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЃС‚СЂРѕРє, РЅР° Рє-Рµ РїРѕРІР»РёСЏР»Рѕ РІС‹РїРѕР»РЅРµРЅРёРµ sql statement.
 ----
 Processing ResultSet Objects
-Можно получить доступ к объектам из result_set через курсор. !!! Это НЕ курсор из БД. Этот курсор -- это указатель на 1 строку с данными из объекта result_set.
-Изначально курсор стоит ПЕРЕД первой строкой. (!!!Initially, the cursor is positioned before the first row. )
+РњРѕР¶РЅРѕ РїРѕР»СѓС‡РёС‚СЊ РґРѕСЃС‚СѓРї Рє РѕР±СЉРµРєС‚Р°Рј РёР· result_set С‡РµСЂРµР· РєСѓСЂСЃРѕСЂ. !!! Р­С‚Рѕ РќР• РєСѓСЂСЃРѕСЂ РёР· Р‘Р”. Р­С‚РѕС‚ РєСѓСЂСЃРѕСЂ -- СЌС‚Рѕ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° 1 СЃС‚СЂРѕРєСѓ СЃ РґР°РЅРЅС‹РјРё РёР· РѕР±СЉРµРєС‚Р° result_set.
+РР·РЅР°С‡Р°Р»СЊРЅРѕ РєСѓСЂСЃРѕСЂ СЃС‚РѕРёС‚ РџР•Р Р•Р” РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРѕР№. (!!!Initially, the cursor is positioned before the first row. )
 -----------------------
 Closing Connections
-Когда закончили работать со statement -- вызовите  метод Statement.close, чтобы закрыть его. (ресурсы, к-е ис-ет statement будут немедленно освобождены). ПОсле вызова этого метода также будет закрыт и объект result_set.
+РљРѕРіРґР° Р·Р°РєРѕРЅС‡РёР»Рё СЂР°Р±РѕС‚Р°С‚СЊ СЃРѕ statement -- РІС‹Р·РѕРІРёС‚Рµ  РјРµС‚РѕРґ Statement.close, С‡С‚РѕР±С‹ Р·Р°РєСЂС‹С‚СЊ РµРіРѕ. (СЂРµСЃСѓСЂСЃС‹, Рє-Рµ РёСЃ-РµС‚ statement Р±СѓРґСѓС‚ РЅРµРјРµРґР»РµРЅРЅРѕ РѕСЃРІРѕР±РѕР¶РґРµРЅС‹). РџРћСЃР»Рµ РІС‹Р·РѕРІР° СЌС‚РѕРіРѕ РјРµС‚РѕРґР° С‚Р°РєР¶Рµ Р±СѓРґРµС‚ Р·Р°РєСЂС‹С‚ Рё РѕР±СЉРµРєС‚ result_set.
 *****************
 Establishing a Connection
-Обычно JDBC application подключается к источнику данных ис-ся 1 из 2 классов:
-(1)DriverManager - полностью реализовнный класс, к-й подключается к БД по предоставленному URL.
-При ПЕРВОЙ попытке установить соединение класс DriverManager автоматически загружает любые JDBC 4.0 driver-ы, найденные в classpath. Для драйверов до версии 4.0 приложение должно загрузить этот драйвер автоматически (ч/з Class.forName() ).
-(2) DataSource - предпочтительнее чем DriverManager, т.к. делает детали подключаемгого дата-сорса прозрачно-видимыми для всего приложения. Поля/св-ва объекта DataSource задаются таким образом, что он (объект) представляет конкретный дата-сорс.
+РћР±С‹С‡РЅРѕ JDBC application РїРѕРґРєР»СЋС‡Р°РµС‚СЃСЏ Рє РёСЃС‚РѕС‡РЅРёРєСѓ РґР°РЅРЅС‹С… РёСЃ-СЃСЏ 1 РёР· 2 РєР»Р°СЃСЃРѕРІ:
+(1)DriverManager - РїРѕР»РЅРѕСЃС‚СЊСЋ СЂРµР°Р»РёР·РѕРІРЅРЅС‹Р№ РєР»Р°СЃСЃ, Рє-Р№ РїРѕРґРєР»СЋС‡Р°РµС‚СЃСЏ Рє Р‘Р” РїРѕ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРЅРѕРјСѓ URL.
+РџСЂРё РџР•Р Р’РћР™ РїРѕРїС‹С‚РєРµ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ РєР»Р°СЃСЃ DriverManager Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р·Р°РіСЂСѓР¶Р°РµС‚ Р»СЋР±С‹Рµ JDBC 4.0 driver-С‹, РЅР°Р№РґРµРЅРЅС‹Рµ РІ classpath. Р”Р»СЏ РґСЂР°Р№РІРµСЂРѕРІ РґРѕ РІРµСЂСЃРёРё 4.0 РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ Р·Р°РіСЂСѓР·РёС‚СЊ СЌС‚РѕС‚ РґСЂР°Р№РІРµСЂ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё (С‡/Р· Class.forName() ).
+(2) DataSource - РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅРµРµ С‡РµРј DriverManager, С‚.Рє. РґРµР»Р°РµС‚ РґРµС‚Р°Р»Рё РїРѕРґРєР»СЋС‡Р°РµРјРіРѕРіРѕ РґР°С‚Р°-СЃРѕСЂСЃР° РїСЂРѕР·СЂР°С‡РЅРѕ-РІРёРґРёРјС‹РјРё РґР»СЏ РІСЃРµРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ. РџРѕР»СЏ/СЃРІ-РІР° РѕР±СЉРµРєС‚Р° DataSource Р·Р°РґР°СЋС‚СЃСЏ С‚Р°РєРёРј РѕР±СЂР°Р·РѕРј, С‡С‚Рѕ РѕРЅ (РѕР±СЉРµРєС‚) РїСЂРµРґСЃС‚Р°РІР»СЏРµС‚ РєРѕРЅРєСЂРµС‚РЅС‹Р№ РґР°С‚Р°-СЃРѕСЂСЃ.
 ----------
 Connecting with DataSource Objects
-Преимущества:
-1) Предоставляют connection POOLing и распределённые transactions.
+РџСЂРµРёРјСѓС‰РµСЃС‚РІР°:
+1) РџСЂРµРґРѕСЃС‚Р°РІР»СЏСЋС‚ connection POOLing Рё СЂР°СЃРїСЂРµРґРµР»С‘РЅРЅС‹Рµ transactions.
 .
 .
 .
-Есть 3 способа, ко-ми DataSource interface реализуется производителем драйвера:
-1)DataSource  производит стандартный Connection объект, к-й не not pooled or used in a distributed transaction
+Р•СЃС‚СЊ 3 СЃРїРѕСЃРѕР±Р°, РєРѕ-РјРё DataSource interface СЂРµР°Р»РёР·СѓРµС‚СЃСЏ РїСЂРѕРёР·РІРѕРґРёС‚РµР»РµРј РґСЂР°Р№РІРµСЂР°:
+1)DataSource  РїСЂРѕРёР·РІРѕРґРёС‚ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ Connection РѕР±СЉРµРєС‚, Рє-Р№ РЅРµ not pooled or used in a distributed transaction
 2) produces Connection objects that participate in connection pooling, that is, connections that can be recycled.
 3) DataSource implementation that supports distributed transactions produces Connection objects that can be used in a distributed transaction, that is, a transaction that accesses two or more DBMS servers
 ---------------------
 ResultSet Interface
-ResultSet объект предоставляет методы для получения и манипулирования результатами выполнения запросов, ResultSet может иметь различную функциональность и характеристики (тип, параллельность, удерживаемость курсора [ type, concurrency, and cursor holdability])
--- Функциональность result_set-а определяется 2 измерениями:
-1) как можно управлять курсором.
-2) Как он будет отражать параллельные изменения (concurrent changes ) из дата-сорса.
+ResultSet РѕР±СЉРµРєС‚ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РјРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ Рё РјР°РЅРёРїСѓР»РёСЂРѕРІР°РЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°РјРё РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РїСЂРѕСЃРѕРІ, ResultSet РјРѕР¶РµС‚ РёРјРµС‚СЊ СЂР°Р·Р»РёС‡РЅСѓСЋ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕСЃС‚СЊ Рё С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё (С‚РёРї, РїР°СЂР°Р»Р»РµР»СЊРЅРѕСЃС‚СЊ, СѓРґРµСЂР¶РёРІР°РµРјРѕСЃС‚СЊ РєСѓСЂСЃРѕСЂР° [ type, concurrency, and cursor holdability])
+-- Р¤СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕСЃС‚СЊ result_set-Р° РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ 2 РёР·РјРµСЂРµРЅРёСЏРјРё:
+1) РєР°Рє РјРѕР¶РЅРѕ СѓРїСЂР°РІР»СЏС‚СЊ РєСѓСЂСЃРѕСЂРѕРј.
+2) РљР°Рє РѕРЅ Р±СѓРґРµС‚ РѕС‚СЂР°Р¶Р°С‚СЊ РїР°СЂР°Р»Р»РµР»СЊРЅС‹Рµ РёР·РјРµРЅРµРЅРёСЏ (concurrent changes ) РёР· РґР°С‚Р°-СЃРѕСЂСЃР°.
 ---ResultSet Types
 The type of a ResultSet object determines the level of its functionality in two areas: the ways in which the cursor can be manipulated, and how concurrent changes made to the underlying data source are reflected by the ResultSet object.
-ЧУВТСВИТЕЛЬНОСТЬ RESULT_SET-A определяется 3 типами:
+Р§РЈР’РўРЎР’РРўР•Р›Р¬РќРћРЎРўР¬ RESULT_SET-A РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ 3 С‚РёРїР°РјРё:
 1) TYPE_FORWARD_ONLY - The result set cannot be scrolled; its cursor moves forward only. it contains the rows that satisfy the query at either the time the query is executed or as the rows are retrieved.
 2) TYPE_SCROLL_INSENSITIVE - The result can be scrolled; its cursor can move both forward and backward relative to the current position, and it can move to an absolute position. The result set is insensitive to changes made to the underlying data source while it is open.
 3) TYPE_SCROLL_SENSITIVE - The result can be scrolled; its cursor can move both forward and backward relative to the current position, and it can move to an absolute position. The result set reflects changes made to the underlying data source while the result set remains open.
 ---ResultSet Concurrency
-Есть 2 concurrency levels:
+Р•СЃС‚СЊ 2 concurrency levels:
 1) CONCUR_READ_ONLY - The ResultSet object cannot be updated using the ResultSet interface
 2) CONCUR_UPDATABLE - The ResultSet object can be updated using the ResultSet interface
 ---Cursor Holdability
-Вызов метода Connection.commit может закрыть объекты из ResultSet, к-е были созданы в текущей транзакции.
-Чтобы этого ибежать, если надо, можно ис-то св-во holdability у курсра. Оно определяет, будут ли объекты из result_set-а закрыты при коммите.
-Есть следующие ResultSet constants:
-1) HOLD_CURSORS_OVER_COMMIT - курсоры из result_set-а НЕ закрываются, они УДЕРЖИВАЮТСЯ ОТКРЫТЫМИ.
+Р’С‹Р·РѕРІ РјРµС‚РѕРґР° Connection.commit РјРѕР¶РµС‚ Р·Р°РєСЂС‹С‚СЊ РѕР±СЉРµРєС‚С‹ РёР· ResultSet, Рє-Рµ Р±С‹Р»Рё СЃРѕР·РґР°РЅС‹ РІ С‚РµРєСѓС‰РµР№ С‚СЂР°РЅР·Р°РєС†РёРё.
+Р§С‚РѕР±С‹ СЌС‚РѕРіРѕ РёР±РµР¶Р°С‚СЊ, РµСЃР»Рё РЅР°РґРѕ, РјРѕР¶РЅРѕ РёСЃ-С‚Рѕ СЃРІ-РІРѕ holdability Сѓ РєСѓСЂСЃСЂР°. РћРЅРѕ РѕРїСЂРµРґРµР»СЏРµС‚, Р±СѓРґСѓС‚ Р»Рё РѕР±СЉРµРєС‚С‹ РёР· result_set-Р° Р·Р°РєСЂС‹С‚С‹ РїСЂРё РєРѕРјРјРёС‚Рµ.
+Р•СЃС‚СЊ СЃР»РµРґСѓСЋС‰РёРµ ResultSet constants:
+1) HOLD_CURSORS_OVER_COMMIT - РєСѓСЂСЃРѕСЂС‹ РёР· result_set-Р° РќР• Р·Р°РєСЂС‹РІР°СЋС‚СЃСЏ, РѕРЅРё РЈР”Р•Р Р–РР’РђР®РўРЎРЇ РћРўРљР Р«РўР«РњР.
 2) CLOSE_CURSORS_AT_COMMIT - ResultSet objects (cursors) are closed when the commit method is called.
 --------------
 Retrieving Column Values from Rows
-result_set interface Объявляет getter методы для получения значения из колонок. Указывать на колонку можно 3 способами:
-1) по индексу колонки (начинается с 1)
-2) по alias-у колонки
-3) по имени колонки
-Для 2и3 - передаваемый string для имени/алиаса явл-ся case-INsensitive, не чувствителен к регистру. Если несколько колонок имеют одно и то же имя/алиас - будет возвращаться значение из 1-й первой совпадающей колонки.
-2и3 ис-ся когда в запросе есть/заданы имена/алиасы.
-Когда ис-ся имена то разраб должен гарантировать что они уникальны.
+result_set interface РћР±СЉСЏРІР»СЏРµС‚ getter РјРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ Р·РЅР°С‡РµРЅРёСЏ РёР· РєРѕР»РѕРЅРѕРє. РЈРєР°Р·С‹РІР°С‚СЊ РЅР° РєРѕР»РѕРЅРєСѓ РјРѕР¶РЅРѕ 3 СЃРїРѕСЃРѕР±Р°РјРё:
+1) РїРѕ РёРЅРґРµРєСЃСѓ РєРѕР»РѕРЅРєРё (РЅР°С‡РёРЅР°РµС‚СЃСЏ СЃ 1)
+2) РїРѕ alias-Сѓ РєРѕР»РѕРЅРєРё
+3) РїРѕ РёРјРµРЅРё РєРѕР»РѕРЅРєРё
+Р”Р»СЏ 2Рё3 - РїРµСЂРµРґР°РІР°РµРјС‹Р№ string РґР»СЏ РёРјРµРЅРё/Р°Р»РёР°СЃР° СЏРІР»-СЃСЏ case-INsensitive, РЅРµ С‡СѓРІСЃС‚РІРёС‚РµР»РµРЅ Рє СЂРµРіРёСЃС‚СЂСѓ. Р•СЃР»Рё РЅРµСЃРєРѕР»СЊРєРѕ РєРѕР»РѕРЅРѕРє РёРјРµСЋС‚ РѕРґРЅРѕ Рё С‚Рѕ Р¶Рµ РёРјСЏ/Р°Р»РёР°СЃ - Р±СѓРґРµС‚ РІРѕР·РІСЂР°С‰Р°С‚СЊСЃСЏ Р·РЅР°С‡РµРЅРёРµ РёР· 1-Р№ РїРµСЂРІРѕР№ СЃРѕРІРїР°РґР°СЋС‰РµР№ РєРѕР»РѕРЅРєРё.
+2Рё3 РёСЃ-СЃСЏ РєРѕРіРґР° РІ Р·Р°РїСЂРѕСЃРµ РµСЃС‚СЊ/Р·Р°РґР°РЅС‹ РёРјРµРЅР°/Р°Р»РёР°СЃС‹.
+РљРѕРіРґР° РёСЃ-СЃСЏ РёРјРµРЅР° С‚Рѕ СЂР°Р·СЂР°Р± РґРѕР»Р¶РµРЅ РіР°СЂР°РЅС‚РёСЂРѕРІР°С‚СЊ С‡С‚Рѕ РѕРЅРё СѓРЅРёРєР°Р»СЊРЅС‹.
 ----------------
 Cursors
-У него есть следующие методы:
-1)next - двигает курсор вперёд на 1 строку. возвращает true - если курсор указывает на строку, и false - если указывает на после последней строки.
-2)previous - аналогично 1
-3)first - устанавливает курсор на 1-ю строку. Возвращает true - если курсор ук-ет на 1ю строку. false - если result_set не содержит строк.
-4)last - аналогично 3.
-5) beforeFirst - понятно.
-6) afterLast - понятно.
-7) relative(int rows) - двигает курсор на N rows относительно текущей позиции.
-8) absolute(int row) - устанавливает на строку с индексом row.
-Обычно курсов имеет тип TYPE_FORWARD_ONLY, поэтому можно вызывать только метод next.
+РЈ РЅРµРіРѕ РµСЃС‚СЊ СЃР»РµРґСѓСЋС‰РёРµ РјРµС‚РѕРґС‹:
+1)next - РґРІРёРіР°РµС‚ РєСѓСЂСЃРѕСЂ РІРїРµСЂС‘Рґ РЅР° 1 СЃС‚СЂРѕРєСѓ. РІРѕР·РІСЂР°С‰Р°РµС‚ true - РµСЃР»Рё РєСѓСЂСЃРѕСЂ СѓРєР°Р·С‹РІР°РµС‚ РЅР° СЃС‚СЂРѕРєСѓ, Рё false - РµСЃР»Рё СѓРєР°Р·С‹РІР°РµС‚ РЅР° РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµР№ СЃС‚СЂРѕРєРё.
+2)previous - Р°РЅР°Р»РѕРіРёС‡РЅРѕ 1
+3)first - СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РєСѓСЂСЃРѕСЂ РЅР° 1-СЋ СЃС‚СЂРѕРєСѓ. Р’РѕР·РІСЂР°С‰Р°РµС‚ true - РµСЃР»Рё РєСѓСЂСЃРѕСЂ СѓРє-РµС‚ РЅР° 1СЋ СЃС‚СЂРѕРєСѓ. false - РµСЃР»Рё result_set РЅРµ СЃРѕРґРµСЂР¶РёС‚ СЃС‚СЂРѕРє.
+4)last - Р°РЅР°Р»РѕРіРёС‡РЅРѕ 3.
+5) beforeFirst - РїРѕРЅСЏС‚РЅРѕ.
+6) afterLast - РїРѕРЅСЏС‚РЅРѕ.
+7) relative(int rows) - РґРІРёРіР°РµС‚ РєСѓСЂСЃРѕСЂ РЅР° N rows РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С‚РµРєСѓС‰РµР№ РїРѕР·РёС†РёРё.
+8) absolute(int row) - СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РЅР° СЃС‚СЂРѕРєСѓ СЃ РёРЅРґРµРєСЃРѕРј row.
+РћР±С‹С‡РЅРѕ РєСѓСЂСЃРѕРІ РёРјРµРµС‚ С‚РёРї TYPE_FORWARD_ONLY, РїРѕСЌС‚РѕРјСѓ РјРѕР¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ С‚РѕР»СЊРєРѕ РјРµС‚РѕРґ next.
 -----------------
 Updating Rows in ResultSet Objects
 You cannot update a default ResultSet object, and you can only move its cursor forward.
-По Умолчанию Нельзя изменять объекты в result_set, можно только двигать курсов вперёд.
-Но можно создать такой тип result_set, к-й позволит двигать курсор вперёд и назад и обновлять данные.
+РџРѕ РЈРјРѕР»С‡Р°РЅРёСЋ РќРµР»СЊР·СЏ РёР·РјРµРЅСЏС‚СЊ РѕР±СЉРµРєС‚С‹ РІ result_set, РјРѕР¶РЅРѕ С‚РѕР»СЊРєРѕ РґРІРёРіР°С‚СЊ РєСѓСЂСЃРѕРІ РІРїРµСЂС‘Рґ.
+РќРѕ РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ С‚Р°РєРѕР№ С‚РёРї result_set, Рє-Р№ РїРѕР·РІРѕР»РёС‚ РґРІРёРіР°С‚СЊ РєСѓСЂСЃРѕСЂ РІРїРµСЂС‘Рґ Рё РЅР°Р·Р°Рґ Рё РѕР±РЅРѕРІР»СЏС‚СЊ РґР°РЅРЅС‹Рµ.
 method ResultSet.updateFloat updates the specified column.
 However, none of these updater methods modifies the database; you must call the method ResultSet.updateRow to update the database.
 -----------
 Using Statement Objects for Batch Updates
-Объекты Statement, PreparedStatement and CallableStatement могут иметь список ассоциированых с ними команд для updating, inserting, or deleting a row, и даже may also contain DDL statements such as CREATE TABLE and DROP TABLE.
+РћР±СЉРµРєС‚С‹ Statement, PreparedStatement and CallableStatement РјРѕРіСѓС‚ РёРјРµС‚СЊ СЃРїРёСЃРѕРє Р°СЃСЃРѕС†РёРёСЂРѕРІР°РЅС‹С… СЃ РЅРёРјРё РєРѕРјР°РЅРґ РґР»СЏ updating, inserting, or deleting a row, Рё РґР°Р¶Рµ may also contain DDL statements such as CREATE TABLE and DROP TABLE.
 It cannot, however, contain a statement that would produce a ResultSet object, such as a SELECT statement. In other words, the list can contain only statements that produce an update count.
-При создании Statement его список команд  пустой. Чтобы добавить команды ис-ся метод addBatch , для очиски списка ис-ся метод clearBatch. ЧТОбы выполнить этот пакет команд ис-ся метод executeBatch (to send them all to the database to be executed as a unit, or batch).
+РџСЂРё СЃРѕР·РґР°РЅРёРё Statement РµРіРѕ СЃРїРёСЃРѕРє РєРѕРјР°РЅРґ  РїСѓСЃС‚РѕР№. Р§С‚РѕР±С‹ РґРѕР±Р°РІРёС‚СЊ РєРѕРјР°РЅРґС‹ РёСЃ-СЃСЏ РјРµС‚РѕРґ addBatch , РґР»СЏ РѕС‡РёСЃРєРё СЃРїРёСЃРєР° РёСЃ-СЃСЏ РјРµС‚РѕРґ clearBatch. Р§РўРћР±С‹ РІС‹РїРѕР»РЅРёС‚СЊ СЌС‚РѕС‚ РїР°РєРµС‚ РєРѕРјР°РЅРґ РёСЃ-СЃСЏ РјРµС‚РѕРґ executeBatch (to send them all to the database to be executed as a unit, or batch).
 int [] updateCounts = stmt.executeBatch();
 To allow for correct error handling, you should always disable auto-commit mode before beginning a batch update.
 The DBMS executes the commands in the order in which they were added to the list of commands.
 The Connection.commit method makes the batch of updates to the COFFEES table permanent. This method needs to be called explicitly because the auto-commit mode for this connection was disabled previously.
 ----------------------
 Handling Batch Update Exceptions
-При выполнении Batch Update исключение может возникнуть в 2х случаях, Если хотя бы одно из выражение/statement :
-1) ВОЗВРАЩАЕТ result_set.
-2) НЕ ЗАВЕРШИЛОСЬ успешно.
- В Batch Update нельзя добавлять запрос на выборку [query (a SELECT statement)] потому что метод executeBatch возвращает массив с кол-вом обновлённых записей. И batch_upade ждёт такое число от каждого statement, который выполнится успешно.
-Поэтому only commands that return an update count (commands such as INSERT INTO, UPDATE, DELETE) or that return 0 (such as CREATE TABLE, DROP TABLE, ALTER TABLE) can be successfully executed as a batch with the executeBatch method.
+РџСЂРё РІС‹РїРѕР»РЅРµРЅРёРё Batch Update РёСЃРєР»СЋС‡РµРЅРёРµ РјРѕР¶РµС‚ РІРѕР·РЅРёРєРЅСѓС‚СЊ РІ 2С… СЃР»СѓС‡Р°СЏС…, Р•СЃР»Рё С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕ РёР· РІС‹СЂР°Р¶РµРЅРёРµ/statement :
+1) Р’РћР—Р’Р РђР©РђР•Рў result_set.
+2) РќР• Р—РђР’Р•Р РЁРР›РћРЎР¬ СѓСЃРїРµС€РЅРѕ.
+ Р’ Batch Update РЅРµР»СЊР·СЏ РґРѕР±Р°РІР»СЏС‚СЊ Р·Р°РїСЂРѕСЃ РЅР° РІС‹Р±РѕСЂРєСѓ [query (a SELECT statement)] РїРѕС‚РѕРјСѓ С‡С‚Рѕ РјРµС‚РѕРґ executeBatch РІРѕР·РІСЂР°С‰Р°РµС‚ РјР°СЃСЃРёРІ СЃ РєРѕР»-РІРѕРј РѕР±РЅРѕРІР»С‘РЅРЅС‹С… Р·Р°РїРёСЃРµР№. Р batch_upade Р¶РґС‘С‚ С‚Р°РєРѕРµ С‡РёСЃР»Рѕ РѕС‚ РєР°Р¶РґРѕРіРѕ statement, РєРѕС‚РѕСЂС‹Р№ РІС‹РїРѕР»РЅРёС‚СЃСЏ СѓСЃРїРµС€РЅРѕ.
+РџРѕСЌС‚РѕРјСѓ only commands that return an update count (commands such as INSERT INTO, UPDATE, DELETE) or that return 0 (such as CREATE TABLE, DROP TABLE, ALTER TABLE) can be successfully executed as a batch with the executeBatch method.
 -----
 The method ResultSet.moveToInsertRow moves the cursor to the insert row. The insert row is a special row associated with an updatable result set. It is essentially a buffer where a new row can be constructed by calling the updater methods prior to inserting the row into the result set. 
 The method ResultSet.insertRow inserts the contents of the insert row into the ResultSet object and into the database.
 Note: After inserting a row with the ResultSet.insertRow, you should move the cursor to a row other than the insert row. For example, this example moves it to before the first row in the result set with the method ResultSet.beforeFirst. Unexpected results can occur if another part of your application uses the same result set and the cursor is still pointing to the insert row.
 ***********************
 Prepared Statement
-оно позволяет сократить время выполнения запроса, если вы вызываете его много раз.
-Потому что SQL statement is precompiled and stored in a PreparedStatement object. This object can then be used to efficiently execute this statement multiple times. == т.е. в prep_stmt sql выражение пре-компилируется сразу же после создания. И потом этот этап уже не нужен, а будет только выполнение самого запроса.
+РѕРЅРѕ РїРѕР·РІРѕР»СЏРµС‚ СЃРѕРєСЂР°С‚РёС‚СЊ РІСЂРµРјСЏ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РїСЂРѕСЃР°, РµСЃР»Рё РІС‹ РІС‹Р·С‹РІР°РµС‚Рµ РµРіРѕ РјРЅРѕРіРѕ СЂР°Р·.
+РџРѕС‚РѕРјСѓ С‡С‚Рѕ SQL statement is precompiled and stored in a PreparedStatement object. This object can then be used to efficiently execute this statement multiple times. == С‚.Рµ. РІ prep_stmt sql РІС‹СЂР°Р¶РµРЅРёРµ РїСЂРµ-РєРѕРјРїРёР»РёСЂСѓРµС‚СЃСЏ СЃСЂР°Р·Сѓ Р¶Рµ РїРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ. Р РїРѕС‚РѕРј СЌС‚РѕС‚ СЌС‚Р°Рї СѓР¶Рµ РЅРµ РЅСѓР¶РµРЅ, Р° Р±СѓРґРµС‚ С‚РѕР»СЊРєРѕ РІС‹РїРѕР»РЅРµРЅРёРµ СЃР°РјРѕРіРѕ Р·Р°РїСЂРѕСЃР°.
 The main feature of a PreparedStatement object is that, unlike a Statement object, it is given a SQL statement when it is created. The advantage to this is that in most cases, this SQL statement is sent to the DBMS right away, where it is compiled. As a result, the PreparedStatement object contains not just a SQL statement, but a SQL statement that has been precompiled. This means that when the PreparedStatement is executed, the DBMS can just run the PreparedStatement SQL statement without having to compile it first.
 ---------
-Передача параметров в PreparedStatement 
-Вместо знаков "?" надо подставить значение, для этого надо вызвать один из setter-ов в prep_stmt.
+РџРµСЂРµРґР°С‡Р° РїР°СЂР°РјРµС‚СЂРѕРІ РІ PreparedStatement 
+Р’РјРµСЃС‚Рѕ Р·РЅР°РєРѕРІ "?" РЅР°РґРѕ РїРѕРґСЃС‚Р°РІРёС‚СЊ Р·РЅР°С‡РµРЅРёРµ, РґР»СЏ СЌС‚РѕРіРѕ РЅР°РґРѕ РІС‹Р·РІР°С‚СЊ РѕРґРёРЅ РёР· setter-РѕРІ РІ prep_stmt.
 After a parameter has been set with a value, it retains that value until it is reset to another value, or the method clearParameters is called.
 ------
 Executing PreparedStatement Objects
@@ -197,39 +197,39 @@ As with Statement objects, to execute a PreparedStatement object, call an execut
 2) The statement executed was a DDL statement.
 **********************
 Transactions
-Н-р, когда обновляются итога за неделю, они также должны попасть в итоги за месяц.
+Рќ-СЂ, РєРѕРіРґР° РѕР±РЅРѕРІР»СЏСЋС‚СЃСЏ РёС‚РѕРіР° Р·Р° РЅРµРґРµР»СЋ, РѕРЅРё С‚Р°РєР¶Рµ РґРѕР»Р¶РЅС‹ РїРѕРїР°СЃС‚СЊ РІ РёС‚РѕРіРё Р·Р° РјРµСЃСЏС†.
 Disabling Auto-Commit Mode
-По умолчанию, когда создаётся connection, то он стоит в режиме auto-commit -- это значит что каждое самостоятельное SQL statement считает 1 транзакцией коммитится сразу автоматически коммитится сразу после выполнения.
-Но если быть более точным, то по умолчанию sql statement коммитится тогда когда оно завершено/completed, а не когда выполнено/executed.
-А statement считается завершённым/completed, когда получены все его result_set-ы and update counts. Обычно это происходит сразу после его выполенения. 
-----Поэтому сгруппировать 2 и более sql выражения в 1 транзакцию можно отключив авто-комит: con.setAutoCommit(false);
-Для коммита надо явно вызвать con.commit();
+РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ, РєРѕРіРґР° СЃРѕР·РґР°С‘С‚СЃСЏ connection, С‚Рѕ РѕРЅ СЃС‚РѕРёС‚ РІ СЂРµР¶РёРјРµ auto-commit -- СЌС‚Рѕ Р·РЅР°С‡РёС‚ С‡С‚Рѕ РєР°Р¶РґРѕРµ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕРµ SQL statement СЃС‡РёС‚Р°РµС‚ 1 С‚СЂР°РЅР·Р°РєС†РёРµР№ РєРѕРјРјРёС‚РёС‚СЃСЏ СЃСЂР°Р·Сѓ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РєРѕРјРјРёС‚РёС‚СЃСЏ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ.
+РќРѕ РµСЃР»Рё Р±С‹С‚СЊ Р±РѕР»РµРµ С‚РѕС‡РЅС‹Рј, С‚Рѕ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ sql statement РєРѕРјРјРёС‚РёС‚СЃСЏ С‚РѕРіРґР° РєРѕРіРґР° РѕРЅРѕ Р·Р°РІРµСЂС€РµРЅРѕ/completed, Р° РЅРµ РєРѕРіРґР° РІС‹РїРѕР»РЅРµРЅРѕ/executed.
+Рђ statement СЃС‡РёС‚Р°РµС‚СЃСЏ Р·Р°РІРµСЂС€С‘РЅРЅС‹Рј/completed, РєРѕРіРґР° РїРѕР»СѓС‡РµРЅС‹ РІСЃРµ РµРіРѕ result_set-С‹ and update counts. РћР±С‹С‡РЅРѕ СЌС‚Рѕ РїСЂРѕРёСЃС…РѕРґРёС‚ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РµРіРѕ РІС‹РїРѕР»РµРЅРµРЅРёСЏ. 
+----РџРѕСЌС‚РѕРјСѓ СЃРіСЂСѓРїРїРёСЂРѕРІР°С‚СЊ 2 Рё Р±РѕР»РµРµ sql РІС‹СЂР°Р¶РµРЅРёСЏ РІ 1 С‚СЂР°РЅР·Р°РєС†РёСЋ РјРѕР¶РЅРѕ РѕС‚РєР»СЋС‡РёРІ Р°РІС‚Рѕ-РєРѕРјРёС‚: con.setAutoCommit(false);
+Р”Р»СЏ РєРѕРјРјРёС‚Р° РЅР°РґРѕ СЏРІРЅРѕ РІС‹Р·РІР°С‚СЊ con.commit();
 All statements executed after the previous call to the method commit are included in the current transaction and committed together as a unit. 
 --------------------
-ЦЕЛОСТНОСТЬ ДАННЫХ
-Чтобы избежать конфликтов во время транзакций DBMS ис-ет блокировку (механизмы для блокировки доступа к данным, к-е попали в транзакцию).
-При включённом авто-комите блокировки выставляются для этого 1 statement-а.
+Р¦Р•Р›РћРЎРўРќРћРЎРўР¬ Р”РђРќРќР«РҐ
+Р§С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РєРѕРЅС„Р»РёРєС‚РѕРІ РІРѕ РІСЂРµРјСЏ С‚СЂР°РЅР·Р°РєС†РёР№ DBMS РёСЃ-РµС‚ Р±Р»РѕРєРёСЂРѕРІРєСѓ (РјРµС…Р°РЅРёР·РјС‹ РґР»СЏ Р±Р»РѕРєРёСЂРѕРІРєРё РґРѕСЃС‚СѓРїР° Рє РґР°РЅРЅС‹Рј, Рє-Рµ РїРѕРїР°Р»Рё РІ С‚СЂР°РЅР·Р°РєС†РёСЋ).
+РџСЂРё РІРєР»СЋС‡С‘РЅРЅРѕРј Р°РІС‚Рѕ-РєРѕРјРёС‚Рµ Р±Р»РѕРєРёСЂРѕРІРєРё РІС‹СЃС‚Р°РІР»СЏСЋС‚СЃСЏ РґР»СЏ СЌС‚РѕРіРѕ 1 statement-Р°.
  After a lock is set, it remains in force until the transaction is committed or rolled back.
-DIRTY_READ -- это когда происходит чтение данных, до того как они сделаны перманентными (т.к. возможно что будет rollback и они изменят своё значение).
+DIRTY_READ -- СЌС‚Рѕ РєРѕРіРґР° РїСЂРѕРёСЃС…РѕРґРёС‚ С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С…, РґРѕ С‚РѕРіРѕ РєР°Рє РѕРЅРё СЃРґРµР»Р°РЅС‹ РїРµСЂРјР°РЅРµРЅС‚РЅС‹РјРё (С‚.Рє. РІРѕР·РјРѕР¶РЅРѕ С‡С‚Рѕ Р±СѓРґРµС‚ rollback Рё РѕРЅРё РёР·РјРµРЅСЏС‚ СЃРІРѕС‘ Р·РЅР°С‡РµРЅРёРµ).
 DIRTY_READ --> (Accessing an updated value that has not been committed is considered a dirty read because it is possible for that value to be rolled back to its previous value. If you read a value that is later rolled back, you will have read an invalid value.)
 
-Как выставляются блокировки определяется УРОВНЕМ ИЗОЛЯЦИИ ТРАНЗАКЦИИ.
- interface Connection имеет 5 видов изоляций:
-1) TRANSACTION_NONE - транзакции не поддерживаются, все ошибки возможны.
-2) TRANSACTION_READ_UNCOMMITTED - транзакции  поддерживаются, все ошибки возможны.
+РљР°Рє РІС‹СЃС‚Р°РІР»СЏСЋС‚СЃСЏ Р±Р»РѕРєРёСЂРѕРІРєРё РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РЈР РћР’РќР•Рњ РР—РћР›РЇР¦РР РўР РђРќР—РђРљР¦РР.
+ interface Connection РёРјРµРµС‚ 5 РІРёРґРѕРІ РёР·РѕР»СЏС†РёР№:
+1) TRANSACTION_NONE - С‚СЂР°РЅР·Р°РєС†РёРё РЅРµ РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ, РІСЃРµ РѕС€РёР±РєРё РІРѕР·РјРѕР¶РЅС‹.
+2) TRANSACTION_READ_UNCOMMITTED - С‚СЂР°РЅР·Р°РєС†РёРё  РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ, РІСЃРµ РѕС€РёР±РєРё РІРѕР·РјРѕР¶РЅС‹.
 This level allows a row changed by one transaction to be read by another transaction before any changes in that row have been committed (a "dirty read").  If any of the changes are rolled back, the second transaction will have retrieved an invalid row
-3) TRANSACTION_READ_COMMITTED - транзакции  поддерживаются, исключаются только ошибки Dirty Reads. Т.е. позволено считывать только закомиченные изменения (will not allow a value to be accessed until after it has been committed.)(DBMS does not allow dirty reads to occur.).
+3) TRANSACTION_READ_COMMITTED - С‚СЂР°РЅР·Р°РєС†РёРё  РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ, РёСЃРєР»СЋС‡Р°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ РѕС€РёР±РєРё Dirty Reads. Рў.Рµ. РїРѕР·РІРѕР»РµРЅРѕ СЃС‡РёС‚С‹РІР°С‚СЊ С‚РѕР»СЊРєРѕ Р·Р°РєРѕРјРёС‡РµРЅРЅС‹Рµ РёР·РјРµРЅРµРЅРёСЏ (will not allow a value to be accessed until after it has been committed.)(DBMS does not allow dirty reads to occur.).
 (This level only prohibits a transaction from reading a row with uncommitted changes in it)
-4) TRANSACTION_REPEATABLE_READ - транзакции  поддерживаются, исключаются только ошибки Dirty Reads и Non-Repeatable Reads.
+4) TRANSACTION_REPEATABLE_READ - С‚СЂР°РЅР·Р°РєС†РёРё  РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ, РёСЃРєР»СЋС‡Р°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ РѕС€РёР±РєРё Dirty Reads Рё Non-Repeatable Reads.
 (This level prohibits a transaction from reading a row with uncommitted changes in it, and it also prohibits the situation where one transaction reads a row, a second transaction alters the row, and the first transaction rereads the row, getting different values the second time (a "non-repeatable read" NRD))
- [NRD происходит когда сначала транзакция "А" считала строку, затем транзакция "В" обновила/изменила данные в этой строке, и затем позже транзакция A снова считала ту же самую строку ещё раз.  
-В результате Transaction A считала одну и ту же строку, но получила разные данные]
-5) TRANSACTION_SERIALIZABLE - транзакции  поддерживаются, ВСЕ ошибки исключаются -- Dirty Reads и Non-Repeatable Reads и phantom reads.
+ [NRD РїСЂРѕРёСЃС…РѕРґРёС‚ РєРѕРіРґР° СЃРЅР°С‡Р°Р»Р° С‚СЂР°РЅР·Р°РєС†РёСЏ "Рђ" СЃС‡РёС‚Р°Р»Р° СЃС‚СЂРѕРєСѓ, Р·Р°С‚РµРј С‚СЂР°РЅР·Р°РєС†РёСЏ "Р’" РѕР±РЅРѕРІРёР»Р°/РёР·РјРµРЅРёР»Р° РґР°РЅРЅС‹Рµ РІ СЌС‚РѕР№ СЃС‚СЂРѕРєРµ, Рё Р·Р°С‚РµРј РїРѕР·Р¶Рµ С‚СЂР°РЅР·Р°РєС†РёСЏ A СЃРЅРѕРІР° СЃС‡РёС‚Р°Р»Р° С‚Сѓ Р¶Рµ СЃР°РјСѓСЋ СЃС‚СЂРѕРєСѓ РµС‰С‘ СЂР°Р·.  
+Р’ СЂРµР·СѓР»СЊС‚Р°С‚Рµ Transaction A СЃС‡РёС‚Р°Р»Р° РѕРґРЅСѓ Рё С‚Сѓ Р¶Рµ СЃС‚СЂРѕРєСѓ, РЅРѕ РїРѕР»СѓС‡РёР»Р° СЂР°Р·РЅС‹Рµ РґР°РЅРЅС‹Рµ]
+5) TRANSACTION_SERIALIZABLE - С‚СЂР°РЅР·Р°РєС†РёРё  РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ, Р’РЎР• РѕС€РёР±РєРё РёСЃРєР»СЋС‡Р°СЋС‚СЃСЏ -- Dirty Reads Рё Non-Repeatable Reads Рё phantom reads.
 (This level includes the prohibitions in TRANSACTION_REPEATABLE_READ and further prohibits the situation where one transaction reads all rows that satisfy a WHERE condition, a second transaction inserts a row that satisfies that WHERE condition, and the first transaction rereads for the same condition, retrieving the additional "phantom" row in the second read.)
-[phantom read  - это когда транз_А получает набор строк, удовлетворяющих заданному условию, а затем транз_Б вставляет или обновляет какую-то строку таким образом, что она теперь попадает/удовлетворяет в заданные условия для транз_А. Потом транз_А повторяет выборку по этому условию, и получает дополнительную +1 строку, к-я наз-ся фантомной.]
+[phantom read  - СЌС‚Рѕ РєРѕРіРґР° С‚СЂР°РЅР·_Рђ РїРѕР»СѓС‡Р°РµС‚ РЅР°Р±РѕСЂ СЃС‚СЂРѕРє, СѓРґРѕРІР»РµС‚РІРѕСЂСЏСЋС‰РёС… Р·Р°РґР°РЅРЅРѕРјСѓ СѓСЃР»РѕРІРёСЋ, Р° Р·Р°С‚РµРј С‚СЂР°РЅР·_Р‘ РІСЃС‚Р°РІР»СЏРµС‚ РёР»Рё РѕР±РЅРѕРІР»СЏРµС‚ РєР°РєСѓСЋ-С‚Рѕ СЃС‚СЂРѕРєСѓ С‚Р°РєРёРј РѕР±СЂР°Р·РѕРј, С‡С‚Рѕ РѕРЅР° С‚РµРїРµСЂСЊ РїРѕРїР°РґР°РµС‚/СѓРґРѕРІР»РµС‚РІРѕСЂСЏРµС‚ РІ Р·Р°РґР°РЅРЅС‹Рµ СѓСЃР»РѕРІРёСЏ РґР»СЏ С‚СЂР°РЅР·_Рђ. РџРѕС‚РѕРј С‚СЂР°РЅР·_Рђ РїРѕРІС‚РѕСЂСЏРµС‚ РІС‹Р±РѕСЂРєСѓ РїРѕ СЌС‚РѕРјСѓ СѓСЃР»РѕРІРёСЋ, Рё РїРѕР»СѓС‡Р°РµС‚ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅСѓСЋ +1 СЃС‚СЂРѕРєСѓ, Рє-СЏ РЅР°Р·-СЃСЏ С„Р°РЅС‚РѕРјРЅРѕР№.]
 ----------------
 Setting and Rolling Back to Savepoints
-В Connection можно создать ТОЧКУ СОХРАНЕНИЯ (SAVEPOINT), через метод Connection.setSavepoint. А в метод Connection.rollback перегружет, чтобы принимать агрумент Savepoint.
+Р’ Connection РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ РўРћР§РљРЈ РЎРћРҐР РђРќР•РќРРЇ (SAVEPOINT), С‡РµСЂРµР· РјРµС‚РѕРґ Connection.setSavepoint. Рђ РІ РјРµС‚РѕРґ Connection.rollback РїРµСЂРµРіСЂСѓР¶РµС‚, С‡С‚РѕР±С‹ РїСЂРёРЅРёРјР°С‚СЊ Р°РіСЂСѓРјРµРЅС‚ Savepoint.
 Consequently, when the method commits the transaction by calling the Connection.commit method, it will not commit any rows whose associated Savepoint has been rolled back; it will commit all the other updated rows.
 The method Connection.releaseSavepoint takes a Savepoint object as a parameter and removes it from the current transaction.
 
@@ -241,15 +241,15 @@ As mentioned earlier, calling the method rollback terminates a transaction and r
 ********************
 RowSet Objects
 JDBC RowSet object holds tabular data in a way that makes it more flexible and easier to use than a result set.
-Есть 5 row_set интерфейсов
+Р•СЃС‚СЊ 5 row_set РёРЅС‚РµСЂС„РµР№СЃРѕРІ
 1.JdbcRowSet
 2.CachedRowSet
 3.WebRowSet
 4.JoinRowSet
 5.FilteredRowSet
 ----
-interface RowSet extends ResultSet и добавляет 2 новые фичи:
-1) Function as JavaBeans Component, это значит, что они имеют свойства/Properties и ис-ют JavaBeans Notification Mechanism.
+interface RowSet extends ResultSet Рё РґРѕР±Р°РІР»СЏРµС‚ 2 РЅРѕРІС‹Рµ С„РёС‡Рё:
+1) Function as JavaBeans Component, СЌС‚Рѕ Р·РЅР°С‡РёС‚, С‡С‚Рѕ РѕРЅРё РёРјРµСЋС‚ СЃРІРѕР№СЃС‚РІР°/Properties Рё РёСЃ-СЋС‚ JavaBeans Notification Mechanism.
 2) Add Scrollability or Updatability
 --------------
 Properties---A property is a field that has corresponding getter and setter methods.
@@ -259,25 +259,25 @@ Properties---A property is a field that has corresponding getter and setter meth
 3 A change to the entire RowSet contents
 The notification of an event goes to all listeners, components that have implemented the RowSetListener interface and have had themselves added to the RowSet object's list of components to be notified when any of the three events occurs.
 ---Add Scrollability or Updatability
-Если драйвер БД не поддерживает сроллинг или обновление result_set, то можно сделать это через row_set. A RowSet object is scrollable and updatable by default, so by populating a RowSet object with the contents of a result set, you can effectively make the result set scrollable and updatable.
+Р•СЃР»Рё РґСЂР°Р№РІРµСЂ Р‘Р” РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚ СЃСЂРѕР»Р»РёРЅРі РёР»Рё РѕР±РЅРѕРІР»РµРЅРёРµ result_set, С‚Рѕ РјРѕР¶РЅРѕ СЃРґРµР»Р°С‚СЊ СЌС‚Рѕ С‡РµСЂРµР· row_set. A RowSet object is scrollable and updatable by default, so by populating a RowSet object with the contents of a result set, you can effectively make the result set scrollable and updatable.
 -------------
 Kinds of RowSet Objects
 
 A RowSet object is considered either connected or disconnected. A connected RowSet object uses a JDBC driver to make a connection to a relational database and maintains that connection throughout its life span. A disconnected RowSet object makes a connection to a data source only to read in data from a ResultSet object or to write data back to the data source. 
 ------
 A CachedRowSet object has all the capabilities of a JdbcRowSet object plus it can also do the following:
-• Obtain a connection to a data source and execute a query
-• Read the data from the resulting ResultSet object and populate itself with that data
-• Manipulate data and make changes to data while it is disconnected
-• Reconnect to the data source to write changes back to it
-• Check for conflicts with the data source and resolve those conflicts
+вЂў Obtain a connection to a data source and execute a query
+вЂў Read the data from the resulting ResultSet object and populate itself with that data
+вЂў Manipulate data and make changes to data while it is disconnected
+вЂў Reconnect to the data source to write changes back to it
+вЂў Check for conflicts with the data source and resolve those conflicts
 A WebRowSet object has all the capabilities of a CachedRowSet object plus it can also do the following:
-• Write itself as an XML document
-• Read an XML document that describes a WebRowSet object
+вЂў Write itself as an XML document
+вЂў Read an XML document that describes a WebRowSet object
 A JoinRowSet object has all the capabilities of a WebRowSet object (and therefore also those of a CachedRowSet object) plus it can also do the following:
-• Form the equivalent of a SQL JOIN without having to connect to a data source
+вЂў Form the equivalent of a SQL JOIN without having to connect to a data source
 A FilteredRowSet object likewise has all the capabilities of a WebRowSet object (and therefore also a CachedRowSet object) plus it can also do the following:
-• Apply filtering criteria so that only selected data is visible. This is equivalent to executing a query on a RowSet object without having to use a query language or connect to a data source.
+вЂў Apply filtering criteria so that only selected data is visible. This is equivalent to executing a query on a RowSet object without having to use a query language or connect to a data source.
 ------------
 https://docs.oracle.com/javase/tutorial/jdbc/basics/jdbcrowset.html
 

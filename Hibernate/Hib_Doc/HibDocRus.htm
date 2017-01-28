@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>HibDocRus</title>
+    <link rel="stylesheet" href="grey.css">
+</head>
+<body>
+<a href="https://habrahabr.ru/post/301384/">p1</a>
+<a href="https://habrahabr.ru/post/269485/">p2</a>
+<a href="https://habrahabr.ru/post/269029/">p4</a>
+<a href="https://habrahabr.ru/post/268903/">p5</a>
+<a href="https://habrahabr.ru/post/268747/">p6</a>
+<div class="content html_format"><i>Представляю вашему вниманию перевод <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/#d5e58">первой главы официальной документации Hibernate</a>.</i><br>
+<br>
+<i>Перевод статьи актуален для версии Hibernate 4.2.19.Final</i><br>
+<br>
+<i>Cледующая глава — <a href="https://habrahabr.ru/post/269485/">Документация разработчика Hibernate – Глава II. Транзакции и контроль многопоточности</a></i><br>
+<br>
+<b>Содержание</b><br>
+&nbsp;<a href="#p">Предисловие</a> <br>
+&nbsp;<a href="#1">1. Доступ к базе данных</a><br>
+&nbsp;&nbsp;<a href="#1_1">1.1. Подключение</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_1_1">1.1.1. Конфигурация</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_1_2">1.1.2. Получение JDBC-соединения</a><br>
+&nbsp;&nbsp;<a href="#1_2">1.2. Пулинг соединений (Connection pooling)</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_2_1">1.2.1. Пулинг с помощью с3p0</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_2_2">1.2.2. Пулинг с помощью Proxool</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_2_3">1.2.3. Получение соединений от сервера приложений, через JNDI</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_2_4">1.2.4. Прочее по конфигурации соединений</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_2_5">1.2.5. Необязательные свойства конфигурации</a><br>
+&nbsp;&nbsp;<a href="#1_3">1.3. Диалекты</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_3_1">1.3.1. Указание диалекта для использования</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_3_2">1.3.2. Разрешение диалекта</a><br>
+&nbsp;&nbsp;<a href="#1_4">1.4. Автоматическая генерация схемы при помощи Schema Export</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_4_1">1.4.1. Кастомизация файлов маппинга (Customizing the mapping files)</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#1_4_2">1.4.2. Запуск инструмента SchemaExport</a><br>
+<a name="habracut"></a><br>
+<a name="p"></a><h3>Предисловие</h3><br>
+Работа как с объектно-ориентированным ПО, так и с реляционными базами данных (далее БД, прим.перев.) может быть весьма обременительной и затратной с точки зрения потраченного времени. Затраты на разработку существенно выше из-за несовпадения парадигм представления данных в объектах и реляционных БД. Hibernate является решением т.н. объектно-реляционного проецирования для Java. Термин объектно-реляционного проецирования отноcится к технике проецирования (маппинга) данных из объектной модели представления к реляционной модели представления (и наоборот). См. <a href="http://en.wikipedia.org/wiki/Object-relational_mapping">en.wikipedia.org/wiki/Object-relational_mapping</a> для более подробного ознакомления.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"> Хотя для использования Hibernate не обязательно хорошо владеть SQL, понимание основных концепций сыграет неплохую роль в быстром и полном освоении Hibernate. Лучшим подспорьем в освоении является понимание принципов моделирования данных. Информация по нижеследующим ссылкам может оказаться полезной<br>
+ <ul>
+<li><a href="http://www.agiledata.org/essays/dataModeling101.html">www.agiledata.org/essays/dataModeling101.html</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Data_modeling">en.wikipedia.org/wiki/Data_modeling</a></li>
+</ul><br>
+</div></div><br>
+Hibernate не только заботится о проецировании Java-классов в таблицы БД (а также проецировании базовых типов Java к типам SQL), но и предоставляет механизмы формирования запросов и выборок данных. Он может существенно снизить время на разработку, которая в старом стиле велась путем ручной работы с данными с использованием SQL и JDBC. Главная цель архитектурного дизайна Hibernate – избавление разработчика от ежедневных задач работы с данными БД, путем избавления от нужд написания собственной логики работы с данными через SQL и JDBC. Однако, в отличие от других persistence-решений, Hibernate не скрывает от вас возможность использовать всю мощь SQL, и гарантирует, что ваши вложения в реляционные технологии и знания по-прежнему имеют силу.<br>
+Hibernate может быть не лучшим решением для приложений, хранящих всю свою бизнес-логику в хранимых процедурах, оно скорее подходит для объектно-ориентированных моделей и логики в среднем (бизнес) слое приложения, написанном на Java. Однако, Hibernate совершенно точно может помочь вам избавиться или инкапсулировать логику специфического SQL-кода, а также справиться с повседневными задачами трансляции результатов ваших запросов из табличного представления в граф объектов.<br>
+<br>
+<a name="1"></a><h3>1. Доступ к базе данных</h3><br>
+<a name="1_1"></a><h3>1.1. Подключение</h3><br>
+Hibernate соединяется с базой от имени вашего приложения. Соединение может осуществляться через различного рода механизмы, а именно:<br>
+<ul>
+<li>Встроенный пул соединений</li>
+<li><i>javax.sql.DataSource</i></li>
+<li>Пулы соединений, также можно использовать сторонние открытые решения для пулов:<ul>
+<li>c3p0</li>
+<li>proxool</li>
+</ul></li>
+<li>Собственноручно созданные приложением JDBC-соединения. Это нерекомендуемый подход и единственная причина его использования – работа с устаревшим (legacy) окружением. </li>
+</ul><br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"> Встроенный пул соединений не предназначен для работы в “боевом” окружении. <br>
+</div></div><br>
+Hibernate получает JDBC-соединения по мере необходимости через интерфейс <i>org.hibernate.service.jdbc.connections.spi.ConnectionProvider</i>. Приложения могут также предоставлять свои реализации интерфейса <i>org.hibernate.service.jdbc.connections.spi.ConnectionProvider</i> для определения кастомного подхода к предоставлению соединений Hibernate’у. (Из другого пула соединений, например)<br>
+<br>
+<a name="1_1_1"></a><h3>1.1.1. Конфигурация</h3><br>
+Вы можете сконфигурировать соединение к базе данных, используя property-файл, через XML-дескриптор развертывания или программно.<br>
+<br>
+<a name="e_1_1"></a><b>Пример 1.1. hibernate.properties для пула соединений c3p0</b><br>
+<br>
+<pre><code class="hljs stylus">hibernate<span class="hljs-selector-class">.connection</span><span class="hljs-selector-class">.driver_class</span> = org<span class="hljs-selector-class">.postgresql</span><span class="hljs-selector-class">.Driver</span>
+hibernate<span class="hljs-selector-class">.connection</span><span class="hljs-selector-class">.url</span> = jdbc:postgresql:<span class="hljs-comment">//localhost/mydatabase</span>
+hibernate<span class="hljs-selector-class">.connection</span><span class="hljs-selector-class">.username</span> = myuser
+hibernate<span class="hljs-selector-class">.connection</span><span class="hljs-selector-class">.password</span> = secret
+hibernate<span class="hljs-selector-class">.c3p0</span><span class="hljs-selector-class">.min_size</span>=<span class="hljs-number">5</span>
+hibernate<span class="hljs-selector-class">.c3p0</span><span class="hljs-selector-class">.max_size</span>=<span class="hljs-number">20</span>
+hibernate<span class="hljs-selector-class">.c3p0</span><span class="hljs-selector-class">.timeout</span>=<span class="hljs-number">1800</span>
+hibernate<span class="hljs-selector-class">.c3p0</span><span class="hljs-selector-class">.max_statements</span>=<span class="hljs-number">50</span>
+hibernate<span class="hljs-selector-class">.dialect</span> = org<span class="hljs-selector-class">.hibernate</span><span class="hljs-selector-class">.dialect</span><span class="hljs-selector-class">.PostgreSQL82Dialect</span>
+</code></pre><br>
+<a name="e_1_2"></a><b>Пример 1.2. hibernate.cfg.xml для соединения к встраиваемой базе данных HSQL</b><br>
+<br>
+<pre><code class="xml hljs"><span class="hljs-meta">&lt;?xml version='1.0' encoding='utf-8'?&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">hibernate-configuration</span>
+        <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://www.hibernate.org/xsd/hibernate-configuration"</span>
+        <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://www.hibernate.org/xsd/hibernate-configuration hibernate-configuration-4.0.xsd"</span>
+        <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">session-factory</span>&gt;</span>
+    <span class="hljs-comment">&lt;!-- Database connection settings --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"connection.driver_class"</span>&gt;</span>org.hsqldb.jdbcDriver<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"connection.url"</span>&gt;</span>jdbc:hsqldb:hsql://localhost<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"connection.username"</span>&gt;</span>sa<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"connection.password"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- JDBC connection pool (use the built-in) --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"connection.pool_size"</span>&gt;</span>1<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- SQL dialect --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"dialect"</span>&gt;</span>org.hibernate.dialect.HSQLDialect<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- Enable Hibernate's automatic session context management --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"current_session_context_class"</span>&gt;</span>thread<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- Disable the second-level cache  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"cache.provider_class"</span>&gt;</span>org.hibernate.cache.internal.NoCacheProvider<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- Echo all executed SQL to stdout --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"show_sql"</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!-- Drop and re-create the database schema on startup --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"hbm2ddl.auto"</span>&gt;</span>update<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">mapping</span> <span class="hljs-attr">resource</span>=<span class="hljs-string">"org/hibernate/tutorial/domain/Event.hbm.xml"</span>/&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">session-factory</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">hibernate-configuration</span>&gt;</span>
+</code></pre><br>
+<br>
+<a name="1_1_1_1"></a><h3>1.1.1.1. Программная конфигурация</h3><br>
+Экземпляр объекта <i>org.hibernate.cfg.Configuration</i> представляет полный набор типов маппингов на базу данных. Объект <i>org.hibernate.cfg.Configuration</i> создает иммутабельный объект <i>org.hibernate.SessionFactory</i>, и компилирует маппинги из различных XML-файлов. Вы можете указать файлы для маппинга напрямую, или Hibernate может найти их за вас.<br>
+<br>
+<a name="e_1_3"></a><b>Пример 1.3. Указание файлов для маппинга напрямую</b><br>
+<br>
+Вы можете получить объект <i>org.hibernate.cfg.Configuration</i>, cоздав его и указав XML-документы для маппинга напрямую. Если файлы для маппинга находятся в classpath, используйте метод addResource().<br>
+<br>
+<pre><code class="java hljs">Configuration cfg = <span class="hljs-keyword">new</span> Configuration()
+    .addResource(<span class="hljs-string">"Item.hbm.xml"</span>)
+    .addResource(<span class="hljs-string">"Bid.hbm.xml"</span>);
+</code></pre><br>
+<br>
+<a name="e_1_4"></a><b>Пример 1.4. Hibernate находит файлы за вас</b><br>
+<br>
+Метод addClass() указывает Hibernate искать mapping-файлы через classpath, основываясь на имени класса, при этом избавляя вас от необходимости указывать имена файлов самому. В следующем примере, он ищет <i>org/hibernate/auction/Item.hbm.xml</i> и <i>org/hibernate/auction/Bid.hbm.xml</i>.<br>
+<br>
+<pre><code class="java hljs">Configuration cfg = <span class="hljs-keyword">new</span> Configuration()
+    .addClass(org.hibernate.auction.Item.class)
+    .addClass(org.hibernate.auction.Bid.class);
+</code></pre><br>
+<br>
+<a name="e_1_5"></a><b>Пример 1.5. Указание свойств конфигурации</b><br>
+<br>
+<pre><code class="java hljs">Configuration cfg = <span class="hljs-keyword">new</span> Configuration()
+    .addClass(org.hibernate.auction.Item.class)
+    .addClass(org.hibernate.auction.Bid.class)
+    .setProperty(<span class="hljs-string">"hibernate.dialect"</span>, <span class="hljs-string">"org.hibernate.dialect.MySQLInnoDBDialect"</span>)
+    .setProperty(<span class="hljs-string">"hibernate.connection.datasource"</span>, <span class="hljs-string">"java:comp/env/jdbc/test"</span>)
+    .setProperty(<span class="hljs-string">"hibernate.order_updates"</span>, <span class="hljs-string">"true"</span>);
+</code></pre><br>
+<br>
+Другие способы программной конфигурации Hibernate<br>
+<ul>
+<li>Передача экземпляра <i>java.util.Properties</i> в Configuration.setProperties().</li>
+<li>Установка системного свойства, используя java -Dproperty=value</li>
+</ul><br>
+<br>
+<a name="1_1_2"></a><h3>1.1.2. Получение JDBC-соединения</h3><br>
+После того, как вы сконфигурируете <a href="#most_important_jdbc_properties">Основные jdbc-свойства Hibernate</a>, вы можете использовать метод <i>openSession</i> класса <i>org.hibernate.SessionFactory</i> для открытия сессий. Сессии откроют JDBC-cоединения по требованию, основываясь на предоставленной конфигурации.<br>
+<br>
+<a name="e_1_6"></a><b>Пример 1.6. Открытие сессии</b><br>
+<br>
+<pre><code class="java hljs">Session session = sessions.openSession();
+</code></pre><br>
+<a name="most_important_jdbc_properties"></a>Основные jdbc-cвойства Hibernate<br>
+<ul>
+<li><i>hibernate.connection.driver_class</i></li>
+<li><i>hibernate.connection.url</i></li>
+<li><i>hibernate.connection.username</i></li>
+<li><i>hibernate.connection.password</i></li>
+<li><i>hibernate.connection.pool_size</i></li>
+</ul><br>
+<br>
+<a name="1_2"></a><h3>1.2. Пулинг соединений (Connection pooling)</h3><br>
+Внутренний алгоритм пулинга соединений в Hibernate довольно рудиментарен, и нужен, по большей части, для разработки и тестирования. Используйте сторонние (3<sup>rd</sup> party) пулы для лучшей производительности и стабильности. Для использования 3<sup>rd</sup> party пула, замените значение свойства <i>hibernate.connection.pool_size</i> на соответствующие специфике вашего выбранного пула. Это отключит использование встроенного пула Hibernate.<br>
+<br>
+<a name="1_2_1"></a><h3>1.2.1. Пулинг с помощью c3p0</h3><br>
+C3P0 – опенсорсный пул JDBC-соединений, распространяемый вместе с Hibernate в директории lib/. Hibernate будет использовать свой собственный <i>org.hibernate.service.jdbc.connections.internal.C3P0ConnectionProvider</i> для пулинга соединений, при настройке свойств hibernate.c3p0.*<br>
+<br>
+<b>Важные конфигурационные свойства для c3p0</b><br>
+<ul>
+<li><i>hibernate.c3p0.min_size</i></li>
+<li><i>hibernate.c3p0.max_size</i></li>
+<li><i>hibernate.c3p0.timeout</i></li>
+<li><i>hibernate.c3p0.max_statements</i></li>
+</ul><br>
+<br>
+<a name="1_2_2"></a><h3>1.2.2. Пулинг с помощью Proxool</h3><br>
+Proxool — другой опенсорсный пул, распространяемый вместе с Hibernate в директории lib/. Hibernate будет использовать свой собственный <i>org.hibernate.service.jdbc.connections.internal.ProxoolConnectionProvider</i> для пулинга соединений при соответствующей настройке hibernate.proxool.*. В отличие от c3p0, proxool требует некоторых дополнительных параметров настройки, которые описаны в документации, доступной на <a href="http://proxool.sourceforge.net/configure.html">proxool.sourceforge.net/configure.html</a>.<br>
+<br>
+<a name="t_1_1"></a><b>Таблица 1.1. Важные конфигурационные свойства для пула соединений Proxool</b><br>
+<table>
+<tbody><tr>
+<th>Свойство</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>hibernate.proxool.xml</td>
+<td>Сконфигурируйте провайдер Proxool, используя указанный файл XML (.xml добавляется автоматически)</td>
+</tr>
+<tr>
+<td>hibernate.proxool.properties</td>
+<td>Сконфигурируйте провайдер Proxool, используя указанный property-файл (.properties добавляется автоматически)</td>
+</tr>
+<tr>
+<td>hibernate.proxool.existing_pool</td>
+<td>Конфигурировать ли провайдер Proxool из существующего пула</td>
+</tr>
+<tr>
+<td>hibernate.proxool.pool_alias</td>
+<td>Псевдоним пула Proxool. Необходим.</td>
+</tr>
+</tbody></table><br>
+<a name="1_2_3"></a><h3>1.2.3. Получение соединений от сервера приложений, через JNDI</h3><br>
+Для использования Hibernate внутри сервера приложений, настройте Hibernate для получения соединений от <i>javax.sql.Datasource</i>, зарегистрированном в JNDI, установив по крайней мере одно из следующих свойств:<br>
+<b>Важные свойства для источников данных JNDI</b><br>
+<ul>
+<li><i>hibernate.connection.datasource</i> (необходимо)</li>
+<li><i>hibernate.jndi.url</i></li>
+<li><i>hibernate.jndi.class</i></li>
+<li><i>hibernate.connection.username</i></li>
+<li><i>hibernate.connection.password</i></li>
+</ul><br>
+JDBC-соединения, полученные из источника данных JNDI, автоматически участвуют в container-managed транзакциях сервера приложений.<br>
+<br>
+<a name="1_2_4"></a><h3>1.2.4. Прочее по конфигурации соединений</h3><br>
+Вы можете передавать произвольные свойства соединения, добавляя перед ними <i>hibernate.connection</i>. К примеру, для указания свойства charSet используйте имя <i>hibernate.connection.charSet</i>.<br>
+Вы можете определить свою стратегию для получения JDBC-соединений, реализовав интерфейс <i>org.hibernate.service.jdbc.connections.spi.ConnectionProvider</i>, и указав вашу пользовательскую реализацию при помощи свойства <i>hibernate.connection.provider_class</i><br>
+<br>
+<a name="1_2_5"></a><h3>1.2.5. Необязательные свойства конфигурации</h3><br>
+В дополнение к свойствам, перечисленным выше, Hibernate включает в себя множество других параметров. См. более подробный список на <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/">http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/</a>.<br>
+<br>
+<a name="1_3"></a><h3>1.3. Диалекты</h3><br>
+Хотя SQL относительно стандартизирован, каждый поставщик СУБД использует свое подмножество поддерживаемых синтаксисов. У этого есть и другой термин, называемый диалектом. Hibernate поддерживает различные вариации диалектов через класс <i>org.hibernate.dialect.Dialect</i> и различные подклассы для каждого vendor-диалекта.<br>
+<br>
+<a name="t_1_2"></a><b>Таблица 1.2. Поддерживаемые диалекты СУБД</b><br>
+<img src="https://habrastorage.org/files/57a/a85/b49/57aa85b4946b45e4a0a919ca24418d57.png"><br>
+<br>
+<a name="1_3_1"></a><h3>1.3.1. Указание диалекта для использования</h3><br>
+Разработчик может вручную указать диалект для использования, указав в свойстве <i>hibernate.dialect</i> нужное имя подкласса <i>org.hibernate.dialect.Dialect</i>.<br>
+<br>
+<a name="1_3_2"></a><h3>1.3.2. Разрешение диалекта</h3><br>
+Заранее предположив, что <i>org.hibernate.service.jdbc.connections.spi.ConnectionProvider</i> был настроен, Hibernate попытается автоматически определить диалект, основываясь на <i>java.sql.DatabaseMetaData</i> получаемым из объекта <i>java.sql.Connection</i>, который в свою очередь достается из <i>org.hibernate.service.jdbc.connections.spi.ConnectionProvider</i>.<br>
+Эта функциональность предоставляется экземплярами <i>org.hibernate.service.jdbc.dialect.spi.DialectResolver</i>, зарегистрированными cамим фреймворком. Hibernate идет вместе со стандартным набором распознаваний. Если в вашем приложении требуются дополнительные возможности распознавания диалекта, вполне возможно зарегистрировать кастомную реализацию <i>org.hibernate.service.jdbc.dialect.spi.DialectResolver</i>, как показано ниже<br>
+Зарегистрированные реализации <i>org.hibernate.service.jdbc.dialect.spi.DialectResolver</i> добавляются во внутренний список resolverов, так что они имеют приоритет над уже ранее зарегистрированными resolver’ами, а также над стандартными.<br>
+<br>
+<a name="1_4"></a><h3>1.4. Автоматическая генерация схемы при помощи SchemaExport</h3><br>
+SchemaExport – утилита Hibernate, которая генерит DDL-скрипты из ваших файлов маппинга. Сгенерированная схема включает в себя ограничения ссылочной целостности (referential integrity constraints), основные и внешние ключи для сущностей и таблиц коллекций. Она также создает таблицы для последовательностей(sequences) и спроецированных id-генераторов (identity generators).<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Вы должны указать диалект SQL через свойство <i>hibernate.dialect</i>, когда используете эту утилиту, так как DDL сам по себе специфичен для каждого вендора. См подробности в <a href="#1_3">Секции 1.3, “Диалекты”</a>.<br>
+</div></div><br>
+Перед тем, как Hibernate сможет сгенерировать вашу схему, вы должны кастомизировать ваши файлы маппинга.<br>
+<br>
+<a name="1_4_1"></a><h3>1.4.1. Кастомизация файлов маппинга (Customizing the mapping files)</h3><br>
+Hibernate предоставляет ряд элементов и атрибутов для ваших файлов маппинга. Они перечислены в Таблице 1.3, “Элементы и аттрибуты, предоставляемые для кастомизации файлов маппинга”, а логический порядок кастомизации представлен в Процедуре 1.1, “Кастомизация схемы”.<br>
+<br>
+<a name="t_1_3"></a><b>Таблица 1.3. Элементы и атрибуты, предоставляемые для кастомизации файлов маппинга</b><br>
+<table>
+<tbody><tr>
+<th>Имя</th>
+<th>Тип значения</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>length</td>
+<td>number</td>
+<td>Длина колонки</td>
+</tr>
+<tr>
+<td>precision</td>
+<td>number</td>
+<td>Десятичная точность колонки</td>
+</tr>
+<tr>
+<td>scale</td>
+<td>number</td>
+<td>Десятичный масштаб колонки</td>
+</tr>
+<tr>
+<td>not-null</td>
+<td>true или false</td>
+<td>Может ли колонка содержать null-значения</td>
+</tr>
+<tr>
+<td>unique</td>
+<td>true или false</td>
+<td>Содержит ли колонка только уникальные значения</td>
+</tr>
+<tr>
+<td>index</td>
+<td>string</td>
+<td>Имя многоколоночного индекса</td>
+</tr>
+<tr>
+<td>unique-key</td>
+<td>string</td>
+<td>Имя многоколоночного ограничения на уникальность</td>
+</tr>
+<tr>
+<td>foreign-key</td>
+<td>string</td>
+<td>Имя ограничения внешнего ключа, генерируемое для ассоциаций. <br>
+ Это относится к &lt;one-to-one&gt;, &lt;many-to-one&gt;, &lt;key&gt;, и &lt;many-to-many&gt; элементам. inverse=«true» пропускаются SchemaExport.</td>
+</tr>
+<tr>
+<td>sql-type</td>
+<td>string</td>
+<td>Переопределяет тип колонки по-умолчанию. Это относится только к элементу &lt;column&gt;.</td>
+</tr>
+<tr>
+<td>default</td>
+<td>string</td>
+<td>Значение по-умолчанию для колонки</td>
+</tr>
+<tr>
+<td>check</td>
+<td>string</td>
+<td>SQL ограничения (SQL check constraint) либо на колонку, либо на таблицу</td>
+</tr>
+</tbody></table><br>
+<b>Процедура 1.1. Кастомизация схемы</b><br>
+<br>
+<b>1. Установка длины, точности, и масштаба элементов маппинга.</b><br>
+ <br>
+Множество элементов маппинга определяют необязательные атрибуты, такие как <b>длина</b>, <b>точность</b>, и <b>масштаб</b>.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"zip"</span> <span class="hljs-attr">length</span>=<span class="hljs-string">"5"</span>/&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"balance"</span> <span class="hljs-attr">precision</span>=<span class="hljs-string">"12"</span> <span class="hljs-attr">scale</span>=<span class="hljs-string">"2"</span>/&gt;</span>
+</code></pre><br>
+ <br>
+<b>2. Установка not-null, UNIQUE, unique-key аттрибутов.</b><br>
+ <br>
+<b>not-null</b> и <b>UNIQUE</b> атрибуты генерируют ограничения на табличные колонки.<br>
+Атрибут <b>unique-key</b> группирует колонки в единое ограничение по уникальности. Атрибут переопределяет имя любого сгенерированного ограничения уникальности.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">many-to-one</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"bar"</span> <span class="hljs-attr">column</span>=<span class="hljs-string">"barId"</span> <span class="hljs-attr">not-null</span>=<span class="hljs-string">"true"</span>/&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">element</span> <span class="hljs-attr">column</span>=<span class="hljs-string">"serialNumber"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"long"</span> <span class="hljs-attr">not-null</span>=<span class="hljs-string">"true"</span> <span class="hljs-attr">unique</span>=<span class="hljs-string">"true"</span>/&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">many-to-one</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"org"</span> <span class="hljs-attr">column</span>=<span class="hljs-string">"orgId"</span> <span class="hljs-attr">unique-key</span>=<span class="hljs-string">"OrgEmployeeId"</span>/&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"employeeId"</span> <span class="hljs-attr">unique-key</span>=<span class="hljs-string">"OrgEmployee"</span>/&gt;</span>
+</code></pre><br>
+<b>3. Установка index и foreign-key аттрибутов.</b><br>
+ <br>
+Атрибут index указывает имя индекса для его создания, используя спроецированную колонку или колонки. Вы можете сгруппировать несколько колонок по одному индексу, указав в каждой из них имя одного и того же индекса.<br>
+Атрибут внешнего ключа (foreign key) переопределяет имя любого сгенерированного ограничения внешнего ключа.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">many-to-one</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"bar"</span> <span class="hljs-attr">column</span>=<span class="hljs-string">"barId"</span> <span class="hljs-attr">foreign-key</span>=<span class="hljs-string">"FKFooBar"</span>/&gt;</span>
+</code></pre><br>
+<br>
+<b>4. Установка дочерних &lt;column&gt;-элементов.</b><br>
+<br>
+Множество элементов маппинга допускают использование дочерних &lt;column&gt; элементов. Это бывает полезно для маппинга типов, включающих в себя несколько колонок.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"name"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"my.customtypes.Name"</span>/&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"last"</span> <span class="hljs-attr">not-null</span>=<span class="hljs-string">"true"</span> <span class="hljs-attr">index</span>=<span class="hljs-string">"bar_idx"</span> <span class="hljs-attr">length</span>=<span class="hljs-string">"30"</span>/&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"first"</span> <span class="hljs-attr">not-null</span>=<span class="hljs-string">"true"</span> <span class="hljs-attr">index</span>=<span class="hljs-string">"bar_idx"</span> <span class="hljs-attr">length</span>=<span class="hljs-string">"20"</span>/&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"initial"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+</code></pre><br>
+<br>
+<b>5. Установка атрибута default.</b><br>
+<br>
+Атрибут default представляет собой значение по-умолчанию для колонки. Добавьте значение к спроецированному свойству перед сохранением нового экземпляра класса.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"credits"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"integer"</span> <span class="hljs-attr">insert</span>=<span class="hljs-string">"false"</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"credits"</span> <span class="hljs-attr">default</span>=<span class="hljs-string">"10"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">version</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"version"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"integer"</span> <span class="hljs-attr">insert</span>=<span class="hljs-string">"false"</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"version"</span> <span class="hljs-attr">default</span>=<span class="hljs-string">"0"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+</code></pre><br>
+<br>
+<b>6. Установка атрибута sql-type.</b><br>
+Используйте атрибут sql-type для переопределения маппинга по-умолчанию для типов Java на типы SQL.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"balance"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"float"</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"balance"</span> <span class="hljs-attr">sql-type</span>=<span class="hljs-string">"decimal(13,3)"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+</code></pre><br>
+<br>
+<b>7. Установка атрибута check.</b><br>
+Используйте атрибут check для указания ограничения <i>check</i>.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"foo"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"integer"</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">column</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"foo"</span> <span class="hljs-attr">check</span>=<span class="hljs-string">"foo &gt; 10"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">class</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"Foo"</span> <span class="hljs-attr">table</span>=<span class="hljs-string">"foos"</span> <span class="hljs-attr">check</span>=<span class="hljs-string">"bar &lt; 100.0"</span>&gt;</span>
+  ...
+  <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"bar"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"float"</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">class</span>&gt;</span>
+</code></pre><br>
+<br>
+<b>8.Добавление &lt;comment&gt; элементов к вашей схеме.</b><br>
+Используйте элемент &lt;comment&gt; для указания комментариев для сгенерированной схемы.<br>
+<pre><code class="xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">class</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"Customer"</span> <span class="hljs-attr">table</span>=<span class="hljs-string">"CurCust"</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">comment</span>&gt;</span>Current customers only<span class="hljs-tag">&lt;/<span class="hljs-name">comment</span>&gt;</span>
+	...
+<span class="hljs-tag">&lt;/<span class="hljs-name">class</span>&gt;</span>
+</code></pre><br>
+<br>
+<a name="1_4_2"></a><h3>1.4.2. Запуск инструмента SchemaExport</h3><br>
+Инструмент SchemaExport записывает DDL-скрипт в стандартный поток вывода, исполняет DDL, или и то, и другое сразу.<br>
+<a name="e_1_7"></a><b>Пример 1.7. Синтаксис SchemaExport</b><br>
+<pre><code class="bash hljs">java -cp hibernate_classpaths org.hibernate.tool.hbm2ddl.SchemaExport options mapping_files 
+</code></pre><br>
+<a name="t_1_4"></a><b>Таблица 1.4. Опции SchemaExport</b> <br>
+<table>
+<tbody><tr>
+<th>Опция</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>--quiet</td>
+<td>Не выводить скрипт в стандартный поток вывода</td>
+</tr>
+<tr>
+<td>--drop</td>
+<td>Только удалять таблицы</td>
+</tr>
+<tr>
+<td>--create</td>
+<td>Только создавать таблицы</td>
+</tr>
+<tr>
+<td>--text</td>
+<td>Не экспортировать в БД</td>
+</tr>
+<tr>
+<td>--output=my_schema.ddl</td>
+<td>Вывести скрипт в указанный файл</td>
+</tr>
+<tr>
+<td>--naming=eg.MyNamingStrategy</td>
+<td>выбор NamingStrategy</td>
+</tr>
+<tr>
+<td>--namingdelegator=eg.MyNamingStrategyDelegator</td>
+<td>выбор NamingStrategyDelegator</td>
+</tr>
+<tr>
+<td>--config=hibernate.cfg.xml</td>
+<td>Чтение конфигурации Hibernate из файла XML</td>
+</tr>
+<tr>
+<td>--properties=hibernate.properties</td>
+<td>Чтение свойств БД из указанного файла</td>
+</tr>
+<tr>
+<td>--format</td>
+<td>Опрятное форматирование SQL</td>
+</tr>
+<tr>
+<td>--delimiter=;</td>
+<td>Разделитель строк</td>
+</tr>
+</tbody></table><br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"> Опции --naming и --namingdelegator, не должны использоваться вместе<br>
+</div></div><br>
+<a name="e_1_8"></a><b>Пример 1.8. Встраивание SchemaExport в ваше приложение</b><br>
+<br>
+<pre><code class="java hljs">Configuration cfg = ....;
+<span class="hljs-keyword">new</span> SchemaExport(cfg).create(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">true</span>);
+</code></pre></div>
+<br><hr>
+<div class="content html_format cye-lm-tag"><i>Представляю вашему вниманию перевод <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/#d5e642">второй главы официальной документации Hibernate</a>.</i><br>
+<br>
+<i>Перевод статьи актуален для версии Hibernate 4.2.19.Final</i><br>
+<br>
+<b>Содержание</b><br>
+<br>
+&nbsp;<a href="#2_1">2.1. Определение транзакции</a><br>
+&nbsp;<a href="#2_2">2.2. Физические транзакции</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_2_1">2.2.1. Физические транзакции — JDBC</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_2_2">2.2.2. Физические транзакции — JTA</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_2_3">2.2.3. Физические транзакции — CMT</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_2_4">2.2.4. Физические транзакции — Прочее</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_2_5">2.2.5. Физические транзакции — Устаревшее</a><br>
+&nbsp;<a href="#2_3">2.3. Применение транзакций Hibernate</a><br>
+&nbsp;<a href="#2_4">2.4. Паттерны и анти-паттерны транзакций</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_4_1">2.4.1. Анти-паттерн сессия-на-операцию</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_4_2">2.4.2. Паттерн сессия-на-запрос</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#2_4_3">2.4.3. Диалоги (Conversations)</a><br>
+&nbsp;<a href="#2_5">2.5. Идентичность объекта</a><br>
+&nbsp;<a href="#2_6">2.6. Общие вопросы</a><br>
+<a name="habracut"></a><br>
+<a name="2_1"></a><h3>2.1. Определение транзакции</h3><br>
+Важно понимать, что термин “транзакция” имеет множество смыслов в отношении персистентности и объектно-реляционного проецирования.<br>
+В большинстве, но не во всех случаях, подходят следующие определения.<br>
+<ul>
+<li>Может иметь отношение к физическим транзакциям БД.</li>
+<li>Может иметь отношение к логическому понятию “транзакция”, как связанному с контекстом персистентности</li>
+<li>Может отсылать нас к понятию Unit-of-Work, как вполне определенному архитектурному шаблону.</li>
+</ul><br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">В данной документации рассматривается логическое и физическое понятия транзакции как одно понятие<br>
+</div></div><br>
+<br>
+<a name="2_2"></a><h3>2.2. Физические транзакции</h3><br>
+Hibernate использует JDBC API для персистентности. В мире Java есть два хорошо определенных механизма работы с транзакциями: непосредственно JDBC и JTA. Hibernate поддерживает оба механизма интеграции с транзакциями и позволяет приложениям управлять физическими транзакциями.<br>
+<br>
+Первая концепция в понимании поддержки транзакций в Hibernate – это интерфейс <i>org.hibernate.engine.transaction.spi.TransactionFactory</i>, который предоставляет две основные функции:<br>
+<ul>
+<li>Он позволяет Hibernate понимать семантику транзакций текущего окружения. Работаем ли мы сейчас в окружении JTA? Является ли физическая транзакция в данной момент уже активной, и.т.д</li>
+<li>Он выступает как фабрика экземпляров <i>org.hibernate.Transaction</i>, используемых приложением для управления и проверки состояния транзакций, <i>org.hibernate.Transaction</i> – понятие логической транзакции в Hibernate's. JPA имеет похожее понятие в интерфейсе <i>javax.persistence.EntityTransaction</i>.</li>
+</ul><br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"><i>javax.persistence.EntityTransaction</i> доступен только тогда, когда вы используете resource-local транзакции. Hibernate предоставляет доступ к <i>org.hibernate.Transaction</i> в независимости от окружения.<br>
+</div></div><br>
+<i>org.hibernate.engine.transaction.spi.TransactionFactory</i> – стандартный сервис Hibernate. Cм. Подробности в <a href="http://docs.jboss.org/hibernate/orm/4.3/devguide/en-US/html_single/#services-TransactionFactory">секции 7.5.16, “org.hibernate.engine.transaction.spi.TransactionFactory”</a>.<br>
+<br>
+<a name="2_2_1"></a><h3>2.2.1. Физические транзакции — JDBC</h3><br>
+Управление транзакциями при помощи JDBC достигается методами<i> java.sql.Connection.commit()</i> и <i>java.sql.Connection.rollback()</i> (JDBC не определяет явного метода для инициирования транзакции). В Hibernate, данный подход представлен классом <i>org.hibernate.engine.transaction.internal.jdbc.JdbcTransactionFactory</i><br>
+<br>
+<a name="2_2_2"></a><h3>2.2.2. Физические транзакции — JTA</h3><br>
+JTA-подход к транзакциям достигается интерфейсом <i>javax.transaction.UserTransaction</i>, получаемым из API <i>org.hibernate.service.jta.platform.spi.JtaPlatform</i>. Этот подход представлен классом <i>org.hibernate.engine.transaction.internal.jta.JtaTransactionFactory</i><br>
+См. по интеграции с JTA <a href="http://docs.jboss.org/hibernate/orm/4.3/devguide/en-US/html_single/#services-JtaPlatform">Секция 7.5.9,“org.hibernate.service.jta.platform.spi.JtaPlatform”</a><br>
+<br>
+<a name="2_2_3"></a><h3>2.2.3. Физические транзакции — CMT</h3><br>
+Другой JTA-ориентированный подход к транзакциям использует интерфейс<i> javax.transaction.TransactionManager</i>, получаемый из API <i>org.hibernate.service.jta.platform.spi.JtaPlatform</i>. Этот подход представлен классом <i>org.hibernate.engine.transaction.internal.jta.CMTTransactionFactory</i>. В актуальном окружении JEE CM, доступ до <i>javax.transaction.UserTransaction</i> закрыт.<br>
+<div class="spoiler cye-lm-tag"><b class="spoiler_title cye-lm-tag">Важно</b><div class="spoiler_text" style="display: none;">Термин CMT потенциально может ввести в заблуждение. Важная часть заключается в том, что физические JTA-транзакции управляются каким-то другим средством, отличным от API Hibernate.<br>
+</div></div><br>
+См. по интеграции с JTA <a href="http://docs.jboss.org/hibernate/orm/4.3/devguide/en-US/html_single/#services-JtaPlatform">Секция 7.5.9,“org.hibernate.service.jta.platform.spi.JtaPlatform”</a>.<br>
+<br>
+<a name="2_2_4"></a><h3>2.2.4. Физические транзакции — Прочее</h3><br>
+Также возможно подключить пользовательское решение по управлению транзакциями, реализовав контракт <i>org.hibernate.engine.transaction.spi.TransactionFactory</i>. Инициатор службы по-умолчанию имеет встроенную поддержку распознавания пользовательских решений через <i>hibernate.transaction.factory_class</i>, которое может указывать на: <br>
+<ul>
+<li>Экземпляр <i>org.hibernate.engine.transaction.spi.TransactionFactory</i>.</li>
+<li>Имя класса-реализации <i>org.hibernate.engine.transaction.spi.TransactionFactory</i>. Класс-реализация должен иметь конструктор без аргументов.</li>
+</ul><br>
+<br>
+<a name="2_2_5"></a><h3>2.2.5. Физические транзакции — Устаревшее</h3><br>
+Большинство их тех классов, названных выше, были перенесены в новые пакеты во время разработки версии 4.0. Для помощи при переходе на новую версию, Hibernate будет распознавать устаревшие имена на непродолжительный период времени.<br>
+<ul>
+<li><i>org.hibernate.transaction.JDBCTransactionFactory</i> маппится на <i>org.hibernate.engine.transaction.internal.jdbc.JdbcTransactionFactory</i></li>
+<li><i>org.hibernate.transaction.JTATransactionFactory</i> маппится на <i>org.hibernate.engine.transaction.internal.jta.JtaTransactionFactory</i></li>
+<li><i>org.hibernate.transaction.CMTTransactionFactory</i> маппится на <i>org.hibernate.engine.transaction.internal.jta.CMTTransactionFactory</i></li>
+</ul><br>
+<br>
+<a name="2_3"></a><h3>2.3. Применение транзакций Hibernate</h3><br>
+Hibernate использует соединения JDBC и ресурсы JTA напрямую, без дополнительной логики синхронизации. Для вас важно ознакомится с JDBC, ANSI SQL, и спецификой изоляции транзакций в вашей СУБД.<br>
+Hibernate не проводит синхронизацию на объектах в памяти. Поведение, определенное уровнем изоляции ваших БД-транзакций не меняется, когда вы используете Hibernate. Объект <i>org.hibernate.Session</i> выступает как предоставляющий повторяющиеся чтения (repeatable reads) и запросы кэш, ограниченный пределами транзакции.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Для уменьшения конкуренции за блокировки, транзакции должны быть как можно более короткими по времени. Долгие транзакции затрудняют масштабирование вашего приложения до высоких нагрузок. Не надо держать транзакции открытыми во время работы конечного пользователя, их нужно открывать после завершения работы пользователя. Эта концепция также по-другому называется транзакционный write-behind.<br>
+</div></div><br>
+<br>
+<a name="2_4"></a><h3>2.4. Паттерны и анти-паттерны транзакций</h3><br>
+<a name="2_4_1"></a><h3>2.4.1. Анти-паттерн сессия-на-операцию</h3><br>
+Это анти-паттерн про открытие и закрытие объекта <i>Session</i> на каждую операцию к БД в одном потоке. Это также анти-паттерн в терминах транзакций БД. Группируйте ваши вызовы в одну запланированную последовательность. Также, не делайте авто-коммит транзакции на каждое SQL-выражение. Hibernate выключает, или ожидает, что сервер приложений немедленно выключит режим авто-коммита. Транзакции к БД никогда не являлись чем-то необязательным. Все коммуникации с БД должны быть обернуты в транзакцию. Избегайте авто-коммита при чтении данных, потому как довольно редко множество небольших транзакций будут работать быстрее, чем одна должным образом определенная транзакция. К тому же, такое множество транзакций трудно поддерживать и расширять.<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Использование автокоммита не обязательно приводит к использованию БД-транзакций на каждое выражение. Вместо этого, в режиме автокоммита, драйверы JDBC просто проводят каждый вызов в рамках неявного вызова транзакции. Это тоже самое, как если бы ваше приложение проводило вызов commit() транзакции после каждого вызова JDBC.<br>
+</div></div><br>
+<a name="2_4_2"></a><h3>2.4.2. Паттерн сессия-на-запрос</h3><br>
+Наиболее распространенный паттерн транзакций. Термин “запрос” здесь следует понимать в контексте системы, реагирующей на серии запросов от пользователя/клиента. Веб-приложения является основным примером таких систем, но, конечно, не только они одни. На этапе начала обработки запроса, приложение открывает объект <i>Session</i>, инициирует транзакцию, проводит всю сопутствующую работу с данными, завершает транзакцию и закрывает <i>Session</i>. Суть паттерна – это отношение один-к-одному между транзакцией и сессией. <br>
+В рамках паттерна есть распространенная техника определения текущей сессии для упрощения передачи этой <i>Session</i> между компонентами приложения. Hibernate предоставляет поддержку данной техники через метод <i>getCurrentSession()</i> класса <i>SessionFactory</i>. Концепция «текущей» сессии должна иметь область видимости, которая определяет границы, в которых определение “текущая” верно. Это задача контракта <i>org.hibernate.context.spi.CurrentSessionContext</i>. Есть две надежно определенных области видимости:<br>
+<ul>
+<li>JTA транзакция, которая через callback может дать знать Hibernate, когда она завершилась, что в свою очередь предоставляет возможность завершить текущую сессию. Данная стратегия представлена <i>org.hibernate.context.internal.JTASessionContext</i> – реализацией контракта <i>org.hibernate.context.spi.CurrentSessionContext</i>. С использованием этой реализации, <i>Session</i> будет открыт, как только вызовется<i> getCurrentSession()</i> в пределах транзакции.</li>
+<li>Цикл запроса сам по себе. Лучше всего представлено <i>org.hibernate.context.internal.ManagedSessionContext</i> — реализацией контракта <i>org.hibernate.context.spi.CurrentSessionContext</i>. Здесь есть внешний компонент, ответственный за управлением жизненным циклом и областью видимости “текущей” сессии. На этапе старта области видимости, метод <i>bind()</i> вызывается у <i>ManagedSessionContext</i> с передачей ссылки на сессию. В конце, вызывается метод <i>unbind()</i>.</li>
+</ul> <br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Метод <i>getCurrentSession()</i> имеет одну неприятную сторону в JTA. Если вы используете его, <i>after_statement</i> режим освобождения соединений также будет использоваться по умолчанию. Из-за ограничений JTA, Hibernate не может автоматически очищать любой незакрытый экземпляр ScrollableResults или Iterator, возвращаемых <i>scroll()</i> или <i>iterate()</i>. Освобождение курсоров БД осуществляется вызовом <i>ScrollableResults.close()</i> или <i>Hibernate.close(Iterator)</i> явно из секции finally.<br>
+</div></div><br>
+<a name="2_4_3"></a><h3>2.4.3. Диалоги</h3><br>
+Паттерн сессия-на-запрос не является единственным средством дизайна unit of work. Множество бизнес-процессов требуют всей серии взаимодействий с пользователем, которые чередуются с доступом к БД. В веб- и энтерпрайз- приложениях, неприемлемо для транзакции БД охватывать все пользовательское взаимодействие. Рассмотрим следующий пример:<br>
+<br>
+<b>Процедура 2.1. Пример “долгоиграющего” диалога</b><br>
+<ol>
+<li>Открывается первый экран диалога. Данные, показываемые пользователю, подгружаются в отдельной сессии <i>Session</i> и БД-транзакции. Пользователь может модифицировать любые поля диалога.</li>
+<li>После пяти минут редактирования, пользователь использует UI элемент для сохранения. Изменения отразились в БД. Пользователь также ожидает эксклюзивного доступа к данным на время сессии редактирования</li>
+</ol><br>
+<br>
+Даже, хотя мы и имеем несколько случаев доступа к БД, с точки зрения пользователя, данная серия шагов представляет одну единицу совершенной работы (Unit of Work). Есть множество путей реализации этого в приложении.<br>
+<br>
+Первый (наивный) метод заключается в удержании открытыми сессий <i>Session</i> и транзакции на время редактирования пользователя, с использованием механизмов синхронизации БД для обеспечения эксклюзивного доступа пользователя к редактируемым данным, и предотвращению обращения к ним со стороны других пользователей, гарантируя изоляцию и атомарность. Это анти-паттерн, так как лишняя синхронизация является узким местом при проблемах производительности, встающих в высоконагруженных приложениях.<br>
+<br>
+Ряд транзакций БД используется для реализации диалога с БД. В данном случае, обеспечение изоляции бизнес-процессов ложится на плечи приложения. Один диалог обычно покрывает несколько транзакций. Множественные доступы к БД могут быть атомарными, если только одна транзакция (обычно последняя) осуществляет запись в БД. Все другие только читают данные. Типичный путь реализации – через создание wizard-style диалога, покрывающего несколько шагов цикла запрос/ответ. Hibernate включает в себя некоторые возможности, позволяющие реализовать подобный функционал.<br>
+<br>
+<ul>
+<li><b>Автоматическое версионирование</b><br>
+Hibernate может осуществлять за вас concurrency-контроль. Он может автоматически обнаружить, осуществлялись ли сторонние <br>
+обновления данных за время ожидания пользователя.<br>
+</li>
+<li><b>Отсоединенные (Detached) объекты</b><br>
+Если вы предпочтете использовать шаблон сессия-на-запрос, <br>
+все загруженные экземпляры будут отсоединены за время ожидания пользователя. Hibernate позволяет вам обратно подсоединить <br>
+объекты и сохранить модификации. Данный паттерн называется <i>сессия-на-запрос-с-отсоединенными</i> объектами. Автоматическое версионирование используется для изоляции параллельно выполняющихся запросов.<br>
+</li>
+<li><b>Расширенная сессия</b><br>
+Сессия <i>Session</i> может быть отсоединена от нижележащего JDBC соединения после того, как БД транзакция будет закоммичена, и переподсоединена, когда возникнет новый клиентский запрос. Этот паттерн называется <i>сессия-на-диалог</i>, делающий повторное соединение (reattachment) объектов ненужным. Автоматическое версионирование используется для изоляции параллельных модификаций, при этом сессия не может быть сброшена (flushed) автоматически, только явно.<br>
+</li>
+</ul><br>
+<i>Сессия-на-запрос-с-отсоединенным-объектами</i> и <i>сессия-на-диалог</i> имеют свои плюсы и минусы.<br>
+<br>
+<a name="2_5"></a><h3>2.5. Идентичность объекта</h3><br>
+Приложение может осуществлять параллельный доступ к одному и тому же persistent-состоянию (строка в базе данных) в двух разных сессиях. Однако, экземпляр persistent-класса никогда не разделяется между двумя разными сессиями. Имеют место быть и вступают в игру два разных понятия идентичности: БД-идентичность и JVM-идентичность.<br>
+<br>
+<a name="e_2_1"></a><b>Пример 2.1. БД-идентичность</b><br>
+<pre><code class="java hljs">foo.getId().equals( bar.getId() )
+</code></pre><br>
+<br>
+<a name="e_2_2"></a><b>Пример 2.2. JVM-идентичность</b><br>
+<pre><code class="java hljs">foo==bar
+</code></pre><br>
+<br>
+Для объектов, присоединенных к одной и той же сессии <i>Session</i>, два понятия идентичности эквивалентны, и JVM-идентичность гарантируется БД-идентичность Hibernate’ом. Приложение может параллельно осуществлять доступ к бизнес-объекту с одной и той же БД-идентичностью в двух разных сессиях, тем временем он будет представлен двумя разными экземплярами Java-объектов, в терминах JVM-идентичности. Разрешение конфликтов осуществляется оптимистичной стратегией и автоматическим версионированием во время сброса(flush)/коммита.<br>
+<br>
+Этот подход возлагает ответственность за управлением параллельностью на Hibernate и БД. Он также обеспечивает лучшую масштабируемость, так как дорогие блокировки не нужны для гарантии идентичности в однопоточном unit of work (single-threaded unit of work). Приложению нет нужды синхронизироваться на каком бы то ни было бизнес-объекте, пока он работает в одном потоке. Хоть это и не рекомендуется, в пределах сессии Session приложение может безопасно использовать оператор == для сравнения объектов.<br>
+<br>
+Однако, приложение, использующее оператор == за пределами сессии <i>Session</i> может внести некоторые проблемы. Если вы добавите два отсоединенных экземпляра объекта в один Set, они возможно будут иметь одну БД-идентичность, т.е они представляют одну и ту же строку в таблице. Совсем не гарантировано, что они будут иметь одну и ту же JVM-идентичность, будучи в состоянии detached. Переопределите методы equals() и hashCode() в persistent-классах, так что они будут иметь собственное определение объектной эквивалентности. Не используйте БД-идентичность для реализации проверки на равенство. Вместо этого, используйте бизнес-ключ, являющийся комбинацией уникальных, неизменяемых атрибутов. БД идентификатор может измениться, если объект перейдет из состояния transient в состояние persistent. Если transient экземпляр находится вместе с detached экземпляром в одном Set’e – изменение хэшкода нарушит контракт Set’а. Атрибуты для бизнес-ключа могут быть менее устойчивыми чем основные ключи. Вам только необходимо гарантировать стабильность до тех пор, пока объекты находятся в одном Set’е. Это не проблема Hibernate, так как относится к реализации объектной идентичности и эквивалентности в Java.<br>
+<br>
+<a name="2_6"></a><h3>2.6. Общие вопросы</h3><br>
+Оба анти-паттерна <i>сессия-на-сессию-пользователя</i> и <i>сессия-на-приложение</i> восприимчивы к следующим проблемам. Часть из этих проблем может возникнуть также и в рекомендованных шаблонах, так что для начала убедитесь, что вы понимаете последствия, перед тем как принимать какие-то решения по дизайну:<br>
+<ul>
+<li>Сессия <i>Session</i> не является потокобезопасной. Сущности, работающие параллельно, такие как HTTP-запросы, session-бины, или Swing worker’ы, приведут к возникновению ситуаций гонки (race conditions) если сессия <i>Session</i> делится между потоками. Если вы храните вашу сессию Hibernate в вашей сессии<i> javax.servlet.http.HttpSession</i> (будет обсуждено позднее), вам нужно рассмотреть проблему синхронизированного доступа к вашей <i>HttpSession</i>; иначе, пользователь, кликающий кнопку ‘Обновить’ слишком быстро, будет использовать одну и ту же сессию в двух параллельно выполняемых потоках.</li>
+<li>Исключение, выбрасываемое Hibernate’ом означает, что вы должны откатить(rollback) вашу транзакцию и закрыть сессию Session немедленно (обсуждается более подробно в следующих главах). Если ваша сессия ограничена приложением, вы должны остановить приложение. Откат транзакции не откатывает ваши бизнес-объекты до состояния, в котором они находились на момент начала транзакции. Это означает, что состояние в БД и состояние объектов подверглось рассинхронизации. Обычно, это не проблема т.к исключения не восстановимы, и вам все равно нужно будет начинать сначала после отката. </li>
+<li>Сессия кэширует каждый объект, находящийся в состоянии persistent (т.е он мониторится и проверяется на изменения Hibernate’ом). Если вы оставите ее на долговременный период, или просто загрузите слишком много данных, она вырастет многократно, до тех пор, пока вы не получите <i>OutOfMemoryException</i>. Есть решение вызывать <i>clear()</i> и <i>evict()</i> для управления кэшем сессии <i>Session</i>, но вам следует рассмотреть альтернативные способы работы с большим количеством данных, такие как хранимые процедуры. Java не является подходящим инструментом для подобного рода операций. Некоторые решения показаны в <a href="http://habrahabr.ru/post/269029/">Главе 4, Пакетная обработка</a>. Сессия, остающаяся открытой на период работы сессии пользователя также означает высокую вероятность появления “несвежих” данных.</li>
+</ul></div>
+<br><hr>
+<div class="content html_format"><i>Представляю вашему вниманию перевод <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/#batch">четвертой главы официальной документации Hibernate</a>.</i><br>
+<br>
+<i>Перевод статьи актуален для версии Hibernate 4.2.19.Final</i><br>
+<br>
+<i>Следующая глава</i> — <a href="http://habrahabr.ru/post/268903/">Документация разработчика Hibernate – Глава V. Блокировки</a><br>
+<br>
+<b>Содержание</b><br>
+&nbsp;<a href="#4_1">4.1. Пакетные вставки (Batch inserts) </a><br>
+&nbsp;<a href="#4_2">4.2. Пакетные обновления (Batch updates) </a><br>
+&nbsp;<a href="#4_3">4.3. StatelessSession</a><br>
+&nbsp;<a href="#4_4">4.4. Язык запросов Hibernate для DML</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#4_4_1">4.4.1. HQL для UPDATE и DELETE</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#4_4_2">4.4.2. HQL-синтаксис для INSERT</a><br>
+<a name="habracut"></a><br>
+Следующий пример демонстрирует анти-паттерн пакетных вставок.<br>
+<br>
+<b>Пример 4.1. Наивный способ вставки 100000 строк с помощью Hibernate</b><br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+<span class="hljs-keyword cye-lm-tag">for</span> ( <span class="hljs-keyword cye-lm-tag">int</span> i=<span class="hljs-number cye-lm-tag">0</span>; i&lt;<span class="hljs-number cye-lm-tag">100000</span>; i++ ) {
+Customer customer = <span class="hljs-keyword cye-lm-tag">new</span> Customer(.....);
+session.save(customer);
+}
+tx.commit();
+session.close();
+</code></pre><br>
+Этот код упадет с исключением <i>OutOfMemoryException</i> после обработки около 50000 строк на большинстве систем. Причина в том, что Hibernate кэширует все недавно созданные экземпляры <i>Customer</i> в кэше уровня сессии. Есть несколько путей избежания подобной проблемы.<br>
+Перед началом работы с пакетной обработкой, разрешите её использование в JDBC. Для разрешения пакетной обработки, проставьте значение между 10 и 50 в свойство <i>hibernate.jdbc.batch_size</i>.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Hibernate выключает пакетные вставки на уровне JDBC прозрачно, если вы используете генератор идентификаторов <br>
+</div></div><br>
+Если данный подход не приемлем, вы можете отключить кэш второго уровня (second-level cache), проставив свойство <i>hibernate.cache.use_second_level_cache</i> в <i>false</i><br>
+<br>
+<a name="4_1"></a><h3>4.1. Пакетные вставки</h3><br>
+Когда вы делаете новые объекты персистентными, используйте методы сессии <i>flush()</i> и <i>clear()</i> для контроля размера кэша первого уровня.<br>
+<br>
+<b>Пример 4.2. Сброс(Flushing) и очистка сессии Session</b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+   
+<span class="hljs-keyword cye-lm-tag">for</span> ( <span class="hljs-keyword cye-lm-tag">int</span> i=<span class="hljs-number cye-lm-tag">0</span>; i&lt;<span class="hljs-number cye-lm-tag">100000</span>; i++ ) {
+    Customer customer = <span class="hljs-keyword cye-lm-tag">new</span> Customer(.....);
+    session.save(customer);
+    <span class="hljs-keyword cye-lm-tag">if</span> ( i % <span class="hljs-number cye-lm-tag">20</span> == <span class="hljs-number cye-lm-tag">0</span> ) { <span class="hljs-comment cye-lm-tag">//20, same as the JDBC batch size</span>
+        <span class="hljs-comment cye-lm-tag">//flush a batch of inserts and release memory:</span>
+        session.flush();
+        session.clear();
+    }
+}
+   
+tx.commit();
+session.close();
+</code></pre><br>
+<a name="4_2"></a><h3>4.2. Пакетные обновления</h3><br>
+Используйте регулярно <i>flush()</i> и <i>clear()</i>, когда вы извлекаете и изменяете данные. В дополнение, используйте метод <i>scroll()</i> для получения преимуществ работы с курсорами БД для запросов, возвращающих большое количество строк.<br>
+<br>
+<b>Пример 4.3. Использование <i>scroll()</i></b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+   
+ScrollableResults customers = session.getNamedQuery(<span class="hljs-string cye-lm-tag">"GetCustomers"</span>)
+    .setCacheMode(CacheMode.IGNORE)
+    .scroll(ScrollMode.FORWARD_ONLY);
+<span class="hljs-keyword cye-lm-tag">int</span> count=<span class="hljs-number cye-lm-tag">0</span>;
+<span class="hljs-keyword cye-lm-tag">while</span> ( customers.next() ) {
+    Customer customer = (Customer) customers.get(<span class="hljs-number cye-lm-tag">0</span>);
+    customer.updateStuff(...);
+    <span class="hljs-keyword cye-lm-tag">if</span> ( ++count % <span class="hljs-number cye-lm-tag">20</span> == <span class="hljs-number cye-lm-tag">0</span> ) {
+        <span class="hljs-comment cye-lm-tag">//flush a batch of updates and release memory:</span>
+        session.flush();
+        session.clear();
+    }
+}
+   
+tx.commit();
+session.close()
+</code></pre><br>
+<a name="4_3"></a><h3>4.3. StatelessSession</h3><br>
+<i>StatelessSession</i> – командно-ориентированный API, предоставляемый Hibernate. Используйте его для потоковой передачи данных в базу и из нее в форме отсоединенных (detached) объектов. <i>StatelessSession</i> не имеет ассоциированного persistence-контекста и не предоставляет большую часть высокоуровневой семантики. <br>
+<br>
+<b>Особенности, не предоставляемые StatelessSession:</b><br>
+<ul>
+<li>Кэш первого уровня</li>
+<li>Взаимодействия с кэшем первого уровня или кэшем запросов</li>
+<li>Транзакционный <i>write-behind</i> или автоматические проверки на модификацию (<i>dirty checking</i>)</li>
+</ul><br>
+<b>Ограничения StatelessSession:</b><br>
+<ul>
+<li>Операции, осуществляемые сессией StatelessSession, нe осуществляются каскадно до связанных сущностей</li>
+<li>Коллекции игнорируются</li>
+<li>Операции, осуществляемые через StatelessSession, минуют событийную модель Hibernate и его перехватчики (interceptors).</li>
+<li>Из-за отсутствия кэша первого уровня, сессии StatelessSession уязвимы к появлению эффектов множественных псевдонимов данных (<i>data aliasing effect</i>s).</li>
+<li>Сессия StatelessSession – низкоуровневая абстракция, которая ближе к нижележащему JDBC.</li>
+</ul><br>
+<b>Пример 4.4. Использование StatelessSession</b><br>
+<br>
+<pre><code class="java hljs">StatelessSession session = sessionFactory.openStatelessSession();
+Transaction tx = session.beginTransaction();
+   
+ScrollableResults customers = session.getNamedQuery(<span class="hljs-string cye-lm-tag">"GetCustomers"</span>)
+    .scroll(ScrollMode.FORWARD_ONLY);
+<span class="hljs-keyword cye-lm-tag">while</span> ( customers.next() ) {
+    Customer customer = (Customer) customers.get(<span class="hljs-number cye-lm-tag">0</span>);
+    customer.updateStuff(...);
+    session.update(customer);
+}
+   
+tx.commit();
+session.close();
+</code></pre><br>
+Объекты <i>Customer</i>, возвращенные запросом, будут отсоединены немедленно. Они не будут ассоциированы с каким-либо контекстом персистентности. <br>
+<br>
+Операции <i>insert()</i>,<i> update()</i>, и <i>delete()</i>, определенные в интерфейсе <i>StatelessSession</i> работают напрямую со строками таблиц. Они приводят к немедленному выполнению соотвествующих SQL-операций, т.к имеют другую семантику, нежели методы <i>save()</i>, <i>saveOrUpdate()</i>, и <i>delete()</i>, определенные в интерфейсе Session.<br>
+<br>
+<a name="4_4"></a><h3>4.4. Язык запросов Hibernate для DML</h3><br>
+DML, или <i>Data Markup Language</i>, имеет отношение к таким SQL-выражениям, как INSERT, UPDATE, и DELETE. Hibernate предоставляет методы для группового выполнения SQL-подобных DML операций, в форме HQL(<i>Hibernate Query Language</i>).<br>
+<br>
+<a name="4_4_1"></a><h3>4.4.1 HQL для UPDATE и DELETE</h3><br>
+<br>
+<b>Пример 4.5. Псевдо-синтаксис для UPDATE и DELETE выражений с использованием HQL</b><br>
+<br>
+<pre><code class="sql hljs">( <span class="hljs-keyword cye-lm-tag">UPDATE</span> | <span class="hljs-keyword cye-lm-tag">DELETE</span> ) <span class="hljs-keyword cye-lm-tag">FROM</span>? EntityName (<span class="hljs-keyword cye-lm-tag">WHERE</span> where_conditions)?
+</code></pre><br>
+Суффикс? означает необязательный параметр. FROM и WHERE оба необязательны.<br>
+FROM может указывать только на одну сущность, которая может иметь псевдоним. Если имя сущности имеет псевдоним, любые ссылки на свойства должны быть ограничены (qualified) этим псевдонимом. Если имя сущности не имеет псевдонима, в таком случае ссылки не должны ограничиваться (qualified).<br>
+<br>
+Join’ы, неявные или явные, запрещены в групповых HQL-запросах. Вы можете использовать подзапросы в выражении WHERE, и подзапросы сами по себе могут содержать join’ы.<br>
+<br>
+<b>Пример 4.6. Выполнение HQL UPDATE, используя метод Query.executeUpdate()</b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+
+String hqlUpdate = <span class="hljs-string cye-lm-tag">"update Customer c set c.name = :newName where c.name = :oldName"</span>;
+<span class="hljs-comment cye-lm-tag">// or String hqlUpdate = "update Customer set name = :newName where name = :oldName";</span>
+<span class="hljs-keyword cye-lm-tag">int</span> updatedEntities = session.createQuery( hqlUpdate )
+        .setString( <span class="hljs-string cye-lm-tag">"newName"</span>, newName )
+        .setString( <span class="hljs-string cye-lm-tag">"oldName"</span>, oldName )
+        .executeUpdate();
+tx.commit();
+session.close();
+</code></pre><br>
+В соответствии со спецификацией EJB3, выражения HQL UPDATE, по-умолчанию не затрагивают значения версии или временной метки (timestamp) у модифицированных сущностей. Вы можете использовать апдейт c поддержкой версий, чтобы заставить Hibernate сбросить версию или временную метку, добавив ключевое слово VERSIONED после UPDATE.<br>
+<br>
+<b>Пример 4.7. Апдейт версии временной метки</b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+String hqlVersionedUpdate = <span class="hljs-string cye-lm-tag">"update versioned Customer set name = :newName where name = :oldName"</span>;
+<span class="hljs-keyword cye-lm-tag">int</span> updatedEntities = session.createQuery( hqlUpdate )
+        .setString( <span class="hljs-string cye-lm-tag">"newName"</span>, newName )
+        .setString( <span class="hljs-string cye-lm-tag">"oldName"</span>, oldName )
+        .executeUpdate();
+tx.commit();
+session.close();
+</code></pre><br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Если вы используете выражение VERSIONED, вы не можете использовать пользовательские типы версий, которые используют класс <i>org.hibernate.usertype.UserVersionType</i><br>
+</div></div><br>
+<b>Пример 4.8. Выражение HQL <i>DELETE</i></b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+
+String hqlDelete = <span class="hljs-string cye-lm-tag">"delete Customer c where c.name = :oldName"</span>;
+<span class="hljs-comment cye-lm-tag">// or String hqlDelete = "delete Customer where name = :oldName";</span>
+<span class="hljs-keyword cye-lm-tag">int</span> deletedEntities = session.createQuery( hqlDelete )
+        .setString( <span class="hljs-string cye-lm-tag">"oldName"</span>, oldName )
+        .executeUpdate();
+tx.commit();
+session.close();
+</code></pre><br>
+Метод <i>Query.executeUpdate()</i> возвращает значение типа <i>int</i>, которое показывают число затронутых операцией сущностей. Данное число не обязательно должно коррелировать с числом строк, обновленных в базе данных. Групповая операция в HQL может представлять из себя несколько SQL-выражений, например для соединяемого подкласса (joined-subclass). В примере с соединяемым подклассом, DELETE для одного из подклассов может на самом деле привести к удалениям в таблицах, нижележащих под join’ом или ниже по иерархии наследования.<br>
+<br>
+<a name="4_4_2"></a><h3>4.4.2 HQL-синтаксис для INSERT</h3><br>
+<b>Пример 4.9. Псевдо-синтаксис для выражений INSERT</b><br>
+<br>
+<pre><code class="sql hljs"><span class="hljs-keyword cye-lm-tag">INSERT</span> <span class="hljs-keyword cye-lm-tag">INTO</span> EntityName properties_list select_statement
+</code></pre><br>
+Поддерживается только форма INSERT INTO… SELECT… Вы не можете указать явные значения для вставки.<br>
+<br>
+<b><i>properties_list</i></b> это аналог для спецификации колонок в SQL-выражении INSERT. Для сущностей, вовлеченных в наследование маппинга (<i>mapped inheritance</i>), вы можете указывать свойства, прямо указанные в самом классе, но не из подклассов или родительского класса. Другими словами, выражение INSERT, по своей сути не полиморфно.<br>
+<br>
+<b><i>select_statement</i></b> может быть любым валидным HQL запросом на выборку (select), но возвращаемые типы должны соответствовать типам, ожидаемым в INSERT. Hibernate проверяет возвращаемые типы во время компиляции, не ожидая, пока их проверит СУБД. Проблемы могут идти от типов Hibernate, которые скорее эквивалентны, но не равны. Один из примеров этого заключается в несоответствии свойства, определенного как org.hibernate.type.DateType и свойства, определенного как org.hibernate.type.TimestampType, даже если БД не делает их различения, или способна сама сделать конверсию типов.<br>
+<br>
+Если свойство <i>id</i> не указано в <b><i>properties_list</i></b>, Hibernate генерирует значение автоматически. Автоматическая генерация доступна только если вы используете id-генераторы. Иначе, Hibernate кинет исключение во время разбора. Доступные для баз данных генераторы это <i>org.hibernate.id.SequenceGenerator</i> и его подклассы, и объекты, реализующие <i>org.hibernate.id.PostInsertIdentifierGenerator</i>. Наиболее примечательное исключение это <i>org.hibernate.id.TableHiLoGenerator</i>, который не предоставляет какого-либо способа получения его значений.<br>
+Для свойств, спроецированных как версия или временная метка, выражение insert предоставляет вам два варианта. Вы можете или указать свойство в <b><i>properties_list</i></b>, в таком случае значение возьмется из сопутствующего select-выражения, или убрать из <b><i>properties_list</i></b>, в таком случае будет использоваться начальное (seed) значение, определенное в <i>org.hibernate.type.VersionType</i>.<br>
+<br>
+<b>Пример 4.10. Выражение HQL INSERT </b><br>
+<br>
+<pre><code class="java hljs">Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+
+String hqlInsert = <span class="hljs-string cye-lm-tag">"insert into DelinquentAccount (id, name) select c.id, c.name from Customer c where ..."</span>;
+<span class="hljs-keyword cye-lm-tag">int</span> createdEntities = session.createQuery( hqlInsert )
+        .executeUpdate();
+tx.commit();
+session.close();
+</code></pre></div>
+<br><hr>
+<div class="content html_format cye-lm-tag"><i>Представляю вашему вниманию перевод <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/#d5e1219">пятой главы официальной документации Hibernate</a>.</i><br>
+<br>
+<i>Перевод статьи актуален для версии Hibernate 4.2.19.Final</i><br>
+<br>
+<i>Предыдущая глава</i> — <a href="http://habrahabr.ru/post/269029/" class="cye-lm-tag">Документация разработчика Hibernate – Глава IV. Пакетная обработка</a><br>
+<i>Следующая глава</i> — <a href="http://habrahabr.ru/post/268747/">Документация разработчика Hibernate – Глава VI. Кэширование</a><br>
+<br>
+<b>Содержание</b><br>
+&nbsp;<a href="#5_1">5.1. Оптимистичные блокировки </a><br>
+&nbsp;&nbsp;&nbsp;<a href="#5_1_1">5.1.1 Выделенный номер версии </a><br>
+&nbsp;&nbsp;&nbsp;<a href="#5_1_2">5.1.2. Timestamp</a><br>
+&nbsp;<a href="#5_2">5.2. Пессимистичные блокировки</a><br>
+<a name="habracut"></a><br>
+Блокировки – это меры по предотвращению модификации данных в реляционной базе данных между временем их чтения, и временем их использования.<br>
+Стратегия блокировок может быть либо оптимистичной, либо пессимистичной.<br>
+<br>
+<b>Стратегии блокировок</b><br>
+<br>
+<b>Оптимистичная</b><br>
+Оптимистичные блокировки предполагают, что множество транзакций могут завершиться без влияния друг на друга, и таким образом могут выполнятся без блокировок тех ресурсов, на которые они влияют. Перед коммитом, каждая транзакция проверяет, что ни одна другая транзакция не модифицировала ее данные. Если проверка выявила конфликтующие модификации, транзакция, находящаяся в состоянии коммита, откатывается.<br>
+<br>
+<b>Пессимистичная</b><br>
+Пессимистичная стратегия подразумевает, что параллельные транзакции будут конфликтовать каждая друг с другом, и требует блокировки ресурсов после их чтения, а также ее снятия только после того, как приложение завершило использование данных.<br>
+Hibernate предоставляет механизмы для реализации обеих стратегий блокировок в вашем приложении.<br>
+<br>
+<a name="5_1"></a><h3>5.1. Оптимистичные блокировки</h3><br>
+Вы можете хранить версионированные данные, когда ваше приложение использует долгоживущие транзакции или диалоги, покрывающие несколько БД-транзакций. Таким образом, если одна и та же сущность будет модифицироваться двумя диалогами, последний диалог, коммитивший изменения, будет оповещен о конфликте, и не перезапишет результаты другого диалога. Этот подход гарантирует некоторую степень изоляции, но при этом хорошо масштабируется, и довольно неплохо себя показывает в ситуациях <i>Read-Often Write-Sometimes</i><br>
+Hibernate предоставляет два различных механизма для хранения версионной информации – выделенный номер версии, или временную метку (<i>timestamp</i>).<br>
+<br>
+<b>Номер версии</b><br>
+<b>Временная метка</b><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"> Свойство версии или временной метки не может быть <i>null</i> для отсоединенных (<i>detached</i>) объектов. Hibernate распознает любой экземпляр с версией ( или временной меткой) равной <i>null</i> как <i>transient</i>, в независимости от других стратегий <i>unsaved-value</i>* которые вы указываете. Объявление null-ового свойства версии или временной метки – легкий способ избежать проблемы с транзитивным повторным соединением(<i>transitive reattachment</i>) в Hibernate, являющееся особенно полезным в случаях, где вы используете присоединенные (<i>assigned</i>) идентификаторы или композитные ключи.<br>
+<br>
+* <b>unsaved-value</b> – стратегия определения операции UPDATE или INSERT для синхронизации с БД, зависящая от значения свойства, проецирующегося с помощью id, version, или timestamp (прим. перев.)<br>
+</div></div><br>
+<a name="5_1_1"></a><h3>5.1.1. Выделенный номер версии</h3><br>
+Механизм номера версии для оптимистичных блокировок предоставляется аннотацией Version.<br>
+<br>
+<a name="e_5_1"></a><b>Пример 5.1. Аннотация Version</b><br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Flight</span> <span class="hljs-keyword cye-lm-tag">implements</span> <span class="hljs-title cye-lm-tag">Serializable</span> </span>{
+...
+<span class="hljs-meta cye-lm-tag">@Version</span>
+<span class="hljs-meta cye-lm-tag">@Column</span>(name=<span class="hljs-string cye-lm-tag">"OPTLOCK"</span>)
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Integer <span class="hljs-title cye-lm-tag">getVersion</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+}
+
+</code></pre><br>
+Здесь свойство версии маппится на колонку OPTLOCK, а менеджер сущностей (<i>entity manager</i>) использует ее для выявления конфликтующих обновлений, и предотвращения потери обновлений, которые были бы перезаписаны стратегией <i>last-commit-wins</i><br>
+<br>
+Колонка версии может быть любого типа, при условии, что вы определите и реализуете подходящий <i>UserVersionType</i>.<br>
+<br>
+Вашему приложению запрещено изменять номер версии, проставленный Hibernate. Чтобы искусственно увеличить номер версии, см. описание свойств <i>LockModeType.OPTIMISTIC_FORCE_INCREMENT</i> или <i>LockModeType.PESSIMISTIC_FORCE_INCREMENT</i> в документации по Hibernate Entity Manager. Если номер версии сгенерирован базой данных, например триггером, используйте аннотацию <i>org.hibernate.annotations.Generated(GenerationTime.ALWAYS)</i>.<br>
+<br>
+<a name="e_5_2"></a><b>Пример 5.2. Объявление свойства версии в hbm.xml</b><br>
+<br>
+<pre><code class="xml hljs"><span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">version</span>
+        <span class="hljs-attr cye-lm-tag">column</span>=<span class="hljs-string cye-lm-tag">"version_column"</span>
+        <span class="hljs-attr cye-lm-tag">name</span>=<span class="hljs-string cye-lm-tag">"propertyName"</span>
+        <span class="hljs-attr cye-lm-tag">type</span>=<span class="hljs-string cye-lm-tag">"typename"</span>
+        <span class="hljs-attr cye-lm-tag">access</span>=<span class="hljs-string cye-lm-tag">"field|property|ClassName"</span>
+        <span class="hljs-attr cye-lm-tag">unsaved-value</span>=<span class="hljs-string cye-lm-tag">"null|negative|undefined"</span>
+        <span class="hljs-attr cye-lm-tag">generated</span>=<span class="hljs-string cye-lm-tag">"never|always"</span>
+        <span class="hljs-attr cye-lm-tag">insert</span>=<span class="hljs-string cye-lm-tag">"true|false"</span>
+        <span class="hljs-attr cye-lm-tag">node</span>=<span class="hljs-string cye-lm-tag">"element-name|@attribute-name|element/@attribute|."</span>
+        /&gt;</span>
+</code></pre><br>
+<table>
+<tbody><tr>
+<th>Имя</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>column</td>
+<td>Имя колонки, в которой находится номер версии. <br>
+Опционально, по-умолчанию такое же как у имени свойства.</td>
+</tr>
+<tr>
+<td>name</td>
+<td>Имя свойства персистентного класса.</td>
+</tr>
+<tr>
+<td>type</td>
+<td>Тип номера версии. Опционально, по-умолчанию integer.</td>
+</tr>
+<tr>
+<td>access</td>
+<td>Стратегия Hibernate для доступа к значению свойства. Опционально, по-умолчанию property</td>
+</tr>
+<tr>
+<td>unsaved-value</td>
+<td>Показывает, что экземпляр только что создан и тем самым не сохранен. Выделяет из отсоединенных сущностей (<i>detached</i>). <br>
+Значение по-умолчанию, <i>undefined</i>, показывает, что свойство-идентификатор не должно использоваться. Опционально.</td>
+</tr>
+<tr>
+<td>generated</td>
+<td>Показывает, что свойство версии должно генерироваться базой данных. <br>
+Опционально, по-умолчанию never.</td>
+</tr>
+<tr>
+<td>insert</td>
+<td>Включать или нет колонку версии в выражение SQL-insert. По-умолчанию true, but вы можете поставить это в false если колонка в БД определена со значением по-умолчанию 0</td>
+</tr>
+</tbody></table><br>
+<br>
+<a name="5_1_2"></a><h3>5.1.2. Timestamp</h3><br>
+Временные метки (timestamps) — менее надежный способ оптимистичных блокировок чем номера версий, который также может быть использован приложениями для других целей. Временные метки используются автоматически, если вы используете аннотацию <i>Version</i> на свойстве типа <i>Date</i> или <i>Calendar</i>.<br>
+<br>
+<a name="e_5_3"></a><b>Пример 5.3. Использование временных меток для оптимистичных блокировок</b><br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Flight</span> <span class="hljs-keyword cye-lm-tag">implements</span> <span class="hljs-title cye-lm-tag">Serializable</span> </span>{
+...
+<span class="hljs-meta cye-lm-tag">@Version</span>
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Date <span class="hljs-title cye-lm-tag">getLastUpdate</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+}
+</code></pre><br>
+Hibernate может извлечь значение временной метки из базы данных или JVM, прочитав значение аннотации <i>org.hibernate.annotations.Source</i>. Значение может быть либо <i>org.hibernate.annotations.SourceType.DB</i>, либо <i>org.hibernate.annotations.SourceType.VM</i>. Поведение по-умолчанию – это использование БД, также используемое, если вы не укажете аннотацию.<br>
+Временная метка также может быть сгенерирована базой данных вместо Hibernate, если вы используете аннотацию <i>org.hibernate.annotations.Generated(GenerationTime.ALWAYS)</i>.<br>
+<br>
+<b>Пример 5.4. Элемент timestamp в hbm.xml</b><br>
+<br>
+<pre><code class="xml hljs"><span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">timestamp</span>
+        <span class="hljs-attr cye-lm-tag">column</span>=<span class="hljs-string cye-lm-tag">"timestamp_column"</span>
+        <span class="hljs-attr cye-lm-tag">name</span>=<span class="hljs-string cye-lm-tag">"propertyName"</span>
+        <span class="hljs-attr cye-lm-tag">access</span>=<span class="hljs-string cye-lm-tag">"field|property|ClassName"</span>
+        <span class="hljs-attr cye-lm-tag">unsaved-value</span>=<span class="hljs-string cye-lm-tag">"null|undefined"</span>
+        <span class="hljs-attr cye-lm-tag">source</span>=<span class="hljs-string cye-lm-tag">"vm|db"</span>
+        <span class="hljs-attr cye-lm-tag">generated</span>=<span class="hljs-string cye-lm-tag">"never|always"</span>
+        <span class="hljs-attr cye-lm-tag">node</span>=<span class="hljs-string cye-lm-tag">"element-name|@attribute-name|element/@attribute|."</span>
+        /&gt;</span>
+</code></pre><br>
+<table>
+<tbody><tr>
+<th>Имя</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>column</td>
+<td>Имя колонки, в которой находится временная метка. Опционально, по-умолчанию<br>
+ такое же, как и имя свойства.</td>
+</tr>
+<tr>
+<td>name</td>
+<td>Имя JavaBeans-свойства типа Date или Timestamp у персистентного свойства.</td>
+</tr>
+<tr>
+<td>access</td>
+<td>Стратегия, которую Hibernate использует для доступа к значению свойства. <br>
+Опционально, по-умолчанию property.</td>
+</tr>
+<tr>
+<td>unsaved-value</td>
+<td>Показывает, что экземпляр только что создан и тем самым не сохранен. Выделяет<br>
+ из отсоединенных сущностей (detached). Значение по-умолчанию, undefined, показывает<br>
+ что свойство-идентификатор не должно использоваться. Опционально.<br>
+ </td>
+</tr>
+<tr>
+<td>source</td>
+<td>Извлекает ли Hibernate метку из БД или из текущей JVM. БД-метки вносят дополнительный оверхэд, т.к Hibernate нужно запрашивать БД каждый раз для определения инкремента. <br>
+Однако, БД-метки более безопасны при использовании в<br>
+ кластеризованном окружении.<br>
+Не все диалекты БД поддерживают извлечение текущих временных меток из БД. Другие могут быть небезопасны для блокировок, из-за нехватки точности.<br>
+ </td>
+</tr>
+<tr>
+<td>generated</td>
+<td>Генерируется ли метки средствами БД. Опционально, по-умолчанию never.</td>
+</tr>
+</tbody></table><br>
+<br>
+<a name="5_2"></a><h3>5.2. Пессимистичные блокировки</h3><br>
+Класс <i>LockMode</i> определяет различные уровни блокировок, которые может захватывать Hibernate.<br>
+<br>
+<ul>
+<li><b>LockMode.WRITE</b><br>
+ Захватывается автоматически, когда Hibernate обновляет или вставляет строку.</li>
+<li><b>LockMode.UPGRADE</b><br>
+ Захватывается после явного запроса пользователя с использованием SELECT… FOR UPDATE на БД, поддерживающих данный синтаксис.</li>
+<li><b>LockMode.UPGRADE_NOWAIT</b><br>
+ Захватывается после явного запроса пользователя с использованием SELECT… FOR UPDATE NOWAIT в Oracle</li>
+<li><b>LockMode.READ</b><br>
+ Захватывается автоматически когда Hibernate читает данные под уровнями изоляции Repeatable Read или Serializable. Может быть повторно захвачен явным запросом пользователя.</li>
+<li><b>LockMode.NONE</b><br>
+ Отсутствие блокировки. Все объекты переключаются на этот режим блокировки в конце транзакции. Объекты, ассоциированные с сессией<br>
+ через вызов update() или saveOrUpdate также начинают в этом режиме .</li>
+</ul><br>
+Явный запрос пользователя, обозначенный выше, происходит как следствие любых из следующих действий:<br>
+<ul>
+<li>Вызов <i>Session.load()</i>, с указанием <i>LockMode</i></li>
+<li>Вызов <i>Session.lock()</i></li>
+<li>Вызов <i>Query.setLockMode()</i></li>
+</ul><br>
+Если вы вызовете <i>Session.load()</i> с опцией UPGRADE или UPGRADE_NOWAIT, и запрошенный объект еще не подгрузился сессией, объект подгружается с помощью SELECT… FOR UPDATE. Если вы вызовете <i>load()</i> для объекта, которые уже подгружен с менее строгой блокировкой, чем с той, что вы запросили, Hibernate вызовет <i>lock()</i> для этого объекта.<br>
+<i>Session.lock()</i> осуществляет проверку номера версии в режимах READ, UPGRADE, или UPGRADE_NOWAIT. В случаях UPGRADE или UPGRADE_NOWAIT, будет использован синтаксис SELECT… FOR UPDATE.<br>
+Если запрошенный режим блокировки не поддерживается базой данных, Hibernate будет использовать подходящий альтернативный режим вместо выбрасывания исключения. Это гарантирует переносимость приложений.</div>
+<br><hr>
+<div class="content html_format"><i>Представляю вашему вниманию перевод <a href="http://docs.jboss.org/hibernate/orm/4.2/devguide/en-US/html_single/#d5e1433">шестой главы официальной документации Hibernate</a>.</i><br>
+<br>
+<i>Перевод статьи актуален для версии Hibernate 4.2.19.Final</i><br>
+<br>
+<i>Предыдущая глава</i> — <a href="http://habrahabr.ru/post/268903/">Документация разработчика Hibernate – Глава V. Блокировки</a><br>
+<br>
+Что собой представляют кэш первого и второго уровня в Hibernate, показано на следующий диаграмме (<i>прим. автора</i>).<br>
+<br>
+<img src="https://habrastorage.org/getpro/habr/post_images/0f9/618/0aa/0f96180aa21a8a39665c3b3ad3bd2a31.jpg" alt="image"><br>
+<a name="6_1"></a><h3>6.1. Кэш запросов</h3><br>
+Если у вас есть запросы, выполняющиеся снова и снова, с одними и теми же параметрами, кэширование запросов предоставит выигрыш в производительности.<br>
+<br>
+Кэширование вводит дополнительные накладные расходы в области выполнения транзакций. К примеру, если вы кэшируете результаты запроса по отношению к какому-либо объекту, Hibernate необходимо отслеживать, были ли закоммичены какие-либо изменения по объекту, и в соответствии с этим, аннулировать записи в кэше. В дополнение, плюсы от кэширования запросов ограничены, и очень зависят от шаблонов использования вашего приложения. По этим причинам, Hibernate по-умолчанию выключает кэширование запросов.<br>
+<a name="habracut"></a><br>
+<h4>Процедура 6.1. Разрешение кэширования запросов</h4><br>
+<ol>
+<li><strong>Выставьте свойство <em>hibernate.cache.use_query_cache</em> в <em>true</em>.</strong><br>
+<br>
+Эта настройка создаст два новых региона кэширования:<br>
+<br>
+<ul>
+<li><em>org.hibernate.cache.internal.StandardQueryCache</em> хранит результаты кэшированных запросов.</li>
+<li><em>org.hibernate.cache.spi.UpdateTimestampsCache</em> хранит временные метки недавних апдейтов в запрашиваемые таблицы. Эти временные метки валидируют результаты, берущиеся из кэша запроса (т.е. через них проверяется актуальность объектов, — <b>прим.перев</b>.)</li>
+</ul><br>
+ </li>
+<li><strong>Настройте таймаут региона кэширования</strong><br>
+<br>
+Если вы конфигурируете таймауты или окончание срока в вашей реализации кэша, выставьте таймаут нижележащего кэш-региона для <em>UpdateTimestampsCache</em> на большее значение, чем таймауты любого из кэшей запросов. Вполне возможно, и рекомендуется, выставлять бесконечный таймаут истечения у региона <em>UpdateTimestampsCache</em>. Если быть более конкретным, LRU-политика кэширования (Least Recently Used) не считается подходящей.<br>
+ </li>
+<li><strong>Разрешите кэширование результатов для конкретных запросов</strong><br>
+<br>
+Так как большая часть запросов не выигрывает от кэширования, вам нужно разрешить кэширование только для индивидуальных запросов, даже после повсеместного разрешения кэширования. Для того, чтобы разрешить кэширование для определенного запроса, вызовите <em>org.hibernate.Query.setCacheable(true)</em>. Вызов позволит запросу ”заглянуть” в кэш перед выполнением, или положить туда результаты после выполнения.<br>
+ </li>
+</ol><br>
+Кэш запросов не кэширует состояние актуальных сущностей в кэше. Он кэширует значения идентификаторов и результаты типов. Таким образом, всегда используете кэш запросов в паре с кэшем второго уровня для тех сущностей, которые должны кэшироваться как часть кэша запросов.<br>
+<br>
+<a name="6_1_1"></a><h3>6.1.1. Регионы кэша запросов</h3><br>
+Для лучшего контроля за политиками истечения актуальности у кэшей запросов, укажите именованный регион кэширования для определенного запроса, вызвав <em>Query.setCacheRegion()</em>.<br>
+<br>
+<b>Пример 6.1. Метод setCacheRegion</b><br>
+<br>
+<pre><code class="java hljs">List blogs = sess.createQuery(<span class="hljs-string cye-lm-tag">"from Blog blog where blog.blogger = :blogger"</span>)
+.setEntity(<span class="hljs-string cye-lm-tag">"blogger"</span>, blogger)
+.setMaxResults(<span class="hljs-number cye-lm-tag">15</span>)
+.setCacheable(<span class="hljs-keyword cye-lm-tag">true</span>)
+.setCacheRegion(<span class="hljs-string cye-lm-tag">"frontpages"</span>)
+.list();
+</code></pre><br>
+Чтобы заставить кэш запросов обновить один из его регионов, и проигнорировать любые закэшированные данные, вызовите <i>org.hibernate.Query.setCacheMode(CacheMode.REFRESH)</i>. В паре с регионом, определенным для запроса, Hibernate выборочно обновит результаты, закэшированные в данном регионе. Это более эффективно, нежели групповое удаление записей (<i>bulk eviction</i>) из региона c помощью <i>org.hibernate.SessionFactory.evictQueries()</i>.<br>
+<br>
+<a name="6_2"></a><h3>6.2. Провайдеры кэша второго уровня</h3><br>
+Hibernate совместим с некоторыми провайдерами кэша второго уровня. Ни один из провайдеров не поддерживает абсолютно все возможные стратегии кэширования, определенные в Hibernate. <a href="#6_2_3">Секция 6.2.3, “Провайдеры кэша второго уровня для Hibernate”</a> содержит список провайдеров, вместе с их интерфейсами и поддерживаемыми стратегиями кэширования. Для определений стратегий кэширования, см. <a href="#6_2_2">Секцию 6.2.2, “Стратегии кэширования”</a>.<br>
+<br>
+<a name="6_2_1"></a><h3>6.2.1. Конфигурация пользовательских кэш-провайдеров</h3><br>
+Вы можете конфигурировать ваши кэш-провайдеры, используя аннотации или файлы маппинга. Сущности, по-умолчанию, не являются частью кэша второго уровня, и их использование не рекомендуется. Если вам все равно необходимо использовать сущности, установите элемент <i>shared-cache-mode</i> в <i>persistence.xml</i>, или используйте свойство <i>javax.persistence.sharedCache.mode</i> в вашей конфигурации. Используйте одно из значений <a href="#t_6_1">Таблицы 6.1, “Возможные значения для Shared Cache Mode”</a>.<br>
+<br>
+<b>Таблица 6.1. Возможные значения для Shared Cache Mode</b><br>
+<table>
+<tbody><tr>
+<th>Значение</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td>ENABLE_SELECTIVE</td>
+<td>Сущности не будут кэшироваться, до тех пор, пока вы явно не пометите их как кэшируемые.<br>
+Это значение рекомендуется и используется по-умолчанию.</td>
+</tr>
+<tr>
+<td>DISABLE_SELECTIVE</td>
+<td>Сущности будут кэшироваться, до тех пор, пока вы явно не отмените кэширование на них.</td>
+</tr>
+<tr>
+<td>ALL</td>
+<td>Все сущности будут кэшироваться, в независимости от того, пометите ли вы их как некэшируемые.</td>
+</tr>
+<tr>
+<td>NONE</td>
+<td>Ни одна сущность не будет кэшироваться, даже если вы пометите их как кэшируемые. Эта опция отменяет <br>
+работу кэша второго уровня.</td>
+</tr>
+</tbody></table><br>
+Глобальная concurrency-стратегия устанавливается с помощью свойства <i>hibernate.cache.default_cache_concurrency_strategy</i>. См. возможные значения в <a href="#6_2_2">секции 6.2.2, “Стратегии кэширования”</a>.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text">Когда это возможно, определяйте concurrency-стратегию кэширования только для определенной сущности, но не глобально. Используйте аннотацию <i>@org.hibernate.annotations.Cache</i>.<br>
+</div></div><br>
+<b>Пример 6.2. Конфигурация кэш-провайдеров с использованием аннотаций.</b><br>
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-meta cye-lm-tag">@Cacheable</span>
+<span class="hljs-meta cye-lm-tag">@Cache</span>(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Forest</span> </span>{ ... }
+</code></pre><br>
+Вы можете кэшировать содержимое коллекций или идентификаторов, если коллекция содержит другие сущности. Используйте аннотацию <i>@Cache</i> на свойстве коллекции.<br>
+<br>
+<i>@Cache</i> содержит несколько атрибутов.<br>
+<br>
+<b>Атрибуты аннотации <i>@Cache</i>:</b><br>
+<table>
+<tbody><tr>
+<th>Имя</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td><b>usage</b></td>
+<td>Заданная concurrency-стратегия кэша, которая может быть:<br>
+ <ul>
+<li>NONE</li>
+<li>READ_ONLY</li>
+<li>NONSTRICT_READ_WRITE</li>
+<li>READ_WRITE</li>
+<li>TRANSACTIONAL</li>
+</ul><br>
+ </td>
+</tr>
+<tr>
+<td><b>region</b></td>
+<td>Регион кэширования. Этот атрибут опционален, и по-умолчанию совпадает с полным именем класса, или <br>
+ролевым именем коллекции (qualified role name of the collection).</td>
+</tr>
+<tr>
+<td><b>include</b></td>
+<td>Включать или нет все свойства. Опционально, и может принимать два возможных значения.<br>
+ <ul>
+<li>Значение all — включаются все свойства. Используется по-умолчанию.</li>
+<li>Значение non-lazy включает только non-lazy свойства.</li>
+</ul><br>
+ </td>
+</tr>
+</tbody></table><br>
+<br>
+<a name="e_6_3"></a><b>Пример 6.3. Конфигурация кэш-провайдеров с использованием файлов маппинга.</b><br>
+<pre><code class="xml hljs"><span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">cache</span>
+        <span class="hljs-attr cye-lm-tag">usage</span>=<span class="hljs-string cye-lm-tag">"transactional"</span>
+        <span class="hljs-attr cye-lm-tag">region</span>=<span class="hljs-string cye-lm-tag">"RegionName"</span>
+        <span class="hljs-attr cye-lm-tag">include</span>=<span class="hljs-string cye-lm-tag">"all"</span>
+        /&gt;</span>
+</code></pre><br>
+Как и в <a href="#e_6_2">Примере 6.2, “Конфигурация кэш-провайдеров с использованием аннотаций”</a>, вы можете указывать атрибуты в файлах маппинга. Есть несколько специфических различий в синтаксисе атрибутов в файлах маппинга.<br>
+<table>
+<tbody><tr>
+<th>Имя</th>
+<th>Описание</th>
+</tr>
+<tr>
+<td><b>usage</b></td>
+<td>Стратегия кэширования. Этот атрибут обязателен, и может принимать любое из следующих значений:<br>
+ <ul>
+<li>transactional</li>
+<li>read-write</li>
+<li>nonstrict-read-write</li>
+<li>read-only</li>
+</ul><br>
+ </td>
+</tr>
+<tr>
+<td><b>region</b></td>
+<td>Имя региона кэша второго уровня. По-умолчанию совпадает полным именем класса или ролевым именем коллекции.</td>
+</tr>
+<tr>
+<td><b>include</b></td>
+<td>Могут ли свойства сущности, указанные с lazy=true, кэшироваться, когда разрешена <br>
+”ленивая” выборка на уровне атрибутов. По-умолчанию all и может быть также non-lazy</td>
+</tr>
+</tbody></table><br>
+Вместо <i>cache</i>, вы можете использовать элементы <i>class-cache</i>, <i>collection-cache</i> в <b><i>hibernate.cfg.xml</i></b>.<br>
+<br>
+<a name="6_2_2"></a><h3>6.2.2. Стратегии кэширования</h3><br>
+<ul>
+<li><b>read-only</b><br>
+<br>
+Read-only кэш хорош для данных, которые читаются, но не изменяются. Простой, хорошо работающий подход, безопасный к тому же в кластеризованном окружении.</li>
+<li><b>nonstrict read-write</b><br>
+<br>
+Некоторым приложениям необходимо лишь иногда читать данные. Это тот случай, когда две транзакции врядли одновременно обновят одну и ту же сущность. В таком случае, вам не нужно ограничивать изоляцию транзакций, и nonstrict-read-write кэш весьма подходящ. Если кэш используется в JTA-окружении, вы должны указать <i>hibernate.transaction.manager_lookup_class</i>. В других окружениях, убедитесь что транзакция завершена, перед тем как вызвать <i>Session.close()</i> или <i>Session.disconnect()</i>.<br>
+ </li>
+<li><b>read-write</b><br>
+<br>
+Read-write кэш подходит для приложения, где данные обновляются регулярно. Не используйте read-write стратегию, если вам нужна сериализуемая изоляция транзакций. В JTA-окружении, укажите стратегию для получения JTA <i>TransactionManager</i>, выставив свойство <i>hibernate.transaction.manager_lookup_class</i>. В не-JTA окружениях, убедитесь, что транзакция завершена, перед тем как вызвать <i>Session.close()</i> или <i>Session.disconnect()</i>.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Важно</b><div class="spoiler_text"> Для использования read-write стратегии в кластеризованном окружении, нижележащая реализация кэша должна поддерживать блокировки. Встроенные кэш-провайдеры не поддерживают блокировки.<br>
+ </div></div><br>
+ </li>
+<li><b>transactional</b><br>
+<br>
+Transactional стратегия кэширования предоставляет поддержку для транзакционных кэш-провайдеров, таких как JBoss TreeCache. Использовать такой кэш вы можете только в JTA-окружении, и для начала вам нужно будет указать <i>hibernate.transaction.manager_lookup_class</i>.<br>
+ </li>
+</ul><br>
+<a name="6_2_3"></a><h3>6.2.3. Провайдеры Hibernate для кэша второго уровня</h3><br>
+<table>
+<tbody><tr>
+<th>Кэш</th>
+<th>Поддерживаемые стратегии</th>
+</tr>
+<tr>
+<td>HashTable (только для тестов)</td>
+<td><ul>
+<li>read-only</li>
+<li>nonstrict read-write</li>
+<li>read-write</li>
+</ul></td>
+</tr>
+<tr>
+<td>EHCache</td>
+<td><ul>
+<li>read-only</li>
+<li>nonstrict read-write</li>
+<li>read-write</li>
+<li>transactional</li>
+</ul></td>
+</tr>
+<tr>
+<td>Infinispan</td>
+<td><ul>
+<li>read-only</li>
+<li>transactional</li>
+</ul></td>
+</tr>
+</tbody></table><br>
+<h3>6.3. Управление кэшем</h3><br>
+<h3>6.3.1. Добавление/извлечение записей из кэша</h3><br>
+Действия, добавляющие записи во внутренний кэш сессии:<br>
+<table>
+<tbody><tr>
+<th>Сохранение или апдейт сущности</th>
+<th>Извлечение сущности</th>
+</tr>
+<tr>
+<td><ul>
+<li><i>save()</i></li>
+<li><i>update()</i></li>
+<li><i>saveOrUpdate()</i></li>
+</ul></td>
+<td><ul>
+<li><i>load()</i></li>
+<li><i>get()</i></li>
+<li><i>list()</i></li>
+<li><i>iterate()</i></li>
+<li><i>scroll()</i></li>
+</ul></td>
+</tr>
+</tbody></table><br>
+Синхронизация или удаление закэшированной записи. Состояние объекта синхронизируется с БД, когда вы вызываете метод <i>flush()</i>. Чтобы избежать синхронизации, вы можете удалить объект и его коллекции из кэша первого уровня с помощью метода <i>evict()</i>. Для удаления всех записей из кэша сессии, используйте метод <i>Session.clear()</i>.<br>
+<br>
+<a name="e_6_4"></a><b>Пример 6.4. Удаление записи из кэша первого уровня</b><br>
+<pre><code class="java hljs">ScrollableResult cats = sess.createQuery(<span class="hljs-string cye-lm-tag">"from Cat as cat"</span>).scroll(); <span class="hljs-comment cye-lm-tag">//a huge result set</span>
+<span class="hljs-keyword cye-lm-tag">while</span> ( cats.next() ) {
+Cat cat = (Cat) cats.get(<span class="hljs-number cye-lm-tag">0</span>);
+doSomethingWithACat(cat);
+sess.evict(cat);
+}
+</code></pre><br>
+<b>Как определить, принадлежит ли сущность кэшу сессии</b>. Объект <i>Session</i> предоставляет метод <i>contains()</i> для определения принадлежности объекта к кэшу сессии.<br>
+<br>
+<a name="e_6_5"></a><b>Пример 6.5 Удаление из кэша второго уровня</b><br>
+Вы можете удалить закэшированное состояние сущности, всего класса, коллекции, или все роли коллекции, используя методы <i>SessionFactory</i><br>
+<pre><code class="java hljs">sessionFactory.getCache().containsEntity(Cat.class, catId); <span class="hljs-comment cye-lm-tag">// is this particular Cat currently in the cache</span>
+
+sessionFactory.getCache().evictEntity(Cat.class, catId); <span class="hljs-comment cye-lm-tag">// evict a particular Cat</span>
+
+sessionFactory.getCache().evictEntityRegion(Cat.class);  <span class="hljs-comment cye-lm-tag">// evict all Cats</span>
+
+sessionFactory.getCache().evictEntityRegions();  <span class="hljs-comment cye-lm-tag">// evict all entity data</span>
+
+sessionFactory.getCache().containsCollection(<span class="hljs-string cye-lm-tag">"Cat.kittens"</span>, catId); <span class="hljs-comment cye-lm-tag">// is this particular collection currently in the cache</span>
+
+sessionFactory.getCache().evictCollection(<span class="hljs-string cye-lm-tag">"Cat.kittens"</span>, catId); <span class="hljs-comment cye-lm-tag">// evict a particular collection of kittens</span>
+
+sessionFactory.getCache().evictCollectionRegion(<span class="hljs-string cye-lm-tag">"Cat.kittens"</span>); <span class="hljs-comment cye-lm-tag">// evict all kitten collections</span>
+
+sessionFactory.getCache().evictCollectionRegions(); <span class="hljs-comment cye-lm-tag">// evict all collection data</span>
+</code></pre><br>
+<br>
+<h3>6.3.1.2. Просмотр содержимого кэша второго уровня и кэшей запросов</h3><br>
+После разрешения статистики, вы можете просматривать содержимое кэша второго уровня или региона кэширования.<br>
+<br>
+<b>Процедура 6.2. Разрешение статистики</b><br>
+<ol>
+<li>Выставьте <i>hibernate.generate_statistics</i> в <i>true</i>.</li>
+<li>Необязательно – выставьте <i>hibernate.cache.use_structured_entries</i> в <i>true</i>, чтобы Hibernate мог хранить записи в понятном пользователю формате.</li>
+</ol><br>
+<br>
+<b>Пример 6.6. Просмотр кэша второго уровня через Statistics API</b><br>
+<pre><code class="java hljs">Map cacheEntries = sessionFactory.getStatistics()
+.getSecondLevelCacheStatistics(regionName)
+.getEntries();
+</code></pre></div>
+<br><hr>
+</body>
+</html>

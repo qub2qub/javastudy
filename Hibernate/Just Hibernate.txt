@@ -1,0 +1,400 @@
+A connection is a gateway to the database for carrying out the operations on the data from a Java application. JDBC provides a connection API to create connections based on the database properties that we provide. 
+
+в xml конфиге можно опустить hibernate.* префикс.
+
+If the name of the column matches the variable name of the object, we can omit the declaration of the "column" property.
+
+How does Hibernate knows that quantity is a double type or security is a String type? Well, ideally we should declare the types too, using the "type" tag.
+We can omit these types and let Hibernate work out the variable types (by using Java reflection) or we can explicitly declare them.
+My personal preference is to declare them explicitly to reduce the startup, as Hibernate will not waste time finding out the types by using Java reflection.
+
+**Identifier Generation Strategies**
+
+While SessionFactory holds the access keys to the doors of a database, the Session itself is the key to interact with and access the database. 
+
+Session is a single-threaded object and therefore should not be shared across various components. It represents a single unit of work. 
+
+ the first level of cache is maintained in the session; (i.e., all the objects that were fetched or accessed will be held in the session until the session is closed)
+
+ The SessionFactory maintains a second level of cache, which is available globally across all other components in the application
+
+We initiate a transaction by invoking the session.beginTrasaction method, which creates a new Transaction object and returns the reference to us. It gets associated with the session and is open until that transaction is committed or rolled back.
+
+ Annotations are decorators applied at the class and variable level that define the metadata about the class itself. 
+
+XML files for configuration:
+1)  they are quite simple and easily readable
+2) but they are also quite verbose and unfortunately do not impose type safety
+
+Annotations are quite concise and enable compile-type checks straightaway.
+They are metadata decorations applied directly on the class, therefore enabling the entities to be managed effectively.
+
+Did you notice that we’ve decorated the variable instead of a getter method? 
+Well, we do have a choice: we can either use the annotation on a variable, in which case Hibernate uses field access, or we can use it on an accessor method, in which case Hibernate uses the accessor method to access the field. There is no hard-and-fast rule here; it’s pretty much a personal preference. 
+
+ As the object field and the column name do not match, we need to set the column name explicitly using an additional annotation, @Column
+
+ In your hibernate.cfg.xml file, use the mapping element to declare your class.  <mapping class="by.den.Employee"/>
+Alternatively, use the addAnnotatedClass method if you prefer associating the annotation in your program.   .addAnnotatedClass(Employee.class)
+
+**Digging into Details**
+In our Employee example, the name of the table is the same as that of the class (EMPLOYEE and Employee, respectively).
+Thus, we did not mention the table name when declaring the @Entity annotation.
+Let’s suppose our table name is TBL_EMPLOYEE; then we need to let Hibernate know that by adding an @Table annotation too:
+@Table(name = "TBL_EMPLOYEE")
+
+We can set up different strategies depending on our requirements. All we need to do is add @GeneratedValue annotation to the id variable.
+This annotation accepts two attributes: strategy and generator. The strategy attribute indicates the type of identifier generation that we would like to use, while generator defines the methods to generate the identifiers.
+
+The strategy should be the GeneratorType value, as described in the following: 
+GeneratorType.AUTO:
+This is the default strategy and is portable across different databases. Hibernate chooses the appropriate ID based on the database.
+
+GeneratorType.IDENTITY:
+This setting is based on the identity provided by some databases; it is the responsibility of the database to provide a unique identifier.
+
+GeneratorType.SEQUENCE:
+Some databases provide a mechanism of sequenced numbers, so this setting will let Hibernate use the sequence number.
+
+GeneratorType.TABLE:
+Sometimes the primary keys have been created from a unique column in another table. In this case, use the TABLE generator.
+
+For employing a sequence strategy, you must define both the strategy and the sequence generator:
+@GeneratedValue (strategy= GenerationType.SEQUENCE, generator="empSeqGen") 
+@SequenceGenerator(name = "empSeqGen", sequenceName = "EMP_SEQ_GEN") private int employeeId =0;
+
+**Composite Identifiers**
+There are three ways of setting the composite-id identifiers, which we will see in the next sections.
+
+1) Using Primary Key Class and @Id
+In this method, we create a separate class representing the business key. We annotate this class with @Embeddable, making it a composite-id class.
+
+Make sure the class implements the java.io.Serializable interface with a default constructor. Also, it must have the hashCode and equals methods implemented; they will help Hibernate distinguish uniqueness.
+
+2) Using Primary Key Class and @EmbeddedId
+In this case, we annotate the identifier of the Course object with @EmbeddedId (instead of annotating with @Id as we did in our earlier case). At the same time, we create an inner class, @CoursePK, annotating with @Embeddable:
+The id field is annotated with @EmbeddedId in the preceding class. Notice that the constructor is doing the job of creating and populating the composite primary key. You can do this outside of the constructor too, if you wish.
+However, we do not have to annotate @Embeddable on the primary key class, as we did in the first method. See the plain definition (i.e., no annotations) of the primary key class CoursePK2 class
+
+This is a simple class that adheres to the primary composite class rules—having a default constructor, and the hashCode and equals method implementations.
+
+3)Using @IdClass и несколько @Id fields
+In this method, we create a composite class (primary key) with all the required primary key attributes. However, we do not annotate this class, so it remains a plain Java class.
+
+Now we need to declare the main entity with the additional class-level annotation @IdClass. This refers to our composite primary key class.
+
+When it comes to the main entity class, there is a disadvantage of following this path. We need to duplicate the composite key identifiers (tutor and title) on our main class too in this method. They must be decorated with @Id.
+
+Using the @IdClass method for defining the composite key is not a standard practice and is best avoided. I suggest you pick either of the first two methods instead.
+
+******************************
+*** Persisting Collections ***
+Always use interfaces when you are defining your collection variables. Hibernate does not like it when we use concrete classes as the variable types.
+**Persisting Lists**
+The List implementation is intended to hold ordered lists of elements.
+
+Lists are simple and easy data structures to hold items in an orderly manner. 
+[т.е. лист - это упорядоченная коллекция? - не отсортированная, а упорядоченная ordered]
+They can also keep track of an element’s position, using indexes. 
+We can insert an element anywhere in the list, and retrieve the element using its index.
+
+For example, let’s say we have persisted a list of manufacturers (Toyota, BMW, Mercedes, etc.) via our Java program. We should expect to retrieve the car data from the table in the same order in which it was inserted. So, if we run a query list.get(n), we should get back the nth element without fail.
+
+To satisfy this requirement, Hibernate maintains another table with the cars’ indexes. So, when it fetches the cars from the main table, it also fetches the indexed order of these items from the additional table (called, say, CAR_LIST). It will then associate and map these items together to find out the order, and accordingly feed the client with the ordered responses.
+
+*** Persisting Sets ***
+
+java.util.Set represents an unordered data structure where duplicates are not allowed.
+
+The key element represents the presence of a foreign key in the CARS_SET table. 
+Hibernate adds this foreign key to the CARS_SET table automatically. 
+
+When working with sets, we need to satisfy an equality requirement: we must create equals and hashCode methods in the Car object. As we know, each individual item that’s being added to the set must be unique. The equals and hashCode methods would help to satisfy this requirement. Make sure the equals and hashCode contracts are fulfilled correctly—for example, use the fields that will identify a car uniquely.
+
+*** Persisting Maps ***
+The Map data structures are like dictionaries where you have a key (word) and related values (meanings). Maps are the de facto choice for key/value-paired data
+
+**Persisting Arrays**
+
+**Persisting Bags and IdBags**
+If we wish to have an unordered collection and no indexing of the elements, Java doesn’t have any data structure that supports that. The closest is java.util.List, but obviously it maintains both order and indexing. To satisfy this requirement, Hibernate created a special type of collection called bags.
+
+Bags are the OPPOSITE OF LISTS: they are UNORDERED and NONINDEXED COLLECTIONS that allow duplicate elements. Bags are unique to Hibernate, and there is no equivalent collection in the Java space.
+
+Implementing bags is very simple; we don’t notice any difference to our entities. In fact, we could still be using List to represent the bag in the Java code (remember, there is no bags collection in Java). The actual difference appears in the mapping side. Instead of declaring the collection as a list, we use bag.
+
+In the bag element, did you notice we dropped the index element that must exist in the list definition? In bags, the index of the collection is not persisted anymore; hence, you won’t see the index element defined in the mapping.
+
+Bags are not a standard collection; they are Hibemate-specific. Although your code still uses java.util.List for a bag, the mapping needs to be explicit. It’s better to stay away from bags if possible, and choose standard collections wherever you can.
+
+---------- IDBAGS -----------
+In addition to bags, Hibernate supports idbags, a collection that provides a mechanism to have a surrogate key on the persisted collection itself, unlike bags where no key exists. As usual, the POJOs will not be changed, but the mapping deserves special attention:
+
+Here we introduce the idbags element to represent our cars collection, pointing to a join table, SHOWROOM_CARS_IDBAGS. The collection-id element creates a primary key on the join table. In addition to its own primary key, the join table will also carry primary keys from the other two tables.
+
+*********************************************************
+*** Persisting Collections Using Annotations ***
+
+There are two methods of preparing our code for annotations: using a foreign key or using an intermediary join table.
+
+1>-----------Using a Foreign Key-----------
+Each showroom will have many cars, as represented by a one-to-many association. 
+The Showroom entity consists of the collection of cars, showcasing them to customers.
+The cars, on the other hand, belong to a showcase/room; hence, are modeled to have a foreign key relationship to the showroom.
+
+The class is declared as a persistable entity (via the @Entity annotation) mapping to a table identified with the @Table annotation. We define the identifier using an autogeneration strategy, meaning the identifier is set by one of the database’s functions, such as auto_increment or identity.
+
+the collection of cars represented by a variable called cars. We use a java.util.List collection to hold the cars data. This variable is decorated with the @OneToMany annotation because each showroom will have many cars, and each car belongs to a showroom.
+
+We learned earlier that the cars collection will have its own table with a foreign key referring to the showroom table’s primary key (SHOWROOM_ID, in this case).
+
+To let Hibernate know about this dependency, we declare the cars variable along with an @JoinColumn annotation defining the foreign key. We must provide the column name SHOWROOM_ID to pick up the list of cars from the cars table. The @Cascade annotation enables Hibernate to persist the collections associated with the main instance.
+
+2>---------- Using a Join Table -------------
+The @JoinTable annotation in the preceding snippet indicates that we will be using an intermediary table (SHOWROOM_CAR_SET_ANN_JOINTABLE, in this case). Also, note that cars are fetched using the FK=CAR_IN_ROOM_FK(SHOWROOM_ID) join column.
+
+As expected, the primary key is the combination of showroom_id and car_id. 
+
+**************************************************
+*** Associations ***
+understanding associations and relationships is essential. If we cannot handle complexity, we cannot solve real-life problems. In this chapter, we’ll concentrate on the fundamentals of associations and their mappings.
+
+Objects cannot just linger on their own; they need to be able to associate with other objects representing real-life problems and solutions.
+
+Relationships are associations between relational database tables. The relationships between the tables are expressed mostly through primary/foreign keys and other constraints.
+Although the terms association and relationship are often used interchangeably.
+There are two things that we should keep in mind: multiplicity and directionality.
+
+*** Multiplicity ***
+Multiplicity refers to how many of the specific objects are related to how many of the other target objects. 
+
+*** Directionality ***
+This property defines the direction to which the association is tending.
+The associations can be either unidirectional or bidirectional
+
+Unfortunately, we can’t get the car details from the engine. This type of association is unidirectional: the directionality is one-sided only.
+In Java, we create a reference of the target object in the source class but not the other way. In the Car and Engine snippets shown previously, you can see that Car has a reference to an engine, but the Engine class does not have a reference to a car
+
+On the other hand, if we can navigate from source object to target object or vice versa, that relationship is said to be bidirectional.
+In the case of Car and Owner, we can derive the owner of the car given the Car object, as well as the owner’s car given the Owner object.
+
+*** One-to-One Association ***
+There are two ways of establishing a one-to-one association: using a primary key and using a foreign key. This difference is not apparent in the object model but is evident in
+
+our relational model. We’ll go through both ways here. The persistent entities will be the same in both cases.
+
+---> 1-1 bi <------ Using a Primary Key
+Engine is set by values pulled from the ENGINE table (which is mapped to the Engine object):
+	<one-to-one name="engine" ctass="Engine" cascade="atl"/>
+
+The Engine mapping is a bit more involved:
+	<one-to-one name="car" class="Car" constrained="true"/>
+
+We know that Engine’s primary key (id) is the same as Car’s id. We should somehow mention this fact in our mapping to let Hibernate know how to deal with this situation. There is a special generator class called foreign for such purposes. This generator checks for a property named car (which is defined via the one-to-one tag further down in the mapping) and picks up the id from that reference.
+
+There’s one more attribute we’ve used in the one-to-one element: constrained="true". Simply put, this means that the primary key of the ENGINE table has a foreign key constraint, which is deduced from the primary key of the CAR table.
+
+Note that the primary key of the Engine is not set on the object while we’re creating it. This is because we are borrowing and sharing the id from the Car. This way, during the process of creating the Engine, Hibernate grabs the id from the car and sets it onto the Engine object.
+
+---> 1-1 bi <------ Using a Foreign Key
+Note the use of the many-to-one element (instead of the one-to-one element we’ve used in the earlier case) with the additional attribute unique="true". By setting this attribute, we are essentially converting a many-to-one relationship to a one-to-one association. This attribute will ensure that one Car is associated to one Engine!
+    <many-to-one name="engine" class="by.den.jh.associations.one2one.Engine" column="engine_id" cascade="all" unique="true"/>
+
+Notice that we are not saving the engine explicitly. That’s because, when the car is persisted, its associated objects (engine, in this case) are saved too because of the cascade="all" attribute defined in the mapping file.
+
+---> 1-1 bi <------ Annotations
+We declare the one-to-one mapping in Car.java using the @OneToOne annotation. As we have to join the car to the ENGINE table, the @JoinColumn is used on the ENGINE_ID column.
+	@OneToOne (cascade= CascadeType.ALL)
+    @JoinColumn(name="ENGINE_ID")
+    private Engine engine = null;
+
+The Engine class is much simpler.the relevant annotation is on the car field (@One ToOne):
+ 	@OneToOne(mappedBy="car")
+    private Car car = null;
+
+***** One-to-Many (or Many-to-One) Association ********
+Because we are looking at the unidirectional relationship, the Actor POJO will not have any reference to the Movie object.
+---- UNI ----}}   1 movie ---> * actors
+the Actors table will contain a foreign key pointing to the movie’s primary key
+
+
+**** Bidirectional One-to-Many Association ****
+<many-to-one name="movie" column="MOVIE_ID" class="Movie"/>
+The many-to-one element indicates the “many” side of the Actor class.
+
+*** Many-to-Many Association ***
+The many-to-many association establishes a relationship between two classes in such a way that each source-side class will have many of the target-side classes, and vice versa.
+
+both sides will have an attribute representing a collection with access methods. While in the database, a third table—usually called a LINK TABLE—is used to link the many-to-many mapping.
+
+******************************************
+*** Hibernate Types ***
+Hibernate uses Java’s reflection to find out the type of the property. Although this option of omitting the types works out fine, the preferred and recommended option is to set the types on the properties implicitly. Setting property column="COLOR" name="color" type="string" explicitly will easily give Hibernate the property’s type.
+
+Did you notice that we declared the type of the color property as string but not String? The string type is neither a Java type nor a SQL type; in fact, it is Hibernate’s own type. Hibernate has extensive support for types, including built-in types such as string, boolean, and integer, as well as our own predefined custom types.
+
+Entity and Value Types
+
+Types are essentially categorized as entity and value types. The main difference is that while entity types have an identifier and exist on their own, value types do not. Our persistent objects, such as Movie, Car, Showroom, and Student—are examples of entities. They have an identifier to uniquely represent them, which makes them independent.
+
+Value types, on the other hand, cannot exist on their own; they are dependent on other objects like entities.
+
+Hibernate provides two categories of value types, basic types and components:
+
+Basic types
+
+Basic types are used to map a table column to a Java property. For example, earlier we saw the string type mapping to the title of a Movie object. The string, boolean, int, long, double, timestamp, and other types fall under this category. As you can imagine, they have to be associated to an entity (Movie, in this case) to exist.
+
+Components
+
+Sometimes we wish to have a type defined based on more than one field. The component type defines a set of fields as a specific type. For example, we may wish to represent a phone number as an aggregation of country code, region number, and a name. We may need to use this combination of composite columns/attributes over and over again, so it would be efficient to develop a PhoneNumber component and associate it as a type. Components are quite handy for splitting table data into varied objects. We will discuss components further in the coming sections.
+
+Java collections also form a persistent type; refer to Chapter 4 for more details on this subject.
+
+Custom Types
+
+In addition to these types, Hibernate also provides excellent support for creating our own type. If our requirement is to use the PhoneNumber type we just discussed, first we need to create a type. We’ll call this the PhoneNumberType class; it implements Hibernate’s own interfaces, such as org.hibernate.type.Type or its derived variants (BasicType).
+
+-------------------------------------
+Components
+
+We can get away from this poor design by refactoring the person object and creating a PhoneNumber class/
+
+How can we now create the mapping between the enhanced person object with the newly created PhoneNumber class? This is where components come into the picture. Components help us to group columns into our objects.
+
+In the preceding example, the PhoneNumber is not an entity itself; it’s merely a representation of a few table columns. There is a strict one-to-one parent-child relationship between the Person and PhoneNumber classes.
+
+<class name="Person" table="PERSON">
+<id name="id" column="PERSON_ID">
+<generator class="native"/>
+</id>
+<property name="firstName" column="FIRST_NAME" />
+...
+<component name="homePhone" class="PhoneNumber">
+<property name="areaCode" column="HOME_AREA_CODE"/>
+<property name="phoneNumber" column="HOME_PHONE_NUMBER"/>
+<property name="name" column="HOME_NAME"/>
+</component>
+<component name="mobilePhone" class="PhoneNumber">
+<property name="areaCode" column="MOBILE_AREA_CODE"/>
+<property name="phoneNumber" column="MOBILE_PHONE_NUMBER"/>
+<property name="name" column="MOBILE_NAME"/>
+</component>
+</class>
+
+----------------------------
+Caching
+Hibernate supports caching of persistent objects using first-level and second-level caching methods.
+
+---------- First-Level Caching
+The first level is simply the transactional cache associated with the Session object, which is available during the lifespan of that session or in the conversation only. This caching is provided by default by the framework.
+
+In this listing, we first create an instance of Person and set the values on it before saving it. With the same session instance, we retrieve the person object again to set another attribute (nickName, in this case). 
+When you load the object the second time, the object is retrieved from the cache maintained by the session itself, thus a network roundtrip to the database is avoided. The session cache is keyed with the class type, and hence you may have to take extra care when trying to override the existing instance.
+
+---------- Second-Level Caching
+The second-level cache is globally available via the SessionFactory class. 
+So, any data present in this cache is made available to the entire application.
+
+Hibernate supports a few open source cache implementations, such as EhCache and InfiniSpan. However, should we need to provide our own, we can do so by implementing the org.hibernate.cache.spi.CacheProvider interface with a concrete implementation. EhCache is the default second-level cache provider in Hibernate.
+
+To plug in the caching provider, set the property hibernate.cache.provider_class, referring to the appropriate cache provider. 
+
+We can set the caching policy on individual classes that need to be cached by using various caching attributes. Check out the following code, which sets the cache attribute on the class tag in our mapping file:
+<cache usage="read-write" region="" include="all"/>
+
+The "USAGE" element is mandatory; it sets the caching concurrency strategy (read-write in the preceding example).
+There are four settings that the usage attribute exposes: 
+----- transactional
+This strategy provides support for cache implementation providers that support transactional caching. Note that not all the cache providers have transactional caching products available.
+
+----- read-only
+If we wish to have frequent reads of persistent objects, but no updates back to the durable storage space, then you should choose read-only. As it requires minimal or no writes to the database, performance with this option is strong.
+
+----- read-write
+This strategy enables both reading and writing of the objects to and from to the database.
+
+----- nonstrict-read-write
+This strategy supports a scenario in which the objects are not updated that often.
+
+To turn on the option of caching globally, set the hibernate.cache.de fault_cache_concurrency_strategy property in your configuration file.
+
+********* Caching Queries ***************
+Not only can we cache objects, we can cache queries too. If you have some queries that will be invoked quite often, it is advisable to cache them. To use this functionality, set the hibernate.cache.use_query_cache attribute to true.
+
+We need to do one more thing in our code: set the cacheable property on the Query to true by invoking the Query.setCacheable() method.
+
+******** Inheritance Strategies ******
+relational databases do not understand the is-a inheritance relationship, although we can get away with using primary and foreign keys for has-a inheritance support . This poses a subtle problem when the ORM tool tries to persist the inheritance relationships. Hibernate overcomes this problem by providing three different strategies to support inheritance persistence.
+
+-------- Table-per-Class Strategy
+The table-per-class strategy, defines one table for all the object hierarchies. This is a simple strategy, as a single table suffices to store the application’s data needs.
+и появляется DISCRIMINATOR COLUMN
+
+---------- Table-per-class strategy using annotations
+We define the inheritance strategy by annotating our entity with the @Inheritance annotation. This annotation accepts a strategy via the strategy variable; in this case, it’s a SINGLE_TABLE strategy. The InheritanceType also has TABLE_PER_CLASS and JOINED strategies. 
+!! Don’t be tempted to set an InheritanceType.TABLE_PER_CLASS value when using th table-per-class strategy—we must set SINGLE_TABLE only. The TABLE_PER_CLASS is set for the table-per-concrete-class strategy
+
+ This strategy is fine as long as we have a simple hierarchy. The minute we start having a deep-level object graph, it might grow out of proportion and be unsuitable to maintain. And if your domain classes change, the table will need alterations too. Note that you cannot declare NOT NULL constraints on the columns related to the subclasses if you choose this strategy.
+
+******* Table-per-Subclass Strategy ********
+In this strategy, all the subclasses (including the parent class if the parent class is not an abstract class) will have their own table persistence. 
+
+the subclass’s tables will have to have a foreign key referring to the parent class’s primary key.
+
+The main Employee (parent) class is defined as expected, but the Executive (child) class is tagged with a joined-class element. The subclass now has its own table (in this case, INHERITANCE_S2_EXECUTIVE). Also, notice how the foreign key is being tied up by using the key attribute in a joined-subclass.
+
+We set the strategy to table-per-subclass by setting the InheritanceType to the JOINED value. On the child class, we need to declare its primary join column using @Primary KeyJoinColumn, which is the foreign key
+
+**** Table-per-Concrete-Class Strategy ****
+In the table-per-concrete-class strategy, the object hierarchy is persisted to the individual table for each concrete class. Any properties of the superclass will be copied to the child class’s related tables, thus making this strategy uncommon.
+
+The Person class, being abstract, is stamped with the abstract="true" property. The id defined by this class is shared across its child classes—therefore, the Employee and Executive class mappings do not mention anything about primary keys.
+
+We tie the subclasses to the parent by using the union-class element. This element declares the child class linking to its own table. Any attributes particular to the child class need to be defined in the union-subclass element, while all the properties defined at the class level are shared by all the children. Note that the native identifier strategy is not allowed in this strategy.
+
+*************************************
+*** Filters ****
+Hibernate provides a filtering feature for such purposes that acts similarly to SQL’s where clause but is more dynamic in nature.
+There are two steps involved in creating the filters: creating the relevant filter definitions, and enabling them in our code.
+
+We define filters using the filter-def element in our mapping file and associate them to each class on which they should be applied. We can define as many filters as we need depending on our requirements. The definition consists of declaring the type of each property that is to be parameterized in our filter query.
+
+As you can see, this snippet defines four filters. The filter-param declares the name of the column we wish to query.
+
+We can create as many of these filters in our mapping file as we require. Once we have them defined, we must associate these mapping definitions to our entity definition:
+<filter-def name="filterByMake">...
+...<filter name="filterByMake" condition="make = :make"/>...
+
+In our class definition, we set the filter using the filter element. It requires two attributes, a name and the condition. The name should match the one we defined in the filter-def definition. The condition follows the same format as our named parameters that we set on the queries. Here’s where you define the actual where clause. The :make is the argument that the client needs to set 
+
+*** Relationship Owner (aka Inverse Attribute) ****
+When we are talking about one-to-many or many-to-many relationships, one of the sides should take the responsibility of managing the relationship. 
+
+Note that the inverse="false" is actually a default, so you can skip providing the inverse attribute if you wish to set the inverse relationship to false.
+<class name="Movie" table="MOVIE_ONE2MANY">
+...
+<set name="actors" table="ACTOR_ONE2MANY" inverse="false" cascade="all">
+	<key column="MOVIE_ID" not-null="true"/>
+	<one-to-many class="Actor"/>
+</set>
+</class>
+
+In the preceding snippet, as inverse is false, we infer that the relationship is owned by the MOVIES table and not by the ACTORS table. This means that the Movie side is responsible for updating the actor’s foreign key MOVIE_ID.
+
+To fulfill this requirement, Hibernate produces three SQL statements: 
+two inserts and one update statement. 
+The two inserts are the statements inserting the data into the MOVIES and ACTORS table, and the update statement updates the relationship in the ACTORS table (i.e., setting the movie_id in the ACTORS table). The third statement is redundant and could be avoided. (That said, it can be suppressed if we set the inverse attribute to true.)
+
+If we set the inverse attribute to true, it works in the opposite way—that is, the ownership lies with the ACTORS table and hence it would maintain the relationship. In this case, only two insert statements are issued—thus eliminating the redundant third update statement, which is good from a performance perspective.
+
+*** Cascading Entities ***
+When persisting object graphs, we usually have to issue save (or update) commands on individual entities. However, the cascade attribute defined on the graph lets us save the whole graph without our having to worry about saving the entities one by one.
+
+However, setting the cascading behavior works in our favor by reducing the lines of code and making it more succinct. We only have to save the parent node; the rest of the graph is handled by Hibernates runtime.
+
+There is one more case to deal with—a special case called delete-orphan. In our movie/ actor example, if we remove the actor from our set collection, delete-orphan would not only dissociate the actor from movie but also delete the actor entity entirely. If this option is not selected, then the movie-to-actor association will be removed, but the actor exists on its own (and is thus an orphan).
+
+************************************
+*** Hibernate Query Language ***
+

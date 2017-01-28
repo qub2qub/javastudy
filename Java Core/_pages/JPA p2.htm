@@ -7,518 +7,518 @@
 </head>
 <body>
 	
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Что такое EntityManager и какие основные его функции вы можете перечислить?</span></li>
+<li>Что такое EntityManager и какие основные его функции вы можете перечислить?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">EntityManager
+<div>
+EntityManager
  это интерфейс, который описывает API для всех основных операций над 
 Enitity, получение данных и других сущностей JPA. По сути главный API 
-для работы с JPA. Основные операции:</span></div>
-<div style="text-align: justify;">
+для работы с JPA. Основные операции:</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+<li>Для
  операций над Entity: persist (добавление Entity под управление JPA), 
 merge (обновление), remove (удаления), refresh (обновление данных), 
 detach (удаление из управление JPA), lock (блокирование Enity от 
-изменений в других thread),</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Получение
+изменений в других thread),</li>
+<li>Получение
  данных: find (поиск и получение Entity), createQuery, createNamedQuery,
  createNativeQuery, contains, createNamedStoredProcedureQuery, 
-createStoredProcedureQuery</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Получение других сущностей JPA: getTransaction, getEntityManagerFactory, getCriteriaBuilder, getMetamodel, getDelegate</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Работа с EntityGraph: createEntityGraph, getEntityGraph<a name="more"></a></span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Общие операции над EntityManager или всеми Entities: close, isOpen, getProperties, setProperty, clear.</span></li>
+createStoredProcedureQuery</li>
+<li>Получение других сущностей JPA: getTransaction, getEntityManagerFactory, getCriteriaBuilder, getMetamodel, getDelegate</li>
+<li>Работа с EntityGraph: createEntityGraph, getEntityGraph<a name="more"></a></li>
+<li>Общие операции над EntityManager или всеми Entities: close, isOpen, getProperties, setProperty, clear.</li>
 </ul>
-<span style="font-family: arial, helvetica, sans-serif;"><br></span><h3 style="text-align: justify;">
+<br><h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие четыре статуса жизненного цикла Entity объекта (Entity Instance’s Life Cycle) вы можете перечислить?</span></li>
+<li>Какие четыре статуса жизненного цикла Entity объекта (Entity Instance’s Life Cycle) вы можете перечислить?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">У Entity объекта существует четыре статуса жизненного цикла: new, managed, detached, или removed. Их описание</span></div>
-<div style="text-align: justify;">
+<div>
+У Entity объекта существует четыре статуса жизненного цикла: new, managed, detached, или removed. Их описание</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">new - объект создан, но при этом ещё не имеет сгенерированных первичных ключей и пока ещё не сохранен в базе данных,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">managed - объект создан, управляется JPA, имеет сгенерированные первичные ключи,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">detached - объект был создан, но не управляется (или больше не управляется) JPA,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">removed - объект создан, управляется JPA, но будет удален после commit’a транзакции.</span></li>
+<li>new - объект создан, но при этом ещё не имеет сгенерированных первичных ключей и пока ещё не сохранен в базе данных,</li>
+<li>managed - объект создан, управляется JPA, имеет сгенерированные первичные ключи,</li>
+<li>detached - объект был создан, но не управляется (или больше не управляется) JPA,</li>
+<li>removed - объект создан, управляется JPA, но будет удален после commit’a транзакции.</li>
 </ul>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+<div>
+</div>
 <div>
 <br></div>
 <h3>
 <ul style="text-align: left;">
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как влияет операция merge на Entity объекты каждого из четырех статусов?</span></li>
+<li>Как влияет операция merge на Entity объекты каждого из четырех статусов?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
+<div>
+1.
  Если статус detached, то либо данные будет скопированы в существующей 
 managed entity с тем же первичным ключом, либо создан новый managed в 
-который скопируются данные,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2. Если статус Entity new, то будет создана новый managed entity, в который будут скопированы данные прошлого объекта,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">3.
+который скопируются данные,</div>
+<div>
+2. Если статус Entity new, то будет создана новый managed entity, в который будут скопированы данные прошлого объекта,</div>
+<div>
+3.
  Если статус managed, операция игнорируется, однако операция merge 
-сработает на каскадно зависимые Entity, если их статус не managed,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">4. Если статус removed, будет выкинут exception сразу или на этапе commit’а транзакции.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
-<br></div>
-<h3 style="text-align: justify;">
-<ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как влияет операция remove на Entity объекты каждого из четырех статусов?</span></li>
-</ul>
-</h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
- Если статус Entity new, операция игнорируется, однако зависимые Entity 
-могут поменять статус на removed, если у них есть аннотации каскадных 
-изменений и они имели статус managed,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2.
- Если статус managed, то статус меняется на removed и запись объект в 
-базе данных будет удалена при commit’е транзакции (так же произойдут 
-операции remove для всех каскадно зависимых объектов),</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">3. Если статус removed, то операция игнорируется,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">4. Если статус detached, будет выкинут exception сразу или на этапе commit’а транзакции.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
-<br></div>
-<h3 style="text-align: justify;">
-<ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как влияет операция persist на Entity объекты каждого из четырех статусов?</span></li>
-</ul>
-</h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
- Если статус Entity new, то он меняется на managed и объект будет 
-сохранен в базу при commit’е транзакции или в результате flush операций,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2.
- Если статус уже managed, операция игнорируется, однако зависимые Entity
- могут поменять статус на managed, если у них есть аннотации каскадных 
-изменений,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">3. Если статус removed, то он меняется на managed,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">4. Если статус detached, будет выкинут exception сразу или на этапе commit’а транзакции.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+сработает на каскадно зависимые Entity, если их статус не managed,</div>
+<div>
+4. Если статус removed, будет выкинут exception сразу или на этапе commit’а транзакции.</div>
+<div>
+</div>
 <div>
 <br></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как влияет операция refresh на Entity объекты каждого из четырех статусов?</span></li>
+<li>Как влияет операция remove на Entity объекты каждого из четырех статусов?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
+<div>
+1.
+ Если статус Entity new, операция игнорируется, однако зависимые Entity 
+могут поменять статус на removed, если у них есть аннотации каскадных 
+изменений и они имели статус managed,</div>
+<div>
+2.
+ Если статус managed, то статус меняется на removed и запись объект в 
+базе данных будет удалена при commit’е транзакции (так же произойдут 
+операции remove для всех каскадно зависимых объектов),</div>
+<div>
+3. Если статус removed, то операция игнорируется,</div>
+<div>
+4. Если статус detached, будет выкинут exception сразу или на этапе commit’а транзакции.</div>
+<div>
+</div>
+<div>
+<br></div>
+<h3>
+<ul>
+<li>Как влияет операция persist на Entity объекты каждого из четырех статусов?</li>
+</ul>
+</h3>
+<div>
+1.
+ Если статус Entity new, то он меняется на managed и объект будет 
+сохранен в базу при commit’е транзакции или в результате flush операций,</div>
+<div>
+2.
+ Если статус уже managed, операция игнорируется, однако зависимые Entity
+ могут поменять статус на managed, если у них есть аннотации каскадных 
+изменений,</div>
+<div>
+3. Если статус removed, то он меняется на managed,</div>
+<div>
+4. Если статус detached, будет выкинут exception сразу или на этапе commit’а транзакции.</div>
+<div>
+</div>
+<div>
+<br></div>
+<div>
+</div>
+<h3>
+<ul>
+<li>Как влияет операция refresh на Entity объекты каждого из четырех статусов?</li>
+</ul>
+</h3>
+<div>
+1.
  Если статус Entity managed, то в результате операции будут 
 востановленны все изменения из базы данных данного Entity, так же 
-произойдет refresh всех каскадно зависимых объектов,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2. Если статус new, removed или detached, будет выкинут exception.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+произойдет refresh всех каскадно зависимых объектов,</div>
+<div>
+2. Если статус new, removed или detached, будет выкинут exception.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как влияет операция detach на Entity объекты каждого из четырех статусов?</span></li>
+<li>Как влияет операция detach на Entity объекты каждого из четырех статусов?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
+<div>
+1.
  Если статус Entity managed или removed, то в результате операции статус
- Entity (и всех каскадно-зависимых объектов) станет detached.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2. Если статус new или detached, то операция игнорируется.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+ Entity (и всех каскадно-зависимых объектов) станет detached.</div>
+<div>
+2. Если статус new или detached, то операция игнорируется.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для чего нужна аннотация Access?</span></li>
+<li>Для чего нужна аннотация Access?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Она
+<div>
+Она
  определяет тип доступа (access type) для класса entity, суперкласса, 
 embeddable или отдельных атрибутов, то есть как JPA будет обращаться к 
 атрибутам entity, как к полям класса (FIELD) или как к свойствам класса 
-(PROPERTY), имеющие гетеры (getter) и сетеры (setter).</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+(PROPERTY), имеющие гетеры (getter) и сетеры (setter).</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для чего нужна аннотация Basic?</span></li>
+<li>Для чего нужна аннотация Basic?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Basic
+<div>
+Basic
  - указывает на простейший тип маппинга данных на колонку таблицы базы 
 данных. Также в параметрах аннотации можно указать fetch стратегию 
-доступа к полю и является ли это поле обязательным или нет.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+доступа к полю и является ли это поле обязательным или нет.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой
+<li>Какой
  аннотациями можно перекрыть связи (override entity relationship) или 
 атрибуты, унаследованные от суперкласса, или заданные в embeddable 
 классе при использовании этого embeddable класса в одном из entity 
-классов и не перекрывать в остальных?</span></li>
+классов и не перекрывать в остальных?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для такого перекрывания существует четыре аннотации:</span></div>
-<div style="text-align: justify;">
+<div>
+Для такого перекрывания существует четыре аннотации:</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AttributeOverride чтобы перекрыть поля, свойства и первичные ключи,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AttributeOverrides аналогично можно перекрыть поля, свойства и первичные ключи со множественными значениями,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">AssociationOverride чтобы перекрывать связи (override entity relationship),</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">As</span><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">sociationOverrides чтобы перекрывать множественные связи (multiple relationship).</span></li>
+<li>AttributeOverride чтобы перекрыть поля, свойства и первичные ключи,</li>
+<li>AttributeOverrides аналогично можно перекрыть поля, свойства и первичные ключи со множественными значениями,</li>
+<li>AssociationOverride чтобы перекрывать связи (override entity relationship),</li>
+<li>AssociationOverrides чтобы перекрывать множественные связи (multiple relationship).</li>
 </ul>
 <div style="text-align: left;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
-</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
-<h3 style="text-align: justify;">
+<br>
+</div>
+<div>
+ </div>
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие
+<li>Какие
  аннотации служит для задания класса преобразования basic атрибута 
 Entity в другой тип при сохранении/получении данных их базы (например, 
 работать с атрибутом Entity boolean типа, но в базу сохранять его как 
-число)?</span></li>
+число)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Convert
+<div>
+Convert
  и Converts - позволяют указать класс для конвертации Basic атрибута 
 Entity в другой тип (Converts - позволяют указать несколько классов 
 конвертации). Классы для конвертации должны реализовать интерфейс 
 AttributeConverter и могут быть отмечены (но это не обязательно) 
-аннотацией Converter.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+аннотацией Converter.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой аннотацией можно управлять кешированием JPA для данного Entity?</span></li>
+<li>Какой аннотацией можно управлять кешированием JPA для данного Entity?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Cacheable
+<div>
+Cacheable
  - позволяет включить или выключить использование кеша второго уровня 
 (second-level cache) для данного Entity (если провайдер JPA поддерживает
  работу с кешированием и настройки кеша (second-level cache) стоят как 
 ENABLE_SELECTIVE или DISABLE_SELECTIVE, см вопрос 41). Обратите внимание
  свойство наследуется и если не будет перекрыто у наследников, то 
-кеширование измениться и для них тоже.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+кеширование измениться и для них тоже.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой
+<li>Какой
  аннотацией можно задать класс, методы которого должен выполнится при 
 определенных JPA операциях над данным Enitity или Mapped Superclass 
-(такие как удаление, изменение данных и т.п.)?</span></li>
+(такие как удаление, изменение данных и т.п.)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Аннотация
+<div>
+Аннотация
  EntityListeners позволяет задать класс Listener, который будет 
 содержать методы обработки событий (сallback methods) определенных 
-Entity или Mapped Superclass.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+Entity или Mapped Superclass.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+<li>Для
  чего нужны callback методы в JPA? К каким сущностям применяются 
 аннотации callback методов? Перечислите семь callback методов (или что 
-тоже самое аннотаций callback методов).</span></li>
+тоже самое аннотаций callback методов).</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Callback
+<div>
+Callback
  методы служат для вызова при определенных событиях Entity (то есть 
 добавить обработку например удаления Entity методами JPA), могут быть 
 добавлены к entity классу, к mapped superclass, или к callback listener 
 классу, заданному аннотацией EntityListeners (см предыдущий вопрос). 
-Существует семь callback методов (и аннотаций с теми же именами):</span></div>
-<div style="text-align: justify;">
+Существует семь callback методов (и аннотаций с теми же именами):</div>
+<div>
 </div>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PrePersist</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PostPersist</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PreRemove</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PostRemove</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PreUpdate</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PostUpdate</span></li>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PostLoad</span></li>
+<li>PrePersist</li>
+<li>PostPersist</li>
+<li>PreRemove</li>
+<li>PostRemove</li>
+<li>PreUpdate</li>
+<li>PostUpdate</li>
+<li>PostLoad</li>
 </ul>
 <div style="text-align: left;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</div>
 <div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какой аннотацей можно исключить поли и свойства Entity из маппинга (property or field is not persistent)?</span></li>
+<li>Какой аннотацей можно исключить поли и свойства Entity из маппинга (property or field is not persistent)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для этого служит аннотация Transient.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+<div>
+Для этого служит аннотация Transient.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие аннотации служить для установки порядка выдачи элементов коллекций Entity?</span></li>
+<li>Какие аннотации служить для установки порядка выдачи элементов коллекций Entity?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для этого служит аннотация OrderBy и OrderColumn.</span><br>
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
-</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<h3 style="text-align: justify;">
+<div>
+Для этого служит аннотация OrderBy и OrderColumn.<br>
+<br>
+</div>
+<div>
+</div>
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие шесть видов блокировок (lock) описаны в спецификации JPA (или какие есть значения у enum LockModeType в JPA)?</span></li>
+<li>Какие шесть видов блокировок (lock) описаны в спецификации JPA (или какие есть значения у enum LockModeType в JPA)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">У
+<div>
+У
  JPA есть шесть видов блокировок, перечислим их в порядке увеличения 
 надежности (от самого ненадежного и быстрого, до самого надежного и 
-медленного):</span></div>
-<div style="text-align: justify;">
+медленного):</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">NONE - без блокировки</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">OPTIMISTIC (или синоним READ, оставшийся от JPA 1) - оптимистическая блокировка</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">OPTIMISTIC_FORCE_INCREMENT
+<li>NONE - без блокировки</li>
+<li>OPTIMISTIC (или синоним READ, оставшийся от JPA 1) - оптимистическая блокировка</li>
+<li>OPTIMISTIC_FORCE_INCREMENT
  (или синоним WRITE, оставшийся от JPA 1) - оптимистическая блокировка с
- принудительным увеличением поля версионности</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PESSIMISTIC_READ - пессимистичная блокировка на чтение</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PESSIMISTIC_WRITE - пессимистичная блокировка на запись (и чтение)</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PESSIMISTIC_FORCE_INCREMENT - пессимистичная блокировка на запись (и чтение) с принудительным увеличением поля версионности.</span></li>
+ принудительным увеличением поля версионности</li>
+<li>PESSIMISTIC_READ - пессимистичная блокировка на чтение</li>
+<li>PESSIMISTIC_WRITE - пессимистичная блокировка на запись (и чтение)</li>
+<li>PESSIMISTIC_FORCE_INCREMENT - пессимистичная блокировка на запись (и чтение) с принудительным увеличением поля версионности.</li>
 </ul>
 <div style="text-align: left;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
+</div>
 <div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие два вида кэшей (cache) вы знаете в JPA и для чего они нужны?</span></li>
+<li>Какие два вида кэшей (cache) вы знаете в JPA и для чего они нужны?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JPA говорит о двух видов кэшей (cache):</span></div>
-<div style="text-align: justify;">
+<div>
+JPA говорит о двух видов кэшей (cache):</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">first-level cache (кэш первого уровня) - кэширует данные одной транзакции,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">second-level
+<li>first-level cache (кэш первого уровня) - кэширует данные одной транзакции,</li>
+<li>second-level
  cache (кэш второго уровня) - кэширует данные дольше чем одна 
 транзакция. Провайдер JPA может, но не обязан реализовывать работу с 
 кэшем второго уровня. Такой вид кэша позволяет сэкономить время доступа и
  улучшить производительность, однако оборотной стороной является 
-возможность получить устаревшие данные.</span></li>
+возможность получить устаревшие данные.</li>
 </ul>
 <div style="text-align: left;">
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие
+<li>Какие
  есть варианты настройки second-level cache (кэша второго уровня) в JPA 
 или что аналогично опишите какие значения может принимать элемент 
-shared-cache-mode из persistence.xml?</span></li>
+shared-cache-mode из persistence.xml?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">JPA
+<div>
+JPA
  говорит о пяти значениях shared-cache-mode из persistence.xml, который 
-определяет как будет использоваться second-level cache:</span></div>
-<div style="text-align: justify;">
+определяет как будет использоваться second-level cache:</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ALL - все Entity могут кэшироваться в кеше второго уровня</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">NONE - кеширование отключено для всех Entity</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">ENABLE_SELECTIVE
+<li>ALL - все Entity могут кэшироваться в кеше второго уровня</li>
+<li>NONE - кеширование отключено для всех Entity</li>
+<li>ENABLE_SELECTIVE
  - кэширование работает только для тех Entity, у которых установлена 
 аннотация Cacheable(true) или её xml эквивалент, для всех остальных 
-кэширование отключено</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DISABLE_SELECTIVE
+кэширование отключено</li>
+<li>DISABLE_SELECTIVE
  - кэширование работает для всех Entity, за исключением тех у которых 
-установлена аннотация Cacheable(false) или её xml эквивалент</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">UNSPECIFIED - кеширование не определенно, каждый провайдер JPA использует свою значение по умолчанию для кэширования</span></li>
+установлена аннотация Cacheable(false) или её xml эквивалент</li>
+<li>UNSPECIFIED - кеширование не определенно, каждый провайдер JPA использует свою значение по умолчанию для кэширования</li>
 </ul>
 <br>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<h3 style="text-align: justify;">
+<div>
+</div>
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Как
+<li>Как
  можно изменить настройки fetch стратегии любых атрибутов Entity для 
 отдельных запросов (query) или методов поиска (find), то если у Enity 
 есть атрибут с fetchType = LAZY, но для конкретного запроса его 
-требуется сделать EAGER или наоборот?</span></li>
+требуется сделать EAGER или наоборот?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+<div>
+Для
  этого существует EntityGraph API, используется он так: с помощью 
 аннотации NamedEntityGraph для Entity, создаются именованные EntityGraph
  объекты, которые содержат список атрибутов у которых нужно поменять 
 fetchType на EAGER, а потом данное имя указывается в hits запросов или 
 метода find. В результате fetchType атрибутов Entity меняется, но только
  для этого запроса. Существует две стандартных property для указания 
-EntityGraph в hit:</span></div>
-<div style="text-align: justify;">
+EntityGraph в hit:</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">javax.persistence.fetchgraph - все атрибуты перечисленные в EntityGraph меняют fetchType на EAGER, все остальные на LAZY</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">javax.persistence.loadgraph
+<li>javax.persistence.fetchgraph - все атрибуты перечисленные в EntityGraph меняют fetchType на EAGER, все остальные на LAZY</li>
+<li>javax.persistence.loadgraph
  - все атрибуты перечисленные в EntityGraph меняют fetchType на EAGER, 
 все остальные сохраняют свой fetchType (то есть если у атрибута, не 
 указанного в EntityGraph, fetchType был EAGER, то он и останется EAGER)С
  помощью NamedSubgraph можно также изменить fetchType вложенных объектов
- Entity.</span></li>
+ Entity.</li>
 </ul>
 <div style="text-align: left;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"><br>
-</span></div>
-<h3 style="text-align: justify;">
+<br>
+</div>
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каким способом можно получить метаданные JPA (сведения о Entity типах, Embeddable и Managed классах и т.п.)?</span></li>
+<li>Каким способом можно получить метаданные JPA (сведения о Entity типах, Embeddable и Managed классах и т.п.)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+<div>
+Для
  получения такой информации в JPA используется интерфейс Metamodel. 
 Объект этого интерфейса можно получить методом getMetamodel у 
-EntityManagerFactory или EntityManager.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+EntityManagerFactory или EntityManager.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Каким
+<li>Каким
  способом можно в коде работать с кэшем второго уровня (удалять все или 
 определенные Entity из кеша, узнать закэшировался ли данное Entity и 
-т.п.)?</span></li>
+т.п.)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Для
+<div>
+Для
  работы с кэшем второго уровня (second level cache) в JPA описан Cache 
 интерфейс, содержащий большое количество методов по управлению кэшем 
 второго уровня (second level cache), если он поддерживается провайдером 
 JPA, конечно. Объект данного интерфейса можно получить с помощью метода 
-getCache у EntityManagerFactory.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+getCache у EntityManagerFactory.</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В чем разница в требованиях к Entity в Hibernate, от требований к Entity, указанных в спецификации JPA?</span></li>
+<li>В чем разница в требованиях к Entity в Hibernate, от требований к Entity, указанных в спецификации JPA?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">1.
+<div>
+1.
  Конструктор без аргументов не обязан быть public или protected, 
 рекомендуется чтобы он был хотя бы package видимости, однако это только 
 рекомендация, если настройки безопасности Java позволяют доступ к 
-приватным полям, то он может быть приватным,</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">2.
+приватным полям, то он может быть приватным,</div>
+<div>
+2.
  JPA категорически требует не использовать final классы, Hibernate лишь 
 рекомендует не использовать такие классы чтобы он мог создавать прокси 
 для ленивой загрузки, однако позволяет либо выключить прокси 
 Proxy(lazy=false), либо использовать в качестве прокси интерфейс, 
 содержащий все методы маппинга для данного класса (аннотацией 
-Proxy(proxyClass=интерфейс.class) )</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+Proxy(proxyClass=интерфейс.class) )</div>
+<div>
+</div>
+<div>
 <br></div>
-<h3 style="text-align: justify;">
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какая уникальная стратегия наследования есть в Hibernate, но нет в спецификации JPA?</span></li>
+<li>Какая уникальная стратегия наследования есть в Hibernate, но нет в спецификации JPA?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В отличии JPA в Hibernate есть уникальная стратегия наследования, которая называется implicit polymorphism.</span></div>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span></div>
-<div style="text-align: justify;">
+<div>
+В отличии JPA в Hibernate есть уникальная стратегия наследования, которая называется implicit polymorphism.</div>
+<div>
+</div>
+<div>
 <br>
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"></span>
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;"> </span></div>
-<h3 style="text-align: justify;">
+
+ </div>
+<h3>
 <ul>
-<li><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Какие
+<li>Какие
  основные новые возможности появились в спецификации JPA 2.1 по 
-сравнению с JPA 2.0 (перечислите хотя бы пять-шесть новых возможностей)?</span></li>
+сравнению с JPA 2.0 (перечислите хотя бы пять-шесть новых возможностей)?</li>
 </ul>
 </h3>
-<div style="text-align: justify;">
-<span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">В спецификации JPA 2.1 появились:</span></div>
-<div style="text-align: justify;">
+<div>
+В спецификации JPA 2.1 появились:</div>
+<div>
 </div>
 <ul>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Entity Graphs - механизм динамического изменения fetchType для каждого запроса</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Converters - механизм определения конвертеров для задания функций конвертации атрибутов Entity в поля базы данных</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">DDL генерация - автоматическая генерация таблиц, индексов и схем</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Stored Procedures - механизм вызова хранимых процедур из JPA</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Criteria Update/Delete - механизм вызова bulk updates или deletes, используя Criteria API</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Unsynchronized persistence contexts - появление возможности указать SynchronizationType</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Новые возможности в JPQL/Criteria API: арифметические подзапросы, generic database functions, join ON clause, функция TREAT</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Динамическое создание именованных запросов (named queries)</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Интерфейс
+<li>Entity Graphs - механизм динамического изменения fetchType для каждого запроса</li>
+<li>Converters - механизм определения конвертеров для задания функций конвертации атрибутов Entity в поля базы данных</li>
+<li>DDL генерация - автоматическая генерация таблиц, индексов и схем</li>
+<li>Stored Procedures - механизм вызова хранимых процедур из JPA</li>
+<li>Criteria Update/Delete - механизм вызова bulk updates или deletes, используя Criteria API</li>
+<li>Unsynchronized persistence contexts - появление возможности указать SynchronizationType</li>
+<li>Новые возможности в JPQL/Criteria API: арифметические подзапросы, generic database functions, join ON clause, функция TREAT</li>
+<li>Динамическое создание именованных запросов (named queries)</li>
+<li>Интерфейс
  EntityManager получил новые методы createStoredProcedureQuery, 
-isJoinedToTransaction и createQuery(CriteriaUpdate или CriteriaDelete)</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Абстрактный
+isJoinedToTransaction и createQuery(CriteriaUpdate или CriteriaDelete)</li>
+<li>Абстрактный
  класс AbstractQuery стал наследоваться от класса 
 CommonAbstractCriteria, появились новые интерфейсы CriteriaUpdate, 
-CriteriaDelete унаследованные CommonAbstractCriteria,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">PersistenceProvider получил новые функции generateSchema позволяющие генерить схемы,</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">EntityManagerFactory
+CriteriaDelete унаследованные CommonAbstractCriteria,</li>
+<li>PersistenceProvider получил новые функции generateSchema позволяющие генерить схемы,</li>
+<li>EntityManagerFactory
  получил методы addNamedQuery, unwrap, addNamedEntityGraph, 
-createEntityManager (с указанием SynchronizationType)</span></li>
-<li style="text-align: justify;"><span style="font-family: &quot;arial&quot; , &quot;helvetica&quot; , sans-serif;">Появился новый enum SynchronizationType, Entity Graphs, StoredProcedureQuery и AttributeConverter интерфейсы.</span></li>
+createEntityManager (с указанием SynchronizationType)</li>
+<li>Появился новый enum SynchronizationType, Entity Graphs, StoredProcedureQuery и AttributeConverter интерфейсы.</li>
 </ul>
 <link href="https://plus.google.com/105527202953364202368" rel="author">
 <p></p>

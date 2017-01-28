@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>SessionsTrans</title>
+    <link rel="stylesheet" href="grey.css">
+</head>
+<body>
+<a href="https://habrahabr.ru/post/271115/">src</a>
+<div class="content html_format cye-lm-tag">В моей первой статье на Хабре я хотел бы поделиться некоторыми соображениями и замечаниями по работе с Hibernate, касающихся сессий и транзакций. Я остановился на некоторых нюансах, которые возникают при начале освоения этой темы. Признаюсь, сам пока Junior-программист, с Hibernate работал не постоянно, поэтому, <s>как всегда</s>, возможны ошибки, коль заметите оные, буду благодарен за поправки. <br>
+<br>
+Библиотека Hibernate является самой популярной ORM-билиотекой и реализацией Java Persistence API. Часто используется как ORM-провайдер в обычных Java-приложениях, контейнерах сервлетов, в частности, в сервере приложений JBoss (и его потомке WildFly).<br>
+<br>
+Начнём, пожалуй.<br>
+<a name="habracut"></a><br>
+<h5>1). Объекты-сущности (Entity Objects)</h5><br>
+Рассмотрим две сущности — пользователя и его задачи:<br>
+<br>
+<pre><code class="sql hljs"><span class="hljs-keyword cye-lm-tag">CREATE</span> <span class="hljs-keyword cye-lm-tag">TABLE</span> <span class="hljs-string cye-lm-tag">"user"</span>
+(
+  user_id <span class="hljs-built_in cye-lm-tag">serial</span> <span class="hljs-keyword cye-lm-tag">NOT</span> <span class="hljs-literal cye-lm-tag">NULL</span>,
+  login <span class="hljs-built_in cye-lm-tag">character</span> <span class="hljs-built_in cye-lm-tag">varying</span>(<span class="hljs-number cye-lm-tag">10</span>),
+  <span class="hljs-keyword cye-lm-tag">password</span> <span class="hljs-built_in cye-lm-tag">character</span> <span class="hljs-built_in cye-lm-tag">varying</span>(<span class="hljs-number cye-lm-tag">10</span>),
+  <span class="hljs-keyword cye-lm-tag">role</span> <span class="hljs-built_in cye-lm-tag">integer</span>,
+  <span class="hljs-keyword cye-lm-tag">name</span> <span class="hljs-built_in cye-lm-tag">character</span> <span class="hljs-built_in cye-lm-tag">varying</span>(<span class="hljs-number cye-lm-tag">20</span>) <span class="hljs-keyword cye-lm-tag">NOT</span> <span class="hljs-literal cye-lm-tag">NULL</span>,
+  <span class="hljs-keyword cye-lm-tag">CONSTRAINT</span> user_pkey PRIMARY <span class="hljs-keyword cye-lm-tag">KEY</span> (user_id)
+)
+
+
+<span class="hljs-keyword cye-lm-tag">CREATE</span> <span class="hljs-keyword cye-lm-tag">TABLE</span> task
+(
+  task_id <span class="hljs-built_in cye-lm-tag">serial</span> <span class="hljs-keyword cye-lm-tag">NOT</span> <span class="hljs-literal cye-lm-tag">NULL</span>,
+  user_id <span class="hljs-built_in cye-lm-tag">bigint</span>,
+  task_date <span class="hljs-built_in cye-lm-tag">date</span>,
+  <span class="hljs-keyword cye-lm-tag">name</span> <span class="hljs-built_in cye-lm-tag">character</span> <span class="hljs-built_in cye-lm-tag">varying</span>(<span class="hljs-number cye-lm-tag">20</span>),
+  definition <span class="hljs-built_in cye-lm-tag">character</span> <span class="hljs-built_in cye-lm-tag">varying</span>(<span class="hljs-number cye-lm-tag">200</span>),
+  <span class="hljs-keyword cye-lm-tag">CONSTRAINT</span> tasks_pkey PRIMARY <span class="hljs-keyword cye-lm-tag">KEY</span> (task_id),
+  <span class="hljs-keyword cye-lm-tag">CONSTRAINT</span> fk_user FOREIGN <span class="hljs-keyword cye-lm-tag">KEY</span> (user_id)
+      <span class="hljs-keyword cye-lm-tag">REFERENCES</span> <span class="hljs-string cye-lm-tag">"user"</span> (user_id) <span class="hljs-keyword cye-lm-tag">MATCH</span> SIMPLE
+      <span class="hljs-keyword cye-lm-tag">ON</span> <span class="hljs-keyword cye-lm-tag">UPDATE</span> <span class="hljs-keyword cye-lm-tag">NO</span> <span class="hljs-keyword cye-lm-tag">ACTION</span> <span class="hljs-keyword cye-lm-tag">ON</span> <span class="hljs-keyword cye-lm-tag">DELETE</span> <span class="hljs-keyword cye-lm-tag">NO</span> <span class="hljs-keyword cye-lm-tag">ACTION</span>
+)
+
+</code></pre><br>
+Теперь приведём классы-сущности для этих таблиц:<br>
+<br>
+<pre class="cye-lm-tag"><code class="java hljs cye-lm-tag"><span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-meta cye-lm-tag">@Table</span>(name = <span class="hljs-string cye-lm-tag">"user"</span>, schema = <span class="hljs-string cye-lm-tag">"public"</span>)
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">User</span> </span>{
+    <span class="hljs-keyword cye-lm-tag">private</span> Long userId;
+    <span class="hljs-keyword cye-lm-tag">private</span> String name;
+    <span class="hljs-keyword cye-lm-tag">private</span> String login;
+    <span class="hljs-keyword cye-lm-tag">private</span> String password;
+    <span class="hljs-keyword cye-lm-tag">private</span> Integer role;
+    <span class="hljs-keyword cye-lm-tag">private</span> List&lt;Task&gt; tasks;
+
+    <span class="hljs-meta cye-lm-tag">@Id</span>
+    <span class="hljs-meta cye-lm-tag">@SequenceGenerator</span>(name = <span class="hljs-string cye-lm-tag">"user_seq"</span>, sequenceName = <span class="hljs-string cye-lm-tag">"user_user_id_seq"</span>, allocationSize = <span class="hljs-number cye-lm-tag">0</span>)
+    <span class="hljs-meta cye-lm-tag">@GeneratedValue</span>(strategy = GenerationType.SEQUENCE, generator = <span class="hljs-string cye-lm-tag">"user_seq"</span>)
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"user_id"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">getUserId</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> userId;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setUserId</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.userId = userId;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@OneToMany</span>(fetch = FetchType.LAZY, mappedBy = <span class="hljs-string cye-lm-tag">"user"</span>, cascade = CascadeType.ALL)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Tasks&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> tasks;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setTasks</span><span class="hljs-params cye-lm-tag">(List&lt;Tasks&gt; tasks)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.tasks = tasks;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"name"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> String <span class="hljs-title cye-lm-tag">getName</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> name;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setName</span><span class="hljs-params cye-lm-tag">(String name)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.name = name;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"login"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> String <span class="hljs-title cye-lm-tag">getLogin</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> login;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setLogin</span><span class="hljs-params cye-lm-tag">(String login)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.login = login;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"password"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> String <span class="hljs-title cye-lm-tag">getPassword</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> password;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setPassword</span><span class="hljs-params cye-lm-tag">(String password)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.password = password;
+    }
+
+}
+
+
+<span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-meta cye-lm-tag">@Table</span>(name = <span class="hljs-string cye-lm-tag">"task"</span>, schema = <span class="hljs-string cye-lm-tag">"public"</span>)
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Task</span> </span>{
+
+    <span class="hljs-keyword cye-lm-tag">private</span> Long taskId;
+    <span class="hljs-keyword cye-lm-tag">private</span> User user;
+    <span class="hljs-keyword cye-lm-tag">private</span> Date taskDate;
+    <span class="hljs-keyword cye-lm-tag">private</span> String name;
+    <span class="hljs-keyword cye-lm-tag">private</span> String definition;
+    <span class="hljs-keyword cye-lm-tag">private</span> Priority priority;
+    <span class="hljs-keyword cye-lm-tag">private</span> Type type;
+
+    <span class="hljs-meta cye-lm-tag">@Id</span>
+    <span class="hljs-meta cye-lm-tag">@SequenceGenerator</span>(name = <span class="hljs-string cye-lm-tag">"tasks_seq"</span>, sequenceName = <span class="hljs-string cye-lm-tag">"tasks_task_id_seq"</span>, allocationSize = <span class="hljs-number cye-lm-tag">0</span>)
+    <span class="hljs-meta cye-lm-tag">@GeneratedValue</span>(strategy = GenerationType.SEQUENCE, generator = <span class="hljs-string cye-lm-tag">"tasks_seq"</span>)
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"task_id"</span>, unique = <span class="hljs-keyword cye-lm-tag">true</span>, nullable = <span class="hljs-keyword cye-lm-tag">false</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">getTaskId</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> taskId;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setTaskId</span><span class="hljs-params cye-lm-tag">(Long taskId)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.taskId = taskId;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@ManyToOne</span>(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    <span class="hljs-meta cye-lm-tag">@JoinColumn</span>(name = <span class="hljs-string cye-lm-tag">"user_id"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> User <span class="hljs-title cye-lm-tag">getUser</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> user;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setUser</span><span class="hljs-params cye-lm-tag">(User user)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.user = user;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"task_date"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Date <span class="hljs-title cye-lm-tag">getTaskDate</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> taskDate;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setTaskDate</span><span class="hljs-params cye-lm-tag">(Date taskDate)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.taskDate = taskDate;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"name"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> String <span class="hljs-title cye-lm-tag">getName</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> name;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setName</span><span class="hljs-params cye-lm-tag">(String name)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.name = name;
+    }
+
+    <span class="hljs-meta cye-lm-tag">@Column</span>(name = <span class="hljs-string cye-lm-tag">"definition"</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> String <span class="hljs-title cye-lm-tag">getDefinition</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> definition;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setDefinition</span><span class="hljs-params cye-lm-tag">(String definition)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.definition = definition;
+    }
+
+}
+</code></pre><br>
+Об аннотациях JPA можно прочитать <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/package-summary.html">здесь</a>.<br>
+<br>
+<h5>2). Интерфейс Session</h5><br>
+В Hibernate работа с БД осуществляется через объект типа <i>org.hibernate.Session</i>. <br>
+Выдержка из документации:<br>
+<blockquote>The main runtime interface between a Java application and Hibernate. This is the central API class abstracting the notion of a persistence service.<br>
+The lifecycle of a Session is bounded by the beginning and end of a logical transaction. (Long transactions might span several database transactions.)<br>
+The main function of the Session is to offer create, read and delete operations for instances of mapped entity classes.<br>
+</blockquote><br>
+Интерфейс <i>org.hibernate.Session</i> является мостом между приложением и Hibernate. С помощью сессий выполняются все CRUD-операции с <i>объектами-сущностями</i>. Объект типа <i>Session</i> получают из экземпляра типа <i>org.hibernate.SessionFactory</i>, который должен присутствовать в приложении в виде <i>singleton</i>.<br>
+<br>
+<h5>3). Состояния объектов</h5><br>
+Объект-сущность может находиться в одном из 3-х состояний (статусов):<br>
+<br>
+<ul>
+<li><i>transient object</i>. Объекты в данном статусе — это заполненные экземпляры классов-сущностей. Могут быть сохранены в БД. Не присоединены к сессии. Поле <i>Id</i> не должно быть заполнено, иначе объект имеет статус <i>detached </i>;</li>
+<li><i>persistent object</i>. Объект в данном статусе — так называемая хранимая сущность, которая присоединена к конкретной сессии. Только в этом статусе объект взаимодействует с базой данных. При работе с объектом данного типа в рамках транзакции все изменения объекта записываются в базу;</li>
+<li><i>detached object</i>. Объект в данном статусе — это объект, отсоединённый от сессии, может существовать или не существовать в БД. </li>
+</ul><br>
+Любой объект-сущность можно переводить из одного статуса в другой. Для этого в интерфейсе <i>Session</i> существуют следующие методы:<br>
+<br>
+<ul>
+<li><i>persist(Object)</i> — преобразует объект из <i>transient</i> в <i>persistent</i>, то есть присоединяет к сессии и сохраняет в БД. Однако, если мы присвоим значение полю <i>Id</i> объекта, то получим <i>PersistentObjectException</i> — Hibernate посчитает, что объект <i>detached</i>, т. е. существует в БД. При сохранении метод <i>persist()</i> сразу выполняет <i>insert</i>, не делая <i>select</i>. </li>
+<li><i>merge(Object)</i> — преобразует объект из <i>transient</i> или <i>detached</i> в <i>persistent</i>. Если из <i>transient</i>, то работает аналогично <i>persist()</i> (генерирует для объекта новый <i>Id</i>, даже если он задан), если из <i>detached</i> — загружает объект из БД, присоединяет к сессии, а при сохранении выполняет запрос <i>update</i></li>
+<li><i>replicate(Object, ReplicationMode)</i> — преобразует объект из <i>detached</i> в <i>persistent</i>, при этом у объекта обязательно должен быть заранее установлен <i>Id</i>. Данный метод предназначен для сохранения в БД объекта с заданным <i>Id</i>, чего не позволяют сделать <i>persist()</i> и <i>merge()</i>. Если объект с данным <i>Id</i> уже существует в БД, то поведение определяется согласно правилу из перечисления <i>org.hibernate.ReplicationMode</i>:<br>
+<i>ReplicationMode.IGNORE</i> — ничего не меняется в базе.<br>
+<i>ReplicationMode.OVERWRITE</i> — объект сохраняется в базу вместо существующего.<br>
+<i>ReplicationMode.LATEST_VERSION</i> — в базе сохраняется объект с последней версией.<br>
+<i>ReplicationMode.EXCEPTION</i> — генерирует исключение.</li>
+<li><i>delete(Object)</i> — удаляет объект из БД, иными словами, преобразует <i>persistent</i> в <i>transient</i>. <i>Object</i> может быть в любом статусе, главное, чтобы был установлен <i>Id</i>.</li>
+<li><i>save(Object)</i> — сохраняет объект в БД, генерируя новый <i>Id</i>, даже если он установлен. <i>Object</i> может быть в статусе <i>transient </i> или <i>detached </i></li>
+<li><i>update(Object)</i> — обновляет объект в БД, преобразуя его в <i>persistent</i> (<i>Object</i> в статусе <i>detached</i>)</li>
+<li><i>saveOrUpdate(Object)</i> — вызывает <i>save()</i> или <i>update()</i></li>
+<li><i>refresh(Object)</i> — обновляет <i>detached</i>-объект, выполнив <i>select</i> к БД, и преобразует его в <i>persistent</i></li>
+<li><i>get(Object.class, id)</i> — получает из БД объект класса-сущности с определённым <i>Id</i> в статусе <i>persistent</i></li>
+</ul><br>
+Объект <i>Session</i> кэширует у себя загруженные объекты; при загрузке объекта из БД в первую очередь проверяется кэш. Для того, чтобы удалить объект из кэша и отсоединить от сессии, используется <i>session.evict(Object)</i>. Метод <i>session.clear()</i> применит <i>evict()</i> ко всем объектам в сессии.<br>
+<br>
+А теперь обратим внимание на аннотации <i>@OneToMany</i> и <i>@ManyToOne</i> в классах-сущностях. Параметр <i>fetch</i> в <i>@OneToMany</i> обозначает, когда загружать дочерние объекты. Может иметь одно из двух значений, указанных в перечислении <i>javax.persistence.FetchType</i>: <br>
+<br>
+<i>FetchType.EAGER</i> — загружать коллекцию дочерних объектов сразу же, при загрузке родительских объектов. <br>
+<i>FetchType.LAZY</i> — загружать коллекцию дочерних объектов при первом обращении к ней (вызове <i>get</i>) — так называемая отложенная загрузка.<br>
+<br>
+Параметр <i>cascade</i> обозначает, какие из методов интерфейса <i>Session</i> будут распространяться каскадно к ассоциированным сущностям. Например, в классе-сущности <i>User</i> для коллекции <i>tasks</i> укажем: <br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@OneToMany</span>(fetch = FetchType.LAZY, mappedBy = <span class="hljs-string cye-lm-tag">"user"</span>, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Tasks&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> tasks;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setTasks</span><span class="hljs-params cye-lm-tag">(List&lt;Tasks&gt; tasks)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.tasks = tasks;
+    }
+</code></pre><br>
+Тогда при выполнении <i>session.persist(user)</i> или <i>session.merge(user)</i> операции <i>persist</i> или <i>merge</i> будут применены ко всем объектам из <i>tasks</i>. Аналогично для остальных операций из перечисления <i>javax.persistence.CascadeType</i>. <i>CascadeType.ALL</i> применяет все операции из перечисления. Необходимо правильно настроить <i>CascadeType</i>, дабы не подгружать из базы кучу лишних ассоциированных объектов-сущностей.<br>
+<br>
+<h5>4). Извлечение объектов из БД</h5><br>
+Приведём простой пример:<br>
+<br>
+<pre><code class="java hljs">     <span class="hljs-meta cye-lm-tag">@Autowired</span>
+     <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">private</span> SessionFactory sessionFactory
+
+     <span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+         ...
+         Session session = sessionFactory.openSession();       
+         User user = (User) session.load(User.class, userId);
+         Session session = sessionFactory.openSession();
+         List&lt;Task&gt; tasksList = user.getTasks();
+         ...
+      }
+</code></pre><br>
+Вместо метода <i>session.get()</i> можно использовать <i>session.load()</i>. Метод <i>session.load()</i> возвращает так называемый <i>proxy-object</i>. <i>Proxy-object</i> — это объект-посредник, через который мы можем взаимодействовать с реальным объектом в БД. Он расширяет функционал объекта-сущности. Взаимодействие с <i>proxy-object</i> полностью аналогично взаимодействию с объектом-сущностью. <i>Proxy-object</i> отличается от объекта-сущности тем, что при создании <i>proxy-object</i> не выполняется ни одного запроса к БД, т. е. Hibernate просто верит нам, что объект с данным <i>Id</i> существует в БД. Однако первый вызванный <i>get</i> или <i>set</i> у <i>proxy-object</i> сразу инициирует запрос <i>select</i>, и если объекта с данным <i>Id</i> нет в базе, то мы получим <i>ObjectNotFoundException</i>. Основное предназначение <i>proxy-object</i> — реализация отложенной загрузки.<br>
+<br>
+Вызов <i>user.getTasks()</i> инициирует загрузку задач юзера из БД, так как в классе <i>User</i> для <i>tasks</i> установлен <i>FetchType.LAZY</i>. <br>
+<br>
+<h6>LazyInitializationException</h6><br>
+С параметром <i>FetchType.LAZY</i> нужно быть аккуратнее. Иногда при загрузке ассоциированных сущностей мы можем поймать исключение <i>LazyInitializationException</i>. В вышеуказанном коде во время вызова <i>user.getTasks()</i> <i>user</i> должен быть либо в статусе <i>persistent</i>, либо <i>proxy</i>.<br>
+<br>
+Также <i>LazyInitializationException</i> может вызвать небольшое изменение в нашем коде:<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+       ...
+       Session session = sessionFactory.openSession();
+       User user = (User) session.load(User.class, userId);
+       List&lt;Task&gt; tasksList = user.getTasks();
+       session.close();
+       <span class="hljs-keyword cye-lm-tag">return</span> tasksList;
+}
+</code></pre><br>
+Здесь теоретически всё верно. Но при попытке обращения к <i>tasksList</i> мы МОЖЕМ получить <i>LazyInitializationException</i>. Но в дебагере данный код отрабатывает верно. Почему? Потому, что <i>user.getTasks()</i> только возвращает ссылку на коллекцию, но не ждёт её загрузки. Не подождав, пока загрузятся данные, мы закрыли сессию. Выход — выполнять в транзакции, т. е.:<br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+       ...
+       User user = (User) session.load(User.class, userId);
+       Session session = sessionFactory.openSession();
+       session.beginTransaction();
+       List&lt;Task&gt; tasksList = user.getTasks();
+       session.getTransaction().commit();            
+       <span class="hljs-keyword cye-lm-tag">return</span> tasksList;
+    }
+</code></pre><br>
+<h6>Выборка с условиями</h6><br>
+А теперь приведём несколько простых примеров выборки данных с условиями. Для этого в Hibernate используются объекты типа <i>org.hibernate.Criteria</i>:<br>
+<br>
+<pre><code class="java hljs">       <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getUser</span><span class="hljs-params cye-lm-tag">(String login)</span> </span>{
+            ...
+            Session session = sessionFactory.openSession();
+            Criteria userCriteria = session.createCriteria(User.class);
+            userCriteria.add(Restrictions.eq(<span class="hljs-string cye-lm-tag">"login"</span>, login));
+            user = (User) userCriteria.uniqueResult();
+            session.close();
+            ...
+       }
+</code></pre><br>
+Здесь понятно, что мы выполняем <i>select * from user where login='login'</i>. В метод <i>add</i> мы передаём объект типа <i>Criterion</i>, представляющий определённый критерий выборки. Класс <i>org.hibernate.criterion.Restrictions</i> предоставляет множество различных видов критериев. Параметр «login» обозначает название свойства класса-сущности, а не поля в таблице БД.<br>
+Приведём ещё пару примеров:<br>
+<br>
+а).<br>
+<pre><code class="java hljs">   <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getTasksByName</span><span class="hljs-params cye-lm-tag">(String name)</span> </span>{
+       ...
+       session = sessionFactory.openSession();
+       Criteria criteria = session.createCriteria(Task.class);
+       List&lt;Task&gt; tasks = criteria.add(Restrictions.like(<span class="hljs-string cye-lm-tag">"name"</span>, name, MatchMode.ANYWHERE)).list();
+       ...
+   }
+</code></pre><br>
+Здесь мы выбираем по содержимому свойства <i>name</i> класса-сущности <i>Task</i>. <i>MatchMode.ANYWHERE</i> означает, что нужно искать подстроку <i>name</i> в любом месте свойства <i>«name»</i>. <br>
+<br>
+б).<br>
+А здесь мы получаем 50 строк, начиная с 20-го номера в таблице.<br>
+<br>
+<pre><code class="java hljs">   <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+       ...
+          Session session = sessionFactory.openSession();
+          Criteria criteria = session.createCriteria(Task.class);
+          List&lt;Task&gt; tasks = criteria.setFirstResult(<span class="hljs-number cye-lm-tag">20</span>).setMaxResults(<span class="hljs-number cye-lm-tag">50</span>).list();
+       ...
+   }
+</code></pre><br>
+<h5>5). Сохранение объектов</h5><br>
+Давайте разберём несколько способов сохранения объекта-сущности в базу данных.<br>
+<br>
+а). Создаём <i>transient-object</i> и сохраняем в базу:<br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@Autowired</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> UserDao userDao;
+ 
+    <span class="hljs-meta cye-lm-tag">@Autowired</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> SessionFactory sessionFactory;
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">saveUser</span><span class="hljs-params cye-lm-tag">(String login)</span> </span>{
+        User user = userDao.getUserByLogin(login);
+        Session session = sessionFactory.openSession();  
+        session.openTransaction();      
+        Task task = <span class="hljs-keyword cye-lm-tag">new</span> Task();
+        task.setName(<span class="hljs-string cye-lm-tag">"Задача 1"</span>);
+        task.setDefinition(<span class="hljs-string cye-lm-tag">"Задача 1"</span>);
+        task.setTaskDate(<span class="hljs-keyword cye-lm-tag">new</span> Date());
+        task.setUser(user);
+        session.saveOrUpdate(task);
+        session.flush();
+        session.getTransaction().commit();
+        <span class="hljs-keyword cye-lm-tag">return</span> task.getTaskId();
+    }
+</code></pre><br>
+Отметим несколько нюансов. Во-первых, сохранение в БД можно производить только в рамках транзакции. Вызов <i>session.openTransaction()</i> открывает для данной сессии новую транзакцию, а <i>session.getTransaction().commit()</i> её выполняет. Во-вторых, в метод <i>task.setUser(user)</i> мы передаём <i>user</i> в статусе <i>detached</i>. Можно передать и в статусе <i>persistent</i>.<br>
+<br>
+Данный код выполнит (не считая получения <i>user</i>) 2 запроса — <i>select nextval('task_task_id_seq')</i> и <i>insert into task...</i> <br>
+Вместо <i>saveOrUpdate()</i> можно выполнить <i>save()</i>, <i>persist()</i>, <i>merge()</i> — будет также 2 запроса. Вызов <i>session.flush()</i> применяет все изменения к БД, но, если честно, этот вызов здесь бесполезен, так как ничего не сохраняется в БД до <i>commit()</i>, который сам вызовет <i>flush()</i>.<br>
+<br>
+Помним, что если мы внутри транзакции что-то изменим в загруженном из БД объекте статуса <i>persistent</i> или <i>proxy-object</i>, то выполнится запрос <i>update</i>. Если <i>task</i> должен ссылаться на нового <i>user</i>, то делаем так:<br>
+<br>
+<pre><code class="java hljs">         User user = <span class="hljs-keyword cye-lm-tag">new</span> User();         <span class="hljs-comment cye-lm-tag">// Создаём &lt;i&gt;transient-object&lt;/i&gt;</span>
+         user.setLogin(<span class="hljs-string cye-lm-tag">"user"</span>);
+         user.setPassword(<span class="hljs-string cye-lm-tag">"user"</span>);
+         ...
+         task.setUser(user);
+         session.saveOrUpdate(task); <span class="hljs-comment cye-lm-tag">// Сохраняем</span>
+</code></pre> <br>
+Внимание: в классе <i>Task</i> для поля <i>user</i> должен быть установлен <i>CascadeType.PERSIST</i>, <i>CascadeType.MERGE</i> или <i>CascadeType.ALL</i>.<br>
+<br>
+Если мы имеем на руках <i>userId</i> существующего в БД юзера, то нам не обязательно загружать объект <i>User</i> из БД, делая лишний <i>select</i>. Так как мы не можем присвоить ID юзера непосредственно свойству класса <i>Task</i>, нам нужно создать объект класса <i>User</i> с единственно заполненными <i>userId</i>. Естественно, это не может быть <i>transient-object</i>, поэтому здесь следует воспользоваться известным нам <i>proxy-объектом</i>.<br>
+<br>
+<pre><code class="java hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">saveTask</span><span class="hljs-params cye-lm-tag">(Long userId, Task task)</span>
+         ...
+         task.<span class="hljs-title cye-lm-tag">setUser</span><span class="hljs-params cye-lm-tag">((User)</span> session.<span class="hljs-title cye-lm-tag">load</span><span class="hljs-params cye-lm-tag">(User.class, userId)</span>)</span>;    <span class="hljs-comment cye-lm-tag">// Никакого запроса к БД не происходит</span>
+         session.saveOrUpdate(task);
+         ...
+</code></pre><br>
+б). Добавляем объект в коллекцию дочерних объектов:<br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">saveUser</span><span class="hljs-params cye-lm-tag">(String login)</span> </span>{
+         Session session = sessionFactory.openSession();  
+         session.openTransaction(); 
+         user = (User) session.load(User.class, userId); 
+         Task task = <span class="hljs-keyword cye-lm-tag">new</span> Task();
+         task.setName(<span class="hljs-string cye-lm-tag">"Имя"</span>);
+         task.setUser(user);
+         user.getTasks().add(task);
+         session.getTransaction().commit();
+         <span class="hljs-keyword cye-lm-tag">return</span> user.getUserId();
+    }
+</code></pre><br>
+В <i>User</i> для свойства <i>tasks</i> должен стоять <i>CascadeType.ALL</i>. Если стоит <i>CascadeType.MERGE</i>, то после <i>user.getTasks().add(task)</i> выполнить <i>session.merge(user)</i>. Данный код выполнит 3 запроса — <i>select * from user</i>, <i>select nextval('task_task_id_seq')</i> и <i>insert into task</i>…<br>
+<br>
+<h5>6). Удаление объектов</h5><br>
+а). Можно удалить, создав <i>transient-object</i>:<br>
+<br>
+<pre><code class="java hljs">      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">deleteTask</span><span class="hljs-params cye-lm-tag">(Long taskId)</span> </span>{
+            Session session = sessionFactory.openSession();  
+            session.openTransaction(); 
+            Tasks task = <span class="hljs-keyword cye-lm-tag">new</span> Tasks();
+            task.setTaskId(taskId);
+            session.delete(task);
+            session.getTransaction().commit();
+      }
+</code></pre><br>
+Данный код удалит только <i>task</i>. Однако, если <i>task</i> — объект типа <i>proxy</i>, <i>persistent</i> или <i>detached</i> и в классе <i>Task</i> для поля <i>user</i> действует <i>CascadeType.REMOVE</i>, то из базы удалится также ассоциированный <i>user</i>. Если удалять юзера не нужно, выполнить что? Правильно, <i>task.setUser(null)</i> <br>
+<br>
+б). Можно удалить и таким способом:<br>
+<br>
+<pre><code class="java hljs">         <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">deleteTask</span><span class="hljs-params cye-lm-tag">(Long userId, Long taskId)</span> </span>{
+            User user = (User) session.load(User.class, userId);
+            user.getTasks().removeIf((Task task) -&gt; {
+                <span class="hljs-keyword cye-lm-tag">if</span> (task.getTaskId() == taskId) {
+                    task.setUser(<span class="hljs-keyword cye-lm-tag">null</span>);
+                    <span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-keyword cye-lm-tag">true</span>;
+                } <span class="hljs-keyword cye-lm-tag">else</span>
+                    <span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-keyword cye-lm-tag">false</span>;
+            });
+         }
+</code></pre><br>
+Данный код просто удаляет связь между <i>task</i> и <i>user</i>. Здесь мы применили новомодное <i>лямбда-выражение</i>. Объект <i>task</i> удалится из БД при одном условии — если изменить кое-что в классе-сущности <i>User</i>:<br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@OneToMany</span>(fetch = FetchType.LAZY, mappedBy = <span class="hljs-string cye-lm-tag">"user"</span>, cascade = CascadeType.ALL, orphanRemoval = <span class="hljs-keyword cye-lm-tag">true</span>)
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Tasks&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">return</span> tasks;
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setTasks</span><span class="hljs-params cye-lm-tag">(List&lt;Tasks&gt; tasks)</span> </span>{
+        <span class="hljs-keyword cye-lm-tag">this</span>.tasks = tasks;
+    }
+</code></pre> <br>
+Параметр <i>orphanRemoval = true</i> указывает, что все объекты <i>Task</i>, которые не имеют ссылки на <i>User</i>, должны быть удалены из БД.<br>
+<br>
+<h5>7). Декларативное управление транзакциями</h5><br>
+Для декларативного управления транзакциями мы будем использовать <i>Spring Framework</i>. Управление транзакциями осуществляется через менеджер транзакций. Вместо вызовов <i>session.openTransaction()</i> и <i>session.commit()</i> используется аннотация <i>@Transactional</i>. В конфигурации приложения должно присутствовать следующее:<br>
+<br>
+<pre><code class="xml hljs">    <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">bean</span> <span class="hljs-attr cye-lm-tag">id</span>=<span class="hljs-string cye-lm-tag">"sessionFactory"</span> <span class="hljs-attr cye-lm-tag">class</span>=<span class="hljs-string cye-lm-tag">"org.springframework.orm.hibernate4.LocalSessionFactoryBean"</span>&gt;</span>
+        <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">property</span> <span class="hljs-attr cye-lm-tag">name</span>=<span class="hljs-string cye-lm-tag">"configLocation"</span> <span class="hljs-attr cye-lm-tag">value</span>=<span class="hljs-string cye-lm-tag">"classpath:hibernate.cfg.xml"</span>&gt;</span><span class="hljs-tag cye-lm-tag">&lt;/<span class="hljs-name cye-lm-tag">property</span>&gt;</span>
+    <span class="hljs-tag cye-lm-tag">&lt;/<span class="hljs-name cye-lm-tag">bean</span>&gt;</span>
+
+    <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">bean</span> <span class="hljs-attr cye-lm-tag">id</span>=<span class="hljs-string cye-lm-tag">"transactionManager"</span> <span class="hljs-attr cye-lm-tag">class</span>=<span class="hljs-string cye-lm-tag">"org.springframework.orm.hibernate4.HibernateTransactionManager"</span>&gt;</span>
+        <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">property</span> <span class="hljs-attr cye-lm-tag">name</span>=<span class="hljs-string cye-lm-tag">"sessionFactory"</span> <span class="hljs-attr cye-lm-tag">ref</span>=<span class="hljs-string cye-lm-tag">"sessionFactory"</span>/&gt;</span>
+    <span class="hljs-tag cye-lm-tag">&lt;/<span class="hljs-name cye-lm-tag">bean</span>&gt;</span>
+    <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">tx:annotation-driven</span> <span class="hljs-attr cye-lm-tag">transaction-manager</span>=<span class="hljs-string cye-lm-tag">"transactionManager"</span>/&gt;</span>
+</code></pre><br>
+Здесь мы определили бин <i>transactionManager</i>, к которому привязан бин <i>sessionFactory</i>. Класс <i>HibernateTransactionManager </i>является реализацией общего интерфейса <i>org.springframework.transaction.PlatformTransactionManager</i> для <i>SessionFactory</i> библиотеки Hibernate. <i>annotation-driven</i> указывает менеджеру транзакций обрабатывать аннотацию <i>@Transactional</i>. <br>
+<br>
+ — Болтовня ничего не стоит. Покажите мне код. <i>(Linus Torvalds)</i><br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@Transactional</span>(propagation = Propagation.REQUIRED, rollbackFor = {ObjectNotFoundException.class,                               ConstraintViolationException.class})
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">saveTask</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+        Session session = sessionFactory.getCurrentSession();
+        Tasks task = <span class="hljs-keyword cye-lm-tag">new</span> Tasks();
+        task.setName(<span class="hljs-string cye-lm-tag">"Задача 1"</span>);
+        task.setDefinition(<span class="hljs-string cye-lm-tag">"Задача 1"</span>);
+        task.setTaskDate(<span class="hljs-keyword cye-lm-tag">new</span> Date());
+        task.setUser((User) session.load(User.class, userId));
+        session.saveOrUpdate(task);
+        <span class="hljs-keyword cye-lm-tag">return</span> task.getTaskId();
+    }
+</code></pre><br>
+Аннотация <i>@Transactional</i> указывает, что метод должен выполняться в транзакции. Менеджер транзакций открывает новую транзакцию и создаёт для неё экземпляр <i>Session</i>, который доступен через <i>sessionFactory.getCurrentSession()</i>. Все методы, которые вызываются в методе с данной аннотацией, также имеют доступ к этой транзакции, потому что экземпляр <i>Session</i> является переменной потока (ThreadLocal). Вызов <i>sessionFactory.openSession()</i> откроет совсем другую сессию, которая не связана с транзакцией.<br>
+<br>
+Параметр <i>rollbackFor</i> указывает исключения, при выбросе которых должен быть произведён откат транзакции. Есть обратный параметр — <i>noRollbackFor</i>, указывающий, что все исключения, кроме перечисленных, приводят к откату транзакции.<br>
+<br>
+Параметр <i>propagation</i> самый интересный. Он указывает принцип распространения транзакции. Может принимать любое значение из перечисления <i>org.springframework.transaction.annotation.Propagation</i>. Приведём пример:<br>
+<br>
+<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@Autowired</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> SessionFactory sessionFactory;
+
+    <span class="hljs-meta cye-lm-tag">@Autowired</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> UserDao userDao;
+
+    <span class="hljs-meta cye-lm-tag">@Transactional</span>(propagation = Propagation.REQUIRED, rollbackFor = {ConstraintViolationException.class})
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">saveTask</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
+        Session session = sessionFactory.getCurrentSession();
+        User user = userDao.getUserByLogin(<span class="hljs-string cye-lm-tag">"user1"</span>);
+        Tasks task = <span class="hljs-keyword cye-lm-tag">new</span> Tasks();
+        task.setName(<span class="hljs-string cye-lm-tag">"Задача 1"</span>);
+        ...
+        task.setUser(user);
+        session.saveOrUpdate(task);
+        <span class="hljs-keyword cye-lm-tag">return</span> task.getTaskId();
+    }
+</code></pre><br>
+Метод <i>UserDao.getUserByLogin()</i> также может быть помечен аннотацией <i>@Transactional</i>. И здесь параметр <i>propagation</i> определит поведение метода <i>UserDao.getUserByLogin()</i> относительно транзакции метода <i>saveTask()</i>:<br>
+<br>
+<ul>
+<li><i>Propagation.REQUIRED</i> — выполняться в существующей транзакции, если она есть, иначе создавать новую.</li>
+<li><i>Propagation.MANDATORY</i> — выполняться в существующей транзакции, если она есть, иначе генерировать исключение.</li>
+<li><i>Propagation.SUPPORTS</i> — выполняться в существующей транзакции, если она есть, иначе выполняться вне транзакции.</li>
+<li><i>Propagation.NOT_SUPPORTED</i> — всегда выполняться вне транзакции. Если есть существующая, то она будет остановлена.</li>
+<li><i>Propagation.REQUIRES_NEW</i> — всегда выполняться в новой независимой транзакции. Если есть существующая, то она будет остановлена до окончания выполнения новой транзакции.</li>
+<li><i>Propagation.NESTED</i> — если есть текущая транзакция, выполняться в новой, так называемой, вложенной транзакции. Если вложенная транзакция будет отменена, то это не повлияет на внешнюю транзакцию; если будет отменена внешняя транзакция, то будет отменена и вложенная. Если текущей транзакции нет, то просто создаётся новая. </li>
+<li><i>Propagation.NEVER</i> — всегда выполнять вне транзакции, при наличии существующей генерировать исключение.</li>
+</ul><br>
+Хороший <a href="http://www.ibm.com/developerworks/ru/library/j-ts1/">материал о транзакциях</a>. Следует помнить, что использование транзакций несёт дополнительные издержки в производительности.<br>
+<br>
+<h5>Ну что ж, подведём итоги</h5><br>
+В моей статье я осветил самые основные принципы работы с сессиями и транзакциями в Hibernate. Надеюсь, что начинающим Java-программистам статья будет полезна при преодолении первого порога в изучении суперклассной (не для всех, возможно) библиотеки Hibernate. Желаю всем успехов в нашей сложной и интересной программерской деятельности!<br>
+<br>
+<a href="https://github.com/Niyazguest/testApp">Пример проекта</a>.<br>
+<br>
+Спасибо за внимание!</div>
+<br><hr>	
+<ul id="comments-list" class="cye-lm-tag">
+      
+  <li class="comment_item cye-lm-tag" id="comment_8657695">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="0"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item  " rel="8657695">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
+                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            18 ноября 2015 в 16:17
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8657695" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8657695" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  voting-wjt__counter_negative">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 3: ↑1 и ↓2">–1</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format bad bad1">
+          <blockquote>Объект-сущность может находиться в одном из 3-х состояний (статусов):<br>
+transient object…<br>
+persistent object…<br>
+detached object...</blockquote><br>
+Простите, а куда у вас делся четвертый <b>removed</b> статус у объектов Entity? В <a href="http://docs.jboss.org/hibernate/orm/5.0/userGuide/en-US/html_single/#pc">официальной документации hibernet</a> он есть, в JPA2/2.1 он тоже есть. Это довольно важно, так вопрос про статусы Entity встречается практически в любом job interview про хибернет/JPA, после ответа о <b>трех</b> статусах интервью скорее всего тут же и закончится. <br>
+<br>
+Странное определение transient:<br>
+<blockquote>transient object. Объекты в данном статусе — это заполненные экземпляры классов-сущностей. Могут быть сохранены в БД. Не присоединены к сессии. Поле Id не должно быть заполнено, иначе объект имеет статус detached ;</blockquote><br>
+<br>
+<a href="http://docs.jboss.org/hibernate/orm/5.0/userGuide/en-US/html_single/#pc">В оригинале</a>:<br>
+<blockquote>transient — the entity has just been instantiated and is not associated with a persistence context. It has no persistent representation in the database and typically no identifier value has been assigned.</blockquote><br>
+Мне кажется лучше что вроде: <br>
+<b>transient</b> — объект-сущность была только инициализирована, но пока ещё не добавлена под управление ORM, не имеет представления в базе данных, ключевые поля, как правило, ещё не заданы. 
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments cye-lm-tag" id="reply_comments_8657695">
+      
+  <li class="comment_item cye-lm-tag" id="comment_8658003">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8657695"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item is_topic_starter " rel="8658003">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
+                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
+            </a>
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            18 ноября 2015 в 19:06
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8658003" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8658003" data-parent_id="8657695" title="Показать ветку комментариев"></span>
+              <a href="#comment_8657695" class="icon_comment-parent js-comment_parent" data-id="8658003" data-parent_id="8657695" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8658003" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Да, так и есть, просто в сессиях Hibernate removed — частный случай persistent, по идее.<br>
+
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments cye-lm-tag" id="reply_comments_8658003">
+      
+  <li class="comment_item cye-lm-tag" id="comment_8658109">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8658003"></span>
+
+    <div class="comment_body  cye-lm-tag">
+        <div class="info comments-list__item comment-item  " rel="8658109">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
+                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            18 ноября 2015 в 19:58
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8658109" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8658109" data-parent_id="8658003" title="Показать ветку комментариев"></span>
+              <a href="#comment_8658003" class="icon_comment-parent js-comment_parent" data-id="8658109" data-parent_id="8658003" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8658109" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format  cye-lm-tag">
+          Нет, removed это совсем другой случай, при removed запись будет удалена после окончания транзакции. <br>
+<br>
+Разная реакций на операции показывает что это никак не частный случай:<br>
+ — при вызове merge на persistent операция игнорируется, при вызове merge на removed по спеке JPA должен быть выкинут exception,<br>
+ — при вызове refresh на persistent данные будет переписаны, при вызове на removed по спеке JPA должен быть выкинут exception,<br>
+<br>
+подробнее можно посмотреть <a href="http://habrahabr.ru/post/265061/">тут</a>
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8658109">
+      
+  <li class="comment_item" id="comment_8659625">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8658109"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item is_topic_starter " rel="8659625">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
+                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
+            </a>
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            19 ноября 2015 в 20:26
+              <span class="comment-item__time_changed icon_comment-edit cye-lm-tag" title="Kомментарий был изменён">
+                <i class="comment-item__sign_changed">(комментарий был изменён)</i>
+              </span>
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8659625" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8659625" data-parent_id="8658109" title="Показать ветку комментариев"></span>
+              <a href="#comment_8658109" class="icon_comment-parent js-comment_parent" data-id="8659625" data-parent_id="8658109" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8659625" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Спасибо за подсказку, просто я брал за основу доки Hibernate — там только 3 статуса
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8659625">
+      
+  <li class="comment_item" id="comment_8659633">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8659625"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item  " rel="8659633">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
+                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            19 ноября 2015 в 20:32
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8659633" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8659633" data-parent_id="8659625" title="Показать ветку комментариев"></span>
+              <a href="#comment_8659625" class="icon_comment-parent js-comment_parent" data-id="8659633" data-parent_id="8659625" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8659633" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          А можете скинуть ссылку на эти доки? Потому что все доки Hibernate, которые я изучал, говорили про 4 статуса. 
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8659633">
+      
+  <li class="comment_item" id="comment_8660109">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8659633"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item is_topic_starter " rel="8660109">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
+                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
+            </a>
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            20 ноября 2015 в 10:11
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8660109" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8660109" data-parent_id="8659633" title="Показать ветку комментариев"></span>
+              <a href="#comment_8659633" class="icon_comment-parent js-comment_parent" data-id="8660109" data-parent_id="8659633" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8660109" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          <a href="http://docs.jboss.org/hibernate/orm/5.0/javadocs/org/hibernate/Session.html">docs.jboss.org/hibernate/orm/5.0/javadocs/org/hibernate/Session.html</a>
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8660109">
+      
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+  <li class="comment_item" id="comment_8658453">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="0"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item  " rel="8658453">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="otvorot2008">
+            <a href="https://habrahabr.ru/users/otvorot2008/" class="comment-item__avatar">
+                <img src="//habrastorage.org/getpro/habr/avatars/235/f05/59c/235f0559c4f7cb135c4514e0a30c691a_small.png" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://habrahabr.ru/users/otvorot2008/" class="comment-item__username">otvorot2008</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            19 ноября 2015 в 01:23
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8658453" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8658453" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          <blockquote>Все методы, которые вызываются в методе с данной аннотацией, также имеют доступ к этой транзакции, потому что экземпляр Session является глобальной переменной потока</blockquote><br>
+Определение «текущей» сессии зависит от используемой реализации <i>org.hibernate.context.spi.CurrentSessionContext</i>. Соответственно приведенный вами сценарий скорее имеет отношение к ThreadLocalSessionContext. Понятно, что это скорее глубокие детали внутренней реализации, но вот <blockquote>глобальную переменную потока</blockquote> стоит уточнить как ThreadLocal)
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8658453">
+      
+  <li class="comment_item" id="comment_8661889">
+    
+    <span class="parent_id cye-lm-tag" data-parent_id="8658453"></span>
+
+    <div class="comment_body ">
+        <div class="info comments-list__item comment-item is_topic_starter " rel="8661889">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
+                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
+            </a>
+            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            21 ноября 2015 в 18:09
+          </time>
+
+          <span class="comment-item__controls cye-lm-tag">
+            <a href="#comment_8661889" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+
+              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8661889" data-parent_id="8658453" title="Показать ветку комментариев"></span>
+              <a href="#comment_8658453" class="icon_comment-parent js-comment_parent" data-id="8661889" data-parent_id="8658453" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8661889" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
+
+                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Спасибо, уточнил)
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8661889">
+      
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+
+  </li>
+
+      
+    </ul>
+</body>
+</html>
