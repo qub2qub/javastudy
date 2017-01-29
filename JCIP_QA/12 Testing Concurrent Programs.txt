@@ -1,1 +1,279 @@
 12 Testing Concurrent Programs (247-274=27)
+
+The same techniques for testing correctness and performance in sequential programs can be applied to concurrent programs, but with concurrent programs the space of things that can go wrong is much larger.
+
+Most tests of concurrent classes fall into one or both of the classic categories of safety and liveness (живучесть (свойство системы)). 
+In Chapter 1, we defined 
+safety as "nothing bad ever happens" 
+and liveness as "something good eventually happens". (в конечном счёте, в итоге, в конце концов).
+Bugs that disappear when you add debugging or test code are playfully called Heisenbugs.
+
+1) Tests of safety, which verify that a class's behavior conforms to its specification, usually take the form of testing invariants.
+
+2)  Liveness tests include tests of progress and nonprogress, which are hard to quantify — how do you verify that a method is blocking and not merely running slowly? Similarly, how do you test that an algorithm does not deadlock? How long should you wait before you declare it to have failed?
+
+3) Performance tests. 
+Performance can be measured in a number of ways, including:
+--THROUGHPUT: the rate at which a set of concurrent tasks is completed;
+--RESPONSIVENESS: the delay between a request for[some action] and completion of some action (also called latency); or
+--SCALABILITY: the improvement in throughput (or lack thereof) as more resources (usually CPUs) are made available.
+
+*** 12.1 Testing for correctness ***
+Тесты начинаются с identifying invariants and postconditions that are amenable[ə`mi:nəb(ə)l] (поддающийся; подверженный; склонный; расположенный) to mechanical checking.
+
+If you are lucky, many of these are present in the specification; the rest of the time, writing tests is an adventure in iterative specification discovery.
+
+Пример, BoundedBuffer.java implements a fixed-length array-based queue with blocking put() and take() methods controlled by a pair of counting semaphores.
+
+--In a COUNTING SEMAPHORE, the permits are not represented explicitly or associated with an owning thread; a RELEASE operation CREATES A PERMIT and an ACQUIRE operation CONSUMES ONE.
+
+The most basic unit tests for BoundedBuffer are similar to what we'd use in a sequential context—create a bounded buffer, call its methods, and assert postconditions and invariants.
+These simple test methods are entirely sequential. Including a set of sequential tests in your test suite is often helpful, since they can disclose when a problem is not related to concurrency issues before you start looking for data races.
+
+--12.1.2 Testing blocking operations--
+Most testing frameworks are not very concurrency-friendly: they rarely include facilities to create threads or monitor them to ensure that they do not die unexpectedly. 
+
+...the convention that every test must wait until all the threads it created terminate. 
+...the key requirements are that it be clear whether the tests passed and that failure information is reported somewhere for use in diagnosing the problem.
+
+If a method is supposed to block under certain conditions, then a test for that behavior should succeed only if the thread does not proceed.
+TESTING that a METHOD BLOCKS is similar to testing that a METHOD THROWS AN EXCEPTION; if the method RETURNS NORMALLY, the TEST HAS FAILED.
+
+Testing that a method blocks introduces an additional complication: 
+once the method successfully blocks, you have to convince it somehow to unblock. 
+The obvious way to do this is via interruption — 
+1) start a blocking activity in a separate thread, 
+2) wait until the thread blocks, 
+3) interrupt it, 
+4) and then assert that the blocking operation completed. 
+Of course, this requires your blocking methods to respond to interruption by returning early or throwing InterruptedException.
+
+The timed join ensures that the test completes even if take gets stuck in some unexpected way. 
+This test method tests several properties of take—not only that it blocks but that, when interrupted, it throws InterruptedException. 
+
+This is one of the few cases in which it is appropriate to subclass Thread explicitly instead of using a Runnable in a pool: in order to test proper termination with join. The same approach can be used to test that the taker thread unblocks after an element is placed in the queue by the main thread.
+
+It is tempting to use Thread.getState() to verify that the thread is actually blocked on a condition wait, but THIS APPROACH IS NOT RELIABLE. There is nothing that requires a blocked thread ever to enter the WAITING or TIMED_WAITING states, since the JVM can choose to implement blocking by spin-waiting instead. 
+Similarly, because spurious(случайный,побочный) wakeups from Object.wait() or Condition.await() are permitted (see Chapter 14), a thread in the WAITING or TIMED_WAITING state may temporarily transition to RUNNABLE even if the condition for which it is waiting is not yet true. 
+Even ignoring these implementation options, it may take some time for the target thread to settle into a blocking state. The result of Thread.getState() should not be used for concurrency control, and is of limited usefulness for testing—its primary utility is as a source of debugging information.
+
+--12.1.3 Testing safety--
+To test that a concurrent class performs correctly under unpredictable concurrent access, we need to set up multiple threads performing put and take operations over some amount of time and then somehow test that nothing went wrong.
+--Developing good concurrent tests can be more difficult than developing the classes they test.
+
+Основная фишка в тестах - это identifying easily checked properties, которые с большой вероятностью за-fail-ятся if something goes wrong; и при этом надо чтобы код из теста не ограничивал искусственно паралленость.
+
+One approach that works well with classes used in producer-consumer designs (like BoundedBuffer) is to check that everything put into a queue or buffer comes out of it, and that nothing else does.
+--Но для такого подхода нужно доп. синхронизации, и она исказить расписание работы тестируемых потоков.
+
+A better approach is to compute checksums of the elements that are enqueued and dequeued using an order-sensitive checksum function, and compare them. 
+ If they match, the test passes. This approach works best when there is a single producer putting elements into the buffer and a single consumer taking them out, because it can test not only that the right elements (probably) came out but that they came out in the right order.
+
+Но для случая multiple-producer, multiple-consumer надо учитывать другие особенности...
+requires using a checksum function that is insensitive to the order in which the elements are combined, so that multiple checksums can be combined after the test. (Any commutative operation, such as addition or XOR, meets these requirements.)
+
+также важно чтобы checksums themselves not be guessable by the compiler. Поэтому test data should be generated randomly,
+и для этого лучше ис-ть Giving each thread its own RNG allows a non-thread-safe RNG to be used.
+--Many benchmarks are, unbeknownst[ˏʌnbı`nəʊnst]без ведома to their developers or users, simply tests of how great a concurrency bottleneck the RNG is.
+
+The xor-Shift function in Listing 12.4 (Marsaglia, 2003) is among the cheapest medium-quality random number functions. Starting it off with values based on hashCode and nanoTime makes the sums both unguessable and almost always different for each run.
+
+Чтобы все потока стартовали и завершались одновременно надо ис-ть CountDownLatch as a starting gate and another as a finish gate.
+Another way to get the same effect is to use a CyclicBarrier, initialized with the number of worker threads plus one.
+
+Tests like PutTakeTest tend to be good at finding safety violations. 
+  For example, a common error in implementing semaphore-controlled buffers is to forget that the code actually doing the insertion and extraction requires mutual exclusion (using synchronized or ReentrantLock).
+А чего это не хаватает???? mutual exclusion^^^^^^
+
+To maximize the chance of detecting timing-sensitive data races, there should be more active threads than CPUs, so that at any given time some threads are running and some are switched out, thus reducing the predicatability of interactions between threads.
+
+In tests that run until they complete a fixed number of operations, it is possible that the test case will never finish if the code being tested encounters an exception due to a bug. The most common way to handle this is to have the test framework abort tests that do not terminate within a certain amount of time; how long to wait should be determined empirically, and failures must then be analyzed to ensure that the problem wasn't just that you didn't wait long enough. (This problem is not unique to testing concurrent classes; sequential tests must also distinguish between long-running and infinite loops.)
+
+*** 12.1.4    Testing resource management ***
+The tests so far have been concerned with a class's adherence to its specifica-tion—that it does what it is supposed to do. A secondary aspect to test is that it does not do things it is not supposed to do, such as leak resources. Any object that holds or manages other objects should not continue to maintain references to those objects longer than necessary. Such storage leaks prevent garbage collectors from reclaiming memory (or threads, file handles, sockets, database connections, or other limited resources) and can lead to resource exhaustion and application failure.
+
+the entire reason for bounding a buffer is to prevent application failure due to resource exhaustion when producers get too far ahead of consumers.
+Bounding causes overly productive producers to block rather than continue to create work that will consume more and more memory or other resources.
+
+*** 12.1.5    Using callbacks ***
+Callbacks to client-provided code can be helpful in constructing test cases; callbacks are often made at known points in an object's lifecycle that are good opportunities to assert invariants. 
+For example, ThreadPoolExecutor makes calls to the task Runnables and to the ThreadFactory.
+
+Что такое вообще колбэки?
+
+и в чём суть примера TestThreadPool?
+
+*** 12.1.6 Generating more interleavings ***
+We've already mentioned how running on multiprocessor systems with fewer processors than active threads can generate more interleavings than either a single-processor system or one with many processors. Similarly, testing on a variety of systems with different processor counts, operating systems, and processor architectures can disclose(раскрывать, открывать; обнажать, показывать) problems that might not occur on all systems.
+
+A useful trick for increasing the number of interleavings, and therefore more effectively exploring the state space of your programs, is to use Thread.yield()... 
+[ отступать; сдавать позицию, возвращать, выдавать, приносить урожай, давать плоды; давать результат, приводить (к чему-л.)]
+...to encourage more context switches during operations that access shared state. (The effectiveness of this technique is platform-specific, поэтому может быть using a short but nonzero sleep would be slower but more reliable.) 
+
+[Thread.yield() = A hint(намёк,совет,подсказка) to the scheduler that the current thread is willing to yield its current use of a processor. The scheduler is free to ignore this hint.]
+
+The inconvenience of adding these calls for testing and removing them for production can be reduced by adding them using aspect-oriented programming (AOP) tools.
+
+******************************************
+**** 12.2 Testing for performance ****
+Performance tests are often extended versions of functionality tests. In fact, it is almost always worthwhile to include some basic functionality testing within performance tests to ensure that you are not testing the performance of broken code.
+
+Performance tests seek( разыскивать; пытаться найти) to measure end-to-end performance metrics for representative use cases.
+
+A common secondary goal of performance testing is to select sizings empirically for various bounds—numbers of threads, buffer capacities, and so on. While these values might turn out to be sensitive enough to platform characteristics (such as processor type or even processor stepping level, number of CPUs, or memory size) to require dynamic configuration, it is equally common that reasonable choices for these values work well across a wide range of systems.
+
+We can learn several things from running TimedPutTakeTest: 
+1) One is the THROUGHPUT of the producer-consumer handoff operation for VARIOUS COMBINATIONS OF PARAMETERS
+2) another is how the BOUNDED BUFFER SCALES with different NUMBERS OF THREADS
+3) a third is how we might select the BOUND SIZE. 
+Answering these questions requires running the test for various combinations of parameters.
+
+It may be somewhat puzzling at first that adding a lot more threads degrades performance only slightly.
+even with many threads, not much computation is going on, and most of it is spent blocking and unblocking threads.
+So there is plenty of CPU slack for more threads to do the same thing without hurting performance very much.
+
+Но в реальной ситуации, будет ещё работа по созданию и обработке объекта в очереди, поэтому then this slack would disappear and the effects of having too many threads could be very noticeable. The primary purpose of this test is to measure what constraints the producer-consumer handoff via the bounded buffer imposes on overall throughput.
+
+** 12.2.2 Comparing multiple algorithms **
+The java.util.concurrent algorithms have been selected and tuned, in part using tests just like those described here, to be as efficient as we know how to make them, while still offering a wide range of functionality.
+
+This test suggests that LinkedBlockingQueue scales better than ArrayBlockingQueue.
+А linked queue allows more concurrent access by puts() and takes() than an array-based queue because the best linked queue algorithms allow the head and tail to be updated independently.
+
+Because allocation is usually thread-local, algorithms that can reduce contention by doing more allocation usually scale better. (This is another instance in which intuition based on traditional performance tuning runs counter to what is needed for scalability.)
+
+*** 12.2.3 Measuring responsiveness ***
+Sometimes it is more important to know how long an individual action might take to complete, and in this case we want to measure the variance of service time. Sometimes it makes sense to allow a longer average service time if it lets us obtain a smaller variance; predictability is a valuable performance characteristic too. Measuring variance allows us to estimate the answers to quality-of-service questions like "What percentage of operations will succeed in under 100 milliseconds?"
+
+.... чё-то я не понял..
+Figure 12.4 shows that fairness doesn't make the average much worse or the variance much better in this case.
+So, unless threads are continually blocking anyway because of tight synchronization requirements, nonfair semaphores provide much better throughput and fair semaphores provides lower variance. Because the results are so dramatically different, Semaphore forces its clients to decide which of the two factors to optimize for.
+
+****************************************************
+*** 12.3 Avoiding performance testing pitfalls ***
+In theory, developing performance tests is easy—find a typical usage scenario, write a program that executes that scenario many times, and time it. In practice, you have to watch out for a number of coding pitfalls that prevent performance tests from yielding meaningful results.
+
+*** 12.3.1 Garbage collection ***
+The timing of garbage collection is unpredictable, so there is always the possibility that the garbage collector will run during a measured test run.
+
+There are two strategies for preventing garbage collection from biasing your results. One is to ensure that garbage collection does not run at all during your test (you can invoke the JVM with -verboseigc to find out); alternatively, you can make sure that the garbage collector runs a number of times during your run so that the test program adequately reflects the cost of ongoing allocation and garbage collection. The latter strategy is often better—it requires a longer test and is more likely to reflect real-world performance.
+
+*** 12.3.2 Dynamic compilation ***
+HotSpot JVM (and other modern JVMs) uses a combination of bytecode INTERPRETATION and DYNAMIC COMPILATION. [ˏkɒmpı`leıʃ(ə)n]
+   
+выполнение в режиме интерпретации --->
+   осуществляется специальной программой, интерпретатором, который воспринимает программу на входном языке как данные, по очереди анализирует и выполняет каждую команду.
+
+трансляция, компиляция --->
+   преобразование с помощью компилятора программы на исходном языке программирования в эквивалентную программу на выходном языке (в машинный или промежуточный код).
+
+direct execution --->
+   прямое выполнение (процесс исполнения процессором команд программы [которые уже идут на машинном языке]).
+
+
+When a class is first loaded, the JVM executes it by interpreting the bytecode. At some point, if a method is run often enough, the dynamic compiler kicks in and converts it to machine code; when compilation completes, it switches from interpretation to direct execution.
+
+The timing of compilation is unpredictable. Your timing tests should run only after all code has been compiled; there is no value in measuring the speed of the interpreted code since most programs run long enough that all frequently executed code paths are compiled. 
+Нет смысла измерять выполнение через интерпретацию, т.к. как правило проги работают довольно долго и весь часто-используемый код уже преобразован в машинный (т.е. скомпилирован).
+
+Картинка 12.5 -- 
+A represents all interpreted execution, 
+B represents compilation halfway through the run 
+C represents compilation early in the run.
+The point at which [compilation runs] seriously affects the measured per-operation runtime.
+
+Code may also be decompiled (reverting to interpreted execution) and recompiled for various reasons, such as loading a class that invalidates assumptions made by prior compilations, or gathering sufficient profiling data to decide that a code path should be recompiled with different optimizations.
+
+Поэтому чтобы исключить это влияние компиляции есть 2 подхода:
+1) to run your program for a long time (at least several minutes) so that compilation and interpreted execution represent a small fraction of the total run time.
+2) to use an unmeasured "warm-up" run, in which your code is executed enough to be fully compiled when you actually start timing. 
+
+On HotSpot, running your program with "-XX:+PrintCompilation" prints out a message when dynamic compilation runs, so you can verify that this is prior to, rather than during, measured test runs.
+
+Running the same test several times in the same JVM instance can be used to validate the testing methodology. The first group of results should be discarded as warm-up; seeing inconsistent results in the remaining groups suggests that the test should be examined further to determine why the timing results are not repeatable.
+
+The JVM uses various background threads for housekeeping tasks.
+Поэтому When measuring multiple unrelated computationally intensive activities in a single run, можно делать паузы между запусами замеров, чтобы дать жвм время подчистить всё и закончить свои фоновые задачи.
+Но с другой стороны тоже засада:
+(When measuring multiple related activities, however, such as multiple runs of the same test, excluding JVM background tasks in this way may give unrealistically optimistic results.)
+
+*** 12.3.3    Unrealistic sampling of code paths *** стр 268 (прочёл 20 стр.)
+Runtime compilers use profiling information to help optimize the code being compiled. The JVM is permitted to use information specific to the execution in order to produce better code, which means that compiling method M in one program may generate different code than compiling M in another. In some cases, the JVM may make optimizations based on assumptions that may only be true temporarily, and later back them out by invalidating the compiled code if they become untrue.
+
+В итоге надо тестить на примерно такой же машине, где и прод будет, чтобы сработали те же самые оптимизиторы.
+
+*** 12.3.4    Unrealistic degrees of contention ***
+Concurrent applications tend to interleave two very different sorts of work: accessing shared data, such as fetching the next task from a shared work queue, and thread-local computation (executing the task, assuming the task itself does not access shared data). Depending on the relative proportions of the two types of work, the application will experience different levels of contention and exhibit different performance and scaling behaviors.
+
+если таски длинные - то не будет соревнования за доступ к очереди и наоборот.
+поэтому надо чтобы кол-во вычислений в тесте для каждого потока было сопоставимо с таким же в проде.
+
+*** 12.3.5 Dead code elimination ***
+Dead-code elimination is a problem in benchmarking.
+
+Many microbenchmarks perform much "better" when run with HotSpot's -server compiler than with -client, not just because the server compiler can produce more efficient code, but also because it is more adept at optimizing dead code
+
+But you should still prefer -server to -client for both production and testing on multiprocessor systems—you just have to write your tests so that they are not susceptible to dead-code elimination.
+This requires every computed result to be used somehow by your program—in a way that does not require synchronization or substantial computation.
+
+A cheap trick for preventing a calculation from being optimized away without introducing too much overhead is to compute the hashCode of the field of some derived object, compare it to an arbitrary value such as the current value of System.nanoTime(), and print a useless and ignorable message if they happen to match.
+
+if (foo.x.hashCode() == System.nanoTime())
+		System.out.print(" ");
+
+Not only should every computed result be used, but results should also be unguessable. Otherwise, a smart dynamic optimizing compiler is allowed to replace actions with precomputed results.
+
+*** 12.4 Complementary(дополнительный, добавочный) testing approaches ***
+In complex programs, no amount of testing can find all coding errors.
+The goal of testing is not so much to find errors as it is to increase confidence that the code works as expected.
+
+Different QA methodologies are more effective at finding some types of defects and less effective at finding others. By employing complementary testing methodologies such as code review and static analysis, you can achieve greater confidence than you could with any single approach.
+
+*** 12.4.1    Code review ***
+Rigorous code review by multiple people. 
+rigorous  -- [`rıgərəs]
+1) точный, строгий; неумолимый, безжалостный, 
+2) тщательный; скрупулёзный; неукоснительный
+
+ You can and should design tests to maximize their chances of discovering safety errors, and you should run them frequently, but you should not neglect to have concurrent code reviewed carefully by someone besides its author.
+
+Platform issues such as JVM implementation details or processor memory models can prevent bugs from showing up on particular hardware or software configurations.
+
+Code review improves the quality of comments describing the implementation details, thus reducing future maintenence cost and risk.
+
+*** 12.4.2    Static analysis tools ***
+Static code analysis is the process of analyzing code without executing it, and code auditing tools can analyze classes to look for instances of common bug patterns.
+Static analysis tools produce a list of warnings that must be examined by hand to determine whether they represent actual errors. 
+
+Например, тулза FindBugs проверяет:
+1) Inconsistent synchronization.
+2) Invoking Thread.run()
+3) Unreleased lock.
+4) Empty synchronized block.
+5) Double-checked locking.
+6) Starting a thread from a constructor.
+7) Notification errors.
+8) Condition wait errors.
+9) Misuse of Lock and Condition. 
+10) Sleeping or waiting while holding a lock. 
+11) Spin loops.
+
+*** 12.4.3    Aspect-oriented testing techniques ***
+As of this writing, aspect-oriented programming (AOP) techniques have only limited applicability to concurrency, because most popular AOP tools do not yet support pointcuts at synchronization points. However, AOP can be applied to assert invariants or some aspects of compliance with synchronization policies.
+
+*** 12.4.4    Profilers and monitoring tools ***
+такие тулзы can often provide insight into what your program is doing (although profiling tools are usually intrusive and can substantially affect program timing and behavior).
+Most offer a display showing a timeline for each thread with different colors for the various thread states (runnable, blocked waiting for a lock, blocked waiting for I/O, etc.). 
+Such a display can show how effectively your program is utilizing the available CPU resources, and if it is doing badly, where to look for the cause. 
+
+The built-in JMX agent also offers some limited features for monitoring thread behavior. The ThreadInfo class includes the thread's current state and, if the thread is blocked, the lock or condition queue on which it is blocked. If the "thread contention monitoring" feature is enabled (it is disabled by default because of its performance impact), ThreadInfo also includes the number of times that the thread has blocked waiting for a lock or notification, and the cumulative amount of time it has spent waiting.
+
+** Summary **
+тестирование паралл.прог это вызов , т.к. есть мало-предсказуемые события that are sensitive to timing, load, and other hard-to-reproduce conditions.
+А также testing infrastructure can introduce additional synchronization or timing constraints.
+
+Testing concurrent programs for performance can be equally challenging.
+
+Java programs are more difficult to test than programs written in statically compiled languages like C, because timing measurements can be affected by dynamic compilation, garbage collection, and adaptive optimization.
+
+Потому надо комбинировать различные техники тестирования, и использовать тулзы.

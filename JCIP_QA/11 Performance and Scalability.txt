@@ -273,14 +273,15 @@ Pooling has its uses, but is of limited utility as a performance optimization.
 !!! Allocating objects is usually cheaper than synchronizing.
 
 **11.5 Example: Comparing Map performance**
-implementation of ConcurrentHashMap assumes the most common operation is retrieving a value that already exists, and is therefore optimized to provide highest performance and concurrency for successful get operations.
+The single-threaded performance of ConcurrentHashMap is slightly better than that of a synchronized HashMap, but it is in concurrent use that it really shines. 
+The implementation of ConcurrentHashMap assumes the most common operation is retrieving a value that already exists, and is therefore optimized to provide highest performance and concurrency for successful get operations.
 
 ConcurrentHashMap does no locking for most successful read operations, and uses lock striping for write operations and those few read operations that do require locking.
 
 So long as contention is low, time per operation is dominated by the time to actually do the work and throughput may improve as threads are added. 
 Once contention becomes significant, time per operation is dominated by context switch and scheduling delays, and adding more threads has little effect on throughput.
 
-***11.6 Reducing context switch overhead***
+*** 11.6 Reducing context switch overhead ***
 Many tasks involve operations that may block; 
 transitioning between the running and blocked states entails(влечь за собой, вызывать) a context switch. 
 One source of blocking in server applications is generating log messages in the course of processing requests;

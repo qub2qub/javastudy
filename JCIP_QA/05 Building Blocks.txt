@@ -231,8 +231,9 @@ All synchronizers share certain STRUCTURAL PROPERTIES: they encapsulate STATE th
 3) provide methods to WAIT EFFICIENTLY for the synchronizer TO ENTER the desired state. (Эфективно ждать момента, пока синхронизатор придёт в нужное состояние.)
 
 *** 5.5.1 Latches (триггер, защёлка, клапан) *** CountDownLatch *** ОДНОРАЗОВЫЕ ЗАЩЁЛКИ
+*** Как ОДНОРАЗОВЫЙ ЗАМОК НА ВОРОТАХ, чтобы открыть его -- надо ОПУСТИТЬ ВСЕ ЗУБЧИКИ. --но замок хрупкий, поэтому после 1 раза все зубчики сломались и больше он никого не сдержит --- ***
+
 A latch is a synchronizer that can delay(задержать, приостановить) the progress of threads until it reaches its terminal state(конечное, последнее, заключительное состояние).
-Как ОДНОРАЗОВЫЙ ЗАМОК НА ВОРОТАХ, чтобы открыть его -- надо ОПУСТИТЬ ВСЕ ЗУБЧИКИ.
 
 LATCHES ARE SINGLE-USE OBJECTS; 
 ONCE A LATCH ENTERS THE TERMINAL STATE, IT CANNOT BE RESET.
@@ -308,6 +309,8 @@ A degenerate case of a counting semaphore is a binary semaphore, a Semaphore wit
 Semaphores are useful for implementing resource pools such as database connection pools. While it is easy to construct a fixed-sized pool that fails if you request a resource from an empty pool, what you really want is to block if the pool is empty and unblock when it becomes nonempty again.
 
 *** 5.5.4 Barriers *** ждёт всё кол-во участников и пропускает их через турникет. *** МНОГОРАЗОВЫЙ
+*** как туникеты на скачках -- все лошади подтянулись -- стартовать забег, а турникет сразу после этого закрывается и ждёт новую группу лошадей ***
+
 Barriers are similar to latches in that they block a group of threads until some event has occurred. 
 The key difference is that with a barrier, ALL THE THREADS MUST COME TOGETHER AT A BARRIER POINT AT THE SAME TIME IN ORDER TO PROCEED. 
 ** LATCHES ARE FOR WAITING FOR EVENTS; BARRIERS ARE FOR WAITING FOR OTHER THREADS. 
