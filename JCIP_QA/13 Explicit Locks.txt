@@ -3,3 +3,164 @@
  ReentrantLock is not a replacement for intrinsic locking, but rather an alternative with advanced features for when intrinsic locking proves too limited.
 
 *** 13.1    Lock and ReentrantLock ***
+Unlike intrinsic locking, Lock offers a choice of unconditional, polled, timed, and interruptible lock acquisition, and all lock and unlock operations are explicit. Lock implementations must provide the same memory-visibility semantics as intrinsic locks, but can differ in their locking semantics, scheduling algorithms, ordering guarantees, and performance characteristics.
+
+ReentrantLock implements Lock, providing the same mutual exclusion and memory-visibility guarantees as SYNCHRONIZED. 
+Acquiring a ReentrantLock has the same memory semantics as entering a synchronized block, 
+and releasing a ReentrantLock has the same memory semantics as exiting a synchronized block.
+а также ReentrantLock provides more flexibility for dealing with lock unavailability than does synchronized.
+
+А зачем вообще было создавать новый механизм, полностью похожий на intrinsic locking?
+Потому что у Intrinsic locking есть некоторые ограниченя:
+1) it is not possible to interrupt a thread waiting to acquire a lock, or to attempt to acquire a lock without [being willing] to wait for it forever.
+2)  Intrinsic locks also must be released in the same block of code in which they are acquired; this simplifies coding and interacts nicely with exception handling, but makes non-block-structured locking disciplines impossible. 
+
+None of these are reasons to abandon synchronized, but in some cases a more flexible locking mechanism offers better liveness or performance.
+
+The lock must be released in a finally block. Otherwise, the lock would never be released if the guarded code were to throw an exception.
+This is one reason not to use ReentrantLock as a blanket substitute for synchronized: it is more "dangerous" because it doesn't automatically clean up the lock when control leaves the guarded block. 
+
+When using locking, you must also consider what happens if an exception is thrown out of the try block; if it is possible for the object to be left in an inconsistent state, additional try-catch or try-finally blocks may be needed. 
+
+!!! (You should always consider the effect of exceptions when using any form of locking, including intrinsic locking.)
+
+*** 13.1.1    Polled and timed lock acquisition ***
+___ tryLock() ___
+Timed and polled locking offer another option: probabalistic deadlock avoidance.
+With intrinsic locks, a deadlock is fatal.
+
+Using timed or polled lock acquisition (tryLock) lets you regain control if you cannot acquire all the required locks, release the ones you did acquire, and try again (or at least log the failure and do something else).
+
+Где это смотреть: (See [CPJ 2.5.1.2] and [CPJ 2.5.1.3] for more examples of using polled locks for deadlock avoidance.) ?
+
+Timed locks are also useful in implementing activities that manage a time budget (see Section 6.3.7). When an activity with a time budget calls a blocking method, it can supply a timeout corresponding to the remaining time in the budget. This lets activities terminate early if they cannot deliver a result within the desired time. With intrinsic locks, there is no way to cancel a lock acquisition once it is started, so intrinsic locks put the ability to implement time-budgeted activities at risk.
+
+--One way to ensure serialized access to a resource in Section 9.5: a single-threaded executor. 
+Another approach is to use an exclusive lock to guard access to the resource. 
+
+*** 13.1.2    Interruptible lock acquisition ***
+Just as timed lock acquisition allows exclusive locking to be used within time-limited activities, interruptible lock acquisition allows locking to be used within cancellable activities. 
+
+Есть 2 способа сделать для Interruptible lock acquisition.
+
+1) The lockInterruptibly() method allows you to try to acquire a lock while remaining responsive to interruption, and its inclusion in Lock avoids creating another category of non-interruptible blocking mechanisms.
+
+The canonical structure of interruptible lock acquisition is slightly more complicated than normal lock acquisition, as two try blocks are needed. (If the interruptible lock acquisition can throw InterruptedException, the standard try-finally locking idiom works.)
+__метод... throws InterruptedException {
+	lock.lockInterruptibly();
+	try {
+		return cancellableSendOnSharedLine(message);
+	} finally {
+		lock.unlock();
+	}
+}
+
+2) И второй метод для Interruptible lock acquisition -- это:
+The timed tryLock() is also responsive to interruption and so can be used when you need both timed and interruptible lock acquisition.
+
+*** 13.1.3 Non-block-structured locking ***
+
+With intrinsic locks, acquire-release pairs are block-structured — a lock is always released in the same basic block in which it was acquired, regardless of how control exits the block. 
+Automatic lock release simplifies analysis and prevents potential coding errors, but sometimes a more flexible locking discipline is needed.
+
+In Chapter 11, we saw how reducing lock granularity can enhance scalability. Lock striping allows different hash chains in a hash-based collection to use different locks. 
+
+Например, в ликедЛисте можно сдлеть отдельный лок на каждый нод, надо получить лок у следующего нода и лишь потом отпустить лок у текущего нода,
+и эта техника называется hand-over-hand locking or lock coupling.
+
+*** 13.2 Performance considerations ***
+When ReentrantLock was added in Java 5.0, it offered far better contended performance than intrinsic locking. 
+Для синхронизации примитивов, contended performance is the key to scalability: 
+чем больше ресурсов тратиться на lock management and scheduling, тем меньше их остаётся для реальной работы приложения.
+
+Java 6 uses an improved algorithm for managing intrinsic locks, similar to that used by ReentrantLock, that closes the scalability gap considerably.
+
+Performance is a moving target; yesterday’s benchmark showing that X is faster than Y may already be out of date today.
+
+*** 13.3 Fairness ***
+
+The ReentrantLock constructor offers a choice of two fairness options: create a nonfair lock (the default) or a fair lock. Threads acquire a FAIR LOCK in the order in which they requested it, whereas a NONFAIR LOCK permits barging: threads requesting a lock can jump ahead of the queue of waiting threads if the lock happens to be available when it is requested. 
+(Semaphore also offers the choice of FAIR OR NONFAIR acquisition ordering.)
+
+NONFAIR ReentrantLocks do not go out of their way to promote barging — they simply don't prevent a thread from barging if it shows up at the right time.
+В нечестном -- специально ничего не продвигает, а есть фактор везения -- что если какой-то поток оказался в нужном месте в нужное время -- то он тут может и получить лок, даже несмотря на то, что есть длинная очередь ожидающих этот же лок. 
+
+With a FAIR lock, a newly requesting thread is queued if the lock is held by another thread or if threads are queued waiting for the lock; 
+with a nonfair lock, the thread is queued only if the lock is currently held.
+
+!!! The polled tryLock() always barges, even for fair locks.
+т.е. tryLock() ВСЕГДА будет НЕЧЕСТНЫМ.
+
+When it comes to locking, though, fairness has a significant performance cost because of the overhead of suspending and resuming threads. 
+In practice, a statistical fairness guarantee — promising that a blocked thread will eventually acquire the lock — is often good enough, and is far less expensive to deliver. 
+[??? непонятно, о какой гарантии речь ??? ^^^^^^]
+Some algorithms rely on fair queueing to ensure their correctness, but these are unusual. In most cases, THE PERFORMANCE BENEFITS OF NONFAIR LOCKS OUTWEIGH THE BENEFITS OF FAIR QUEUEING.
+
+!!! Don't pay for fairness if you don't need it.
+
+One reason barging locks perform so much better than fair locks under heavy contention is that there can be a SIGNIFICANT DELAY between when a suspended thread is RESUMED and when it actually RUNS.
+
+Let's say thread A holds a lock and thread B asks for that lock. When A releases the lock, B is resumed so it can try again. И как раз в это время приходит поток С.
+if thread C requests the lock, there is a good chance that C can acquire the lock, use it, and release it before B even finishes waking up. In this case, everyone wins: B gets the lock no later than it otherwise would have, C gets it much earlier, and throughput is improved.
+
+Fair locks tend to work best when they are held for a relatively long time or when the mean time(промежуток времени) between lock requests is relatively long. In these cases, the condition under which barging provides a throughput advantage — when the lock is unheld but a thread is currently waking up to claim it — is less likely to hold.
+
+Как и default ReentrantLock, intrinsic locking не даёт никаких гаранти по честности получения лока, но the statistical fairness guarantees of most locking implementations are good enough for almost all situations. 
+Но и так относительная честность тоже хорошо справляется.
+
+*** 13.4 Choosing between synchronized and ReentrantLock *** 285
+Intrinsic locks still have significant advantages over explicit locks. 
+The notation is familiar and compact, and many existing programs already use intrinsic locking — and mixing the two could be confusing and error-prone. 
+
+ReentrantLock is definitely a more dangerous tool than synchronization; if you forget to wrap the unlock call in a finally block...
+Save ReentrantLock for situations in which you need something ReentrantLock provides that intrinsic locking doesn't.
+
+--ReentrantLock's advanced features: 
+timed, polled, or interruptible lock acquisition, fair queueing, or non-block-structured locking. OTHERWISE, PREFER SYNCHRONIZED.
+
+Future performance improvements (с джавы 6) говорят в пользу synchronized над ReentrantLock. 
+Because synchronized is built into the JVM, it can perform optimizations such as lock elision for thread-confined lock objects and lock coarsening to eliminate synchronization with intrinsic locks.
+
+it is not a good idea to choose ReentrantLock over synchronized for performance reasons.
+
+*** 13.5    Read-write locks *** 286
+ReentrantLock implements a standard mutual-exclusion lock: 
+AT MOST ONE THREAD AT A TIME CAN HOLD A REENTRANTLOCK.
+
+But mutual exclusion is frequently a stronger locking discipline than needed to preserve data integrity, and thus limits concurrency more than necessary. 
+
+In many cases, data structures are "read-mostly" — they are mutable and are sometimes modified, but most accesses involve only reading. 
+Поэтому было бы эффективно allow multiple readers to access the data structure at once.
+As long as each thread is guaranteed an up-to-date view of the data and no other thread modifies the data while the readers are viewing it, there will be no problems. This is what read-write locks allow: a resource can be accessed by multiple readers or a single writer at a time, but not both.
+
+ReadWriteLock exposes two Lock objects—one for reading and one for writing:
+While there may appear to be two separate locks, the read lock and write lock are simply different views of an integrated read-write lock object.
+
+The locking strategy implemented by read-write locks allows multiple simultaneous readers but only a single writer. Like Lock, ReadWriteLock admits multiple implementations that can vary in performance, scheduling guarantees, acquisition preference, fairness, or locking semantics.
+
+Read-write locks can improve performance for frequently accessed read-mostly data structures on multiprocessor systems; 
+under other conditions they perform slightly worse than exclusive locks due to their greater complexity.
+Поэтому лучше всего сначала замерить производительность через profiling. И если надо -- заменить Read-write лок на обычный.
+
+Some of the implementation options for a ReadWriteLock are:
+1) Release preference. who should be given preference—readers, writers, or whoever asked first?
+2) Reader barging. Когда уже заблокировано ридерами -- Allowing readers to barge ahead of writers enhances concurrency but runs the risk of starving writers.
+3) Reentrancy. Are the read and write locks reentrant?
+4) Downgrading. If a thread holds the write lock, can it acquire the read lock without releasing the write lock? This would let a writer "downgrade" to a read lock without letting other writers modify the guarded resource in the meantime.
+5) Upgrading. Can a read lock be upgraded to a write lock in preference to other waiting readers or writers? В большинстве -- не поддерживается, т.к. может быть deadlock-prone. (If two readers simultaneously attempt to upgrade to a write lock, neither will release the read lock.)
+
+ReentrantReadWriteLock provides reentrant locking semantics for both locks. Like ReentrantLock, a ReentrantReadWriteLock can be constructed as nonfair (the default) or fair. 
+FAIR: доступ дадут тому, кто дольше всех ждёт. Если пришёл на запись, то ридеры после него ставятся в очередь, пока он не запишет.
+Downgrading from writer to reader is permitted; upgrading from reader to writer is not (attempting to do so results in deadlock).
+
+Like ReentrantLock, the write lock in ReentrantReadWriteLock has a unique owner and can be released only by the thread that acquired it.
+
+Read-write locks can improve concurrency when locks are typically held for a moderately long time and most operations do not modify the guarded resources.
+
+ReadWriteMap.java -- this technique would be useful if you want to provide more concurrent access to an alternate Map implementation such as LinkedHashMap.
+А так эффективнее использовать ConcurrentHashMap.
+
+*** Summary ***
+Explicit Locks offer an extended feature set compared to intrinsic locking, including greater flexibility in dealing with lock unavailability and greater control over queueing behavior. But ReentrantLock is not a blanket substitute for synchronized; use it only when you need features that synchronized lacks.
+
+Read-write locks allow multiple readers to access a guarded object concurrently, offering the potential for improved scalability when accessing read-mostly data structures.

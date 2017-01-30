@@ -1,0 +1,169 @@
+****************************
+Lesson: Interfaces and Inheritance
+
+наследование
+
+В этом разделе описывается способ, в котором вы можете получить один класс от другого. То есть, как подкласс может наследовать поля и методы из суперкласса. Вы узнаете, что все классы являются производными от класса Object, и как изменить методы, которые подкласс наследует от суперкласса. В этом разделе описываются также интерфейс и абстрактные классы.
+
+Есть целый ряд ситуаций, когда важно чтобы разрозненные группы программистов согласились на "договор", разъясняющий, как их программное обеспечение взаимодействует. Каждая группа должна иметь возможность написать свой код без каких-либо знаний о том, как пишется код другой группы. Вообще говоря, интерфейсы это эти контракты.
+
+Например, представьте себе футуристическое общество, где управляемые компьютером роботизированные автомобили перевозят пассажиров по городским улицам без человека-оператора. Автомобильные производители пишут программное обеспечение (Java, конечно), что приводит в действие автомобиль-стоп, старт, ускорение, поворот налево, и так далее. Другая промышленная группа, электронные производители приборов наведения, делают компьютерные системы, которые получают GPS (Global Positioning System) данные о местоположении и беспроводную передачу условий движения и используют эту информацию, чтобы водить машину.
+
+Автопроизводители должны публиковать стандартный промышленный интерфейс, подробно разъясняющий , какие методы могут быть вызваны, чтобы заставить автомобиль двигаться (любой автомобиль, от любого производителя). Другие Производители могут затем написать программное обеспечение, которое вызывает методы, описанные в интерфейсе по управлению автомобилем. Ни одна промышленная группа не должна знать, как реализуется программа у другой группы. На самом деле, каждая группа считает свое программное обеспечение в высшей степени собственностью и оставляет за собой право изменять в любое время, до тех пор, пока он продолжает придерживаться опубликованного интерфейса.
+------------
+Interfaces in Java
+Интерфейсы в Java
+
+В языке программирования Java, интерфейс является ссылочным типом (как и класс), который может содержать:
+1) ТОЛЬКО КОНСТАНТЫ,
+2) сигнатуры методов,
+3) default methods (стандартные методы),
+4) статические методы (static methods)
+5)  вложенные типы (nested types). 
+тЕЛА Методов есть только у default methods and static methods. 
+--Интерфейсы не могут быть созданы(instantiated), они могут быть только реализованы каким-то классом или расширены с помощью других интерфейсов.
+
+Определение интерфейса похоже на создание нового класса/
+Обратите внимание, что подписи метода не имеют фигурных скобок и заканчиваются точкой с запятой.
+
+Чтобы использовать интерфейс, вы пишете класс, который реализует интерфейс. Когда инстанциируемый класс реализует интерфейс, он добавляет/описывает тело для каждого из методов, объявленных в интерфейсе.
+
+Defining an Interface
+
+An interface declaration consists of modifiers, the keyword interface, the interface name, a comma-separated list of parent interfaces (if any), and the interface body.
+
+The public access specifier indicates that the interface can be used by any class in any package. If you do not specify that the interface is public, then your interface is accessible only to classes defined in the same package as the interface.
+
+An interface can extend other interfaces, just as a class subclass or extend another class. However, whereas a class can extend only one other class, an interface can extend any number of interfaces. The interface declaration includes a comma-separated list of all the interfaces that it extends.
+
+The Interface Body
+
+The interface body can contain abstract methods, default methods, and static methods. An abstract method within an interface is followed by a semicolon, but no braces (an abstract method does not contain an implementation). Default methods are defined with the default modifier, and static methods with the static keyword. All abstract, default, and static methods in an interface are implicitly public, so you can omit the public modifier.
+
+In addition, an interface can contain constant declarations. All constant values defined in an interface are implicitly public, static, and final. Once again, you can omit these modifiers.
+-----------
+Implementing an Interface
+
+To declare a class that implements an interface, you include an implements clause in the class declaration. Your class can implement more than one interface, so the implements keyword is followed by a comma-separated list of the interfaces implemented by the class. By convention, the implements clause follows the extends clause, if there is one.
+
+Using an Interface as a Type
+
+When you define a new interface, you are defining a new reference data type. You can use interface names anywhere you can use any other data type name. If you define a reference variable whose type is an interface, any object you assign to it must be an instance of a class that implements the interface.
+
+These methods work for any "relatable" objects, no matter what their class inheritance is. When they implement Relatable, they can be of both their own class (or superclass) type and a Relatable type. This gives them some of the advantages of multiple inheritance, where they can have behavior from both a superclass and an interface.
+------------------
+Evolving Interfaces
+
+Consider an interface that you have developed called DoIt:
+
+public interface DoIt {
+   void doSomething(int i, double x);
+   int doSomethingElse(String s);
+}
+
+Suppose that, at a later time, you want to add a third method to DoIt, so that the interface now becomes:
+
+public interface DoIt {
+
+   void doSomething(int i, double x);
+   int doSomethingElse(String s);
+   boolean didItWork(int i, double x, String s);
+   
+}
+
+If you make this change, then all classes that implement the old DoIt interface will break because they no longer implement the old interface. Programmers relying on this interface will protest loudly.
+
+Try to anticipate all uses for your interface and specify it completely from the beginning. If you want to add additional methods to an interface, you have several options. You could create a DoItPlus interface that extends DoIt:
+
+public interface DoItPlus extends DoIt {
+
+   boolean didItWork(int i, double x, String s);
+   
+}
+
+Now users of your code can choose to continue to use the old interface or to upgrade to the new interface.
+
+Alternatively, you can define your new methods as default methods. The following example defines a default method named didItWork:
+
+public interface DoIt {
+
+   void doSomething(int i, double x);
+   int doSomethingElse(String s);
+   default boolean didItWork(int i, double x, String s) {
+       // Method body 
+   }
+   
+}
+
+Note that you must provide an implementation for default methods. You could also define new static methods to existing interfaces. Users who have classes that implement interfaces enhanced with new default or static methods do not have to modify or recompile them to accommodate the additional methods.
+----------------------
+Default methods
+Default methods enable you to add new functionality to the interfaces of your libraries and ensure binary compatibility with code written for older versions of those interfaces.
+(an abstract method is a method declared without an implementation.)
+
+You specify that a method definition in an interface is a default method with the default keyword at the beginning of the method signature. All method declarations in an interface, including default methods, are implicitly public, so you can omit the public modifier.
+
+Extending Interfaces That Contain Default Methods
+
+When you extend an interface that contains a default method, you can do the following:
+
+1) Not mention the default method at all, which lets your extended interface inherit the default method. (не трогать, тогда будет вызываться дефолтный метод из родителя)
+2) Redeclare the default method, which makes it abstract. (заново задеклаировать его, но уже как абстрактный метод -- void default1();)
+3) Redefine the default method, which overrides it.
+(переопределить его)
+-----------
+Static Methods
+
+In addition to default methods, you can define static methods in interfaces. (!!! 
+A static method is a method that is associated with the class in which it is defined rather than with any object. Every instance of the class shares its static methods.!!!) 
+All method declarations in an interface, including static methods, are implicitly public, so you can omit the public modifier.
+
+Integrating Default Methods into Existing Libraries
+
+Default methods enable you to add new functionality to existing interfaces and ensure binary compatibility with code written for older versions of those interfaces. In particular, default methods enable you to add methods that accept lambda expressions as parameters to existing interfaces.
+--------------------------
+To start, suppose that you want to sort the deck of playing cards by rank, regardless of suit. You can invoke the StandardDeck.sort method as follows:
+
+StandardDeck myDeck = new StandardDeck();
+myDeck.shuffle();
+myDeck.sort(
+    (firstCard, secondCard) ->
+        firstCard.getRank().value() - secondCard.getRank().value()
+); 
+
+Because the interface Comparator is a functional interface, you can use a lambda expression as an argument for the sort method. In this example, the lambda expression compares two integer values.
+
+It would be simpler for your developers if they could create a Comparator instance by invoking the method Card.getRank only. In particular, it would be helpful if your developers could create a Comparator instance that compares any object that can return a numerical value from a method such as getValue or hashCode. The Comparator interface has been enhanced with this ability with the static method comparing:
+
+myDeck.sort(Comparator.comparing((card) -> card.getRank()));  
+
+In this example, you can use a method reference instead:
+
+myDeck.sort(Comparator.comparing(Card::getRank));  
+
+This invocation better demonstrates what to sort rather than how to do it.
+
+The Comparator interface has been enhanced with other versions of the static method comparing such as comparingDouble and comparingLong that enable you to create Comparator instances that compare other data types.
+
+И там дальше много всего интересного про компаратор:
+https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html
+
+******************
+Summary of Interfaces
+
+Объявление интерфейса может содержать сигнатуры методов, default методы, static  методы и определения констант. Имплементацию/РЕАЛИЗАЦИЮ имеют только default and static methods.
+
+Класс, который реализует интерфейс должен реализовать все методы, объявленные в интерфейсе.
+
+Имя интерфейса может использоваться везде, где тип может использоваться тип.
+******************
+Inheritance - наследование
+Определение: 
+1) Класс, который является производным от другого класса, называется подкласс (или производный класс, расширенный класс, дочерний класс). 
+2) Класс, из которого получен подкласс называется суперкласс (также базовый класс или родительский класс).
+
+Исключая Object, который не имеет суперкласса, каждый класс имеет один и только один прямой суперкласс (одиночное наследование). При отсутствии какого-либо другого явного суперкласса каждый класс неявно является подкласом Object.
+Классы могут быть получены из классов, которые получены из классов, которые получены из классов, и так далее, и, в конечном счете, полученные из самого верхнего класса, Object. Про Такой класс говорят, что он происходит от всех классов в цепочке наследования, растягивающейся к объекту.
+--------------
+Extending Interfaces That Contain Default Methods
+

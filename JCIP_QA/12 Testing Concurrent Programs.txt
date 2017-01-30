@@ -48,49 +48,59 @@ The obvious way to do this is via interruption —
 4) and then assert that the blocking operation completed. 
 Of course, this requires your blocking methods to respond to interruption by returning early or throwing InterruptedException.
 
-The timed join ensures that the test completes even if take gets stuck in some unexpected way. 
-This test method tests several properties of take—not only that it blocks but that, when interrupted, it throws InterruptedException. 
+The timed join ensures that the test completes even if take() gets stuck in some unexpected way. 
+This test method tests several properties of take() — not only that it blocks but that, when interrupted, it throws InterruptedException. 
 
-This is one of the few cases in which it is appropriate to subclass Thread explicitly instead of using a Runnable in a pool: in order to test proper termination with join. The same approach can be used to test that the taker thread unblocks after an element is placed in the queue by the main thread.
+This is one of the few cases in which it is appropriate to subclass Thread explicitly instead of using a Runnable in a pool: 
+in order to test proper termination with join. The same approach can be used to test that the taker thread unblocks after an element is placed in the queue by the main thread.
 
-It is tempting to use Thread.getState() to verify that the thread is actually blocked on a condition wait, but THIS APPROACH IS NOT RELIABLE. There is nothing that requires a blocked thread ever to enter the WAITING or TIMED_WAITING states, since the JVM can choose to implement blocking by spin-waiting instead. 
+It is tempting to use Thread.getState() to verify that the thread is actually blocked on a condition wait, but THIS APPROACH IS NOT RELIABLE. 
+There is nothing that requires a blocked thread ever to enter the WAITING or TIMED_WAITING states, since the JVM can choose to implement blocking by spin-waiting instead. 
+[spin-waiting (ожидание в состоянии занятости)-- проверять условие в цикле]
 Similarly, because spurious(случайный,побочный) wakeups from Object.wait() or Condition.await() are permitted (see Chapter 14), a thread in the WAITING or TIMED_WAITING state may temporarily transition to RUNNABLE even if the condition for which it is waiting is not yet true. 
 Even ignoring these implementation options, it may take some time for the target thread to settle into a blocking state. The result of Thread.getState() should not be used for concurrency control, and is of limited usefulness for testing—its primary utility is as a source of debugging information.
 
 --12.1.3 Testing safety--
-To test that a concurrent class performs correctly under unpredictable concurrent access, we need to set up multiple threads performing put and take operations over some amount of time and then somehow test that nothing went wrong.
+To test that a concurrent class performs correctly under unpredictable concurrent access, we need to set up multiple threads performing put() and take() operations over some amount of time and then somehow test that nothing went wrong.
 --Developing good concurrent tests can be more difficult than developing the classes they test.
 
-Основная фишка в тестах - это identifying easily checked properties, которые с большой вероятностью за-fail-ятся if something goes wrong; и при этом надо чтобы код из теста не ограничивал искусственно паралленость.
+Основная фишка в тестах - это identifying easily checked properties, которые с большой вероятностью за-fail-ятся if something goes wrong; 
+и при этом надо чтобы код из теста не ограничивал искусственно паралленость.
 
 One approach that works well with classes used in producer-consumer designs (like BoundedBuffer) is to check that everything put into a queue or buffer comes out of it, and that nothing else does.
 --Но для такого подхода нужно доп. синхронизации, и она исказить расписание работы тестируемых потоков.
 
-A better approach is to compute checksums of the elements that are enqueued and dequeued using an order-sensitive checksum function, and compare them. 
+A better approach is to compute checksums of the elements that are enqueued and dequeued using an ORDER-SENSITIVE CHECKSUM FUNCTION, and compare them. 
  If they match, the test passes. This approach works best when there is a single producer putting elements into the buffer and a single consumer taking them out, because it can test not only that the right elements (probably) came out but that they came out in the right order.
 
 Но для случая multiple-producer, multiple-consumer надо учитывать другие особенности...
 requires using a checksum function that is insensitive to the order in which the elements are combined, so that multiple checksums can be combined after the test. (Any commutative operation, such as addition or XOR, meets these requirements.)
 
-также важно чтобы checksums themselves not be guessable by the compiler. Поэтому test data should be generated randomly,
+также важно чтобы checksums themselves not be guessable by the compiler. 
+Поэтому test data should be generated randomly,
 и для этого лучше ис-ть Giving each thread its own RNG allows a non-thread-safe RNG to be used.
 --Many benchmarks are, unbeknownst[ˏʌnbı`nəʊnst]без ведома to their developers or users, simply tests of how great a concurrency bottleneck the RNG is.
 
-The xor-Shift function in Listing 12.4 (Marsaglia, 2003) is among the cheapest medium-quality random number functions. Starting it off with values based on hashCode and nanoTime makes the sums both unguessable and almost always different for each run.
+The xor-Shift function in Listing 12.4 (Marsaglia, 2003) is among the cheapest medium-quality random number functions. 
+Starting it off with values based on hashCode and nanoTime makes the sums both unguessable and almost always different for each run.
 
 Чтобы все потока стартовали и завершались одновременно надо ис-ть CountDownLatch as a starting gate and another as a finish gate.
 Another way to get the same effect is to use a CyclicBarrier, initialized with the number of worker threads plus one.
 
 Tests like PutTakeTest tend to be good at finding safety violations. 
   For example, a common error in implementing semaphore-controlled buffers is to forget that the code actually doing the insertion and extraction requires mutual exclusion (using synchronized or ReentrantLock).
-А чего это не хаватает???? mutual exclusion^^^^^^
+А чего это не хаватает???? mutual exclusion^^^^^^ наверно как инкремент и декремент.
 
 To maximize the chance of detecting timing-sensitive data races, there should be more active threads than CPUs, so that at any given time some threads are running and some are switched out, thus reducing the predicatability of interactions between threads.
 
-In tests that run until they complete a fixed number of operations, it is possible that the test case will never finish if the code being tested encounters an exception due to a bug. The most common way to handle this is to have the test framework abort tests that do not terminate within a certain amount of time; how long to wait should be determined empirically, and failures must then be analyzed to ensure that the problem wasn't just that you didn't wait long enough. (This problem is not unique to testing concurrent classes; sequential tests must also distinguish between long-running and infinite loops.)
+In tests that run until they complete a fixed number of operations, it is possible that the test case will never finish if the code being tested encounters an exception due to a bug. 
+The most common way to handle this is to have the test framework abort tests that do not terminate within a certain amount of time; how long to wait should be determined empirically, and failures must then be analyzed to ensure that the problem wasn't just that you didn't wait long enough. (This problem is not unique to testing concurrent classes; sequential tests must also distinguish between long-running and infinite loops.)
 
 *** 12.1.4    Testing resource management ***
-The tests so far have been concerned with a class's adherence to its specifica-tion—that it does what it is supposed to do. A secondary aspect to test is that it does not do things it is not supposed to do, such as leak resources. Any object that holds or manages other objects should not continue to maintain references to those objects longer than necessary. Such storage leaks prevent garbage collectors from reclaiming memory (or threads, file handles, sockets, database connections, or other limited resources) and can lead to resource exhaustion and application failure.
+The tests so far have been concerned with a class's adherence to its specification — that it does what it is supposed to do. 
+A secondary aspect to test is that it DOES NOT DO THINGS IT IS NOT SUPPOSED TO do, such as leak resources. 
+Any object that holds or manages other objects should not continue to maintain references to those objects longer than necessary. 
+Such storage leaks prevent garbage collectors from reclaiming memory (or threads, file handles, sockets, database connections, or other limited resources) and can lead to resource exhaustion and application failure.
 
 the entire reason for bounding a buffer is to prevent application failure due to resource exhaustion when producers get too far ahead of consumers.
 Bounding causes overly productive producers to block rather than continue to create work that will consume more and more memory or other resources.
@@ -104,7 +114,8 @@ For example, ThreadPoolExecutor makes calls to the task Runnables and to the Thr
 и в чём суть примера TestThreadPool?
 
 *** 12.1.6 Generating more interleavings ***
-We've already mentioned how running on multiprocessor systems with fewer processors than active threads can generate more interleavings than either a single-processor system or one with many processors. Similarly, testing on a variety of systems with different processor counts, operating systems, and processor architectures can disclose(раскрывать, открывать; обнажать, показывать) problems that might not occur on all systems.
+We've already mentioned how running on multiprocessor systems with fewer processors than active threads can generate more interleavings than either a single-processor system or one with many processors. 
+Similarly, testing on a variety of systems with different processor counts, operating systems, and processor architectures can disclose(раскрывать, открывать; обнажать, показывать) problems that might not occur on all systems.
 
 A useful trick for increasing the number of interleavings, and therefore more effectively exploring the state space of your programs, is to use Thread.yield()... 
 [ отступать; сдавать позицию, возвращать, выдавать, приносить урожай, давать плоды; давать результат, приводить (к чему-л.)]
@@ -116,11 +127,13 @@ The inconvenience of adding these calls for testing and removing them for produc
 
 ******************************************
 **** 12.2 Testing for performance ****
-Performance tests are often extended versions of functionality tests. In fact, it is almost always worthwhile to include some basic functionality testing within performance tests to ensure that you are not testing the performance of broken code.
+Performance tests are often extended versions of functionality tests. 
+In fact, it is almost always worthwhile to include some basic functionality testing within performance tests to ensure that you are not testing the performance of broken code.
 
-Performance tests seek( разыскивать; пытаться найти) to measure end-to-end performance metrics for representative use cases.
+1) Performance tests seek( разыскивать; пытаться найти ) to measure end-to-end performance metrics for representative use cases.
 
-A common secondary goal of performance testing is to select sizings empirically for various bounds—numbers of threads, buffer capacities, and so on. While these values might turn out to be sensitive enough to platform characteristics (such as processor type or even processor stepping level, number of CPUs, or memory size) to require dynamic configuration, it is equally common that reasonable choices for these values work well across a wide range of systems.
+2) A common secondary goal of performance testing is to select sizings empirically for various bounds — numbers of threads, buffer capacities, and so on. 
+While these values might turn out to be sensitive enough to platform characteristics (such as processor type or even processor stepping level, number of CPUs, or memory size) to require dynamic configuration, it is equally common that reasonable choices for these values work well across a wide range of systems.
 
 We can learn several things from running TimedPutTakeTest: 
 1) One is the THROUGHPUT of the producer-consumer handoff operation for VARIOUS COMBINATIONS OF PARAMETERS
@@ -132,9 +145,10 @@ It may be somewhat puzzling at first that adding a lot more threads degrades per
 even with many threads, not much computation is going on, and most of it is spent blocking and unblocking threads.
 So there is plenty of CPU slack for more threads to do the same thing without hurting performance very much.
 
-Но в реальной ситуации, будет ещё работа по созданию и обработке объекта в очереди, поэтому then this slack would disappear and the effects of having too many threads could be very noticeable. The primary purpose of this test is to measure what constraints the producer-consumer handoff via the bounded buffer imposes on overall throughput.
+Но в реальной ситуации, будет ещё работа по созданию и обработке объекта в очереди, поэтому then this slack would disappear and the effects of having too many threads could be very noticeable.
+The primary purpose of this test is to measure what constraints the producer-consumer handoff via the bounded buffer imposes on overall throughput.
 
-** 12.2.2 Comparing multiple algorithms **
+** 12.2.2 Comparing multiple algorithms *** 29.01.2017
 The java.util.concurrent algorithms have been selected and tuned, in part using tests just like those described here, to be as efficient as we know how to make them, while still offering a wide range of functionality.
 
 This test suggests that LinkedBlockingQueue scales better than ArrayBlockingQueue.

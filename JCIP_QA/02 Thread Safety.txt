@@ -1,12 +1,34 @@
-﻿Что такое Thread Safety?
+﻿2 Thread Safety
+
+2.1 What is thread safety?
+
+Что такое Thread Safety?
 thread-safe code is about managing access to state, and in particular to shared, mutable state.
 т.е. это управления доступом к состоянию объекта, а в частности к общему, изменяемому состоянию.
 
+A class is thread-safe if it behaves correctly when accessed from multiple threads, regardless of the scheduling or interleaving of the execution of those threads by the runtime environment, and with no additional synchronization or other coordination on the part of the calling code.
+Класс является потокобезопастным -- если он продолжает правильно работать когда к нему ображаются много потоков.
+
+Since any single-threaded program is also a valid multithreaded program, it cannot be thread-safe if it is not even correct in a single-threaded environment. 1 If an object is correctly implemented, no sequence of operations - calls to public methods and reads or writes of public fields - should be able to violate any of its invariants or post-conditions. No set of operations performed sequentially or concurrently on instances of a thread-safe class can cause an instance to be in an invalid state.
+
+Thread-safe classes encapsulate any needed synchronization so that clients need not provide their own.
+
+Writing thread-safe code is, at its core, about managing access to state, and in particular to shared, mutable state.
+***
+
 Что такое состояние объекта?
 Это данные, которые хранятся в полях объекта.
+Informally, an object's state is its data, stored in state variables such as instance or static fields. An object's state may include fields from other, dependent objects; 
+a HashMap's state is partially stored in the HashMap object itself, but also in many Map.Entry objects. An object's state encompasses any data that can affect its externally visible behavior.
+
+Что такое ОБЩАЯ переменная? расшаренная
+By shared, we mean that a variable could be accessed by multiple threads; 
+
+Что такое ИЗМЕНЯЕМАЯ переменная?
+by mutable, we mean that its value could change during its lifetime. 
 
 От чего зависит, должен ли быть объект thread-safe?
-Whether an object needs to be thread-safe depends on whether it will be accessed from multiple threads. 
+Whether an object needs to be thread-safe depends on whether it will be accessed from multiple threads. This is a property of how the object is used in a program, not what it does.
 
 Is a thread-safe program one that is constructed entirely of thread-safe classes? 
 Not necessarily—a program that consists entirely of thread-safe classes may not be thread-safe, and a thread-safe program may contain classes that are not thread-safe.
@@ -19,14 +41,18 @@ Not necessarily—a program that consists entirely of thread-safe classes may no
 - No set of operations performed sequentially or concurrently on instances of a thread-safe class can cause an instance to be in an invalid state.
 - Thread-safe classes encapsulate any needed synchronization so that clients need not provide their own.
 
-Какие объекта будут потокобезопасны: statefull или stateless?
+Какие объекты будут потокобезопасны: statefull или stateless?
 Stateless objects are always thread-safe.
 Почему:т.к. не хранят состояние в переменных, которые могут быть причиной ошибок.
+
+Когда уже НАДО синхронизировать доступ к переменной?
+Whenever more than one thread accesses a given state variable, and one of them might write to it, they all must coordinate their access to it using synchronization.
 
 Что такое race conditions?
 A race condition occurs when the correctness of a computation depends on the relative timing or interleaving of multiple threads by the runtime;
 in other words, when getting the right answer relies on lucky timing. 
 The most common type of race condition is CHECK-THEN-ACT, where a potentially stale observation is used to make a decision on what to do next.
+--This type of race condition is called check-then-act: you observe something to be true (file X doesn't exist) and then take action based on that observation (create X); but in fact the observation could have become invalid between the time you observed it and the time you acted on it (someone else created X in the meantime), causing a problem (unexpected exception, overwritten data, file corruption).
 
 Классический пример race conditions, который использует CHECK-THEN-ACT?
 A common idiom that uses check-then-act is lazy initialization.
@@ -107,3 +133,4 @@ For every invariant that involves more than one variable, all the variables invo
 Avoid holding locks during lengthy computations or operations at risk of not completing quickly such as network or console I/O.
 
 т.е. глава была о том, чтобы не допустить нескольким потокам доступ к одним и тем же данным в одно и то же время.
+We may talk about thread safety as if it were about code, but what we are really trying to do is protect data from uncontrolled concurrent access.
