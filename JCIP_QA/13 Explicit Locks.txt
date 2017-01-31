@@ -1,9 +1,10 @@
 13 Explicit Locks (277-289 = 12) всего до 351
 
- ReentrantLock is not a replacement for intrinsic locking, but rather an alternative with advanced features for when intrinsic locking proves too limited.
+ReentrantLock is not a replacement for intrinsic locking, but rather an alternative with advanced features for when intrinsic locking proves too limited.
 
 *** 13.1    Lock and ReentrantLock ***
-Unlike intrinsic locking, Lock offers a choice of unconditional, polled, timed, and interruptible lock acquisition, and all lock and unlock operations are explicit. Lock implementations must provide the same memory-visibility semantics as intrinsic locks, but can differ in their locking semantics, scheduling algorithms, ordering guarantees, and performance characteristics.
+Unlike intrinsic locking, Lock offers a choice of unconditional, polled, timed, and interruptible lock acquisition, and all lock and unlock operations are explicit. 
+Lock implementations must provide the same memory-visibility semantics as intrinsic locks, but can differ in their locking semantics, scheduling algorithms, ordering guarantees, and performance characteristics.
 
 ReentrantLock implements Lock, providing the same mutual exclusion and memory-visibility guarantees as SYNCHRONIZED. 
 Acquiring a ReentrantLock has the same memory semantics as entering a synchronized block, 
@@ -79,7 +80,8 @@ Performance is a moving target; yesterday’s benchmark showing that X is faster
 
 *** 13.3 Fairness ***
 
-The ReentrantLock constructor offers a choice of two fairness options: create a nonfair lock (the default) or a fair lock. Threads acquire a FAIR LOCK in the order in which they requested it, whereas a NONFAIR LOCK permits barging: threads requesting a lock can jump ahead of the queue of waiting threads if the lock happens to be available when it is requested. 
+The ReentrantLock constructor offers a choice of two fairness options: create a nonfair lock (the default) or a fair lock. 
+Threads acquire a FAIR LOCK in the order in which they requested it, whereas a NONFAIR LOCK permits barging: threads requesting a lock can jump ahead of the queue of waiting threads if the lock happens to be available when it is requested. 
 (Semaphore also offers the choice of FAIR OR NONFAIR acquisition ordering.)
 
 NONFAIR ReentrantLocks do not go out of their way to promote barging — they simply don't prevent a thread from barging if it shows up at the right time.
@@ -93,7 +95,7 @@ with a nonfair lock, the thread is queued only if the lock is currently held.
 
 When it comes to locking, though, fairness has a significant performance cost because of the overhead of suspending and resuming threads. 
 In practice, a statistical fairness guarantee — promising that a blocked thread will eventually acquire the lock — is often good enough, and is far less expensive to deliver. 
-[??? непонятно, о какой гарантии речь ??? ^^^^^^]
+
 Some algorithms rely on fair queueing to ensure their correctness, but these are unusual. In most cases, THE PERFORMANCE BENEFITS OF NONFAIR LOCKS OUTWEIGH THE BENEFITS OF FAIR QUEUEING.
 
 !!! Don't pay for fairness if you don't need it.
@@ -105,7 +107,7 @@ if thread C requests the lock, there is a good chance that C can acquire the loc
 
 Fair locks tend to work best when they are held for a relatively long time or when the mean time(промежуток времени) between lock requests is relatively long. In these cases, the condition under which barging provides a throughput advantage — when the lock is unheld but a thread is currently waking up to claim it — is less likely to hold.
 
-Как и default ReentrantLock, intrinsic locking не даёт никаких гаранти по честности получения лока, но the statistical fairness guarantees of most locking implementations are good enough for almost all situations. 
+Как и default ReentrantLock, intrinsic locking не даёт никаких гарантий по честности получения лока, но the statistical fairness guarantees of most locking implementations are good enough for almost all situations. 
 Но и так относительная честность тоже хорошо справляется.
 
 *** 13.4 Choosing between synchronized and ReentrantLock *** 285
@@ -122,6 +124,8 @@ Future performance improvements (с джавы 6) говорят в пользу
 Because synchronized is built into the JVM, it can perform optimizations such as lock elision for thread-confined lock objects and lock coarsening to eliminate synchronization with intrinsic locks.
 
 it is not a good idea to choose ReentrantLock over synchronized for performance reasons.
+locking information in thread dumps has saved many programmers from utter consternation.
+utter consternation -- абсолютный ужас
 
 *** 13.5    Read-write locks *** 286
 ReentrantLock implements a standard mutual-exclusion lock: 
@@ -151,7 +155,8 @@ Some of the implementation options for a ReadWriteLock are:
 
 ReentrantReadWriteLock provides reentrant locking semantics for both locks. Like ReentrantLock, a ReentrantReadWriteLock can be constructed as nonfair (the default) or fair. 
 FAIR: доступ дадут тому, кто дольше всех ждёт. Если пришёл на запись, то ридеры после него ставятся в очередь, пока он не запишет.
-Downgrading from writer to reader is permitted; upgrading from reader to writer is not (attempting to do so results in deadlock).
+Downgrading from writer to reader is permitted; 
+upgrading from reader to writer is not (attempting to do so results in deadlock).
 
 Like ReentrantLock, the write lock in ReentrantReadWriteLock has a unique owner and can be released only by the thread that acquired it.
 
@@ -161,6 +166,7 @@ ReadWriteMap.java -- this technique would be useful if you want to provide more 
 А так эффективнее использовать ConcurrentHashMap.
 
 *** Summary ***
-Explicit Locks offer an extended feature set compared to intrinsic locking, including greater flexibility in dealing with lock unavailability and greater control over queueing behavior. But ReentrantLock is not a blanket substitute for synchronized; use it only when you need features that synchronized lacks.
+Explicit Locks offer an extended feature set compared to intrinsic locking, including greater flexibility in dealing with lock unavailability and greater control over queueing behavior. 
+But ReentrantLock is not a blanket substitute for synchronized; use it only when you need features that synchronized lacks.
 
 Read-write locks allow multiple readers to access a guarded object concurrently, offering the potential for improved scalability when accessing read-mostly data structures.

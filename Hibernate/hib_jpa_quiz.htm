@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>hib_jpa_quiz</title>
+    <style type="text/css">
+	pre, div.note {
+		font-family: "Trebuchet MS",Tahoma,Arial;
+		font-size: 18px;
+		font-weight: bold;
+		border: 1px solid #000;
+		background-color: #999;
+		padding: 5px;
+	}
+	body {
+		font-size: 20px;
+		background-color: #c0c0c0;
+	}
+	table {
+		table-layout: fixed;
+		border-collapse: collapse;
+		border-spacing: 0;
+	}
+	td {
+		border: 1px solid black;
+		word-wrap: break-word;
+	}
+	</style>
+</head>
+<body>
+<div class="content html_format cye-lm-tag">
+<br>
+
+<div class="spoiler"><b class="spoiler_title">Общее оглавление 'Шпаргалок'</b><div class="spoiler_text"><a href="https://habrahabr.ru/post/265061/">1. JPA и Hibernate в вопросах и ответах</a><br>
+<a href="https://habrahabr.ru/post/266821/">2. Триста пятьдесят самых популярных не мобильных Java opensource проектов на github</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/256877/">3. Коллекции в Java (стандартные, guava, apache, trove, gs-collections и другие</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/270383/">4. Java Stream API</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/272025/">5. Двести пятьдесят русскоязычных обучающих видео докладов и лекций о Java</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/280784/">6. Список полезных ссылок для Java программиста</a> <br>
+7 Типовые задачи &nbsp;&nbsp; <a href="https://habrahabr.ru/post/278233/">7.1 Оптимальный путь преобразования InputStream в строку</a><br>
+&nbsp;&nbsp; <a href="https://habrahabr.ru/post/278313/">7.2 Самый производительный способ обхода Map'ы, подсчет количества вхождений подстроки</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/280782/">8. Библиотеки для работы с Json (Gson, Fastjson, LoganSquare, Jackson, JsonPath и другие) </a><br>
+</div></div><br>
+<br>
+Данная статья будет полезна и для тех кто только собирается изучать JPA и Hibernate (В этом случае рекомендую сразу открывать ответы), и для тех кто уже хорошо знает JPA и Hibernate (В этом случае статья позволит проверить свои знания и освежить особенности технологий). Особенно статья будет полезна тем кто собирается пройти техническое интервью, где возможно будут задавать вопросы по JPA и Hibernate (или сам собирается провести техническое интервью).<br>
+<br>
+<a name="habracut"></a><br>
+Рекомендую так считать правильные ответы: если вы ответили на вопрос по вашему мнению правильно и полностью — поставьте себе 1 балл, если ответили только частично — 0.5 балл. Везде где только возможно я старался добавлять цитаты из оригинальной документации (но из-за ограничений лицензии Oracle не могу давать слишком большие цитаты из документации). <br>
+<br>
+<h3>Общие вопросы</h3><br>
+<ul class="cye-lm-tag">
+<li class="cye-lm-tag">Вопрос 1. Что такое JPA? <br>
+<div class="spoiler cye-lm-tag"><b class="spoiler_title cye-lm-tag">Ответ</b><div class="spoiler_text">JPA (Java Persistence API) это спецификация Java EE и Java SE, описывающая систему управления сохранением java объектов в таблицы реляционных баз данных в удобном виде. Сама Java не содержит реализации JPA, однако есть существует много реализаций данной спецификации от разных компаний (открытых и нет). Это не единственный способ сохранения java объектов в базы данных (ORM систем), но один из самых популярных в Java мире.<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The JPA (Java Persistence API) is the specification of the Java API for the management of persistence and object/relational mapping with Java EE and Java SE. The technical objective of this work is to provide an object/relational mapping facility for the Java application developer using a Java domain model to manage a relational database.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li>Вопрос 2. В чем её отличие JPA от Hibernate? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Hibernate одна из самых популярных открытых реализаций последней версии спецификации (JPA 2.1). Даже скорее самая популярная, почти стандарт де-факто. То есть JPA только описывает правила и API, а Hibernate реализует эти описания, впрочем у Hibernate (как и у многих других реализаций JPA) есть дополнительные возможности, не описанные в JPA (и не переносимые на другие реализации JPA).<br>
+</div></div><br>
+</li>
+<hr>
+<li>Вопрос 3. Можно ли использовать JPA c noSQl базами? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Вообще, спецификация JPA говорит только о отображении java объектов в таблицы реляционных баз данных, но при этом существует ряд реализаций данного стандарта для noSql баз данных: <a href="https://github.com/impetus-opensource/Kundera/wiki">Kundera</a>, <a href="http://www.datanucleus.org/">DataNucleus</a>, ObjectDB и ряд других. Естественно, при этом не все специфичные для реляционных баз данных особенности спецификации переносятся на nosql базы полностью. <br>
+</div></div><br>
+</li>
+<hr>
+<li>Вопрос 4. В чем её отличие JPA от JDO? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPA (Java Persistence API) и Java Data Objects (JDO) две спецификации сохранения java объектов в базах данных. Если JPA сконцентрирована только на реляционных базах, то JDO более общая спецификация которая описывает ORM для любых возможных баз и хранилищ. В принципе можно рассматривать JPA как специализированную на релятивистских баз часть спецификации JDO, даже при том что API этих двух спецификаций не полностью совпадает. Также отличаются «разработчики» спецификаций — если JPA разрабатывается как <a href="http://www.jcp.org">JSR</a>, то JDO сначала разрабатывался как <a href="http://www.jcp.org">JSR</a>, теперь разрабатывается как проект <a href="http://db.apache.org/jdo/">Apache JDO</a>. Подробнее про сравнения функционала и API спецификаций можно посмотреть <a href="http://db.apache.org/jdo/">здесь</a>. <br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 5. Что такое Entity? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Entity это легковесный хранимый объект бизнес логики (persistent domain object). Основная программная сущность это entity класс, который так же может использовать дополнительные классы, которые могут использоваться как вспомогательные классы или для сохранения состояния еntity.<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An entity is a lightweight persistent domain object.<br>
+The primary programming artifact is the entity class. An entity class may make use of auxiliary classes that serve as helper classes or that are used to represent the state of the entity.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 6. Может ли Entity класс наследоваться от не Entity классов (non-entity classes)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Может <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.1</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Entities may extend non-entity classes…<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 7. Может ли Entity класс наследоваться от других Entity классов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Тоже может <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.1</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Entities may extend non-entity classes as well as entity classes…<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 8. Может ли не Entity класс наследоваться от Entity класса? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">И это тоже допустимо <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.1</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Entities may extend non-entity classes as well as entity classes, and non-entity classes may extend entity classes.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 9. Может ли Entity быть абстрактным классом? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Может, при этом он сохраняет все свойства Entity, за исключением того что его нельзя непосредственно инициализировать.<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.11.1</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An abstract class can be specified as an entity. An abstract entity differs from a concrete entity only in that it cannot be directly instantiated. An abstract entity is mapped as an entity and can be the target of queries (which will operate over and/or retrieve instances of its concrete subclasses).<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 10. Какие требования JPA к Entity классам вы можете перечислить (не менее шести требований)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1) Entity класс должен быть отмечен аннотацией Entity или описан в XML файле конфигурации JPA,<br>
+2) Entity класс должен содержать public или protected конструктор без аргументов (он также может иметь конструкторы с аргументами), <br>
+3) Entity класс должен быть классом верхнего уровня (top-level class),<br>
+4) Entity класс не может быть enum или интерфейсом,<br>
+5) Entity класс не может быть финальным классом (final class), <br>
+6) Entity класс не может содержать финальные поля или методы, если они участвуют в маппинге (persistent final methods or persistent final instance variables),<br>
+7) Если объект Entity класса будет передаваться по значению как отдельный объект (detached object), например через удаленный интерфейс (through a remote interface), он так же должен реализовывать Serializable интерфейс, <br>
+8) Поля Entity класс должны быть напрямую доступны только методам самого Entity класса и не должны быть напрямую доступны другим классам, использующим этот Entity. Такие классы должны обращаться только к методам (getter/setter методам или другим методам бизнес-логики в Entity классе),<br>
+9) Enity класс должен содержать первичный ключ, то есть атрибут или группу атрибутов которые уникально определяют запись этого Enity класса в базе данных,<br>
+ <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.1 and 2.4</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">1. The entity class must be annotated with the Entity annotation or denoted in the XML descriptor as an entity.<br>
+2. The entity class must have a no-arg constructor. The entity class may have other constructors as well.<br>
+3. The no-arg constructor must be public or protected.<br>
+4. The entity class must be a top-level class. An enum or interface must not be designated as an entity.<br>
+5. The entity class must not be final. No methods or persistent instance variables of the entity class may be final.<br>
+6. If an entity instance is to be passed by value as a detached object (e.g., through a remote interface), the entity class must implement the Serializable interface.<br>
+7. Entities support inheritance, polymorphic associations, and polymorphic queries.<br>
+8. Both abstract and concrete classes can be entities. Entities may extend non-entity classes as well as entity classes, and non-entity classes may extend entity classes.<br>
+10. The persistent state of an entity is represented by instance variables, which may correspond to JavaBeans properties. An instance variable must be directly accessed only from within the methods of the entity by the entity instance itself. Instance variables must not be accessed by clients of the entity. The state of the entity is available to clients only through the entity’s methods—i.e., accessor methods (getter/setter methods) or other business methods.<br>
+…<br>
+2.4 Primary Keys and Entity Identity Every entity must have a primary key. <br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 11. Какие два типа элементов есть у Entity классов. Или другими словами перечислите два типа доступа (access) к элементам Entity классов.<br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPA указывает что она может работать как с свойствами классов (property), оформленные в стиле JavaBeans, либо с полями (field), то есть переменными класса (instance variables). Соответственно, при этом тип доступа будет либо property access или field access. <br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.2</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The persistent state of an entity is accessed by the persistence provider runtime[1] either via JavaBeans style property accessors (“property access”) or via instance variables (“field access”). Whether persistent properties or persistent fields or a combination of the two is used for the provider’s access to given class or entity hierarchy is determined as described in Section 2.3, “Access Type”.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 12. Что такое атрибут Entity класса в терминологии JPA? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPA указывает что она может работать как с свойствами классов (property), оформленные в стиле JavaBeans, либо с полями (field), то есть переменными класса (instance variables). Оба типа элементов Entity класса называются атрибутами Entity класса.<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.2</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The persistent state of an entity is accessed by the persistence provider runtime[1] either via JavaBeans style property accessors (“property access”) or via instance variables (“field access”). Whether persistent properties or persistent fields or a combination of the two is used for the provider’s access to given class or entity hierarchy is determined as described in Section 2.3, “Access Type”.<br>
+Terminology Note: <b>The persistent fields and properties of an entity class are generically referred to in this document as the “attributes” of the class.</b><br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 13. Какие типы данных допустимы в атрибутах Entity класса (полях или свойствах)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Допустимые типы атрибутов у Entity классов: <br>
+1. примитивные типы ( см.п.3: и их обертки Java),<br>
+2. строки, <br>
+3. other Java serializable types (в т.ч. и обёртки для примитивов)<br>
+4. сериализуемые used-defined типы <br>
+5. enums; <br>
+6. entity types; <br>
+7. embeddable классы 7. и коллекции типов 1-6 <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.2</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The persistent fields or properties of an entity may be of the following types: 
+<pre>
+1) Java primitive types; 
+2) java.lang.String; 
+other Java serializable types (including wrappers of the primitive types, 
+3) java.math.BigInteger,
+4)  java.math.BigDecimal,
+5)  java.util.Date,
+6)  java.util.Calendar, (Note that an instance of Calendar must be fully initialized for the type that it is mapped to.)
+7)  java.sql.Date,
+8)  java.sql.Time,
+9)  java.sql.Timestamp,
+10)  byte[],
+11)  Byte[],
+12)  char[],
+13)  Character[],
+14)  and user-defined types that implement the Serializable interface),
+15)  enums,
+16)  entity types,
+17)  collections of entity types,
+18)  embeddable classes (see Section 2.5),
+19)  collections of basic and embeddable types (see Section 2.6).
+ </pre><br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 14. Какие типы данных можно использовать в атрибутах, входящих в первичный ключ Entity класса (составной или простой), чтобы полученный первичный ключ мог использоваться для любой базы данных? А в случае автогенерируемого первичного ключа (generated primary keys)?<br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Допустимые типы атрибутов, входящих в первичный ключ:<br>
+1. примитивные типы и их обертки Java,<br>
+2. строки, <br>
+3. BigDecimal и BigInteger,<br>
+4. java.util.Date и java.sql.Date, <br>
+<br>
+В случае автогенерируемого первичного ключа (generated primary keys) допустимы <br>
+1. только числовые типы, <br>
+<br>
+В случае использования других типов данных в первичном ключе, он может работать только для некоторых баз данных, т.е. становится не переносимым (not portable), <br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.4</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">A simple primary key or a field or property of a composite primary key should be one of the following types: 
+<pre>
+1) any Java primitive type,
+2)  any primitive wrapper type,
+3)  java.lang.String,
+4)  java.util.Date,
+5)  java.sql.Date,
+6)  java.math.BigDecimal,
+7)  java.math.BigInteger… </pre>
+ Entities whose primary keys use types other than these will not be portable. If generated primary keys are used, only integral types will be portable. <br>
+</div></div><br>
+</div></div><br>
+</li>
+</ul><br>
+<h3>Сложные структуры JPA</h3><br>
+<ul>
+<hr>
+<li> Вопрос 15. Что такое встраиваемый (Embeddable) класс? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Встраиваемый (Embeddable) класс это класс который не используется сам по себе, только как часть одного или нескольких Entity классов. Entity класс могут содержать как одиночные встраиваемые классы, так и коллекции таких классов. Также такие классы могут быть использованы как ключи или значения map. 
+<br><br>
+Во время выполнения каждый встраиваемый класс принадлежит только одному объекту Entity класса и не может быть использован для передачи данных между объектами Entity классов (то есть такой класс не является общей структурой данных для разных объектов). 
+<br><br>
+В целом, такой класс служит для того чтобы выносить определение общих атрибутов для нескольких Entity, можно считать что JPA просто встраивает в Entity вместо объекта Embeddable те атрибуты, которые он содержит.<br>
+<br>
+т.е. Embeddable - это как шаблон, вместо которого подставляются его атрибуты.
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.5</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An entity may use other fine-grained classes to represent entity state. Instances of these classes, unlike entity instances, do not have persistent identity of their own. Instead, they exist only as part of the state of the entity to which they belong. An entity may have collections of embeddables as well as single-valued embeddable attributes. Embeddables may also be used as map keys and map values. Embedded objects belong strictly to their owning entity, and are not sharable across persistent entities. Attempting to share an embedded object across entities has undefined semantics. <br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 16. Может ли встраиваемый (Embeddable) класс содержать другой встраиваемый (Embeddable) класс? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Да, может <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.5</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An embeddable class may be used to represent the state of another embeddable class.An embeddable class (including an embeddable class within another embeddable class) may contain a collection of a basic type or other embeddable class.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 17. Может ли встраиваемый (Embeddable) класс содержать связи (relationship) с другими Entity или коллекциями Entity? Если может, то существуют ли какие-то ограничение на такие связи (relationship)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Может, но только в случае если этот Embeddable класс не используется как первичный ключ или ключ map'ы.<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.5</a><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An embeddable class may contain a relationship to an entity or collection of entities. Since instances of embeddable classes themselves have no persistent identity, the relationship from the referenced entity is to the entity that contains the embeddable instance(s) and not to the embeddable itself. An embeddable class that is used as an embedded id or as a map key must not contain such a relationship.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 18. Какие требования JPA устанавливает к встраиваемым (Embeddable) классам? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1. Такие классы должны удовлетворять тем же правилам что Entity классы, за исключением того что они 
+<pre>1.1_не обязаны содержать первичный ключ и 
+1.2_не должны быть отмечены аннотацией Entity (см. вопрос 10),</pre>
+<br>
+2. Embeddable класс должен быть отмечен аннотацией Embeddable или описан в XML файле конфигурации JPA,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.5</a><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Embeddable classes must adhere to the requirements specified in Section 2.1 for entities with the exception that embeddable classes are not annotated as Entity. Embeddable classes must be annotated as Embeddable or denoted in the XML descriptor as such. <br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 19. Какие типы связей (relationship) между Entity вы знаете (перечислите восемь типов, либо укажите четыре типа связей, каждую из которых можно разделить ещё на два вида)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Существуют следующие четыре типа связей <br>
+1. OneToOne (связь один к одному, то есть один объект Entity может связан не больше чем с один объектом другого Entity ), <br>
+2. OneToMany (связь один ко многим, один объект Entity может быть связан с целой коллекцией других Entity), <br>
+3. ManyToOne (связь многие к одному, обратная связь для OneToMany), <br>
+4. ManyToMany (связь многие ко многим)<br>
+<br>
+Каждую из которых можно разделить ещё на два вида:<br>
+1. Bidirectional <br>
+2. Unidirectional <br>
+<div class="note">
+A bidirectional relationship has both an owning side and an inverse (non-owning) side. <br>
+Т.е. у связи одна сторона будет главной (OWNING SIDE) (т.е. <u>владеющей этим relationship</u>),<br>
+а вторая будет второстепенной, <u>оборотной, ничем не владеющей</u> (INVERSE (NON-OWNING) SIDE)
+</div>
+Bidirectional — ссылка на связь устанавливается у всех Entity, 
+<pre>
+то есть в случае OneToOne A-B:
+в Entity A есть ссылка на Entity B, 
+в Entity B есть ссылка на Entity A, 
+Entity A считается владельцем этой связи 
+(это важно для случаев каскадного удаления данных, 
+тогда при удалении A также будет удалено B, но не наоборот).</pre>
+<br>
+<br>
+Undirectional- ссылка на связь устанавливается только с одной стороны, 
+<pre>то есть в случае OneToOne A-B 
+только у Entity A будет ссылка на Entity B, 
+у Entity B ссылки на A не будет. 
+</pre><br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.9</a><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Relationships among entities may be 
+<pre>
+one-to-one, one-to-many, many-to-one, or many-to-many. 
+</pre>
+<div class="note">
+	Relationships are polymorphic.
+</div>
+<br>
+If there is an association between two entities, one of the following relationship modeling annotations must be applied to the corresponding persistent property or field of the referencing entity: OneToOne, OneToMany, ManyToOne, ManyToMany. <br><br>
+For associations that do not specify the target type (e.g.,
+where Java generic types are not used for collections), it is necessary to specify the entity that is the target of the relationship.[For associations of type java.util.Map, target typerefers to the type that is the Map value] 
+<br><br>
+Equivalent XML elements may be used as an alternative to these mapping annotations.<br>
+These annotations mirror common practice in relational database schema modeling. The use of the relationship modeling annotations allows the object/relationship mapping of associations to the relational database schema to be fully defaulted, to provide an ease-of-development facility. This is described in Section 2.10, “Relationship Mapping Defaults”.<br>
+Relationships may be bidirectional or unidirectional. A bidirectional relationship has both an owning side and an inverse (non-owning) side. A unidirectional relationship has only an owning side. The owning side of a relationship determines the updates to the relationship in the database, as described in section 3.2.4.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 20. Что такое Mapped Superclass? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Mapped Superclass это класс от которого наследуются Entity, он может содержать анотации JPA, однако сам такой класс не является Entity, ему не обязательно выполнять все требования установленные для Entity (например, он может не содержать первичного ключа). Такой класс не может использоваться в операциях EntityManager или Query. Такой класс должен быть отмечен аннотацией MappedSuperclass или соответственно описан в xml файле. <br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.2</a><br>
+<div class="spoiler"><b class="spoiler_title">Примеры</b><div class="spoiler_text">Примеры на <a href="https://github.com/search?utf8=%E2%9C%93&amp;q=javax.persistence.MappedSuperclass&amp;type=Code&amp;ref=searchresults">github</a>: <a href="https://github.com/redime/redime.persistence/blob/bb231a53b1efa8fce4794135eb67c0fecbd37de1/persistence/src/main/java/redime/persistence/SharedEntity.java">1</a> <a href="https://github.com/ebean-orm/avaje-ebeanorm-agent/blob/97f41c41537cf7a7fd3c46b5dffe2418946dc078/src/test/java/test/model/PBase.java">2</a> <a href="https://github.com/ChunkyDev/Chunky2/blob/6829872d160a0bf70e295652790dc236e71b263f/src/main/java/org/getchunky/chunkyapi/object/ChunkyFlagged.java">3</a><br>
+<br>
+Example: Concrete class as a mapped superclass <pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@MappedSuperclass</span>
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Employee</span> </span>{
+ <span class="hljs-meta cye-lm-tag">@Id</span> <span class="hljs-keyword cye-lm-tag">protected</span> Integer empId;
+ <span class="hljs-meta cye-lm-tag">@Version</span> <span class="hljs-keyword cye-lm-tag">protected</span> Integer version;
+ <span class="hljs-meta cye-lm-tag">@ManyToOne</span> <span class="hljs-meta cye-lm-tag">@JoinColumn</span>(name=<span class="hljs-string cye-lm-tag">"ADDR"</span>)
+ <span class="hljs-keyword cye-lm-tag">protected</span> Address address;
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Integer <span class="hljs-title cye-lm-tag">getEmpId</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setEmpId</span><span class="hljs-params cye-lm-tag">(Integer id)</span> </span>{ ... }
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Address <span class="hljs-title cye-lm-tag">getAddress</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setAddress</span><span class="hljs-params cye-lm-tag">(Address addr)</span> </span>{ ... }
+}
+<span class="hljs-comment cye-lm-tag">// Default table is FTEMPLOYEE table</span>
+<span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">FTEmployee</span> <span class="hljs-keyword cye-lm-tag">extends</span> <span class="hljs-title cye-lm-tag">Employee</span> </span>{
+ <span class="hljs-comment cye-lm-tag">// Inherited empId field mapped to FTEMPLOYEE.EMPID</span>
+ <span class="hljs-comment cye-lm-tag">// Inherited version field mapped to FTEMPLOYEE.VERSION</span>
+ <span class="hljs-comment cye-lm-tag">// Inherited address field mapped to FTEMPLOYEE.ADDR fk</span>
+
+<span class="hljs-comment cye-lm-tag">// Defaults to FTEMPLOYEE.SALARY</span>
+<span class="hljs-keyword cye-lm-tag">protected</span> Integer salary;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-title cye-lm-tag">FTEmployee</span><span class="hljs-params cye-lm-tag">()</span> </span>{}
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Integer <span class="hljs-title cye-lm-tag">getSalary</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setSalary</span><span class="hljs-params cye-lm-tag">(Integer salary)</span> </span>{ ... }
+}
+<span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-meta cye-lm-tag">@Table</span>(name=<span class="hljs-string cye-lm-tag">"PT_EMP"</span>)
+<span class="hljs-meta cye-lm-tag">@AssociationOverride</span>(name=<span class="hljs-string cye-lm-tag">"address"</span>,
+joincolumns=<span class="hljs-meta cye-lm-tag">@JoinColumn</span>(name=<span class="hljs-string cye-lm-tag">"ADDR_ID"</span>))
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">PartTimeEmployee</span> <span class="hljs-keyword cye-lm-tag">extends</span> <span class="hljs-title cye-lm-tag">Employee</span> </span>{
+ <span class="hljs-comment cye-lm-tag">// Inherited empId field mapped to PT_EMP.EMPID</span>
+ <span class="hljs-comment cye-lm-tag">// Inherited version field mapped to PT_EMP.VERSION</span>
+ <span class="hljs-comment cye-lm-tag">// address field mapping overridden to PT_EMP.ADDR_ID fk</span>
+ <span class="hljs-meta cye-lm-tag">@Column</span>(name=<span class="hljs-string cye-lm-tag">"WAGE"</span>)
+ <span class="hljs-keyword cye-lm-tag">protected</span> Float hourlyWage;
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-title cye-lm-tag">PartTimeEmployee</span><span class="hljs-params cye-lm-tag">()</span> </span>{}
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Float <span class="hljs-title cye-lm-tag">getHourlyWage</span><span class="hljs-params cye-lm-tag">()</span> </span>{ ... }
+ <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">setHourlyWage</span><span class="hljs-params cye-lm-tag">(Float wage)</span> </span>{ ... }
+}
+</code></pre><br>
+</div></div><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An entity may inherit from a superclass that provides persistent entity state and mapping information, but which is not itself an entity. 
+<br><br>Typically, the purpose of such a mapped superclass is to define state and mapping information that is common to multiple entity classes.<br><br>
+A mapped superclass, unlike an entity, is not queryable and must NOT be passed as an argument to EntityManager or Query operations. <br>
+<br>
+<div class="note">Persistent relationships defined by a mapped superclass must be unidirectional.</div>
+<br>
+Both abstract and concrete classes may be specified as mapped superclasses.<br>
+The <u>@MappedSuperclass</u> annotation (or mapped-superclass XML descriptor element) is used to designate mapped superclass.<br>
+A class designated as a mapped superclass has no separate table defined for it. Its mapping information is applied to the entities that inherit from it.<br>
+A class designated as a mapped superclass can be mapped in the same way as an entity except that the mappings will apply only to its subclasses since no table exists for the mapped superclass itself. 
+<br><br>
+When applied to the subclasses, the inherited mappings will apply in the context of the subclass tables. Mapping information can be overridden in such subclasses by using the <u>@AttributeOverride</u> and <u>@AssociationOverride</u> annotations or corresponding XML elements.<br><br>
+All other entity mapping defaults apply equally to a class designated as a mapped superclass.<br>
+The following example illustrates the definition of a concrete class as a mapped superclass.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<pre>
+Example: Non-entity superclass
+public class Cart {
+    protected Integer operationCount; // transient state
+    public Cart() { operationCount = 0; }
+    public Integer getOperationCount() { return operationCount; }
+    public void incrementOperationCount() { operationCount++; }
+}
+@Entity
+public class ShoppingCart extends Cart {
+    Collection<Item> items = new Vector<Item>(); public ShoppingCart() { super(); }
+...
+    @OneToMany
+    public Collection<Item> getItems() { return items; }
+    public void addItem(Item item) {
+        items.add(item);
+        incrementOperationCount();
+    }
+}	
+</pre>
+<hr>
+<li> Вопрос 21. Какие три типы стратегии наследования мапинга (Inheritance Mapping Strategies) описаны в JPA? <br>
+[то есть как JPA будет работать с классами-наследниками Entity]
+<br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">В JPA описаны три стратегии наследования мапинга (Inheritance Mapping Strategies): <br>
+
+<div class="note">
+1) одна таблица на всю иерархию наследования (<b>a single table per class hierarchy</b>) — 
+<br>1.1_все enity, со всеми наследниками записываются в одну таблицу, <br>1.2_для идентификации типа entity определяется специальная колонка <b>“discriminator column”</b>. </div>
+<br>
+Например, если есть entity Animals c классами-потомками Cats и Dogs, при такой стратегии все entity записываются в таблицу Animals, но при это имеют дополнительную колонку animalType в которую соответственно пишется значение «cat» или «dog». 
+<br><b>Минусом</b> является то что <u>в общей таблице, будут созданы все поля уникальные для каждого из классов-потомков</u>, которые будет пусты для всех других классов-потомков. Например, в таблице animals окажется и скорость лазанья по дереву от cats и может ли пес приносить тапки от dogs, которые будут всегда иметь null для dog и cat соотвественно.<br>
+<br>
+<div class="note">
+2) объединяющая стратегия (<b>joined subclass strategy</b>) — 
+<br>2.1_все унаследованные/общие колонки записываются в таблицу класса-предка,
+<br>2.2_а каждый дочерний класс (enity) сохраняет свои уникальные колонки (не унаследованные от классов-предков) и первичный ключ в свою отдельную таблицу, 
+<br>2.3_и дополнительно устанавливается связь (relationships) между этими таблицами.
+</div><br>
+например в случае классов Animals (см.выше), будут три таблицы animals, cats, dogs, причем в cats будет записана только ключ и скорость лазанья, в dogs — ключ и умеет ли пес приносить палку, а в animals все остальные данные cats и dogs c ссылкой на соответствующие таблицы. 
+<br><b>Минусом</b> тут являются <u>потери производительности</u> от объединения таблиц (join) для любых операций. <br>
+<br>
+<div class="note">
+3) одна таблица для каждого класса (<b>table per concrete class strategy</b>) — 
+<br>каждый отдельный класс-наследник имеет свою таблицу
+</div><br>
+Для cats и dogs (см.выше) все данные будут записываться просто в таблицы cats и dogs как если бы они вообще не имели общего суперкласса.
+<br><b>Минусом</b> является <u>плохая поддержка полиморфизма</u> (polymorphic relationships) и то что для выборки всех классов иерархии потребуются большое количество отдельных sql запросов или использование UNION запроса. <br>
+<br>
+Для задания стратегии наследования используется аннотация <b>Inheritance</b> (или соответствующие блоки <br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 2.12</a>, <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/InheritanceType.html">J7EE javadoc</a><br>
+<br>
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-meta cye-lm-tag">@Inheritance</span>(strategy=JOINED)
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Customer</span> </span>{ ... }
+<span class="hljs-meta cye-lm-tag">@Entity</span>
+<span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">ValuedCustomer</span> <span class="hljs-keyword cye-lm-tag">extends</span> <span class="hljs-title cye-lm-tag">Customer</span> </span>{ ... }
+</code></pre><br>
+</div></div><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">There are three basic strategies that are used when mapping a class or class hierarchy to a relational database:
+<br>1) a single table per class hierarchy 
+<br>2) a joined subclass strategy, in which fields that are specific to a subclass are mapped to a separate table than the fields that are common to the parent class, and a join is performed to instantiate the subclass.
+<br>3) a table per concrete entity class </div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 22. Какие два типа fetch стратегии в JPA вы знаете? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">В JPA описаны два типа fetch стратегии:<br>
+1) LAZY — данные поля будут загруженны только во время первого доступа к этому полю,<br>
+2) EAGER — данные поля будут загруженны немедленно,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 11.1.6</a> <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/FetchType.html">J7EE javadoc</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The EAGER strategy is a requirement on the persistence provider runtime that the associated entity must be eagerly fetched. The LAZY strategy is a hint to the persistence provider runtime that the associated entity should be fetched lazily when it is first accessed. The implementation is permitted to eagerly fetch associations for which the LAZY strategy hint has been specified.<br>
+</div></div><br>
+</div></div><br>
+</li>
+</ul><br>
+<h3>Основные операции с Entity</h3><br>
+<ul>
+<hr>
+<li> Вопрос 23. Что такое EntityManager и какие основные его функции вы можете перечислить? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">EntityManager это интерфейс, который описывает API для всех основных операций над Enitity, получение данных и других сущностей JPA. По сути главный API для работы с JPA. Основные операции:<br>
+1) Для операций над Entity: <pre>
+1.1) persist (добавление Entity под управление JPA)
+1.2) merge (обновление)
+1.3) remove (удаления)
+1.4) refresh (обновление данных)
+1.5) detach (удаление из управление JPA)
+1.6) lock (блокирование Enity от изменений в других thread)</pre>
+<br>
+2) Получение данных: <pre>
+2.1) find (поиск и получение Entity
+2.2) createQuery, 
+2.3) createNamedQuery, 
+2.4) createNativeQuery, 
+2.5) contains, 
+2.6) createNamedStoredProcedureQuery, 
+2.7) createStoredProcedureQuery</pre>
+<br>
+3) Получение других сущностей JPA: <pre>
+3.1) getTransaction, 
+3.2) getEntityManagerFactory, 
+3.3) getCriteriaBuilder, 
+3.4) getMetamodel, 
+3.5) getDelegate </pre>
+<br>
+4) Работа с EntityGraph: 
+<pre>4.1) createEntityGraph, 
+4.2) getEntityGraph </pre>
+<br>
+5) Общие операции над EntityManager или всеми Entities: 
+<pre>5.1) close, 
+5.2) isOpen, 
+5.3) getProperties, 
+5.4) setProperty, 
+5.5) clear</pre>
+<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Interface used to interact with the persistence context.<br>
+An EntityManager instance is associated with a persistence context. A persistence context is a set of entity instances in which for any persistent entity identity there is a unique entity instance. Within the persistence context, the entity instances and their lifecycle are managed. The EntityManager API is used to create and remove persistent entity instances, to find entities by their primary key, and to query over entities.<br>
+<br>
+The set of entities that can be managed by a given EntityManager instance is defined by a persistence unit. A persistence unit defines the set of all classes that are related or grouped by the application, and which must be colocated in their mapping to a single database.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 24. Какие четыре статуса жизненного цикла Entity объекта (Entity Instance’s Life Cycle) вы можите перечислить? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">У Entity объекта существует четыре статуса жизненного цикла: new, managed, detached, или removed. Их описание <br>
+1) new — новый объект, не имеет <b>persistent identity</b> (<u>сгенерированных первичных ключей</u>) и not yet associated with a persistence context (пока ещё не сохранен в базе данных),<br>
+2) managed — объект создан, имеет persistent identity, <u>управляется JPA</u>, т.е. <b>is currently associated with a persistence context</b><br>
+3) detached — объект был создан, имеет persistent identity, но не управляется (или больше не управляется) JPA [not (or no longer) associated with a persistence context]<br>
+4) removed — объект создан, имеет persistent identity, управляется JPA, но будет удален сразу после commit'a транзакции.<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2</a> <br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An entity instance can be characterized as being new, managed, detached, or removed.<br>
+<br>
+1• A <b>new entity</b> instance has no persistent identity, and is not yet associated with a persistence context.<br>
+2• A <b>managed entity</b> instance is an instance with a persistent identity that is currently associated with a persistence context.<br>
+3• A <b>detached entity</b> instance is an instance with a persistent identity that is not (or no longer) associated with a persistence context.<br>
+4• A <b>removed entity</b> instance is an instance with a persistent identity, associated with a persistence context, that will be removed from the database upon transaction commit.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 25. Как влияет операция persist на Entity объекты каждого из четырех статусов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1) Если статус Entity new, то он меняется на managed и объект будет сохранен в базу при commit'е транзакции или в результате flush операций, <br>
+2) Если статус уже managed, операция игнорируется, однако зависимые Entity могут поменять статус на managed, если у них есть аннотации каскадных изменений,<br>
+3) Если статус detached, будет выкинут exception сразу или на этапе commit'а транзакции,<br>
+4) Если статус removed, то он меняется на managed,<br>
+<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2.2</a><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал persist</b><div class="spoiler_text">
+<br>
+1• If X is a <b>new entity</b>, it becomes <b>managed</b>. The entity X will be entered into the database at or before transaction commit or as a result of the flush operation.
+<br><br>
+2• If X is a preexisting <b>managed entity</b>, it is <b>ignored</b> by the persist operation. However, the <u>persist operation is <b>cascaded to</b> entities <b>referenced</b> by X</u>, <b>if..</b> the relationships from X to these other entities are annotated with the cascade=PERSIST or cascade=ALL annotation element value or specified with the equivalent XML descriptor element.
+<br><br>
+3• If X is a <b>detached</b> object, the <b>EntityExistsException may be thrown</b> when the persist operation is invoked, or the EntityExistsException <b>or another</b> PersistenceException may be thrown at flush or commit time.
+<br><br>
+4• If X is a <b>removed</b> entity, it becomes <b>managed</b>.
+<br><br>
+*5*• For all entities Y referenced by a relationship from X, if the <b>relationship to Y</b> has been <b>annotated</b> <b>with</b> the <b>cascade element</b> value cascade=PERSIST or cascade=ALL, the<b> persist operation is applied to Y</b> 
+<br>
+</div></div> <br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 26. Как влияет операция remove на Entity объекты каждого из четырех статусов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1) Если статус Entity new, операция игнорируется, однако зависимые Entity могут поменять статус на removed, если у них есть аннотации каскадных изменений и они имели статус managed, <br>
+2) Если статус managed, то статус меняется на removed и запись объект в базе данных будет удалена при commit'е транзакции (так же произойдут операции remove для всех каскадно зависимых объектов),<br>
+3) Если статус removed, то операция игнорируется,<br>
+4) Если статус detached, будет выкинут exception сразу или на этапе commit'а транзакции,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2.3</a> <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал remove</b><div class="spoiler_text">
+<br>
+1• If X is a <b>new entity</b>, it is <b>ignored</b> by the remove operation. However, the <u>remove operation is cascaded to entities referenced by X</u>, if the relationship from X to these other entities is annotated with the cascade=REMOVE or cascade=ALL annotation element value.
+<br><br>
+2• If X is a <b>managed</b> entity, the <b>remove</b> operation causes it to become removed. <u>The remove operation is cascaded to entities referenced by</u> X, if the relationships from X to these other entities is annotated with the cascade=REMOVE or cascade=ALL annotation element value.
+<br><br>
+3• If X is a <b>detached</b> entity, an <b>IllegalArgumentException will be thrown</b> by the remove operation (<b>or the transaction commit will fail</b>).
+<br><br>
+4• If X is a <b>removed</b> entity, it is <b>ignored</b> by the remove operation.
+<br><br>
+5• A removed entity X will be removed from the database <b>at or before transaction commit or as result of the flush operation</b>. 
+<br><br>
+</div></div> <br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 27. Как влияет операция merge на Entity объекты каждого из четырех статусов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">
+1) Если статус Entity new, то будет создана новый managed entity, в который будут скопированы данные прошлого объекта,<br>
+2) Если статус managed, операция игнорируется, однако операция merge сработает на каскадно зависимые Entity, если их статус не managed,<br>
+3) Если статус detached, то либо данные будет скопированы в существующей managed entity с тем же первичным ключом, либо создан новый managed в который скопируются данные,<br>
+4) Если статус removed, будет выкинут exception сразу или на этапе commit'а транзакции,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2.7.1</a> <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал merge</b>
+<div class="spoiler_text">
+<br>
+1• If X is a <b>new entity</b> instance, a <u><b>new managed entity</b> instance X'</u> is <b>created</b> and the <b>state</b> of X is <b>copied</b> into the new managed entity instance X'.<br><br>
+2• If X is a <b>managed entity</b>, it is <b>ignored</b> by the merge operation, however, the <u>merge operation is cascaded to entities referenced by relationships from X</u> if these relationships have been annotated with the cascade element value cascade=MERGE or cascade=ALL annotation.<br><br>
+3• If X is a <b>detached entity</b>, the state of X is <b>copied onto</b> a <b>pre-existing</b> managed entity instance X' of the same identity <b>OR</b> a <b>new managed copy</b> X' of X is <b>created</b>.<br><br>
+4• If X is a <b>removed entity</b> instance, an <b>IllegalArgumentException will be thrown</b> by the merge operation (<b>or the transaction commit will fail</b>).<br><br>
+5• <u>For all entities Y referenced by relationships from X</u> having the cascade element value cascade=MERGE or cascade=ALL, <b>Y is merged recursively as Y'</b>. <br><u>For all such Y referenced by X, X' is set to reference Y'</u>. <br>(Note that if X is managed then X is the same object as X'.)<br><br>
+6• If <b>X</b> is an entity <b>merged to X'</b>, <u>with a reference to another entity Y</u>, where cascade=MERGE or cascade=ALL <b>is not specified</b>, then <u>navigation of the same association from X' yields reference to a managed object Y' with the same persistent identity as Y.</u><br><br>
+</div></div> <br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 28. Как влияет операция refresh на Entity объекты каждого из четырех статусов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1) Если статус Entity managed, то в результате операции будут востановлены все изменения из базы данных данного Entity, так же произойдет refresh всех каскадно зависимых объектов,<br>
+2) Если статус new, removed или detached, будет выкинут exception,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2.5</a> <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал refresh</b><div class="spoiler_text">
+• If X is a <b>managed entity</b>, <u>the state of X is refreshed from the database</u>, <b>overwriting changes made to the entity, if any</b>. The <u>refresh operation is cascaded to entities referenced by X</u> if the relationship from X to these other entities is annotated with the cascade=REFRESH or cascade=ALL annotation element value.<br><br>
+• If X is a <b>new, detached, or removed</b> entity, the <b>IllegalArgumentException is thrown</b>.<br>
+</div></div> <br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 29. Как влияет операция detach на Entity объекты каждого из четырех статусов? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">1) Если статус Entity managed или removed, то в результате операции статус Entity (и всех каскадно-зависимых объектов) станет detached.<br>
+2) Если статус new или detached, то операция игнорируется,<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2.6</a> <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал detach</b><div class="spoiler_text">
+1• If X is a <b>managed entity</b>, the detach operation causes it to <b>become detached</b>. The <u>detach operation is cascaded to entities referenced by X</u> if the relationships from X to these other entities is annotated with the cascade=DETACH or cascade=ALL annotation element value. <br><u>Entities which previously referenced X will continue to reference X.</u><br><br>
+2• If X is a <b>new or detached</b> entity, it is <b>ignored</b> by the detach operation.<br><br>
+3• If X is a <b>removed entity</b>, the detach operation causes it to <b>become detached</b>. The <u>detach operation is cascaded to entities referenced by X</u> if the relationships from X to these other entities is annotated with the cascade=DETACH or cascade=ALL annotation element value. <br><u>Entities which previously referenced X will continue to reference X.</u> <br><b>Portable applications should not pass</b> <u><b>removed</b> entities that have been <b>detached</b></u> from the persistence context <u><b>to further</b> EntityManager operations</u>.<br><br>
+</div></div> <br>
+</div></div><br>
+</li>
+</ul><br>
+<hr>
+<h3>Аннотации JPA</h3><br>
+<ul>
+<li> Вопрос 30. Для чего нужна аннотация Basic?<br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"><b>Basic</b> — указывает на простейший тип маппинга данных на колонку таблицы базы данных. Также в параметрах аннотации можно указать fetch стратегию доступа к полю и является ли это поле обязательным или нет. 
+
+<pre><code class="java hljs">Example <span class="hljs-number cye-lm-tag">1</span>:
+<span class="hljs-meta cye-lm-tag">@Basic</span>
+<span class="hljs-keyword cye-lm-tag">protected</span> String name;
+Example <span class="hljs-number cye-lm-tag">2</span>:
+<span class="hljs-meta cye-lm-tag">@Basic</span>(fetch=LAZY)
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">protected</span> String <span class="hljs-title cye-lm-tag">getName</span><span class="hljs-params cye-lm-tag">()</span> </span>{ <span class="hljs-keyword cye-lm-tag">return</span> name; }
+</code></pre><br>
+</div></div><div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Basic annotation is the simplest type of mapping to a database column. The Basic annotation can be applied to a persistent property or instance variable of any of the following types: Java primitive types, wrappers of the primitive types, java.lang.String, ((java.math.BigInteger, java.math.BigDecimal, java.util.Date, java.util.Calendar, java.sql.Date, java.sql.Time, java.sql.Timestamp, byte[], Byte[], char[], Character[])),<br>
+enums, and any other type that implements Serializable. 
+<br>
+As described in Section 2.8, the use of the Basic annotation is optional for persistent fields and properties of these types. If the Basic annotation is not specified for such a field or property, the default values of the Basic annotation will apply.
+ </div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 31. Для чего нужна аннотация Access? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Она определяет тип доступа (access type) для класса entity, суперкласса, embeddable или отдельных атрибутов, то есть как JPA будет обращаться к атрибутам entity, как к полям класса (FIELD) или как к свойствам класса (PROPERTY), имеющие гетеры (getter) и сетеры (setter). <br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 11.1.1</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Access annotation is used to specify an access type to be applied to an entity class, mapped superclass,or embeddable class, or to a specific attribute of such a class.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 32. Какими аннотациями можно перекрыть связи (override entity relationship) или атрибуты, унаследованные от суперкласса, или заданные в embeddable классе при использовании этого embeddable класса в одном из entity классов и не перекрывать в остальных? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для такого перекрывания существует четыре аннотации: <br>
+1. AttributeOverride чтобы перекрыть поля, свойства и первичные ключи,<br>
+2. AttributeOverrides аналогично можно перекрыть поля, свойства и первичные ключи со множественными значениями,<br>
+3. AssociationOverride чтобы перекрывать связи (override entity relationship),<br>
+4. AssociationOverrides чтобы перекрывать множественные связи (multiple relationship),<br>
+<br>
+<a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 11.1.2-11.1.5</a><br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The AssociationOverride annotation is used to override a mapping for an entity relationship.<br>
+</div></div><br>
+<div class="spoiler"><b class="spoiler_title">Примеры (AssociationOverride)</b><div class="spoiler_text">
+Example 1:
+<pre>
+@MappedSuperclass
+public class Employee {
+    @Id protected Integer id;
+    @Version protected Integer version;
+    @ManyToOne
+    protected Address address;
+    public Integer getId() { ... }
+    public void setId(Integer id) { ... }
+    public Address getAddress() { ... }
+    public void setAddress(Address address) { ... }
+}
+@Entity
+@AssociationOverride(name="address",
+        joinColumns=@JoinColumn(name="ADDR_ID"))
+public class PartTimeEmployee extends Employee {
+    // address field mapping overridden to ADDR_ID foreign key
+    @Column(name="WAGE")
+    protected Float hourlyWage;
+    public Float getHourlyWage() { ... }
+    public void setHourlyWage(Float wage) { ... }
+}
+
+</pre>
+
+<br>
+<br>
+Example 2: Overriding of the mapping for the phoneNumbers relationship defined in the ContactInfo embeddable class.<br>
+<pre>
+@Entity
+public class Employee {
+    @Id int id;
+    @AssociationOverride(
+            name="phoneNumbers",
+            joinTable=@JoinTable(
+                    name="EMPPHONES",
+                    joinColumns=@JoinColumn(name="EMP"),
+                    inverseJoinColumns=@JoinColumn(name="PHONE")
+            )
+    )
+    @Embedded ContactInfo contactInfo;
+...
+}
+@Embeddable
+public class ContactInfo {
+    @ManyToOne Address address; // Unidirectional
+    @ManyToMany(targetEntity=PhoneNumber.class) List phoneNumbers;
+}
+@Entity
+public class PhoneNumber {
+    @Id int number;
+    @ManyToMany(mappedBy="contactInfo.phoneNumbers")
+    Collection<Employee> employees;
+}
+</pre>
+<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 33. Какой аннотацией можно управлять кешированием JPA для данного Entity? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"><b>@Cacheable</b> — позволяет включить или выключить использование кеша второго уровня (second-level cache) для данного Entity (если провайдер JPA поддерживает работу с кешированием и настройки кеша (second-level cache) стоят как ENABLE_SELECTIVE или DISABLE_SELECTIVE, см вопрос 41). Обратите внимание свойство наследуется и если не будет перекрыто у наследников, то кеширование измениться и для них тоже. <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Cacheable annotation specifies whether an entity should be cached if caching is enabled when the value of the persistence.xml shared-cache-mode element is ENABLE_SELECTIVE or DISABLE_SELECTIVE. The value of the Cacheable annotation is inherited by subclasses; it can be overridden by specifying Cacheable on a subclass.<br>
+<pre>@Target({TYPE}) @Retention(RUNTIME)
+public @interface Cacheable {
+ boolean value() default true;
+}</pre>
+Cacheable(false) means that the entity and its state must not be cached by the provider.<br>
+If the shared-cache-mode element is not specified in the persistence.xml file and the javax.persistence.sharedCache.mode property is not specified when the entity manager factory for the persistence unit is created, the semantics of the Cacheable annotation are undefined.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 34. Какие аннотации служат для задания класса преобразования basic аттрибута Entity в другой тип при сохранении/получении данных их базы (например, работать с аттрибутом Entity boolean типа, но в базу сохранять его как число)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"><b>@Convert</b> и <b>@Converts</b> — позволяют указать класс для конвертации Basic аттрибута Entity в другой тип (Converts — позволяют указать несколько классов конвертации). Классы для конвертации должны реализовать интерфейс AttributeConverter и могут быть отмечены (но это не обязательно) аннотацией <b>Converter</b>.<br>
+<br>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/Convert.html">Javadoc 7ee</a>.<br>
+Example 1:  Convert a basic attribute
+<pre>@Converter
+public class BooleanToIntegerConverter
+        implements AttributeConverter<Boolean, Integer> { ... }
+@Entity
+public class Employee {
+    @Id long id;
+    @Convert(converter=BooleanToIntegerConverter.class)
+    boolean fullTime;
+...
+}</pre>
+
+Example 2:  Auto-apply conversion of a basic attribute
+<pre>@Converter(autoApply=true)
+public class EmployeeDateConverter
+        implements AttributeConverter<com.acme.EmployeeDate, java.sql.Date> { 
+... }
+@Entity
+public class Employee {
+    @Id long id;
+...
+    // EmployeeDateConverter is applied automatically
+    EmployeeDate startDate;
+}</pre>
+
+<pre>
+	Example 3:   Disable conversion in the presence 
+                 of an autoapply converter
+     @Convert(disableConversion=true)
+     EmployeeDate lastReview;
+
+
+     Example 4:  Apply a converter to an element collection
+                 of basic type
+     @ElementCollection
+     // applies to each element in the collection
+     @Convert(NameConverter.class) 
+     List<String> names;
+
+
+     Example 5:  Apply a converter to an element collection 
+                 that is a map or basic values.  
+                 The converter is applied to the map value.
+
+     @ElementCollection
+     @Convert(EmployeeNameConverter.class)
+     Map<String, String> responsibilities;
+
+
+     Example 6:  Apply a converter to a map key of basic type
+
+     @OneToMany
+     @Convert(converter=ResponsibilityCodeConverter.class, 
+              attributeName="key")
+     Map<String, Employee> responsibilities;
+
+
+     Example 7:  Apply a converter to an embeddable attribute
+
+     @Embedded
+     @Convert(converter=CountryConverter.class, 
+              attributeName="country")
+     Address address;
+ 
+
+     Example 8:  Apply a converter to a nested embeddable attribute
+ 
+     @Embedded
+     @Convert(converter=CityConverter.class, 
+              attributeName="region.city")
+     Address address;
+
+
+     Example 9:  Apply a converter to a nested attribute of an
+                 embeddable that is a map key 
+                 of an element collection
+
+     @Entity public class PropertyRecord {
+          ...
+         @Convert(name="key.region.city", 
+                  converter=CityConverter.class)
+         @ElementCollection
+         Map<Address, PropertyInfo> parcels;
+     }
+
+
+     Example 10: Apply a converter to an embeddable that 
+                 is a map key for a relationship
+
+     @OneToMany
+     @Convert(attributeName="key.jobType", 
+              converter=ResponsibilityTypeConverter.class)
+     Map<Responsibility, Employee> responsibilities;
+
+
+     Example 11: Override conversion mappings for attributes
+                 inherited from a mapped superclass
+
+     @Entity
+         @Converts({
+            @Convert(attributeName="startDate", 
+                     converter=DateConverter.class),
+            @Convert(attributeName="endDate", 
+                     converter=DateConverter.class)})
+     public class FullTimeEmployee extends GenericEmployee { ... }
+</pre>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 35. Какой аннотацией можно задать класс, методы которого должен выполнится при определенных JPA операциях над данным Enitity или Mapped Superclass (такие как удаление, изменение данных и т.п.)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Аннотация <b>@EntityListeners</b> позволяет задать класс Listener, который будет содержать методы обработки событий (сallback methods) определенных Entity или Mapped Superclass.<br>
+<br>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/EntityListeners.html">Javadoc 7ee</a>.<br>
+см главву в спеке "Life Cycle Callback Methods for Entities"
+<br>
+<pre>
+@Entity
+@EntityListeners(com.acme.AlertMonitor.class)
+public class Account {
+    Long accountId;
+    Integer balance;
+    boolean preferred;
+    @Id
+    public Long getAccountId() { ... }
+...
+    public Integer getBalance() { ... }
+...
+    @Transient // because status depends upon non-persistent context
+    public boolean isPreferred() { ... }
+...
+    public void deposit(Integer amount) { ... }
+    public Integer withdraw(Integer amount) throws NSFException {... }
+    @PrePersist
+    protected void validateCreate() {
+        if (getBalance() < MIN_REQUIRED_BALANCE)
+            throw new AccountException("Insufficient balance to open an 
+                    account");
+    }
+    @PostLoad
+    protected void adjustPreferredStatus() {
+        preferred =
+                (getBalance() >= AccountManager.getPreferredStatu-sLevel());
+    }
+}
+public class AlertMonitor {
+    @PostPersist
+    public void newAccountAlert(Account acct) {
+        Alerts.sendMarketingInfo(acct.getAccountId(), acct.getBal-ance());
+    }
+}
+</pre><br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 36. Для чего нужны callback методы в JPA? К каким сущностям применяются аннотации callback методов? Перечислите семь callback методов (или что тоже самое аннотаций callback методов) <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Callback методы служат для вызова при определенных событиях Entity (то есть добавить обработку например удаления Entity методами JPA), могут быть добавлены к entity классу, к mapped superclass, или к callback listener классу, заданному аннотацией EntityListeners (см предыдущий вопрос). Существует семь callback методов (и аннотаций с теми же именами):<br>
+<br><pre>
+1) PrePersist 
+2) PostPersist 
+3) PreRemove 
+4) PostRemove 
+5) PreUpdate 
+6) PostUpdate 
+7) PostLoad </pre>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/package-summary.html">Javadoc 7ee</a> или спецификация JPA2.1 глава 3.5.2 <br>
+
+<pre>
+см пример кода из предыдущего вопроса 35
+</pre><br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 37. Какие аннотации служать для установки порядка выдачи элементов коллекций Entity? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для этого служит аннотация OrderBy и OrderColumn 
+<br><br>
+<p>OrderBy Annotation
+The OrderByannotation specifies the ordering the elementsof a collection-valued association or element collection are to have when the association or collection is retrieved.</p>
+<p>The syntax of the valueordering element is an orderby_list, as follows:
+<pre>orderby_list::= orderby_item [,orderby_item]*
+orderby_item::= [property_or_field_name] [ASC | DESC]</pre>
+If orderby_listis not specified or if ASC or DESC is not specified, ASC(ascending order) is assumed.
+If the ordering element is not specified for an entity association, ordering by the primary key of the associated entity is assumed.</p>
+<br><br>
+<p>
+	The dot (".") notation is used to refer to an attribute within an embedded attribute. The value of each identifier used with the dot notation is the nameof the respective embedded field or property.
+<br>
+The OrderBy annotation may be applied to an element collection. 
+When OrderByis applied to an element collection of basic type, the ordering will be by value of the basic objects and the property_or_field_name is not used.[116]
+<br>
+When specifying an ordering over an element collection of embeddable type, the dot notation must be used to specify the attribute or attributes that determine the ordering.
+<br>
+The OrderByannotation is not used when an order column is specified. 
+</p>
+<pre>
+Example 1:
+@Entity public class Course {
+...
+    @ManyToMany
+    @OrderBy("lastname ASC")
+    public List&lt;Student&gt; getStudents() {...};
+...
+}
+Example 2:
+@Entity public class Student {
+...
+    @ManyToMany(mappedBy="students")
+    @OrderBy // PK is assumed
+    public List&lt;Course&gt; getCourses() {...};
+...
+}
+Example 3:
+@Entity public class Person {
+...
+    @ElementCollection
+    @OrderBy("zipcode.zip, zipcode.plusFour")
+    public Set&lt;Address&gt; getResidences() {...};
+...
+}
+</pre>
+<br>
+<p>
+	<b>OrderColumn Annotation</b>
+	<br>
+The OrderColumn annotation specifies a column that is used to maintain the persistent order of a list.
+<br>
+The persistence provider is responsible for maintaining the order upon retrieval and in the database. The persistence provider is responsible for updating the ordering upon flushing to the database to reflect any insertion, deletion, or reordering affecting the list. 
+<br>
+The OrderColumnannotation may be specified on a one-to-many or many-to-many relationship or on an element collection. 
+<br>
+The OrderColumn annotation is specified on the side of the relationship that references the collection that is to be ordered. 
+<br>
+The order column is not visible as part of the state of the entity or embeddable class.[117]
+<br>
+The OrderBy annotation is not used when OrderColumn is specified.
+</p>
+<pre>@Target({METHOD, FIELD}) @Retention(RUNTIME)
+public @interface OrderColumn {
+String name() default "";
+boolean nullable() default true;
+boolean insertable() default true;
+boolean updatable() default true;
+String columnDefinition() default "";
+}</pre>
+<p>
+If name is not specified, the column name is the concatenation of the following: 
+<br>the name of the refer-encing relationship property or field of the referencing entity or embeddable class; "_"; "ORDER". <br>
+The order column must be of integral type. The persistence provider must maintain a contiguous (non-sparse) ordering of the values of the order column when updating the association or element col-lection. 
+<br>The order column value for the first element of the list must be 0.</p>
+<pre>Example 1:
+@Entity
+public class CreditCard {
+    @Id long ccNumber;
+    @OneToMany // unidirectional
+    @OrderColumn
+    List&lt;CardTransaction&gt; transactionHistory;
+...
+}
+Example 2:
+@Entity public class Course {
+...
+    @ManyToMany
+    @JoinTable(name="COURSE_ENROLLMENT")
+    public Set&lt;Student&gt; getStudents() {...};
+...
+    @ManyToMany // unidirectional
+    @JoinTable(name="WAIT_LIST")
+    @OrderColumn(name="WAITLIST_ORDER")
+    public List&lt;Student&gt; getWaitList() {...}
+}
+@Entity public class Student {
+...
+    @ManyToMany(mappedBy="students")
+    public Set&lt;Course&gt; getCourses() {...};
+...
+}
+</pre>
+<p>
+	Example of querying the ordered list:
+<pre>
+SELECT w
+FROM course c JOIN c.waitlist w
+WHERE c.name = "geometry" AND INDEX(w) = 0</pre>
+Т.е. вся конструкция с джоином, которая идёт после фром -- её можно рассматривать как целое новое множество.
+<br>
+FROM (course c JOIN c.waitlist w) = FROM (множество).
+И возможно в этот примере они забыли [ON ..] в джоине.
+</p>
+<br>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/OrderBy.html">Javadoc 7ee</a> или спецификация JPA2.1 глава 11.1.42 <br>
+<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 38. Какой аннотацей можно исключить поли и свойства Entity из маппинга (property or field is not persistent)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для этого служит аннотация Transient <br>
+<br>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/Transient.html">Javadoc 7ee</a> или спецификация JPA2.1 глава 11.1.52 <br>
+<pre>@Entity
+public class Employee {
+@Id int id;
+@Transient User currentUser;
+...
+}</pre>
+</div></div>
+</div></div>
+</li>
+</ul>
+<hr><hr>
+<h3>Сложные вопросы JPA</h3><br>
+<ul>
+<li> Вопрос 39. Какие шесть видов блокировок (lock) описаны в спецификации JPA (или какие есть значения у enum LockModeType в JPA)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">У JPA есть шесть видов блокировок, перечислим их в порядке увеличения надежности (от самого ненадежного и быстрого, до самого надежного и медленного):<br>
+<br>
+1) NONE — без блокировки  <br>
+2) OPTIMISTIC (или синоним READ, оставшийся от JPA_1) — оптимистическая блокировка,<br>
+ 3) OPTIMISTIC_FORCE_INCREMENT (или синоним WRITE, оставшийся от JPA 1) — оптимистическая блокировка с принудительным увеличением поля версионности,<br>
+ 4) PESSIMISTIC_READ — пессимистичная блокировка на чтение,<br>
+ 5) PESSIMISTIC_WRITE — пессимистичная блокировка на запись (и чтение),<br>
+ 6) PESSIMISTIC_FORCE_INCREMENT — пессимистичная блокировка на запись (и чтение) с принудительным увеличением поля версионности,<br>
+<br>
+Подробнее, см <a href="http://docs.oracle.com/javaee/7/api/javax/persistence/LockModeType.html">Javadoc 7ee</a> и описание оптимистичных и пессимистичных блокировок баз данных.<br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 40. Какие два вида кэшей (cache) вы знаете в JPA и для чего они нужны? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPA говорит о двух видов кэшей (cache):<br>
+1) first-level cache (кэш первого уровня) — кэширует данные одной транзакции,<br>
+2) second-level cache (кэш второго уровня) — кэширует данные дольше чем одна транзакция. Провайдер JPA может, но не обязан реализовывать работу с кэшем второго уровня. Такой вид кэша позволяет сэкономить время доступа и улучшить производительность, однако оборотной стороной является возможность получить устаревшие данные.<br>
+<br>
+Подробнее, см JPA 2.1 specification, 3.9 Caching <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">This specification supports the use of a second-level cache by the persistence provider. The second-level cache, if used, underlies the persistence context, and is largely transparent to the application.<br>
+A second-level cache is typically used to enhance performance. Use of a cache, however, may have consequences in terms of the up-to-dateness of the data seen by the application, resulting in “stale reads”. A stale read is defined as the reading of entities or entity state that is older than the point at which the persistence context was started.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 41. Какие есть варианты настройки second-level cache (кэша второго уровня) в JPA или что аналогично опишите какие значения может принимать элемент shared-cache-mode из persistence.xml? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPA говорит о пяти значениях shared-cache-mode из persistence.xml, который определяет как будет использоваться second-level cache:<br>
+1) ALL — все Entity могут кэшироваться в кеше второго уровня, <br>
+2) NONE — кеширование отключено для всех Entity, <br>
+3) ENABLE_SELECTIVE — кэширование работает только для тех Entity, у которых установлена аннотация Cacheable(true) или её xml эквивалент, для всех остальных кэширование отключено,<br>
+4) DISABLE_SELECTIVE — кэширование работает для всех Entity, за исключением тех у которых установлена аннотация Cacheable(false) или её xml эквивалент <br>
+5) UNSPECIFIED — кеширование не определенно, каждый провайдер JPA использует свою значение по умолчанию для кэширования,<br>
+<br>
+Подробнее, см JPA 2.1 specification, 3.9 Caching <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The shared-cache-mode element has five possible values: ALL, NONE, ENABLE_SELECTIVE, DISABLE_SELECTIVE, UNSPECIFIED.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 42. Как можно изменить настройки fetch стратегии любых атрибутов Entity для отдельных запросов (query) или методов поиска (find), то если у Enity есть атрибут с fetchType = LAZY, но для конкретного запроса его требуется сделать EAGER или наоборот? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для этого существует EntityGraph API, используется он так: с помощью аннотации NamedEntityGraph для Entity, создаются именованные EntityGraph объекты, которые содержат список атрибутов у которых нужно поменять fetchType на EAGER, а потом данное имя указывается в hits запросов или метода find. В результате fetchType атрибутов Entity меняется, но только для этого запроса. Существует две стандартных property для указания EntityGraph в hit:<br>
+1) javax.persistence.fetchgraph — все атрибуты перечисленные в EntityGraph меняют fetchType на EAGER, все остальные на LAZY 
+<br>
+2) javax.persistence.loadgraph — все атрибуты перечисленные в EntityGraph меняют fetchType на EAGER, все остальные сохраняют свой fetchType (то есть если у атрибута, не указанного в EntityGraph, fetchType был EAGER, то он и останется EAGER)<br>
+<br>
+С помощью NamedSubgraph можно также изменить fetchType вложенных объектов Entity. <br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Примеры</b><div class="spoiler_text"><pre>
+// Определяем Entity и EntityGraph
+@Entity
+@Table(name = "order")
+@Named(name = "graphOrderItems", 
+               attributeNodes = @NamedAttributeNode(attributeNodes = "items")
+)
+public class Order implements Serializable {
+
+   ...
+
+   @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+   private Set&lt;Item&gt; items = new HashSet&lt;Item&gt;();
+
+   @OneToMany(mappedBy = "order", fetch = FetchType.EAGER)
+   private Set&lt;Features&gt; features = new HashSet&lt;Features&gt;();
+
+   @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+   private Set&lt;Comment&gt; comments = new HashSet&lt;Comment&gt;();
+   ...
+
+// Вызываем метод поиска c javax.persistence.fetchgraph
+..
+EntityGraph graph = this.em.getEntityGraph("graphOrderItems");
+
+Map hints = new HashMap();
+hints.put("javax.persistence.fetchgraph", graph);
+
+return this.em.find(Order.class, orderId, hints); 
+// items во время запроса будет иметь 
+fetchType = EAGER, а features и 
+comments имеют fetchType = LAZY
+
+// Вызываем метод поиска c javax.persistence.loadgraph
+..
+EntityGraph graph = this.em.getEntityGraph("graphOrderItems");
+
+Map hints = new HashMap();
+hints.put("javax.persistence.loadgraph", graph);
+
+return this.em.find(Order.class, orderId, hints); 
+// items и features во время запроса 
+будет иметь fetchType = EAGER, а  
+comments все также имеет fetchType = LAZY
+</pre><br>
+<br>
+</div></div>Подробнее, см JPA 2.1 specification, 3.7 EntityGraph <br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">An entity graph can be used with the find method or as a query hint to override or augment FetchType semantics. The standard properties javax.persistence.fetchgraph and javax.persistence.loadgraph are used to specify such graphs to queries and find operations </div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 43. Каким способом можно в коде работать с кэшем второго уровня (удалять все или определенные Entity из кеша, узнать закэшировался ли данное Entity и т.п.)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для работы с кэшем второго уровня (second level cache) в JPA описан Cache интерфейс, содержащий большое количество методов по управлению кэшем второго уровня (second level cache), если он поддерживается провайдером JPA, конечно. Объект данного интерфейса можно получить с помощью метода getCache у EntityManagerFactory.<br>
+<br>
+Подробнее, см JPA 2.1 specification, 7.10 Cache Interface <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Cache interface provides basic functionality over the persistence provider’s second level cache, if used.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 44. Каким способом можно получить метаданные JPA (сведения о Entity типах, Embeddable и Managed классах и т.п.)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Для получения такой информации в JPA используется интерфейс Metamodel. Объект этого интерфейса можно получить методом getMetamodel у EntityManagerFactory или EntityManager.<br>
+<br>
+Подробнее, см JPA 2.1 specification, 5 Metamodel API <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">This specification provides a set of interfaces for dynamically accessing the metamodel corresponding to the managed classes of a persistence unit.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 45. Что такое JPQL (Java Persistence query language) и чем он отличается от SQL? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">JPQL (Java Persistence query language) это язык запросов, практически такой же как SQL, однако вместо имен и колонок таблиц базы данных, он использует имена классов Entity и их атрибуты. В качестве параметров запросов так же используются типы данных атрибутов Entity, а не полей баз данных. В отличии от SQL в JPQL есть автоматический полиморфизм (см. следующий вопрос). Также в JPQL используется функции которых нет в SQL: такие как KEY (ключ Map'ы), VALUE (значение Map'ы), TREAT (для приведение суперкласса к его объекту-наследнику, downcasting), ENTRY и т.п.<br>
+<br>
+Подробнее, см JPA 2.1 specification, Chapter 4 Query Language <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Java Persistence query language is a string-based query language used to define queries over entities and their persistent state. It enables the application developer to specify the semantics of queries in a portable way, independent of the particular database schema in use in an enterprise environment. The full range of the language may be used in both static and dynamic queries </div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 46. Что означает полиморфизм (polymorphism) в запросах JPQL (Java Persistence query language) и как его «выключить»? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">В отличии от SQL в запросах JPQL есть автоматический полиморфизм, то есть каждый запрос к Entity возвращает не только объекты этого Entity, но так же объекты всех его классов-потомков, независимо от стратегии наследования (например, запрос select * from Animal, вернет не только объекты Animal, но и объекты классов Cat и Dog, которые унаследованы от Animal). Чтобы исключить такое поведение используется функция TYPE в where условии (например select * from Animal a where TYPE(a) IN (Animal, Cat) уже не вернет объекты класса Dog).<br>
+<br>
+Подробнее, см JPA 2.1 specification, Chapter 4 Query Language <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Java Persistence queries are automatically polymorphic. An entity type expression can be used to restrict query polymorphism. The TYPE operator returns the exact type of the argument.<br>
+</div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 47. Что такое Criteria API и для чего он используется? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Criteria API это тоже язык запросов, аналогичным JPQL (Java Persistence query language), однако запросы основаны на методах и объектах, то есть запросы выглядят так:<br>
+<pre><code class="java hljs">CriteriaBuilder cb = ...
+CriteriaQuery&lt;Customer&gt; q = cb.createQuery(Customer.class);
+Root&lt;Customer&gt; customer = q.from(Customer.class);
+q.select(customer);  
+</code></pre><br>
+<br>
+Подробнее, см JPA 2.1 specification, Chapter 6 Criteria API <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">The Java Persistence Criteria API is used to define queries through the construction of object-based query definition objects, rather than use of the string-based approach of the Java Persistence query language described in Chapter 4. <br>
+</div></div><br>
+</div></div><br>
+</li>
+</ul>
+<hr><hr>
+<h3>Отличия Hibernate 5.0 от JPA 2.1 или JPA 2.0 от JPA 2.1</h3>
+
+<ul>
+<li> Вопрос 48. В чем разница в требованиях к Entity в Hibernate, от требований к Entity, указанных в спецификации JPA (см. вопрос 10)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"> <br>
+1) Конструктор без аргументов не обязан быть public или protected, рекомендуется чтобы он был хотя бы package видимости, однако это только рекомендация, если настройки безопасности Java позволяют доступ к приватным полям, то он может быть приватным,<br>
+2) JPA категорически требует не использовать final классы, Hibernate лишь рекомендует не использовать такие классы чтобы он мог создавать прокси для ленивой загрузки, однако позволяет либо выключить прокси  <a href="https://habrahabr.ru/users/proxy/" class="user_link">Proxy</a>(lazy=false), либо использовать в качестве прокси интерфейс, содержащий все методы маппинга для данного класса (аннотацией  <a href="https://habrahabr.ru/users/proxy/" class="user_link">Proxy</a>(proxyClass=интерфейс.class) ) <br>
+<br>
+Подробнее, см <a href="http://docs.jboss.org/hibernate/orm/5.0/manual/en-US/html_single/#persistent-classes-pojo">hibernate 5.0 manual</a><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 49. Какая уникальная стратегия наследования есть в Hibernate, но нет в спецификации JPA? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"> <br>
+В отличии JPA в Hibernate есть уникальная стратегия наследования, которая называется implicit polymorphism.<br>
+<br>
+Подробнее, см <a href="http://docs.jboss.org/hibernate/orm/5.0/manual/en-US/html_single/#inheritance-strategies">hibernate 5.0 manual</a><br>
+<div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">Hibernate supports the three basic inheritance mapping strategies:<br>
+<br>
+table per class hierarchy table per subclass table per concrete class In addition, Hibernate supports a fourth, slightly different kind of polymorphism:<br>
+<br>
+implicit polymorphism </div></div><br>
+</div></div><br>
+</li>
+<hr>
+<li> Вопрос 50. Какие основные новые возможности появились в спецификации JPA 2.1 по сравнению с JPA 2.0 (перечислите хотя бы пять-шесть новых возможностей)? <br>
+<div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text"> <br>
+В спецификации JPA 2.1 появились: <br>
+1) Entity Graphs — механизм динамического изменения fetchType для каждого запроса, <br>
+2) Converters — механизм определения конвертеров для задания функций конвертации атрибутов Entity в поля базы данных,<br>
+3) DDL генерация — автоматическая генерация таблиц, индексов и схем,<br>
+4) Stored Procedures — механизм вызова хранимых процедур из JPA,<br>
+5) Criteria Update/Delete — механизм вызова bulk updates или deletes, используя Criteria API, <br>
+6) Unsynchronized persistence contexts — появление возможности указать SynchronizationType,<br>
+7) Новые возможности в JPQL/Criteria API: арифметические подзапросы, generic database functions, join ON clause, функция TREAT,<br>
+8) Динамическое создание именованных запросов (named queries)<br>
+<br>
+Подробнее о изменении интерфейсов и API в JPA 2.1:<br>
+1) Интерфейс EntityManager получил новые методы createStoredProcedureQuery, isJoinedToTransaction и createQuery(CriteriaUpdate или CriteriaDelete)<br>
+2) Абстрактный класс AbstractQuery стал наследоваться от класса CommonAbstractCriteria, появились новые интерфейсы CriteriaUpdate, CriteriaDelete унаследованные CommonAbstractCriteria,<br>
+3) PersistenceProvider получил новые функции generateSchema позволяющие генерить схемы,<br>
+4) EntityManagerFactory получил методы addNamedQuery, unwrap, addNamedEntityGraph, createEntityManager (с указанием SynchronizationType)<br>
+5) Появился новый enum SynchronizationType, Entity Graphs, StoredProcedureQuery и AttributeConverter интерфейсы,<br>
+<br>
+Подробнее, см <a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1</a> и <a href="http://download.oracle.com/otndocs/jcp/persistence-2.0-fr-eval-oth-JSpec/">Java Persistence 2.0</a><br>
+</div></div><br>
+</li>
+</ul><br>
+<br>
+P.S. Если нашли техническую ошибку, ошибку в переводе или хотите что-то добавить (в том числе новые интересные вопросы), буду благодарен если напишите их в комментарии этой статьи или в личку.<br>
+<br>
+<b>P.P.S.</b> Так же советую посмотреть мой opensource проект [useful-java-links](https://github.com/Vedenin/useful-java-links/tree/master/link-rus) — возможно, наиболее полная коллекция полезных Java библиотек, фреймворков и русскоязычного обучающего видео. Так же есть аналогичная [английская версия](https://github.com/Vedenin/useful-java-links/) этого проекта и начинаю opensource подпроект [Hello world](https://github.com/Vedenin/useful-java-links/tree/master/helloworlds) по подготовке коллекции простых примеров для разных Java библиотек в одном maven проекте (буду благодарен за любую помощь).<br>
+<br>
+<div class="spoiler"><b class="spoiler_title">Общее оглавление 'Шпаргалок'</b><div class="spoiler_text"><a href="https://habrahabr.ru/post/265061/">1. JPA и Hibernate в вопросах и ответах</a><br>
+<a href="https://habrahabr.ru/post/266821/">2. Триста пятьдесят самых популярных не мобильных Java opensource проектов на github</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/256877/">3. Коллекции в Java (стандартные, guava, apache, trove, gs-collections и другие</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/270383/">4. Java Stream API</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/272025/">5. Двести пятьдесят русскоязычных обучающих видео докладов и лекций о Java</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/280784/">6. Список полезных ссылок для Java программиста</a> <br>
+7 Типовые задачи &nbsp;&nbsp; <a href="https://habrahabr.ru/post/278233/">7.1 Оптимальный путь преобразования InputStream в строку</a><br>
+&nbsp;&nbsp; <a href="https://habrahabr.ru/post/278313/">7.2 Самый производительный способ обхода Map'ы, подсчет количества вхождений подстроки</a><br>
+<a href="https://habrahabr.ru/company/luxoft/blog/280782/">8. Библиотеки для работы с Json (Gson, Fastjson, LoganSquare, Jackson, JsonPath и другие) </a><br>
+</div></div></div>
+</body>
+</html>

@@ -153,24 +153,30 @@ The java.util.concurrent algorithms have been selected and tuned, in part using 
 
 This test suggests that LinkedBlockingQueue scales better than ArrayBlockingQueue.
 А linked queue allows more concurrent access by puts() and takes() than an array-based queue because the best linked queue algorithms allow the head and tail to be updated independently.
-
-Because allocation is usually thread-local, algorithms that can reduce contention by doing more allocation usually scale better. (This is another instance in which intuition based on traditional performance tuning runs counter to what is needed for scalability.)
+Because allocation is usually thread-local, algorithms that can reduce contention by doing more allocation usually scale better. 
+(This is another instance in which intuition based on traditional performance tuning runs counter to what is needed for scalability.)
 
 *** 12.2.3 Measuring responsiveness ***
-Sometimes it is more important to know how long an individual action might take to complete, and in this case we want to measure the variance of service time. Sometimes it makes sense to allow a longer average service time if it lets us obtain a smaller variance; predictability is a valuable performance characteristic too. Measuring variance allows us to estimate the answers to quality-of-service questions like "What percentage of operations will succeed in under 100 milliseconds?"
+Sometimes it is more important to know how long an individual action might take to complete, and in this case we want to measure the variance of service time. Sometimes it makes sense to allow a longer average service time if it lets us obtain a smaller variance(расхождение во времени обработки запросов); predictability is a valuable performance characteristic too. 
+Measuring variance allows us to estimate the answers to quality-of-service questions like "What percentage of operations will succeed in under 100 milliseconds?"
 
-.... чё-то я не понял..
+на гистограмме -- это суммарное кол-во потоков, которые завершились с данным временем.
+
 Figure 12.4 shows that fairness doesn't make the average much worse or the variance much better in this case.
 So, unless threads are continually blocking anyway because of tight synchronization requirements, nonfair semaphores provide much better throughput and fair semaphores provides lower variance. Because the results are so dramatically different, Semaphore forces its clients to decide which of the two factors to optimize for.
 
 ****************************************************
 *** 12.3 Avoiding performance testing pitfalls ***
-In theory, developing performance tests is easy—find a typical usage scenario, write a program that executes that scenario many times, and time it. In practice, you have to watch out for a number of coding pitfalls that prevent performance tests from yielding meaningful results.
+In theory, developing performance tests is easy — find a typical usage scenario, write a program that executes that scenario many times, and time it. 
+In practice, you have to watch out for a number of coding pitfalls that prevent performance tests from yielding meaningful results.
 
 *** 12.3.1 Garbage collection ***
 The timing of garbage collection is unpredictable, so there is always the possibility that the garbage collector will run during a measured test run.
 
-There are two strategies for preventing garbage collection from biasing your results. One is to ensure that garbage collection does not run at all during your test (you can invoke the JVM with -verboseigc to find out); alternatively, you can make sure that the garbage collector runs a number of times during your run so that the test program adequately reflects the cost of ongoing allocation and garbage collection. The latter strategy is often better—it requires a longer test and is more likely to reflect real-world performance.
+There are two strategies for preventing garbage collection from biasing your results. 
+1) One is to ensure that garbage collection does not run at all during your test (you can invoke the JVM with "-verboseigc" to find out); 
+2) alternatively, you can make sure that the garbage collector runs a number of times during your run so that the test program adequately reflects the cost of ongoing allocation and garbage collection. 
+The latter strategy is often better — it requires a longer test and is more likely to reflect real-world performance.
 
 *** 12.3.2 Dynamic compilation ***
 HotSpot JVM (and other modern JVMs) uses a combination of bytecode INTERPRETATION and DYNAMIC COMPILATION. [ˏkɒmpı`leıʃ(ə)n]
@@ -186,6 +192,8 @@ direct execution --->
 
 
 When a class is first loaded, the JVM executes it by interpreting the bytecode. At some point, if a method is run often enough, the dynamic compiler kicks in and converts it to machine code; when compilation completes, it switches from interpretation to direct execution.
+
+!!! he JVM may choose to perform compilation in the application thread or in the background thread; each can bias timing results in different ways.
 
 The timing of compilation is unpredictable. Your timing tests should run only after all code has been compiled; there is no value in measuring the speed of the interpreted code since most programs run long enough that all frequently executed code paths are compiled. 
 Нет смысла измерять выполнение через интерпретацию, т.к. как правило проги работают довольно долго и весь часто-используемый код уже преобразован в машинный (т.е. скомпилирован).
@@ -216,18 +224,26 @@ Runtime compilers use profiling information to help optimize the code being comp
 
 В итоге надо тестить на примерно такой же машине, где и прод будет, чтобы сработали те же самые оптимизиторы.
 
-*** 12.3.4    Unrealistic degrees of contention ***
-Concurrent applications tend to interleave two very different sorts of work: accessing shared data, such as fetching the next task from a shared work queue, and thread-local computation (executing the task, assuming the task itself does not access shared data). Depending on the relative proportions of the two types of work, the application will experience different levels of contention and exhibit different performance and scaling behaviors.
+*** 12.3.4    Unrealistic degrees(степень) of contention ***
+Concurrent applications tend to interleave two very different sorts of work: 
+1) accessing shared data, such as fetching the next task from a shared work queue, 
+2) and thread-local computation (executing the task, assuming the task itself does not access shared data). 
+Depending on the relative proportions of the two types of work, the application will experience different levels of contention and exhibit different performance and scaling behaviors.
 
-если таски длинные - то не будет соревнования за доступ к очереди и наоборот.
+если таски длинные - то НЕ будет соревнования за доступ к очереди и наоборот.
+а если короткие - то проблема будет взять его из очереди.т.е. получить доступ к очереди за новым таском.
 поэтому надо чтобы кол-во вычислений в тесте для каждого потока было сопоставимо с таким же в проде.
 
 *** 12.3.5 Dead code elimination ***
 Dead-code elimination is a problem in benchmarking.
 
-Many microbenchmarks perform much "better" when run with HotSpot's -server compiler than with -client, not just because the server compiler can produce more efficient code, but also because it is more adept at optimizing dead code
+Dead-code- это код, результаты которого не используются. Или как-то так.
 
-But you should still prefer -server to -client for both production and testing on multiprocessor systems—you just have to write your tests so that they are not susceptible to dead-code elimination.
+Many microbenchmarks perform much "better" when run with HotSpot's -server compiler than with -client, not just because the server compiler can produce more efficient code, but also because it is more adept at optimizing dead code.
+
+But you should 
+1_still prefer -server to -client for both production and testing on multiprocessor systems — но при этом также:
+2_you just have to write your tests so that they are not susceptible to dead-code elimination.
 This requires every computed result to be used somehow by your program—in a way that does not require synchronization or substantial computation.
 
 A cheap trick for preventing a calculation from being optimized away without introducing too much overhead is to compute the hashCode of the field of some derived object, compare it to an arbitrary value such as the current value of System.nanoTime(), and print a useless and ignorable message if they happen to match.
@@ -272,6 +288,32 @@ Static analysis tools produce a list of warnings that must be examined by hand t
 10) Sleeping or waiting while holding a lock. 
 11) Spin loops.
 
+Inconsistent synchronization. Many objects follow the synchronization policy of guarding all variables with the object's intrinsic lock. If a field is accessed frequently but not always with the this lock held, this may indicate that the synchronization policy is not being consistently followed.
+
+Invoking Thread.run. Thread implements Runnable and therefore has a run method. However, it is almost always a mistake to call Thread.run directly; usually the programmer meant to call Thread.start.
+
+Unreleased lock. Unlike intrinsic locks, explicit locks (see Chapter 13) are not automatically released when control exits the scope in which they were acquired. The standard idiom is to release the lock from a finally block; otherwise the lock can remain unreleased in the event of an Exception.
+
+Empty synchronized block. While empty synchronized blocks do have semantics under the Java Memory Model, they are frequently used incorrectly, and there are usually better solutions to whatever problem the developer was trying to solve.
+
+Double-checked locking. Double-checked locking is a broken idiom for reducing synchronization overhead in lazy initialization (see Section 16.2.4) that involves reading a shared mutable field without appropriate synchronization.
+
+Starting a thread from a constructor. Starting a thread from a constructor introduces the risk of subclassing problems, and can allow the this reference to escape the constructor.
+
+Notification errors. The notify() and notifyAll() methods indicate that an object's state may have changed in a way that would unblock threads that are waiting on the associated condition queue. These methods should be called only when the state associated with the condition queue has changed. A synchronized block that calls notify or notifyAll but does not modify any state is likely to be an error. (See Chapter 14.)
+
+Condition wait errors. When waiting on a condition queue, Object.wait() or Condition.await() should be called 
+1_in a loop, 
+2_with the appropriate lock held, 
+3_after testing some state predicate (see Chapter 14). 
+Calling Object.wait or Condition.await() without the lock held, not in a loop, or without testing some state predicate is almost certainly an error.
+
+Misuse of Lock and Condition. Using a Lock as the lock argument for a synchronized block is likely to be a typo, as is calling Condition.wait() instead of await() (though the latter would likely be caught in testing, since it would throw an IllegalMonitorStateException the first time it was called).
+
+Sleeping or waiting while holding a lock. Calling Thread.sleep() with a lock held can prevent other threads from making progress for a long time and is therefore a potentially serious liveness hazard. Calling Object.wait() or Condition.await() with two locks held poses a similar hazard. т.к. тогда локи будут простаивать.
+
+Spin loops. Code that does nothing but spin (busy wait) checking a field for an expected value can waste CPU time and, if the field is not volatile, is not guaranteed to terminate. Latches or condition waits are often a better technique when waiting for a state transition to occur.
+
 *** 12.4.3    Aspect-oriented testing techniques ***
 As of this writing, aspect-oriented programming (AOP) techniques have only limited applicability to concurrency, because most popular AOP tools do not yet support pointcuts at synchronization points. However, AOP can be applied to assert invariants or some aspects of compliance with synchronization policies.
 
@@ -280,14 +322,15 @@ As of this writing, aspect-oriented programming (AOP) techniques have only limit
 Most offer a display showing a timeline for each thread with different colors for the various thread states (runnable, blocked waiting for a lock, blocked waiting for I/O, etc.). 
 Such a display can show how effectively your program is utilizing the available CPU resources, and if it is doing badly, where to look for the cause. 
 
-The built-in JMX agent also offers some limited features for monitoring thread behavior. The ThreadInfo class includes the thread's current state and, if the thread is blocked, the lock or condition queue on which it is blocked. If the "thread contention monitoring" feature is enabled (it is disabled by default because of its performance impact), ThreadInfo also includes the number of times that the thread has blocked waiting for a lock or notification, and the cumulative amount of time it has spent waiting.
+The built-in JMX agent also offers some limited features for monitoring thread behavior. 
+The ThreadInfo class includes the thread's current state and, if the thread is blocked, the lock or condition queue on which it is blocked. If the "thread contention monitoring" feature is enabled (it is disabled by default because of its performance impact), ThreadInfo also includes the number of times that the thread has blocked waiting for a lock or notification, and the cumulative amount of time it has spent waiting.
 
 ** Summary **
-тестирование паралл.прог это вызов , т.к. есть мало-предсказуемые события that are sensitive to timing, load, and other hard-to-reproduce conditions.
+тестирование паралл.прог это вызов, т.к. есть мало-предсказуемые события that are sensitive to timing, load, and other hard-to-reproduce conditions.
 А также testing infrastructure can introduce additional synchronization or timing constraints.
 
 Testing concurrent programs for performance can be equally challenging.
 
 Java programs are more difficult to test than programs written in statically compiled languages like C, because timing measurements can be affected by dynamic compilation, garbage collection, and adaptive optimization.
 
-Потому надо комбинировать различные техники тестирования, и использовать тулзы.
+Потому надо комбинировать различные техники тестирования, и использовать тулзы и код ревью.

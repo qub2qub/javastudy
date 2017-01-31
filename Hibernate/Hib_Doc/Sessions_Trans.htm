@@ -13,7 +13,7 @@
 <br>
 Начнём, пожалуй.<br>
 <a name="habracut"></a><br>
-<h5>1). Объекты-сущности (Entity Objects)</h5><br>
+<h3>1). Объекты-сущности (Entity Objects)</h3><br>
 Рассмотрим две сущности — пользователя и его задачи:<br>
 <br>
 <pre><code class="sql hljs"><span class="hljs-keyword cye-lm-tag">CREATE</span> <span class="hljs-keyword cye-lm-tag">TABLE</span> <span class="hljs-string cye-lm-tag">"user"</span>
@@ -169,7 +169,7 @@
 </code></pre><br>
 Об аннотациях JPA можно прочитать <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/package-summary.html">здесь</a>.<br>
 <br>
-<h5>2). Интерфейс Session</h5><br>
+<h3>2). Интерфейс Session</h3><br>
 В Hibernate работа с БД осуществляется через объект типа <i>org.hibernate.Session</i>. <br>
 Выдержка из документации:<br>
 <blockquote>The main runtime interface between a Java application and Hibernate. This is the central API class abstracting the notion of a persistence service.<br>
@@ -178,14 +178,24 @@ The main function of the Session is to offer create, read and delete operations 
 </blockquote><br>
 Интерфейс <i>org.hibernate.Session</i> является мостом между приложением и Hibernate. С помощью сессий выполняются все CRUD-операции с <i>объектами-сущностями</i>. Объект типа <i>Session</i> получают из экземпляра типа <i>org.hibernate.SessionFactory</i>, который должен присутствовать в приложении в виде <i>singleton</i>.<br>
 <br>
-<h5>3). Состояния объектов</h5><br>
+<h3>3). Состояния объектов</h3><br>
 Объект-сущность может находиться в одном из 3-х состояний (статусов):<br>
 <br>
-<ul>
-<li><i>transient object</i>. Объекты в данном статусе — это заполненные экземпляры классов-сущностей. Могут быть сохранены в БД. Не присоединены к сессии. Поле <i>Id</i> не должно быть заполнено, иначе объект имеет статус <i>detached </i>;</li>
-<li><i>persistent object</i>. Объект в данном статусе — так называемая хранимая сущность, которая присоединена к конкретной сессии. Только в этом статусе объект взаимодействует с базой данных. При работе с объектом данного типа в рамках транзакции все изменения объекта записываются в базу;</li>
-<li><i>detached object</i>. Объект в данном статусе — это объект, отсоединённый от сессии, может существовать или не существовать в БД. </li>
-</ul><br>
+<ol>
+<li><i><b>transient object</b></i>.
+объект-сущность была только инициализирована, но пока ещё не добавлена под управление ORM, не имеет представления в базе данных, ключевые поля, как правило, ещё не заданы.
+<br>
+<b>transient</b> — the entity has just been instantiated and is not associated with a persistence context. It has no persistent representation in the database and typically no identifier value has been assigned.
+Поле <i>Id</i> не должно быть заполнено, иначе объект имеет статус <i>detached </i>;</li>
+<li><b>persistent object</b>. Объект в данном статусе — так называемая хранимая сущность, которая присоединена к конкретной сессии. Только в этом статусе объект взаимодействует с базой данных. При работе с объектом данного типа в рамках транзакции все изменения объекта записываются в базу;</li>
+<li><b>detached object</b>. Объект в данном статусе — это объект, отсоединённый от сессии, может существовать или не существовать в БД. </li>
+<li><b>removed</b></li>
+ при removed запись будет удалена после окончания транзакции. 
+ <br>
+ Разная реакция на операции показывает что это никак не частный случай:
+— при вызове merge на persistent операция игнорируется, при вызове merge на removed по спеке JPA должен быть выкинут exception,
+— при вызове refresh на persistent данные будет переписаны, при вызове на removed по спеке JPA должен быть выкинут exception.
+</ol><br>
 Любой объект-сущность можно переводить из одного статуса в другой. Для этого в интерфейсе <i>Session</i> существуют следующие методы:<br>
 <br>
 <ul>
@@ -212,7 +222,8 @@ The main function of the Session is to offer create, read and delete operations 
 <br>
 Параметр <i>cascade</i> обозначает, какие из методов интерфейса <i>Session</i> будут распространяться каскадно к ассоциированным сущностям. Например, в классе-сущности <i>User</i> для коллекции <i>tasks</i> укажем: <br>
 <br>
-<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@OneToMany</span>(fetch = FetchType.LAZY, mappedBy = <span class="hljs-string cye-lm-tag">"user"</span>, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+<pre><code class="java hljs"><span class="hljs-meta cye-lm-tag">@OneToMany</span>(fetch = FetchType.LAZY, mappedBy = <span class="hljs-string cye-lm-tag">"user"</span>, 
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Tasks&gt; <span class="hljs-title cye-lm-tag">getTasks</span><span class="hljs-params cye-lm-tag">()</span> </span>{
         <span class="hljs-keyword cye-lm-tag">return</span> tasks;
     }
@@ -223,7 +234,7 @@ The main function of the Session is to offer create, read and delete operations 
 </code></pre><br>
 Тогда при выполнении <i>session.persist(user)</i> или <i>session.merge(user)</i> операции <i>persist</i> или <i>merge</i> будут применены ко всем объектам из <i>tasks</i>. Аналогично для остальных операций из перечисления <i>javax.persistence.CascadeType</i>. <i>CascadeType.ALL</i> применяет все операции из перечисления. Необходимо правильно настроить <i>CascadeType</i>, дабы не подгружать из базы кучу лишних ассоциированных объектов-сущностей.<br>
 <br>
-<h5>4). Извлечение объектов из БД</h5><br>
+<h3>4). Извлечение объектов из БД</h3><br>
 Приведём простой пример:<br>
 <br>
 <pre><code class="java hljs">     <span class="hljs-meta cye-lm-tag">@Autowired</span>
@@ -242,7 +253,7 @@ The main function of the Session is to offer create, read and delete operations 
 <br>
 Вызов <i>user.getTasks()</i> инициирует загрузку задач юзера из БД, так как в классе <i>User</i> для <i>tasks</i> установлен <i>FetchType.LAZY</i>. <br>
 <br>
-<h6>LazyInitializationException</h6><br>
+<h3>LazyInitializationException</h3><br>
 С параметром <i>FetchType.LAZY</i> нужно быть аккуратнее. Иногда при загрузке ассоциированных сущностей мы можем поймать исключение <i>LazyInitializationException</i>. В вышеуказанном коде во время вызова <i>user.getTasks()</i> <i>user</i> должен быть либо в статусе <i>persistent</i>, либо <i>proxy</i>.<br>
 <br>
 Также <i>LazyInitializationException</i> может вызвать небольшое изменение в нашем коде:<br>
@@ -268,7 +279,7 @@ The main function of the Session is to offer create, read and delete operations 
        <span class="hljs-keyword cye-lm-tag">return</span> tasksList;
     }
 </code></pre><br>
-<h6>Выборка с условиями</h6><br>
+<h3>Выборка с условиями</h3><br>
 А теперь приведём несколько простых примеров выборки данных с условиями. Для этого в Hibernate используются объекты типа <i>org.hibernate.Criteria</i>:<br>
 <br>
 <pre><code class="java hljs">       <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> List&lt;Task&gt; <span class="hljs-title cye-lm-tag">getUser</span><span class="hljs-params cye-lm-tag">(String login)</span> </span>{
@@ -306,7 +317,7 @@ The main function of the Session is to offer create, read and delete operations 
        ...
    }
 </code></pre><br>
-<h5>5). Сохранение объектов</h5><br>
+<h3>5). Сохранение объектов</h3><br>
 Давайте разберём несколько способов сохранения объекта-сущности в базу данных.<br>
 <br>
 а). Создаём <i>transient-object</i> и сохраняем в базу:<br>
@@ -372,7 +383,7 @@ The main function of the Session is to offer create, read and delete operations 
 </code></pre><br>
 В <i>User</i> для свойства <i>tasks</i> должен стоять <i>CascadeType.ALL</i>. Если стоит <i>CascadeType.MERGE</i>, то после <i>user.getTasks().add(task)</i> выполнить <i>session.merge(user)</i>. Данный код выполнит 3 запроса — <i>select * from user</i>, <i>select nextval('task_task_id_seq')</i> и <i>insert into task</i>…<br>
 <br>
-<h5>6). Удаление объектов</h5><br>
+<h3>6). Удаление объектов</h3><br>
 а). Можно удалить, создав <i>transient-object</i>:<br>
 <br>
 <pre><code class="java hljs">      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">deleteTask</span><span class="hljs-params cye-lm-tag">(Long taskId)</span> </span>{
@@ -412,7 +423,7 @@ The main function of the Session is to offer create, read and delete operations 
 </code></pre> <br>
 Параметр <i>orphanRemoval = true</i> указывает, что все объекты <i>Task</i>, которые не имеют ссылки на <i>User</i>, должны быть удалены из БД.<br>
 <br>
-<h5>7). Декларативное управление транзакциями</h5><br>
+<h3>7). Декларативное управление транзакциями</h3><br>
 Для декларативного управления транзакциями мы будем использовать <i>Spring Framework</i>. Управление транзакциями осуществляется через менеджер транзакций. Вместо вызовов <i>session.openTransaction()</i> и <i>session.commit()</i> используется аннотация <i>@Transactional</i>. В конфигурации приложения должно присутствовать следующее:<br>
 <br>
 <pre><code class="xml hljs">    <span class="hljs-tag cye-lm-tag">&lt;<span class="hljs-name cye-lm-tag">bean</span> <span class="hljs-attr cye-lm-tag">id</span>=<span class="hljs-string cye-lm-tag">"sessionFactory"</span> <span class="hljs-attr cye-lm-tag">class</span>=<span class="hljs-string cye-lm-tag">"org.springframework.orm.hibernate4.LocalSessionFactoryBean"</span>&gt;</span>
@@ -428,7 +439,10 @@ The main function of the Session is to offer create, read and delete operations 
 <br>
  — Болтовня ничего не стоит. Покажите мне код. <i>(Linus Torvalds)</i><br>
 <br>
-<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@Transactional</span>(propagation = Propagation.REQUIRED, rollbackFor = {ObjectNotFoundException.class,                               ConstraintViolationException.class})
+<pre><code class="java hljs">
+@Transactional(propagation = Propagation.REQUIRED, 
+rollbackFor = {ObjectNotFoundException.class,
+               ConstraintViolationException.class})
     <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">saveTask</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
         Session session = sessionFactory.getCurrentSession();
         Tasks task = <span class="hljs-keyword cye-lm-tag">new</span> Tasks();
@@ -440,19 +454,28 @@ The main function of the Session is to offer create, read and delete operations 
         <span class="hljs-keyword cye-lm-tag">return</span> task.getTaskId();
     }
 </code></pre><br>
-Аннотация <i>@Transactional</i> указывает, что метод должен выполняться в транзакции. Менеджер транзакций открывает новую транзакцию и создаёт для неё экземпляр <i>Session</i>, который доступен через <i>sessionFactory.getCurrentSession()</i>. Все методы, которые вызываются в методе с данной аннотацией, также имеют доступ к этой транзакции, потому что экземпляр <i>Session</i> является переменной потока (ThreadLocal). Вызов <i>sessionFactory.openSession()</i> откроет совсем другую сессию, которая не связана с транзакцией.<br>
+<p>А что возвращает sessionFactory.getCurrentSession() ? 
+<br>
+если мы в каждом методе будем брать текущую сессию, и будет много вложенности -- то все методы будут выполняться в одной и той же сессии?
+</p>
+Аннотация <i>@Transactional</i> указывает, что метод должен выполняться в транзакции. Менеджер транзакций открывает новую транзакцию и создаёт для неё экземпляр <i>Session</i>, который доступен через <i>sessionFactory.getCurrentSession()</i>. Все методы, которые вызываются в методе с данной аннотацией, также имеют доступ к этой транзакции, потому что экземпляр <i>Session</i> является ThreadLocal переменной. Вызов <i>sessionFactory.openSession()</i> откроет совсем другую сессию, которая не связана с транзакцией.
+<br>
+<i>Определение «текущей» сессии зависит от используемой реализации org.hibernate.context.spi.CurrentSessionContext. Соответственно приведенный вами сценарий скорее имеет отношение к ThreadLocalSessionContext.</i>
 <br>
 Параметр <i>rollbackFor</i> указывает исключения, при выбросе которых должен быть произведён откат транзакции. Есть обратный параметр — <i>noRollbackFor</i>, указывающий, что все исключения, кроме перечисленных, приводят к откату транзакции.<br>
 <br>
 Параметр <i>propagation</i> самый интересный. Он указывает принцип распространения транзакции. Может принимать любое значение из перечисления <i>org.springframework.transaction.annotation.Propagation</i>. Приведём пример:<br>
 <br>
-<pre><code class="java hljs">    <span class="hljs-meta cye-lm-tag">@Autowired</span>
-    <span class="hljs-keyword cye-lm-tag">private</span> SessionFactory sessionFactory;
+<pre><code class="java hljs">
+    @Autowired 
+    private SessionFactory sessionFactory;
 
     <span class="hljs-meta cye-lm-tag">@Autowired</span>
     <span class="hljs-keyword cye-lm-tag">private</span> UserDao userDao;
 
-    <span class="hljs-meta cye-lm-tag">@Transactional</span>(propagation = Propagation.REQUIRED, rollbackFor = {ConstraintViolationException.class})
+    <span class="hljs-meta cye-lm-tag">@Transactional</span>(
+         propagation = Propagation.REQUIRED, 
+         rollbackFor = {ConstraintViolationException.class})
     <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> Long <span class="hljs-title cye-lm-tag">saveTask</span><span class="hljs-params cye-lm-tag">(Long userId)</span> </span>{
         Session session = sessionFactory.getCurrentSession();
         User user = userDao.getUserByLogin(<span class="hljs-string cye-lm-tag">"user1"</span>);
@@ -477,507 +500,10 @@ The main function of the Session is to offer create, read and delete operations 
 </ul><br>
 Хороший <a href="http://www.ibm.com/developerworks/ru/library/j-ts1/">материал о транзакциях</a>. Следует помнить, что использование транзакций несёт дополнительные издержки в производительности.<br>
 <br>
-<h5>Ну что ж, подведём итоги</h5><br>
+<h3>Ну что ж, подведём итоги</h3><br>
 В моей статье я осветил самые основные принципы работы с сессиями и транзакциями в Hibernate. Надеюсь, что начинающим Java-программистам статья будет полезна при преодолении первого порога в изучении суперклассной (не для всех, возможно) библиотеки Hibernate. Желаю всем успехов в нашей сложной и интересной программерской деятельности!<br>
 <br>
 <a href="https://github.com/Niyazguest/testApp">Пример проекта</a>.<br>
 <br>
-Спасибо за внимание!</div>
-<br><hr>	
-<ul id="comments-list" class="cye-lm-tag">
-      
-  <li class="comment_item cye-lm-tag" id="comment_8657695">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="0"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item  " rel="8657695">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
-                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
-            </a>
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            18 ноября 2015 в 16:17
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8657695" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8657695" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark  voting-wjt__counter_negative">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 3: ↑1 и ↓2">–1</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format bad bad1">
-          <blockquote>Объект-сущность может находиться в одном из 3-х состояний (статусов):<br>
-transient object…<br>
-persistent object…<br>
-detached object...</blockquote><br>
-Простите, а куда у вас делся четвертый <b>removed</b> статус у объектов Entity? В <a href="http://docs.jboss.org/hibernate/orm/5.0/userGuide/en-US/html_single/#pc">официальной документации hibernet</a> он есть, в JPA2/2.1 он тоже есть. Это довольно важно, так вопрос про статусы Entity встречается практически в любом job interview про хибернет/JPA, после ответа о <b>трех</b> статусах интервью скорее всего тут же и закончится. <br>
-<br>
-Странное определение transient:<br>
-<blockquote>transient object. Объекты в данном статусе — это заполненные экземпляры классов-сущностей. Могут быть сохранены в БД. Не присоединены к сессии. Поле Id не должно быть заполнено, иначе объект имеет статус detached ;</blockquote><br>
-<br>
-<a href="http://docs.jboss.org/hibernate/orm/5.0/userGuide/en-US/html_single/#pc">В оригинале</a>:<br>
-<blockquote>transient — the entity has just been instantiated and is not associated with a persistence context. It has no persistent representation in the database and typically no identifier value has been assigned.</blockquote><br>
-Мне кажется лучше что вроде: <br>
-<b>transient</b> — объект-сущность была только инициализирована, но пока ещё не добавлена под управление ORM, не имеет представления в базе данных, ключевые поля, как правило, ещё не заданы. 
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments cye-lm-tag" id="reply_comments_8657695">
-      
-  <li class="comment_item cye-lm-tag" id="comment_8658003">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8657695"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item is_topic_starter " rel="8658003">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
-                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
-            </a>
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            18 ноября 2015 в 19:06
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8658003" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8658003" data-parent_id="8657695" title="Показать ветку комментариев"></span>
-              <a href="#comment_8657695" class="icon_comment-parent js-comment_parent" data-id="8658003" data-parent_id="8657695" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8658003" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark  ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          Да, так и есть, просто в сессиях Hibernate removed — частный случай persistent, по идее.<br>
-
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments cye-lm-tag" id="reply_comments_8658003">
-      
-  <li class="comment_item cye-lm-tag" id="comment_8658109">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8658003"></span>
-
-    <div class="comment_body  cye-lm-tag">
-        <div class="info comments-list__item comment-item  " rel="8658109">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
-                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
-            </a>
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            18 ноября 2015 в 19:58
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8658109" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8658109" data-parent_id="8658003" title="Показать ветку комментариев"></span>
-              <a href="#comment_8658003" class="icon_comment-parent js-comment_parent" data-id="8658109" data-parent_id="8658003" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8658109" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format  cye-lm-tag">
-          Нет, removed это совсем другой случай, при removed запись будет удалена после окончания транзакции. <br>
-<br>
-Разная реакций на операции показывает что это никак не частный случай:<br>
- — при вызове merge на persistent операция игнорируется, при вызове merge на removed по спеке JPA должен быть выкинут exception,<br>
- — при вызове refresh на persistent данные будет переписаны, при вызове на removed по спеке JPA должен быть выкинут exception,<br>
-<br>
-подробнее можно посмотреть <a href="http://habrahabr.ru/post/265061/">тут</a>
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8658109">
-      
-  <li class="comment_item" id="comment_8659625">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8658109"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item is_topic_starter " rel="8659625">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
-                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
-            </a>
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            19 ноября 2015 в 20:26
-              <span class="comment-item__time_changed icon_comment-edit cye-lm-tag" title="Kомментарий был изменён">
-                <i class="comment-item__sign_changed">(комментарий был изменён)</i>
-              </span>
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8659625" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8659625" data-parent_id="8658109" title="Показать ветку комментариев"></span>
-              <a href="#comment_8658109" class="icon_comment-parent js-comment_parent" data-id="8659625" data-parent_id="8658109" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8659625" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark  ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          Спасибо за подсказку, просто я брал за основу доки Hibernate — там только 3 статуса
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8659625">
-      
-  <li class="comment_item" id="comment_8659633">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8659625"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item  " rel="8659633">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="vedenin1980">
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__avatar">
-                <img src="//habrastorage.org/getpro/habr/avatars/7eb/763/2e5/7eb7632e5a0d2720be542c25ec40614f_small.jpg" alt="" class="comment-item__avatar-img">
-            </a>
-            <a href="https://habrahabr.ru/users/vedenin1980/" class="comment-item__username">vedenin1980</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            19 ноября 2015 в 20:32
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8659633" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8659633" data-parent_id="8659625" title="Показать ветку комментариев"></span>
-              <a href="#comment_8659625" class="icon_comment-parent js-comment_parent" data-id="8659633" data-parent_id="8659625" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8659633" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          А можете скинуть ссылку на эти доки? Потому что все доки Hibernate, которые я изучал, говорили про 4 статуса. 
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8659633">
-      
-  <li class="comment_item" id="comment_8660109">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8659633"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item is_topic_starter " rel="8660109">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
-                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
-            </a>
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            20 ноября 2015 в 10:11
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8660109" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8660109" data-parent_id="8659633" title="Показать ветку комментариев"></span>
-              <a href="#comment_8659633" class="icon_comment-parent js-comment_parent" data-id="8660109" data-parent_id="8659633" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8660109" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 1: ↑1 и ↓0">+1</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          <a href="http://docs.jboss.org/hibernate/orm/5.0/javadocs/org/hibernate/Session.html">docs.jboss.org/hibernate/orm/5.0/javadocs/org/hibernate/Session.html</a>
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8660109">
-      
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-  <li class="comment_item" id="comment_8658453">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="0"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item  " rel="8658453">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="otvorot2008">
-            <a href="https://habrahabr.ru/users/otvorot2008/" class="comment-item__avatar">
-                <img src="//habrastorage.org/getpro/habr/avatars/235/f05/59c/235f0559c4f7cb135c4514e0a30c691a_small.png" alt="" class="comment-item__avatar-img">
-            </a>
-            <a href="https://habrahabr.ru/users/otvorot2008/" class="comment-item__username">otvorot2008</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            19 ноября 2015 в 01:23
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8658453" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8658453" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark  ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          <blockquote>Все методы, которые вызываются в методе с данной аннотацией, также имеют доступ к этой транзакции, потому что экземпляр Session является глобальной переменной потока</blockquote><br>
-Определение «текущей» сессии зависит от используемой реализации <i>org.hibernate.context.spi.CurrentSessionContext</i>. Соответственно приведенный вами сценарий скорее имеет отношение к ThreadLocalSessionContext. Понятно, что это скорее глубокие детали внутренней реализации, но вот <blockquote>глобальную переменную потока</blockquote> стоит уточнить как ThreadLocal)
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8658453">
-      
-  <li class="comment_item" id="comment_8661889">
-    
-    <span class="parent_id cye-lm-tag" data-parent_id="8658453"></span>
-
-    <div class="comment_body ">
-        <div class="info comments-list__item comment-item is_topic_starter " rel="8661889">
-
-          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
-
-          <span class="comment-item__user-info cye-lm-tag" data-user-login="guestfromEarth">
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__avatar">
-                <span class="comment-item__avatar-img_default user-pic_blue cye-lm-tag"></span>
-            </a>
-            <a href="https://habrahabr.ru/users/guestfromEarth/" class="comment-item__username">guestfromEarth</a>
-          </span>
-
-          <time class="comment-item__time_published">
-            21 ноября 2015 в 18:09
-          </time>
-
-          <span class="comment-item__controls cye-lm-tag">
-            <a href="#comment_8661889" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
-
-
-              <span class="icon_comment-tree js-comment_tree cye-lm-tag" data-id="8661889" data-parent_id="8658453" title="Показать ветку комментариев"></span>
-              <a href="#comment_8658453" class="icon_comment-parent js-comment_parent" data-id="8661889" data-parent_id="8658453" title="Показать предыдущий комментарий"></a>
-            <span class="js-comment_chidren cye-lm-tag" title="Вернуться к ответу"></span>
-          </span>
-
-            <div id="voting_8661889" class="voting-wjt voting-wjt_comments js-voting   ">
-
-              <div class="voting-wjt__counter js-mark  ">
-                <span class="voting-wjt__counter-score js-score cye-lm-tag" title="Всего 0: ↑0 и ↓0">0</span>
-              </div>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↑</span></button>
-
-                <button type="button" disabled="" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Голосовать могут только зарегистрированные пользователи"><span class="cye-lm-tag">↓</span></button>
-            </div>
-        </div>
-
-        <div class="message html_format ">
-          Спасибо, уточнил)
-        </div>
-
-        <div class="reply_form_placeholder"></div>
-
-        <div class="reply">
-
-        </div>
-    </div>
-
-    <ul class="reply_comments" id="reply_comments_8661889">
-      
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
-
-  </li>
-
-      
-    </ul>
 </body>
 </html>
