@@ -1,0 +1,65 @@
+https://docs.jboss.org/hibernate/orm/5.2/userguide/html_single/chapters/pc/PersistenceContext.html
+
+Обы объекта org.hibernate.Session API и javax.persistence.EntityManager предоставляют контекст (окружение) для работы с постоянными данными. Эта концепция называется "контекст сохранения"/"постоянный контекст". 
+Постоянные данные своим состоянием связаны с двумя объектами:  [постоянный контекст] и [лежащая в основе база данных]
+---Both the org.hibernate.Session API and javax.persistence.EntityManager API represent a context for dealing with persistent data. 
+This concept is called a PERSISTENCE CONTEXT. 
+Persistent data has a state in relation to both a persistence context and the underlying database. 
+
+Entity states: Состояния сущностей:
+1    TRANSIENT - the entity has just been instantiated and is not associated with a persistence context. It has no persistent representation in the database and typically no identifier value has been assigned (unless the assigned generator was used).
+1 (transient) кратковременное-краткосрочное - сущность была проинициализирована, но не связана с контекстом постоянства[постоянный контекст]. Сущность не имеет постоянное представление в базе данных и, как правило, ей не был назначен идентификатор.
+
+2    MANAGED, or persistent - the entity has an associated identifier and is associated with a persistence context. It may or may not physically exist in the database yet.
+2 (managed, or persistent) управляемое или постоянное - сущность имеет соответствующий идентификатор и связана с persistence контекстом. 
+Сущность [всё ещё] может или не может физически существовать в базе данных.
+
+3    DETACHED - the entity has an associated identifier, but is no longer associated with a persistence context (usually because the persistence context was closed or the instance was evicted from the context)
+3 (detached) отсоединённое-отделённое - сущность имеет связанный идентификатор, но больше не связана с persistence контекстом (обычно, потому что контекст был закрыт или сущность была исключена/выселена/удалена из контекста)
+
+4    REMOVED - the entity has an associated identifier and is associated with a persistence context, however it is scheduled for removal from the database.
+4 (removed) удалённая - сущность имеет связанный идентификатор и связана с persistence контекстом, однако запланировано удаление этой сущности из базы данных [при комите транзакции].
+
+-Much of the org.hibernate.Session and javax.persistence.EntityManager methods deal with moving entities between these states. 
+------------------------------------------------
+
+------------------------------------------------
+Hibernate itself can handle deleting detached state. JPA, however, disallows it
+The implication here is that the entity instance passed to the org.hibernate.Session delete method can be either in managed or detached state, while the entity instance passed to remove on javax.persistence.EntityManager must be in managed state
+----
+**********************
+Obtain an entity reference without initializing its data
+the ability to obtain a reference to an entity without having to load its data is hugely important. 
+The most common case being the need to create an association between an entity and another, existing entity
+*getReference
+    Should be used in cases where the identifier is assumed to exist, where non-existence would be an actual error. Should never be used to test existence. That is because this method will prefer to create and return a proxy if the data is not already associated with the Session rather than hit the database. The quintessential use-case for using this method is to create foreign-key based associations.
+*load
+    Will return the persistent data associated with the given identifier value or null if that identifier does not exist.
+In addition to those 2 methods, each also defines the method with accepting a org.hibernate.LockOptions argument
+-----
+Refresh entity state
+You can reload an entity instance and it's collections at any time.
+One case where this is useful is when it is known that the database state has changed since the data was read. Refreshing allows the current database state to be pulled into the entity instance and the persistence context. 
+Another case where this might be useful is when database triggers are used to initialize some of the properties of the entity. Note that only the entity instance and its collections are refreshed unless you specify REFRESH as a cascade style of any associations.
+---------
+4.7. Modifying managed/persistent state
+Entities in managed/persistent state may be manipulated by the application and any changes will be automatically detected and persisted when the persistence context is flushed. There is no need to call a particular method to make your modifications persistent.
+---
+4.8. Working with detached data
+Detachment is the process of working with data outside the scope of any persistence context. Data becomes detached in a number of ways. Once the persistence context is closed, all data that was associated with it becomes detached. Clearing the persistence context has the same effect. Evicting a particular entity from the persistence context makes it detached. And finally, serialization will make the deserialized form be detached (the original instance is still managed). 
+---
+4.8.1. Reattaching detached data
+Reattachment is the process of taking an incoming entity instance that is in detached state and re-associating it with the current persistence context.
+Important! - JPA does not provide for this model. This is only available through Hibernate org.hibernate.Session.
+session.lock( someDetachedCat, LockMode.NONE );
+session.saveOrUpdate( someDetachedCat );
+@Unless the entity is mapped with select-before-update, in which case Hibernate will pull the current state from the database and see if an update is needed. @
+---
+4.8.2. Merging detached data
+Merging is the process of taking an incoming entity instance that is in detached state and copying its data over onto a new instance that is in managed state.
+---
+4.9. Checking persistent state - session.contains( cat );
+if ( Hibernate.isInitialized( customer.getOrders()) ) ) {
+    //display orders if loaded
+}
+---

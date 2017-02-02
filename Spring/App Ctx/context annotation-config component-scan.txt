@@ -1,0 +1,258 @@
+1_ http://techidiocy.com/annotation-config-vs-component-scan-spring-core/
+2_ http://stackoverflow.com/questions/7414794/difference-between-contextannotation-config-vs-contextcomponent-scan
+*************************************************
+
+1) <context:annotation-config> is used to activate annotations in beans  that were already registered in the application context 
+(no matter if they were defined with XML or by package scanning).
+
+2) <context:component-scan> can also do what <context:annotation-config> does but <context:component-scan> also scans packages to find and register other annotated java classes as spring bean within the application context.
+
+*************************************************
+
+annotation-config :  Annotation config main job is to activate all the annotations that are present in java beans and those are already registered either by defining in your application context file or being registered while component scanning. Important point is they need to be registered.
+
+component-scan : Component scan can do everything that annotation config does , in addition to it it also registers the java classes as spring bean those are annotated with @Component, @Service, @Repository etc.
+
+*************************************************
+
+1) <context:annotation-config> is used to 
+1.1__ ACTIVATE APPLIED ANNOTATIONS in ALREADY REGISTERED BEANS in application context. 
+Note that it simply does not matter whether bean was registered by which mechanism e.g. using <context:component-scan> or it was defined in application-context.xml file itself.
+
+2) <context:component-scan> 
+2.1__ register the beans from the "base-package" in the app_context,
+2.2__ it also scans the annotations inside beans and activate them. 
+So <context:component-scan>; does what <context:annotation-config> does, but additionally it scans the packages and registers beans from that packages in application context.
+
+*************************************************
+
+I'll use some examples to show the differences/similarities.
+
+Lets start with a basic setup of three beans of type A, B and C, with B and C being injected into A.
+
+package com.xxx;
+public class B {
+  public B() {
+    System.out.println("creating bean B: " + this);
+  }
+}
+
+package com.xxx;
+public class C {
+  public C() {
+    System.out.println("creating bean C: " + this);
+  }
+}
+
+package com.yyy;
+import com.xxx.B;
+import com.xxx.C;
+public class A { 
+  private B bbb;
+  private C ccc;
+  public A() {
+    System.out.println("creating bean A: " + this);
+  }
+  public void setBbb(B bbb) {
+    System.out.println("setting A.bbb with " + bbb);
+    this.bbb = bbb;
+  }
+  public void setCcc(C ccc) {
+    System.out.println("setting A.ccc with " + ccc);
+    this.ccc = ccc; 
+  }
+}
+With the following XML configuration :
+
+<bean id="bBean" class="com.xxx.B" />
+<bean id="cBean" class="com.xxx.C" />
+<bean id="aBean" class="com.yyy.A">
+  <property name="bbb" ref="bBean" />
+  <property name="ccc" ref="cBean" />
+</bean>
+Loading the context produces the following output:
+
+creating bean B: com.xxx.B@c2ff5
+creating bean C: com.xxx.C@1e8a1f6
+creating bean A: com.yyy.A@1e152c5
+setting A.bbb with com.xxx.B@c2ff5
+setting A.ccc with com.xxx.C@1e8a1f6
+OK, this is the expected output. But this is "old style" Spring. Now we have annotations so lets use those to simplify the XML.
+
+First, lets autowire the bbb and ccc properties on bean A like so:
+
+package com.yyy;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.xxx.B;
+import com.xxx.C;
+public class A { 
+  private B bbb;
+  private C ccc;
+  public A() {
+    System.out.println("creating bean A: " + this);
+  }
+  @Autowired
+  public void setBbb(B bbb) {
+    System.out.println("setting A.bbb with " + bbb);
+    this.bbb = bbb;
+  }
+  @Autowired
+  public void setCcc(C ccc) {
+    System.out.println("setting A.ccc with " + ccc);
+    this.ccc = ccc;
+  }
+}
+This allows me to remove the following rows from the XML:
+
+<property name="bbb" ref="bBean" />
+<property name="ccc" ref="cBean" />
+My XML is now simplified to this:
+
+<bean id="bBean" class="com.xxx.B" />
+<bean id="cBean" class="com.xxx.C" />
+<bean id="aBean" class="com.yyy.A" />
+When I load the context I get the following output:
+
+creating bean B: com.xxx.B@5e5a50
+creating bean C: com.xxx.C@54a328
+creating bean A: com.yyy.A@a3d4cf
+OK, this is wrong! What happened? Why aren't my properties autowired?
+
+Well, annotations are a nice feature but by themselves they do nothing whatsoever. They just annotate stuff. You need a processing tool to find the annotations and do something with them.
+
+<context:annotation-config> to the rescue. This activates the actions for the annotations that it finds on the beans defined in the same application context where itself is defined.
+
+If I change my XML to this:
+
+<context:annotation-config />
+<bean id="bBean" class="com.xxx.B" />
+<bean id="cBean" class="com.xxx.C" />
+<bean id="aBean" class="com.yyy.A" />
+when I load the application context I get the proper result:
+
+creating bean B: com.xxx.B@15663a2
+creating bean C: com.xxx.C@cd5f8b
+creating bean A: com.yyy.A@157aa53
+setting A.bbb with com.xxx.B@15663a2
+setting A.ccc with com.xxx.C@cd5f8b
+OK, this is nice, but I've removed two rows from the XML and added one. That's not a very big difference. The idea with annotations is that it's supposed to remove the XML.
+
+So let's remove the XML definitions and replace them all with annotations:
+
+package com.xxx;
+import org.springframework.stereotype.Component;
+@Component
+public class B {
+  public B() {
+    System.out.println("creating bean B: " + this);
+  }
+}
+
+package com.xxx;
+import org.springframework.stereotype.Component;
+@Component
+public class C {
+  public C() {
+    System.out.println("creating bean C: " + this);
+  }
+}
+
+package com.yyy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import com.xxx.B;
+import com.xxx.C;
+@Component
+public class A { 
+  private B bbb;
+  private C ccc;
+  public A() {
+    System.out.println("creating bean A: " + this);
+  }
+  @Autowired
+  public void setBbb(B bbb) {
+    System.out.println("setting A.bbb with " + bbb);
+    this.bbb = bbb;
+  }
+  @Autowired
+  public void setCcc(C ccc) {
+    System.out.println("setting A.ccc with " + ccc);
+    this.ccc = ccc;
+  }
+}
+While in the XML we only keep this:
+
+<context:annotation-config />
+We load the context and the result is... Nothing. No beans are created, no beans are autowired. Nothing!
+
+That's because, as I said in the first paragraph, the <context:annotation-config /> only works on beans registered within the application context. Because I removed the XML configuration for the three beans there is no bean created and <context:annotation-config /> has no "targets" to work on.
+
+But that won't be a problem for <context:component-scan> which can scan a package for "targets" to work on. Let's change the content of the XML config into the following entry:
+
+<context:component-scan base-package="com.xxx" />
+When I load the context I get the following output:
+
+creating bean B: com.xxx.B@1be0f0a
+creating bean C: com.xxx.C@80d1ff
+Hmmmm... something is missing. Why?
+
+If you look closelly at the classes, class A has package com.yyy but I've specified in the <context:component-scan> to use package com.xxx so this completely missed my A class and only picked up B and C which are on the com.xxx package.
+
+To fix this, I add this other package also:
+
+<context:component-scan base-package="com.xxx,com.yyy" />
+and now we get the expected result:
+
+creating bean B: com.xxx.B@cd5f8b
+creating bean C: com.xxx.C@15ac3c9
+creating bean A: com.yyy.A@ec4a87
+setting A.bbb with com.xxx.B@cd5f8b
+setting A.ccc with com.xxx.C@15ac3c9
+And that's it! Now you don't have XML definitions anymore, you have annotations.
+
+As a final example, keeping the annotated classes A, B and C and adding the following to the XML, what will we get after loading the context?
+
+<context:component-scan base-package="com.xxx" />
+<bean id="aBean" class="com.yyy.A" />
+We still get the correct result:
+
+creating bean B: com.xxx.B@157aa53
+creating bean C: com.xxx.C@ec4a87
+creating bean A: com.yyy.A@1d64c37
+setting A.bbb with com.xxx.B@157aa53
+setting A.ccc with com.xxx.C@ec4a87
+Even if the bean for class A isn't obtained by scanning, the processing tools are still applied by <context:component-scan> on all beans registered in the application context, even for A which was manually registered in the XML.
+
+But what if we have the following XML, will we get duplicated beans because we've specified both <context:annotation-config /> and <context:component-scan>?
+
+<context:annotation-config />
+<context:component-scan base-package="com.xxx" />
+<bean id="aBean" class="com.yyy.A" />
+No, no duplications, We again get the expected result:
+
+creating bean B: com.xxx.B@157aa53
+creating bean C: com.xxx.C@ec4a87
+creating bean A: com.yyy.A@1d64c37
+setting A.bbb with com.xxx.B@157aa53
+setting A.ccc with com.xxx.C@ec4a87
+That's because both tags register the same processing tools (<context:annotation-config /> can be omitted if <context:component-scan> is specified) but Spring takes care of running them only once.
+
+Even if you register the processing tools yourself multiple times, Spring will still make sure they do their magic only once; this XML:
+
+<context:annotation-config />
+<context:component-scan base-package="com.xxx" />
+<bean id="aBean" class="com.yyy.A" />
+<bean id="bla" class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+<bean id="bla1" class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+<bean id="bla2" class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+<bean id="bla3" class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+will still generate the following result:
+
+creating bean B: com.xxx.B@157aa53
+creating bean C: com.xxx.C@ec4a87
+creating bean A: com.yyy.A@25d2b2
+setting A.bbb with com.xxx.B@157aa53
+setting A.ccc with com.xxx.C@ec4a87
+OK, that about raps it up.
+
+I hope this information along with the responses from @Tomasz Nurkiewicz and @Sean Patrick Floyd are all you need to understand how  <context:annotation-config> and <context:component-scan> work.

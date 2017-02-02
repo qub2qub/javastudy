@@ -7,3 +7,114 @@ The easiest way to construct a state-dependent class is usually to build on top 
 Но если из коробки не достаточно -- можно создать свои синхронизаторы, ис-я low-level mechanisms provided by the language and libraries, including intrinsic condition queues, explicit Condition objects, and the AbstractQueuedSynchronizer framework.
 
 *** 14.1 Managing state dependence ***
+In a single-threaded program, if a state-based precondition не выполнялась когда был запущен метод -- то она никогда уже и не выполнится.
+Поэтому classes in sequential programs can be coded to fail when their preconditions do not hold. 
+Но в concurrent program [state-based conditions] УСЛОВИЯ НА ПРОВЕРКУ СОСТОЯНИЯ can change through the actions of other threads.
+
+Поэтому в многопоточных приложениях есть 2 выбора:
+1) failing when their preconditions are not met
+2) wait for the precondition to become true
+
+ОПЕРАЦИИ на проверку состояния, которые БЛОКИРУЮТСЯ until the operation can proceed, более удобные и менее error-prone than those that simply fail.
+
+Далее -- пример как state dependence might be (painfully) tackled using polling and sleeping.
+и логика в примере:
+The pattern of locking is somewhat unusual in that the lock is released and reacquired in the middle of the operation. The state variables that make up the precondition must be guarded by the object's lock, so that they can remain constant while the precondition is tested. But if the precondition does not hold, the lock must be released so another thread can modify the object state—otherwise the precondition will never become true. The lock must then be reacquired before testing the precondition again.
+
+acquire lock on object state
+while (precondition does not hold) {
+	release lock
+	wait until precondition might hold
+	optionally fail if interrupted or timeout expires
+	reacquire lock
+}
+perform action
+release lock
+--------------------------------------------------
+
+A bounded buffer provides put() and take() operations, each of which has preconditions: you cannot take an element from an empty buffer, nor put an element into a full buffer. 
+STATE DEPENDENT OPERATIONS can deal with precondition failure by:
+1__ throwing an exception or returning an error status (making it the caller's problem), 
+2__ or by blocking until the object transitions to the right state.
+
+В общем, в примере GrumpyBoundedBuffer.java есть Fundamental problem: 
+that callers must deal with precondition failures themselves.
+
+В примере делается sleep, но есть и другой подход:
+The caller could retry the take immediately, without sleeping — an approach known as BUSY WAITING or SPIN WAITING.
+This could consume quite a lot of CPU time if the buffer state does not change for a while. Но если он выберет спать, то он может пропустить состояние, когда изменилось состояние буфера.
+Т.е. это выбор из двух "неудачных" стратегий:
+1__ poor CPU usage of spinning 
+2__ and the poor responsiveness of sleeping.
+3*__  (Somewhere between busy waiting and sleeping would be calling Thread.yield() in each iteration, which is a hint to the scheduler that this would be a reasonable time to let another thread run. If you are waiting for another thread to do something, that something might happen faster if you yield the processor rather than consuming your full scheduling quantum.)
+
+*** 14.1.2 Example: crude blocking by polling and sleeping ***
+SleepyBoundedBuffer.java --- Listing 14.5
+В этом классе решили уменьшить неудобства клиента, и сам буфер делает доп. попытки вставить/забрать элемент, если предусловия не выполнены.
+This approach encapsulates precondition management and simplifies using the buffer.
+В листинге 14.5 -- The buffer code must test the appropriate state condition with the buffer lock held, because the variables that represent the state condition are guarded by the buffer lock. If the test fails, the executing thread sleeps for a while, first releasing the lock so other threads can access the buffer.
+Once the thread wakes up, it reacquires the lock and tries again, alternating between sleeping and testing the state condition until the operation can proceed.
+
+From the perspective of the caller, this works nicely — if the operation can proceed immediately, it does, and otherwise it blocks — and the caller need not deal with the mechanics of failure and retry. 
+Choosing the sleep granularity is a tradeoff between responsiveness and CPU usage; the smaller the sleep granularity, the more responsive, but also the more CPU resources consumed.
+
+SleepyBoundedBuffer also creates another requirement for the caller — dealing with InterruptedException. (the polite thing to do is to provide a cancellation mechanism) 
+
+*** 14.1.3 Condition queues to the rescue ***
+A condition queue gets its name because it gives a group of threads—called the wait set—a way to wait for a specific condition to become true. Unlike typical queues in which the elements are data items, the elements of a condition queue are the threads waiting for the condition.
+
+Just as EACH JAVA OBJECT can act AS A LOCK, each object can also act AS A CONDITION QUEUE, and the wait(), notify(), and notifyAll() methods in Object constitute the API for intrinsic condition queues. 
+An object's intrinsic lock and its intrinsic condition queue are related: 
+!!! IN ORDER TO CALL ANY OF THE CONDITION QUEUE METHODS ON OBJECT X, YOU MUST HOLD THE LOCK ON X. 
+This is because the mechanism for waiting for state-based conditions is necessarily tightly bound to the mechanism for PRESERVING STATE CONSISTENCY: you cannot wait for a condition unless you can examine the state, and you cannot release another thread from a condition wait unless you can modify the state.
+
+Object.wait() atomically releases the lock and asks the OS to suspend the current thread, allowing other threads to acquire the lock and therefore modify the object state. 
+Upon waking, it reacquires the lock before returning. 
+Intuitively, CALLING WAIT MEANS "I want to go to sleep, but wake me when something interesting happens", 
+and CALLING THE NOTIFICATION methods MEANS "something interesting happened".
+
+BoundedBuffer.java in Listing 14.6 implements a bounded buffer using wait and notifyAll. This is simpler than the sleeping version, and is both more efficient (waking up less frequently if the buffer state does not change) and more responsive (waking up promptly when an interesting state change happens). 
+
+--a fair condition queue can guarantee the relative order in which threads are released from the wait set. Intrinsic condition queues, like intrinsic locks, do not offer fair queueing; explicit Conditions offer a choice of fair or nonfair queueing.
+
+*** 14.2 Using condition queues *** 298 (7стр)
+Condition queues make it easier to build efficient and responsive state-dependent classes, but they are still easy to use incorrectly; there are a LOT OF RULES regarding their PROPER USE that are not enforced by the compiler or platform. 
+(This is one of the reasons to build on top of classes like LinkedBlockingQueue, CountDownLatch, Semaphore, and FutureTask when you can; if you can get away with it, it is a lot easier.)
+
+*** 14.2.1 The condition predicate ***
+The key to using condition queues correctly is identifying the CONDITION PREDICATES that the object may wait for. 
+Но только хуй его знает, что это за зверь  condition predicate!!
+
+The condition predicate is the precondition that makes an operation state-dependent in the first place. In a bounded buffer, take can proceed only if the buffer is not empty; otherwise it must wait. For take, the condition predicate is "the buffer is not empty", which take must test for before proceeding. Similarly, the condition predicate for put is "the buffer is not full". Condition predicates are expressions constructed from the state variables of the class; BaseBoundedBuffer tests for "buffer not empty" by comparing count to zero, and tests for "buffer not full" by comparing count to the buffer size.
+
+!!! Document the condition predicate(s) associated with a condition queue and the operations that wait on them.
+
+В общем, в [condition wait] (ожидании условия) есть ВАЖНАЯ ТРЁХ-строронняя связь, включающая:
+1__locking (lock object = Он же явл-ся объектом "очередь")
+2__wait method, 
+3__condition predicate.
+
+The condition predicate involves state variables, and the state variables are guarded by a lock, so before testing the condition predicate, we must hold that lock. 
+The LOCK OBJECT and the CONDITION QUEUE OBJECT (the object on which wait and notify are invoked) must also be the SAME OBJECT.
+
+!!! CONDITION PREDICATE --> STATE VARIABLES --> GUARDED BY A LOCK --> SAME OBJECT(LOCK OBJECT == CONDITION QUEUE OBJECT)
+
+В примере BoundedBuffer.java
+    // буфером явл-ся @GuardedBy("this") private final V[] buf;
+    // он же CONDITION QUEUE OBJECT, локом для него является THIS.
+
+    // поэтому и тут для методов put() и take() LOCK OBJECT будет THIS
+    // ну... подразумевается что локом явл-ся сам объект "очередь"
+
+In BoundedBuffer, the buffer state is guarded by the buffer lock and the buffer object is used as the condition queue. The take method acquires the buffer lock and then tests the condition predicate (that the buffer is nonempty). If the buffer is indeed nonempty, it removes the first element, which it can do because it still holds the lock guarding the buffer state.
+
+сука дохуя читать:
+If the condition predicate is not true (the buffer is empty), take must wait until another thread puts an object in the buffer. It does this by calling wait on the buffer's intrinsic condition queue, which requires holding the lock on the condition queue object. As careful design would have it, take already holds that lock, which it needed to test the condition predicate (and if the condition predicate was true, to modify the buffer state in the same atomic operation). The wait method releases the lock, blocks the current thread, and waits until the specified timeout expires, the thread is interrupted, or the thread is awakened by a notification. After the thread wakes up, wait reacquires the lock before returning. A thread waking up from wait gets no special priority in reacquiring the lock; it contends for the lock just like any other thread attempting to enter a synchronized block.
+
+!!! Every call to wait is implicitly associated with a SPECIFIC CONDITION PREDICATE. When calling wait regarding a particular condition predicate, the caller must already hold the lock associated with the condition queue, and that lock must also guard the state variables from which the condition predicate is composed.
+
+*** 14.2.2 Waking up too soon ***
+As if the three-way relationship among the lock, the condition predicate, and the condition queue were not complicated enough, that wait returns does not necessarily mean that the condition predicate the thread is waiting for has become true.
+
+A single intrinsic condition queue may be used with more than one condition predicate. When your thread is awakened because someone called notifyAll, that doesn't mean that the condition predicate you were waiting for is now true. (This is like having your toaster and coffee maker share a single bell; when it rings, you still have to look to see which device raised the signal.)7 Additionally, wait is even allowed to return "spuriously"—not in response to any thread calling notify.8
+
