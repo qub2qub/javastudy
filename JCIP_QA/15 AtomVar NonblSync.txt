@@ -3,7 +3,7 @@
 *** Atomic Variables and Nonblocking Synchronization ***
 Они явл-ся the primary source of this performance boost.
 
-Much of the recent research on concurrent algorithms has focused on nonblocking algorithms, which use low-level atomic machine instructions such as compare-and-swap instead of locks to ensure data integrity under concurrent access. Nonblocking algorithms are used extensively in operating systems and JVMs for thread and process scheduling, garbage collection, and to implement locks and other concurrent data structures.
+Much of the recent research on concurrent algorithms has focused on nonblocking algorithms, which use low-level atomic machine instructions such as compare-and-swap instead of locks to ensure data integrity under concurrent access. Nonblocking algorithms are used extensively(много где, всесторонне) in operating systems and JVMs for thread and process scheduling, garbage collection, and to implement locks and other concurrent data structures.
 
 Nonblocking algorithms are considerably more complicated to design and implement than lock-based alternatives, but they can offer significant scalability and liveness advantages.
 У них лучшее разбиение на блоки и они уменьшают издержки планирования (scheduling overhead), потому что они не блокируются при множественном доступе к ним.
@@ -11,7 +11,7 @@ Nonblocking algorithms are considerably more complicated to design and implement
 И ещё: nonblocking algorithms are impervious(невосприимчивый) to individual thread failures.
 Начиная с Java 5.0, it is possible to build efficient nonblocking algorithms in Java using the atomic variable classes such as AtomicInteger and AtomicReference.
 
-Atomic variables can also be used as "better volatile variables" even if you are not developing nonblocking algorithms. Atomic variables offer the same memory semantics as volatile variables, but with additional support for atomic updates— making them ideal for counters, sequence generators, and statistics gathering while offering better scalability than lock-based alternatives.
+Atomic variables can also be used as "better volatile variables" even if you are not developing nonblocking algorithms. Atomic variables offer the same memory semantics as volatile variables, but with additional support for atomic updates — making them ideal for counters, sequence generators, and statistics gathering while offering better scalability than lock-based alternatives.
 
 *** 15.1 Disadvantages of locking ***
 Coordinating access to shared state using a consistent locking protocol ensures that WHICHEVER THREAD [holds the lock guarding a set of variables] 
@@ -81,7 +81,7 @@ CAS has three operands —
 
 !!! CAS atomically updates V to the new value B, but only if the value in V matches the expected old value A; otherwise it does nothing. 
 In either case(и тот и другой; оба),
-В любом случае, it returns the value currently in V. 
+В любом случае, it returns the value currently in V. (походу старое значение)
 
     The variant called COMPARE-AND-SET instead returns whether the operation succeeded.
 
@@ -107,6 +107,8 @@ although in cases of extreme contention it might be DESIRABLE TO WAIT OR BACK OF
 
 Since the CAS succeeds most of the time (assuming low to moderate contention), the hardware will correctly predict the branch implicit in the while loop, minimizing the overhead of the more complicated control logic.
 
+	overhead == доп. действия и операции, кот надо сделать чтобы завершить действие.
+
    TRAVERSING == 
    прослеживать (связи); 
    проходить (по дереву поиска); 
@@ -115,7 +117,8 @@ Since the CAS succeeds most of the time (assuming low to moderate contention), t
 Locking entails traversing a relatively complicated code path in the JVM and may entail OS-level locking, thread suspension, and context switches. 
 On the other hand, executing a CAS from within the program involves no JVM code, system calls, or scheduling activity. 
 
-The primary disadvantage of CAS is that it forces the caller to deal with contention (by retrying, backing off, or giving up), whereas locks deal with contention automatically by blocking until the lock is available.
+The primary disadvantage of CAS is that 
+IT FORCES THE CALLER TO DEAL WITH CONTENTION (by retrying, backing off, or giving up), whereas locks deal with contention automatically by blocking until the lock is available.
    !!! Actually, the biggest disadvantage of CAS is the difficulty of constructing the surrounding algorithms correctly.
 
 rule of thumb == 
@@ -128,9 +131,11 @@ A good rule of thumb is that the cost of the "fast path" for uncontended lock ac
 *** 15.2.3    CAS support in the JVM ***
 In Java 5.0, low-level support was added to expose CAS operations on int, long, and object references, and the JVM compiles these into the most efficient means provided by the underlying hardware.
 
- in the WORST CASE, if a CAS-like instruction is not available the JVM uses a SPIN LOCK. 
+   in the WORST CASE, if a CAS-like instruction is not available the JVM uses a SPIN LOCK. 
 
 SPIN LOCK (спин-блокировка) == это цикл с ожиданием (busy-waiting loop), в котором процесс ждёт доступа к разделяемому ресурсу (shared resource), периодически опрашивая флаг, указывающий, что ресурс свободен.
+
+--как это может быть реализовано в ЖВМ? спин-лок для кас.
 
 This low-level JVM support is used by the atomic variable classes (AtomicXxx in java.util.concurrent.atomic); 
 these atomic variable classes are used, directly or indirectly, to implement most of the classes in java.util.concurrent.

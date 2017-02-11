@@ -188,7 +188,8 @@ other Java serializable types (including wrappers of the primitive types,
 3) java.math.BigInteger,
 4)  java.math.BigDecimal,
 5)  java.util.Date,
-6)  java.util.Calendar, (Note that an instance of Calendar must be fully initialized for the type that it is mapped to.)
+6)  java.util.Calendar, (Note that an instance of Calendar MUST BE
+ fully initialized for the type that it is mapped to.)
 7)  java.sql.Date,
 8)  java.sql.Time,
 9)  java.sql.Timestamp,
@@ -214,8 +215,8 @@ other Java serializable types (including wrappers of the primitive types,
 3. BigDecimal и BigInteger,<br>
 4. java.util.Date и java.sql.Date, <br>
 <br>
-В случае автогенерируемого первичного ключа (generated primary keys) допустимы <br>
-1. только числовые типы, <br>
+В случае автогенерируемого первичного ключа (generated primary keys) переносимы будут лишь целые; целочисленные типа<br>
+
 <br>
 В случае использования других типов данных в первичном ключе, он может работать только для некоторых баз данных, т.е. становится не переносимым (not portable), <br>
 <br>
@@ -223,21 +224,48 @@ other Java serializable types (including wrappers of the primitive types,
 <br>
 <div class="spoiler"><b class="spoiler_title">Оригинал</b><div class="spoiler_text">A simple primary key or a field or property of a composite primary key should be one of the following types: 
 <pre>
-1) any Java primitive type,
+1) 	any Java primitive type,
 2)  any primitive wrapper type,
 3)  java.lang.String,
 4)  java.util.Date,
 5)  java.sql.Date,
 6)  java.math.BigDecimal,
 7)  java.math.BigInteger… </pre>
- Entities whose primary keys use types other than these will not be portable. If generated primary keys are used, only integral types will be portable. <br>
+<pre>In general, however, approximate numeric types (e.g., floating point types) should never be used in primary keys.</pre>
+
+Entities whose primary keys use types other than these will not be portable. If generated primary keys are used, only integral types will be portable. <br>
 </div></div><br>
 </div></div><br>
 </li>
-</ul><br>
-<h3>Сложные структуры JPA</h3><br>
-<ul>
+<li>
+	<p>Вопрос 14.2*<br>Какие правила применяются к составному ПК</p>
+<p>The following rules apply for composite primary keys:
+	<ol>
+<li> The primary key class must be public and must have a public no-arg constructor.
+</li><li> The access type (field- or property-based access) of a primary key class is determined by the
+access type of the entity for which it is the primary key unless the primary key is a embedded
+id and a different access type is specified. See Section 2.3, “Access Type”.
+</li><li> If property-based access is used, the properties of the primary key class must be public or pro-tected.
+</li><li> The primary key class must be serializable.
+</li><li> The primary key class must define equalsand hashCodemethods. The semantics of value
+equality for these methods must be consistent with the database equality for the database types
+to which the key is mapped.
+</li><li> A composite primary key must either be represented and mapped as an embeddable class (see
+Section 11.1.17, “EmbeddedId Annotation”) or must be represented as an id class and mapped
+to multiple fields or properties of the entityclass (see Section 11.1.22, “IdClass Annotation”).
+</li><li> If the composite primary key class is represented as an id class, the names of primary key
+fields or properties in the primary key class and those of the entity class to which the id class is
+mapped must correspond and their types must be the same. 
+</li><li> A primary key that corresponds to a derived identity must conform to the rules of Section 2.4.1.
+The value of its primary key uniquely identifies anentity instance within a persistence context and to
+EntityManageroperations as described in Chapter 3, “Entity Operations”. The application must not change the value of the primary key. The behavior is undefined if this occurs.</li>
+	</ol>
+	</p>
+</li>
+</ul>
 <hr>
+<h3>Сложные структуры JPA</h3>
+<ul>
 <li> Вопрос 15. Что такое встраиваемый (Embeddable) класс? <br>
 <div class="spoiler"><b class="spoiler_title">Ответ</b><div class="spoiler_text">Встраиваемый (Embeddable) класс это класс который не используется сам по себе, только как часть одного или нескольких Entity классов. Entity класс могут содержать как одиночные встраиваемые классы, так и коллекции таких классов. Также такие классы могут быть использованы как ключи или значения map. 
 <br><br>
@@ -533,6 +561,34 @@ The set of entities that can be managed by a given EntityManager instance is def
 2) managed — объект создан, имеет persistent identity, <u>управляется JPA</u>, т.е. <b>is currently associated with a persistence context</b><br>
 3) detached — объект был создан, имеет persistent identity, но не управляется (или больше не управляется) JPA [not (or no longer) associated with a persistence context]<br>
 4) removed — объект создан, имеет persistent identity, управляется JPA, но будет удален сразу после commit'a транзакции.<br>
+<br>
+<table style="text-align: center;">
+	<tr>
+		<td>Тип Entity</td>
+		<td>имеет persistent identity</td>
+		<td>associated with a persistence context</td>
+	</tr>
+	<tr>
+		<td>new</td>
+		<td>no</td>
+		<td>no</td>
+	</tr>
+	<tr>
+		<td>managed</td>
+		<td>yes</td>
+		<td>yes</td>
+	</tr>
+	<tr>
+		<td>detached</td>
+		<td>yes</td>
+		<td>no</td>
+	</tr>
+	<tr>
+		<td>removed</td>
+		<td>yes</td>
+		<td>yes*(будет удалён)</td>
+	</tr>
+</table>
 <br>
 <a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1. Chapter 3.2</a> <br>
 <br>

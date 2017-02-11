@@ -1,5 +1,7 @@
 JDBC состоит из 4-х компонент:
-1)JDBC API - предоставляет программный доступ к реляционной БД. Через него можно выполнять SQL запросы, получать результаты, вносить изменения обратно в БД. JDBC API может работать с неколькики дата-сорсами.
+1)JDBC API - предоставляет программный доступ к реляционной БД. 
+Через него можно выполнять SQL запросы, получать результаты, вносить изменения обратно в БД. 
+JDBC API может работать с неколькики дата-сорсами.
 2)JDBC Driver Manager - это класс DriverManager, к-й может подключать java приложения к jdbc драйверу. DriverManager - это костяк jdbc архитектуры. Он Довольно маленький и простой.
 
 3) JDBC Test Suite - помогает определить что jdbc driver будает работать в ваше программе. 
@@ -18,7 +20,8 @@ Relational Database Overview
 1) каждая строка в таблице должна быть уникальной.
 2) значение в колонках не должны быть повторяющимися группами или массивами.
 3) Null значение. Это когда значение "не доступно", т.е. не задано/отсутствует. Null не равен нулю или пустому значению. It does not equate to a blank or zero. A blank is considered equal to another blank, a zero is equal to another zero, but two null values are not considered equal.
-----когда каждая строка в таблице - уникальная - становится возможным использовать 1 или более колонок чтобы идентифицировать канкретную строку. И такой уникальный набор колонок называется PRIMARY KEY. Любая колонка, к-я входит в primary_key не может быть равна Null. 
+----когда каждая строка в таблице - уникальная - становится возможным использовать 1 или более колонок чтобы идентифицировать канкретную строку. И такой уникальный набор колонок называется PRIMARY KEY. 
+Любая колонка, к-я входит в primary_key не может быть равна Null. 
 ----------------
 A SELECT statement, also called a query.
 The result_set (the set of rows that satisfy the requirement) - 
@@ -52,10 +55,13 @@ JDBC API добавило возможность для курсора двиг�
 Transactions
 Когда пользователь получает доступ к данным в БД, другой юзер может получать доступ к этим же данным в тот же самый момент.
 Чтобы сохранить целостность данных в БД при одновременной работе нескольких юзеров ис-ся механизм транзакций. 
+
 ТРАНЗАКЦИЯ - это набор из 1 или более SQL statements/выражений, к-й совершает одну логическую единицу работы.
+
 Транзакция заканчивается только 1 из 2 вариантов (в зависимости от того были ли какие-то проблемы с целостностью данных или параллельностью):
 1) успехом - тогда происходит commit/фиксация результата.
 2) провалом - тогда происходит rollback/откат изменений.
+
 COMMIT - делает постоянными все те изменения, к-е были получены из выполнения всех sql выражений из транзакции.
 ROLLBACK - откатывает/убирает все изменения, к-е были получены в результате выполнения всех sql выражений входящих в транзакцию.
 LOCK - БЛОКИРОВКА - это механизм, к-й запрещает двум транзакциям одновременно манипулировать одними и теми же данными.
@@ -79,22 +85,26 @@ statement возвращают result_set, к-й представляет соб
 3) CallableStatement - (Extends PreparedStatement.) ис-ся для выполнения stored_procedures, к-е могут содержать одновременно и входные и выходные параметры.
 ----
 Чтобы выполнить Statement надо вызвать его execute method:
-1) execute: Returns true если первый объект, к-й вернулся из запроса - это объект result_set. Можно использовать этот метод тогда, когда запрос может вернуть 1 или более result_set объектов, получить их можно повторно вызывая Statement.getResultSet.
+1) execute: Returns true если первый объект, к-й вернулся из запроса - это объект result_set. Можно использовать этот метод тогда, когда запрос может вернуть 1 или более result_set объектов, получить их можно повторно вызывая Statement.getResultSet().
 2) executeQuery: Returns one ResultSet object.
 3) executeUpdate: Returns an integer, показывающее количество строк, на к-е повлияло выполнение sql statement.
 ----
 Processing ResultSet Objects
-Можно получить доступ к объектам из result_set через курсор. !!! Это НЕ курсор из БД. Этот курсор -- это указатель на 1 строку с данными из объекта result_set.
-Изначально курсор стоит ПЕРЕД первой строкой. (!!!Initially, the cursor is positioned before the first row. )
+Можно получить доступ к объектам из result_set через курсор. 
+!!! Это НЕ курсор из БД. 
+Этот курсор -- это указатель на 1 строку с данными из объекта result_set.
+Изначально курсор стоит ПЕРЕД первой строкой. 
+(!!!Initially, the cursor is positioned before the first row. )
 -----------------------
 Closing Connections
-Когда закончили работать со statement -- вызовите  метод Statement.close, чтобы закрыть его. (ресурсы, к-е ис-ет statement будут немедленно освобождены). ПОсле вызова этого метода также будет закрыт и объект result_set.
+Когда закончили работать со statement -- вызовите  метод Statement.close(), чтобы закрыть его. (ресурсы, к-е ис-ет statement будут немедленно освобождены). ПОсле вызова этого метода также будет закрыт и объект result_set.
 *****************
 Establishing a Connection
 Обычно JDBC application подключается к источнику данных ис-ся 1 из 2 классов:
 (1)DriverManager - полностью реализовнный класс, к-й подключается к БД по предоставленному URL.
 При ПЕРВОЙ попытке установить соединение класс DriverManager автоматически загружает любые JDBC 4.0 driver-ы, найденные в classpath. Для драйверов до версии 4.0 приложение должно загрузить этот драйвер автоматически (ч/з Class.forName() ).
-(2) DataSource - предпочтительнее чем DriverManager, т.к. делает детали подключаемгого дата-сорса прозрачно-видимыми для всего приложения. Поля/св-ва объекта DataSource задаются таким образом, что он (объект) представляет конкретный дата-сорс.
+(2) DataSource - предпочтительнее чем DriverManager, т.к. делает детали подключаемгого дата-сорса прозрачно-видимыми для всего приложения. 
+Поля/св-ва объекта DataSource задаются таким образом, что он (объект) представляет конкретный дата-сорс.
 ----------
 Connecting with DataSource Objects
 Преимущества:
@@ -113,23 +123,32 @@ ResultSet объект предоставляет методы для получ
 1) как можно управлять курсором.
 2) Как он будет отражать параллельные изменения (concurrent changes ) из дата-сорса.
 ---ResultSet Types
-The type of a ResultSet object determines the level of its functionality in two areas: the ways in which the cursor can be manipulated, and how concurrent changes made to the underlying data source are reflected by the ResultSet object.
+The type of a ResultSet object determines the level of its functionality in two areas: 
+1) the ways in which the cursor can be manipulated, 
+2) how concurrent changes made to the underlying data source are reflected by the ResultSet object.
+
 ЧУВТСВИТЕЛЬНОСТЬ RESULT_SET-A определяется 3 типами:
 1) TYPE_FORWARD_ONLY - The result set cannot be scrolled; its cursor moves forward only. it contains the rows that satisfy the query at either the time the query is executed or as the rows are retrieved.
+
 2) TYPE_SCROLL_INSENSITIVE - The result can be scrolled; its cursor can move both forward and backward relative to the current position, and it can move to an absolute position. The result set is insensitive to changes made to the underlying data source while it is open.
+
 3) TYPE_SCROLL_SENSITIVE - The result can be scrolled; its cursor can move both forward and backward relative to the current position, and it can move to an absolute position. The result set reflects changes made to the underlying data source while the result set remains open.
+
 ---ResultSet Concurrency
 Есть 2 concurrency levels:
 1) CONCUR_READ_ONLY - The ResultSet object cannot be updated using the ResultSet interface
 2) CONCUR_UPDATABLE - The ResultSet object can be updated using the ResultSet interface
+
 ---Cursor Holdability
-Вызов метода Connection.commit может закрыть объекты из ResultSet, к-е были созданы в текущей транзакции.
-Чтобы этого ибежать, если надо, можно ис-то св-во holdability у курсра. Оно определяет, будут ли объекты из result_set-а закрыты при коммите.
+Вызов метода Connection.commit() может закрыть объекты из ResultSet, к-е были созданы в текущей транзакции.
+Чтобы этого ибежать, если надо, можно ис-ть св-во holdability у курсра. Оно определяет, будут ли объекты из result_set-а закрыты при коммите.
 Есть следующие ResultSet constants:
 1) HOLD_CURSORS_OVER_COMMIT - курсоры из result_set-а НЕ закрываются, они УДЕРЖИВАЮТСЯ ОТКРЫТЫМИ.
 2) CLOSE_CURSORS_AT_COMMIT - ResultSet objects (cursors) are closed when the commit method is called.
---------------
-Retrieving Column Values from Rows
+----------------------------------------------
+
+*** Retrieving Column Values from Rows ***
+
 result_set interface Объявляет getter методы для получения значения из колонок. Указывать на колонку можно 3 способами:
 1) по индексу колонки (начинается с 1)
 2) по alias-у колонки
@@ -137,93 +156,119 @@ result_set interface Объявляет getter методы для получе�
 Для 2и3 - передаваемый string для имени/алиаса явл-ся case-INsensitive, не чувствителен к регистру. Если несколько колонок имеют одно и то же имя/алиас - будет возвращаться значение из 1-й первой совпадающей колонки.
 2и3 ис-ся когда в запросе есть/заданы имена/алиасы.
 Когда ис-ся имена то разраб должен гарантировать что они уникальны.
-----------------
+---------------------------------------
 Cursors
 У него есть следующие методы:
-1)next - двигает курсор вперёд на 1 строку. возвращает true - если курсор указывает на строку, и false - если указывает на после последней строки.
-2)previous - аналогично 1
-3)first - устанавливает курсор на 1-ю строку. Возвращает true - если курсор ук-ет на 1ю строку. false - если result_set не содержит строк.
-4)last - аналогично 3.
+1) next - двигает курсор вперёд на 1 строку. возвращает true - если курсор указывает на строку, и false - если указывает на после последней строки.
+2) previous - аналогично 1
+3) first - устанавливает курсор на 1-ю строку. Возвращает true - если курсор ук-ет на 1ю строку. false - если result_set не содержит строк.
+4) last - аналогично 3.
 5) beforeFirst - понятно.
 6) afterLast - понятно.
 7) relative(int rows) - двигает курсор на N rows относительно текущей позиции.
 8) absolute(int row) - устанавливает на строку с индексом row.
 Обычно курсов имеет тип TYPE_FORWARD_ONLY, поэтому можно вызывать только метод next.
------------------
+------------------------------------------------
+
 Updating Rows in ResultSet Objects
+
 You cannot update a default ResultSet object, and you can only move its cursor forward.
 По Умолчанию Нельзя изменять объекты в result_set, можно только двигать курсов вперёд.
 Но можно создать такой тип result_set, к-й позволит двигать курсор вперёд и назад и обновлять данные.
-method ResultSet.updateFloat updates the specified column.
-However, none of these updater methods modifies the database; you must call the method ResultSet.updateRow to update the database.
------------
+method ResultSet.updateFloat() updates the specified column.
+However, none of these updater methods modifies the database; you must call the method ResultSet.updateRow() to update the database.
+----------------------------------------------------
+
 Using Statement Objects for Batch Updates
+
 Объекты Statement, PreparedStatement and CallableStatement могут иметь список ассоциированых с ними команд для updating, inserting, or deleting a row, и даже may also contain DDL statements such as CREATE TABLE and DROP TABLE.
 It cannot, however, contain a statement that would produce a ResultSet object, such as a SELECT statement. In other words, the list can contain only statements that produce an update count.
-При создании Statement его список команд  пустой. Чтобы добавить команды ис-ся метод addBatch , для очиски списка ис-ся метод clearBatch. ЧТОбы выполнить этот пакет команд ис-ся метод executeBatch (to send them all to the database to be executed as a unit, or batch).
-int [] updateCounts = stmt.executeBatch();
+
+При создании Statement его список команд  пустой. Чтобы добавить команды ис-ся метод addBatch , для очиски списка ис-ся метод clearBatch. 
+ЧТОбы выполнить этот пакет команд ис-ся метод executeBatch (to send them all to the database to be executed as a unit, or batch).
+         int [] updateCounts = stmt.executeBatch();
+
 To allow for correct error handling, you should always disable auto-commit mode before beginning a batch update.
 The DBMS executes the commands in the order in which they were added to the list of commands.
-The Connection.commit method makes the batch of updates to the COFFEES table permanent. This method needs to be called explicitly because the auto-commit mode for this connection was disabled previously.
-----------------------
+The Connection.commit() method makes the batch of updates to the COFFEES table permanent. This method needs to be called explicitly because the auto-commit mode for this connection was disabled previously.
+-------------------------------------------
+
 Handling Batch Update Exceptions
-При выполнении Batch Update исключение может возникнуть в 2х случаях, Если хотя бы одно из выражение/statement :
+
+При выполнении Batch Update исключение может возникнуть в 2х случаях, Если хотя бы одно из выражений/statement :
 1) ВОЗВРАЩАЕТ result_set.
 2) НЕ ЗАВЕРШИЛОСЬ успешно.
- В Batch Update нельзя добавлять запрос на выборку [query (a SELECT statement)] потому что метод executeBatch возвращает массив с кол-вом обновлённых записей. И batch_upade ждёт такое число от каждого statement, который выполнится успешно.
+    В Batch Update нельзя добавлять запрос на выборку [query (a SELECT statement)] потому что метод executeBatch возвращает массив с кол-вом обновлённых записей. И batch_upade ждёт такое число от каждого statement, который выполнится успешно.
+
 Поэтому only commands that return an update count (commands such as INSERT INTO, UPDATE, DELETE) or that return 0 (such as CREATE TABLE, DROP TABLE, ALTER TABLE) can be successfully executed as a batch with the executeBatch method.
------
-The method ResultSet.moveToInsertRow moves the cursor to the insert row. The insert row is a special row associated with an updatable result set. It is essentially a buffer where a new row can be constructed by calling the updater methods prior to inserting the row into the result set. 
-The method ResultSet.insertRow inserts the contents of the insert row into the ResultSet object and into the database.
-Note: After inserting a row with the ResultSet.insertRow, you should move the cursor to a row other than the insert row. For example, this example moves it to before the first row in the result set with the method ResultSet.beforeFirst. Unexpected results can occur if another part of your application uses the same result set and the cursor is still pointing to the insert row.
-***********************
+----------------------------------------------
+The method ResultSet.moveToInsertRow() moves the cursor to the insert row. The insert row is a special row associated with an updatable result set. It is essentially a buffer where a new row can be constructed by calling the updater methods prior to inserting the row into the result set. 
+The method ResultSet.insertRow() inserts the contents of the insert row into the ResultSet object and into the database.
+Note: After inserting a row with the ResultSet.insertRow(), you should move the cursor to a row other than the insert row. For example, this example moves it to before the first row in the result set with the method ResultSet.beforeFirst(). 
+Unexpected results can occur if another part of your application uses the same result set and the cursor is still pointing to the insert row.
+*******************************************
+
 Prepared Statement
+
 оно позволяет сократить время выполнения запроса, если вы вызываете его много раз.
-Потому что SQL statement is precompiled and stored in a PreparedStatement object. This object can then be used to efficiently execute this statement multiple times. == т.е. в prep_stmt sql выражение пре-компилируется сразу же после создания. И потом этот этап уже не нужен, а будет только выполнение самого запроса.
-The main feature of a PreparedStatement object is that, unlike a Statement object, it is given a SQL statement when it is created. The advantage to this is that in most cases, this SQL statement is sent to the DBMS right away, where it is compiled. As a result, the PreparedStatement object contains not just a SQL statement, but a SQL statement that has been precompiled. This means that when the PreparedStatement is executed, the DBMS can just run the PreparedStatement SQL statement without having to compile it first.
----------
+Потому что SQL statement is precompiled and stored in a PreparedStatement object. 
+This object can then be used to efficiently execute this statement multiple times. == т.е. в prep_stmt sql выражение пре-компилируется сразу же после создания. И потом этот этап уже не нужен, а будет только выполнение самого запроса.
+
+The main feature of a PreparedStatement object is that, unlike a Statement object, it is given a SQL statement when it is created. The advantage to this is that in most cases, this SQL statement is sent to the DBMS right away, where it is compiled. As a result, the PreparedStatement object contains not just a SQL statement, but a SQL statement that has been precompiled. 
+This means that when the PreparedStatement is executed, the DBMS can just run the PreparedStatement SQL statement without having to compile it first.
+--------------------------------------------------
 Передача параметров в PreparedStatement 
 Вместо знаков "?" надо подставить значение, для этого надо вызвать один из setter-ов в prep_stmt.
 After a parameter has been set with a value, it retains that value until it is reset to another value, or the method clearParameters is called.
-------
+-----------------------------------------------
 Executing PreparedStatement Objects
 
 As with Statement objects, to execute a PreparedStatement object, call an execute statement:
 1) "executeQuery" if the query returns only one ResultSet (such as a SELECT SQL statement), 
 2) "executeUpdate" if the query does not return a ResultSet (such as an UPDATE SQL statement), or
 3) "execute" if the query might return more than one ResultSet object.
-----Note that when the return value for executeUpdate is 0, it can mean one of two things:
+
+----Note that when the return value for .executeUpdate() is 0, it can mean one of two things:
 1) The statement executed was an update statement that affected zero rows.
 2) The statement executed was a DDL statement.
-**********************
+***************************************************
+
 Transactions
-Н-р, когда обновляются итога за неделю, они также должны попасть в итоги за месяц.
+
+Н-р, когда обновляются итоги за неделю, они также должны попасть в итоги за месяц.
 Disabling Auto-Commit Mode
-По умолчанию, когда создаётся connection, то он стоит в режиме auto-commit -- это значит что каждое самостоятельное SQL statement считает 1 транзакцией коммитится сразу автоматически коммитится сразу после выполнения.
+По умолчанию, когда создаётся connection, то он стоит в режиме auto-commit -- это значит что каждое самостоятельное SQL statement считается 1 транзакцией, и коммитится сразу (автоматически коммитится сразу после выполнения).
 Но если быть более точным, то по умолчанию sql statement коммитится тогда когда оно завершено/completed, а не когда выполнено/executed.
-А statement считается завершённым/completed, когда получены все его result_set-ы and update counts. Обычно это происходит сразу после его выполенения. 
-----Поэтому сгруппировать 2 и более sql выражения в 1 транзакцию можно отключив авто-комит: con.setAutoCommit(false);
+А statement считается завершённым/completed, когда получены все его result_set-ы and update counts. 
+Обычно это происходит сразу после его выполнения. 
+
+----Поэтому чтобы сгруппировать 2 и более sql выражения в 1 транзакцию, надо отключить авто-комит: con.setAutoCommit(false);
 Для коммита надо явно вызвать con.commit();
 All statements executed after the previous call to the method commit are included in the current transaction and committed together as a unit. 
---------------------
+-------------------------------------------------------------
 ЦЕЛОСТНОСТЬ ДАННЫХ
 Чтобы избежать конфликтов во время транзакций DBMS ис-ет блокировку (механизмы для блокировки доступа к данным, к-е попали в транзакцию).
 При включённом авто-комите блокировки выставляются для этого 1 statement-а.
- After a lock is set, it remains in force until the transaction is committed or rolled back.
+      After a lock is set, it remains in force until the transaction is committed or rolled back.
+
 DIRTY_READ -- это когда происходит чтение данных, до того как они сделаны перманентными (т.к. возможно что будет rollback и они изменят своё значение).
 DIRTY_READ --> (Accessing an updated value that has not been committed is considered a dirty read because it is possible for that value to be rolled back to its previous value. If you read a value that is later rolled back, you will have read an invalid value.)
 
 Как выставляются блокировки определяется УРОВНЕМ ИЗОЛЯЦИИ ТРАНЗАКЦИИ.
  interface Connection имеет 5 видов изоляций:
 1) TRANSACTION_NONE - транзакции не поддерживаются, все ошибки возможны.
+
 2) TRANSACTION_READ_UNCOMMITTED - транзакции  поддерживаются, все ошибки возможны.
-This level allows a row changed by one transaction to be read by another transaction before any changes in that row have been committed (a "dirty read").  If any of the changes are rolled back, the second transaction will have retrieved an invalid row
+This level allows a row changed by one transaction to be read by another transaction before any changes in that row have been committed (a "dirty read").  If any of the changes are rolled back, the second transaction will have retrieved an invalid row.
+
 3) TRANSACTION_READ_COMMITTED - транзакции  поддерживаются, исключаются только ошибки Dirty Reads. Т.е. позволено считывать только закомиченные изменения (will not allow a value to be accessed until after it has been committed.)(DBMS does not allow dirty reads to occur.).
 (This level only prohibits a transaction from reading a row with uncommitted changes in it)
+
 4) TRANSACTION_REPEATABLE_READ - транзакции  поддерживаются, исключаются только ошибки Dirty Reads и Non-Repeatable Reads.
 (This level prohibits a transaction from reading a row with uncommitted changes in it, and it also prohibits the situation where one transaction reads a row, a second transaction alters the row, and the first transaction rereads the row, getting different values the second time (a "non-repeatable read" NRD))
- [NRD происходит когда сначала транзакция "А" считала строку, затем транзакция "В" обновила/изменила данные в этой строке, и затем позже транзакция A снова считала ту же самую строку ещё раз.  
+     [NRD происходит когда сначала транзакция "А" считала строку, затем транзакция "В" обновила/изменила данные в этой строке, и затем позже транзакция A снова считала ту же самую строку ещё раз.  
 В результате Transaction A считала одну и ту же строку, но получила разные данные]
+
 5) TRANSACTION_SERIALIZABLE - транзакции  поддерживаются, ВСЕ ошибки исключаются -- Dirty Reads и Non-Repeatable Reads и phantom reads.
 (This level includes the prohibitions in TRANSACTION_REPEATABLE_READ and further prohibits the situation where one transaction reads all rows that satisfy a WHERE condition, a second transaction inserts a row that satisfies that WHERE condition, and the first transaction rereads for the same condition, retrieving the additional "phantom" row in the second read.)
 [phantom read  - это когда транз_А получает набор строк, удовлетворяющих заданному условию, а затем транз_Б вставляет или обновляет какую-то строку таким образом, что она теперь попадает/удовлетворяет в заданные условия для транз_А. Потом транз_А повторяет выборку по этому условию, и получает дополнительную +1 строку, к-я наз-ся фантомной.]
@@ -280,7 +325,4 @@ A FilteredRowSet object likewise has all the capabilities of a WebRowSet object 
 • Apply filtering criteria so that only selected data is visible. This is equivalent to executing a query on a RowSet object without having to use a query language or connect to a data source.
 ------------
 https://docs.oracle.com/javase/tutorial/jdbc/basics/jdbcrowset.html
-
-
-
 

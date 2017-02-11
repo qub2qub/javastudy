@@ -399,27 +399,31 @@ None of the synchronizers in java.util.concurrent extends AQS directly — they 
 
 *** 14.6 AQS in java.util.concurrent synchronizer classes ***
 *** 14.6.1 ReentrantLock ***
-ReentrantLock supports only exclusive acquisition, so it implements tryAcquire, tryRelease, and isHeldExclusively; 
+ReentrantLock supports ONLY EXCLUSIVE ACQUISITION, so it implements tryAcquire, tryRelease, and isHeldExclusively; 
+
 ReentrantLock uses the synchronization state to hold the lock acquisition count, and maintains an owner variable holding the identity of the owning thread that is modified only when the current thread has just acquired the lock or is just about to release it.
-[Because the protected state-manipulation methods have the memory semantics of a volatile read or write and ReentrantLock is careful to read the owner field only after calling getState and write it only before calling setState, ReentrantLock can piggyback on the memory semantics of the synchronization state, and thus avoid further synchronization—see Section 16.1.4.]
+[Because the protected state-manipulation methods have the memory semantics of a volatile read or write and ReentrantLock is careful to READ THE OWNER FIELD only after calling getState() and write it only before calling setState(), ReentrantLock can piggyback on the memory semantics of the synchronization state, and thus avoid further synchronization — see Section 16.1.4.]
 
-When a thread attempts to acquire a lock, tryAcquire first consults the lock state. If it is unheld, it tries to update the lock state to indicate that it is held. Because the state could have changed since it was first inspected a few instructions ago, tryAcquire uses compareAndSetState to attempt to atomically update the state to indicate that the lock is now held and confirm that the state has not changed since last observed. (See the description of compareAndSet in Section 15.3.) If the lock state indicates that it is already held, if the current thread is the owner of the lock, the acquisition count is incremented; if the current thread is not the owner of the lock, the acquisition attempt fails.
+When a thread attempts to acquire a lock, tryAcquire() first consults the lock state. If it is unheld, it tries to update the lock state to indicate that it is held. Because the state could have changed since it was first inspected a few instructions ago, tryAcquire() uses compareAndSetState() to attempt to atomically update the state to indicate that the lock is now held and confirm that the state has not changed since last observed. 
+(See the description of compareAndSet in Section 15.3.) 
+If the lock state indicates that it is already held, if the current thread is the owner of the lock, the acquisition count is incremented; if the current thread is not the owner of the lock, the acquisition attempt fails.
 
-ReentrantLock also takes advantage of AQS's built-in support for multiple condition variables and wait sets. Lock.newCondition returns a new instance of ConditionObject, an inner class of AQS.
+ReentrantLock also takes advantage of AQS's built-in support for multiple condition variables(= много new Condition()) and wait sets. Lock.newCondition() returns a new instance of ConditionObject, an inner class of AQS.
 
 *** 14.6.2 Semaphore and CountDownLatch ***
-
+Semaphore -- как тоннель с билетами.
 Semaphore uses the AQS synchronization STATE to hold the count of permits currently available. 
-The tryAcquireShared method (see Listing 14.16) first computes the number of permits remaining, and if there are not enough, returns a value indicating that the acquire failed. 
+The tryAcquireShared() method (see Listing 14.16) first computes the number of permits remaining, and if there are not enough, returns a value indicating that the acquire failed. 
+
 If sufficient permits appear to be left, it attempts to atomically reduce the permit count using compareAndSetState(). 
 If that succeeds (meaning that the permit count had not changed since it last looked), it returns a value indicating that the acquire succeeded. The return value also encodes whether other shared acquisition attempts might succeed, in which case other waiting threads will also be unblocked.
 --------------
-CountDownLatch uses AQS in a similar manner to Semaphore: the synchronization state holds the current count. The countDown method calls release, which causes the counter to be decremented and unblocks waiting threads if the counter has reached zero; await calls acquire, which returns immediately if the counter has reached zero and otherwise blocks.
+CountDownLatch uses AQS in a similar manner to Semaphore: the synchronization state holds the current count. The countDown method calls release, which causes the counter to be decremented and unblocks waiting threads if the counter has reached zero; await() calls acquire, which returns immediately if the counter has reached zero and otherwise blocks.
 
 *** 14.6.3    FutureTask ***
 Future.get() has semantics that are very similar to that of a latch — if some event (the completion or cancellation of the task represented by the FutureTask) has occurred, then threads can proceed, otherwise they are queued until that event occurs.
 
-FutureTask uses the AQS synchronization state to hold the task status— running, completed, or cancelled. It also maintains additional state variables to hold the result of the computation or the exception it threw. It further maintains a reference to the thread that is running the computation (if it is currently in the running state), so that it can be interrupted if the task is cancelled.
+FutureTask uses the AQS synchronization state to hold the task status —  running, completed, or cancelled. It also maintains additional state variables to hold the result of the computation or the exception it threw. It further maintains a reference to the thread that is running the computation (if it is currently in the running state), so that it can be interrupted if the task is cancelled.
 
 ИЗ JDK FutureTask.java:
      * Revision notes: This differs from previous versions of this
@@ -443,6 +447,7 @@ operations on the WRITE LOCK use the EXCLUSIVE ACQUIRE() and RELEASE() methods.
 
 Internally, AQS maintains a queue of waiting threads, keeping track of whether a thread has requested exclusive or shared access. 
 In ReentrantReadWriteLock, when the lock becomes available, if the thread at the head of the queue was looking for write access it will get it, and if the thread at the head of the queue was looking for read access, all queued threads up to the first writer will get it.
+
 [This mechanism does not permit the choice of a reader-preference or writer-preference policy, as some read-write lock implementations do. For that, either the AQS wait queue would need to be something other than a FIFO queue, or two queues would be needed. However, such a strict ordering policy is rarely needed in practice; if the nonfair version of ReentrantReadWriteLock does not offer acceptable liveness, the fair version usually provides satisfactory ordering and guarantees nonstarvation of readers and writers.]
 
 *** Summary ***
