@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>init immutable</title>
+    <link rel="stylesheet" href="../Git Guide/grey.css">
+</head>
+<body>
+<div class="day">
+
+
+	<div id="larval_objects_in_the_vm" class="entry">
+
+	<h3 class="entry-title">
+			larval objects in the VM
+	    </h3>
+
+    <h4 class="entry-meta">By John.Rose-Oracle on <a href="#">Oct 02, 2010</a></h4>
+
+    <div class="entry-body">
+                                        	Or, the ascent from squishy to crunchy.
+
+<p>
+
+I want to talk about initialization of immutable data structures on the JVM.  But first I want to note that, in good news for Latin lovers (and those with Latin homework), Google <a href="http://googletranslate.blogspot.com/2010/10/veni-vidi-verba-verti.html"> has made Latin translation available</a> <a href="http://translate.google.com/#la|en|ad+mundi+stupor">ad stupor mundi</a>.
+
+</p><p>
+
+<a href="http://translate.google.com/#en|la|that+has+nothing+to+do+with+Java">That has nothing to do with Java</a>, but it reminds me of a Java design pattern that deserves to be unmasked and recognized:  The larval stage.  The idea (which will be instantly familiar to experienced programmers) is that every Java data structure goes through a construction phase during which it is incomplete, and at some point becomes mature enough to publish generally.  This pattern is most readily seen in Java constructors themselves.  The <code>this</code> value during the execution of an object’s constructor in general contains uninitialized fields.  Until the constructor completes normally, the object may be regarded as in a <em>larval</em> stage, with its internal structure undergoing radical private changes.  When the constructor completes, the object may be viewed, by contrast, as having entered a permanent <em>adult</em> stage.  In that stage, the object is “ready for prime time” and may be exposed to untrusted code, published to other threads, etc.
+
+</p><p>
+
+This pattern is so important that we amended the 1.1 version of Java (here is an <a href="http://www.public.iastate.edu/~java/docs/guide/innerclasses/html/innerclasses.doc.html">old link to my paper</a>) to include the concept of <em>blank finals</em> to enable the adult stage of an object to be immutable.  Later on, the JSR 133 Expert Group <a href="http://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#finalRight">enhanced the Java memory model</a> to guarantee that larval stages of immutable objects could not be made unintentionally visible to other threads.  The result is that immutable Java objects (starting with <a href="http://download.oracle.com/javase/1.4.2/docs/api/java/lang/Integer.html"><code>Integer</code></a> and <a href="http://download.oracle.com/javase/1.4.2/docs/api/java/lang/String.html"><code>String</code></a>) can be easily defined and safely used even in massively multi-threaded systems.  Especially on such systems, immutable data structures are of great importance, because they allow threads to communicate using the basic capabilities of the multi-processor memory system, without expensive synchronization operations.  (This isn’t the best imaginable way for processors to communicate, but it is the communication channel to which chip designers give the most attention.  The <a href="http://www.thocp.net/biographies/papers/backus_turingaward_lecture.pdf">Von Neumann haunting</a> appears to be permanent.)
+
+</p><p>
+
+Something is missing, though.  The support I just described applies only to objects which are able to enter the adult stage when their constructor completes.  This means that the complete information content of an object must be supplied as arguments (or some other way) to the constructor.  If an immutable object’s contents are built up incrementally in a variable number of optional steps, the construction of the object is better expressed using a builder pattern.  In this pattern, a builder object acts as a front-end or mask for the object under construction.  The builder object has an API which accepts requests to add information content to a larval object (which may or may not actually exist yet), and is eventually asked to unveil the adult object.  The first instance of this pattern in Java was the trusty <a lang="" stringbuffer.html"="" java="" api="" docs="" 1.4.2="" javase="" download.oracle.com="" href"http:="">StringBuffer</a>, which collects <code>append</code> requests and eventually produces the completed string in response to the <code>toString</code> request.  More recently, Google has made an admirable investment in <a href="http://guava-libraries.googlecode.com/svn/trunk/javadoc/com/google/common/collect/ImmutableList.Builder.html">builder-based APIs</a> for immutable collections of various sorts.
+
+</p><p>
+
+Still, from my viewpoint as a JVM tinkerer, something else is missing.  It seems to me that the most natural way to express the creation of an immutable object is what I see when I read the machine code for creating an <code>Integer</code> or <code>String</code>:  First you allocate a blank object, then you fill it in, then you publish it.  Just before you publish it, you take whatever steps needed to make sure everybody will agree on its contents.  (This is sometimes called a <a href="http://g.oswego.edu/dl/jsr166/dist/docs/java/util/concurrent/atomic/Fences.html">fence</a>, which is a subject of <a oldhref="http://distractible.org/wp-content/uploads/2009/12/fent.jpg" href="http://www.bmwbmw.org/forums/viewtopic.php?p=150086#p150086">multiple posts</a>.)  After you publish the object, nobody changes it ever.  (Well, in some cases, maybe there’s an <a href="http://groups.google.com/group/jvm-languages/msg/6f55b6143863d2ce">end to the epoch</a>.  But that is another story.)  The only changes ever made to that block of memory are performed by the garbage collector, until (and unless) the block gets reused for another object.
+
+</p><p>
+
+In other words, using the larval/adult metaphor for this pattern, the object building process starts out with an incomplete larval object, which is masked behind (or cocooned within) a module (wish I could say monad here) that sets up the object, and when the object is mature, eventually hatches it out into the open as an adult.  The organization of the code which sets up the object is <em>not</em> in general as simple as a constructor body.
+
+</p><p>
+
+In order to make this work better in more cases, I want to give the builder object fully privileged access to the object in its larval state.  And I want to these full privileges to extend to the initialization of finals, a privilege which is currently given only to constructors.  The increased flexibility means that the final fields will be initialized by multiple blocks of code.  The blocks of code may even repeatedly initialize finals (as the underlying array in a <code>StringBuffer</code> is subject to repeated extension or truncation).  The blocks of code may be invoked by untrusted code (via the builder API, not directly).  Eventually the builder declares that the object is done.  Just before it publishes the object, it flushes all the writes.  The flush sometimes appears as a memory fence operation in the machine code.  This part is especially problematic, since the current Java and JVM specifications only guarantee correct flushing of writes for variables used to reach final fields.  The guarantees for non-final fields and array elements are weaker, and the interactions are subtle.
+
+</p><p>
+
+What would this look like in an amended Java and JVM?  Maybe non-public access to finals could be relaxed to allow writing, so that if a builder object has privileged access to do so, it can write the finals of a larval object.  There would have to be an explicit “hatching” step, I think, to clearly mark the pre-publication point at which writing must stop and memory must be flushed.  One or more new keywords could be used to indicate statically which finals are writable, which methods or classes can do the writing, and where the writing must stop.  There is probably a way to express it all without keywords, too, or a combination of keywords (“volatile final”, for for those looking to recoil from rebarbative syntax).  The surface syntax is less important than the pattern.  The pattern must prevent you from applying a larval operation to an adult operation, both in the language and in the JVM.  That might be an innocent mistake, or a deliberate attack; in either case it must be provably impossible.  The important thing to recognize is that there are separate larval and adult sets of operations (APIs) and only the larval ones are allowed to change finals.
+
+</p><p>
+
+But a static pattern cannot ensure such safety, unless we allow another new thing.  That is some kind of type-state or changeable class, which expresses the transition from larval to adult stage.  A direct and flexible way of making this distinction would be to allow a Java object to have two types over its lifetime, a larval type with an extended set of initialization operations, and an adult type.  The type change operation from larva to adult would be a low-level JVM operation which would do several things:
+</p><ul>
+<li>mark the object permanently as adult
+</li><li>forbid all future attempts to invoke methods classified as larval
+</li><li>forbid all future changes to finals
+</li><li>flush all pending memory changes relevant to the object
+</li></ul>
+
+<p>
+
+In all cases to date, the de facto larval API has privileged elements, like the package-private <code>String</code> constructor used by <code>StringBuffer</code>.  Most uses of the larval type-state I am suggesting would probably continue to be restricted to the internals of a specific module.  Explicit larval objects would tend to allow builder objects to be simpler, since the builder could drop information into the larval object as soon as it is known, rather than (as at present) keep shadow copies until the constructor is finally invoked.
+
+</p><p>
+
+With better protection, based on type-state, it might be reasonable in some cases to make larval APIs public.  For a large-scale example, a transactional database might support a public API for creating a larval view of a new version of the database, which would allow free mutation of the database contents.  The adult form would be a read-only view of some other version.
+
+</p><p>
+
+In the small scale (which is more typical), when a Java API designer creates a tuple-like class for something like complex numbers, there are always conflicting impulses between making the structure immutable, so that it can be safely used across threads, or else making the structure mutable (and often with public fields), so that the objects can be used directly as scratch variables in a computation.  If the choice is made for mutability, every object must be defensively copied before it handed to untrusted code.  If the choice is made for immutability, a fresh object must be made for every intermediate value of a computation.  Years ago, the tilt was towards mutability, probably under the assumption that objects were expensive to allocate.  This tilt might be visible in the choice to make Java arrays only mutable, and in the mutability of the <code>Date</code> class.  (In the worst case there are mostly-immutable data structures, such as <code>java.lang.reflect.Method</code>, which has one mutable bit.)  For <code>Complex</code>, there are <a href="http://www.cs.umbc.edu/~squire/math/Complex.java">mutable sketches</a> floating around the net, but the <a href="http://commons.apache.org/math/apidocs/org/apache/commons/math/complex/Complex.html">Apache commons design</a> is immutable.  What I want to point out here is that, if we had type-state with control of mutability, programmers would get both from two stages of the same type:  The larval form could have public mutable fields, useful as temporaries, while the adult form would be immutable and safe to throw around.  Defensive copying would be rare to nonexistent, and failures to copy could be detected by checks on type-state.
+
+</p><p>
+
+All this begs the question of what type-state looks like in the JVM.  That is a discussion for another day, but I will drop a hint, with another biological metaphor:  If a <em>class</em> is a standard unit of taxonomy, what would we say if we had to suddenly distinguish objects of the same class?  Well, we would have to invent a subsidary unit of taxonomy, such as the <em>species</em>.  There are several potential uses of such a refined distinction: Storing the type parameters for <a href="http://portal.acm.org/citation.cfm?id=1244286">reified generics</a>, tracking life cycle invariants (as here with larva vs. adult), and <a href="http://cr.openjdk.java.net/~jrose/pres/201009-ThunderingRhinos.pdf">optimizing</a> prototype based languages.  At the JVM level, all these things are an extra indirection between object and class, and could be formalized and made available to the library implementor.
+
+</p><p>
+
+A final word about terminology:  The term “larva” comes from a <a href="http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.04.0059:entry=larva">Latin word</a> which can mean a mask; a “larvatus” is something that is masked.  Creepily, the word also refers to witches, skeletons, and (as with modern languages) worms.  I suppose that if we invent larval data structures, the name will remind us to keep them well covered, at least until their little exoskeletons have hardened.  More specifically, unfinished data structures should be carefully masked.  Or, as an ancient Roman software engineer might have remarked, <a href="http://translate.google.com/#la|en|hoc+collectio+est+imperfectum,+sit+larvatum."><em>Collectio imperfectum larvatum sit</em></a>.
+        
+    </p></div>
+
+    <div class="entry-footer">
+        <p class="entry-category">Category: JVM</p>
+        <p class="entry-tags">Tags:  none </p>
+        <p class="entry-links">
+        <a href="https://blogs.oracle.com/jrose/entry/larval_objects_in_the_vm">Permanent link to this entry</a>
+                        </p>
+    </div>
+
+	    
+	</div>
+
+</div>
+</body>
+</html>

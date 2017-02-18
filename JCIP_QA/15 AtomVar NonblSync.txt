@@ -157,7 +157,10 @@ There are 12 atomic variable classes, divided into 4 groups:
 (To simulate atomic variables of other primitive types, you can cast short or byte values to and from int, and use floatToIntBits() or doubleToLongBits() for floating-point numbers.)
 
 The atomic array classes are arrays whose elements can be updated atomically.
+Т.е. когда ты записываешь переменную в массив или считываешь из неё.
+
 The atomic array classes provide volatile access semantics to the elements of the array, a feature not available for ordinary arrays — a volatile array has VOLATILE semantics ONLY FOR THE ARRAY REFERENCE, not for its elements.
+А в примере с volatile array видна будет только ссылка на массив, а переменные в массиве(их изменения) могут быть не видны другим потокам.
 
 While the atomic scalar classes extend Number, they do not extend the primitive wrapper classes such as Integer or Long. 
 In fact, they cannot: the primitive wrapper classes are immutable whereas the atomic variable classes are mutable. 
@@ -169,6 +172,8 @@ public class AtomicInteger extends Number implements java.io.Serializable {..}
 We can combine the technique from OneValueCache with atomic references to close the race condition by atomically updating the reference to an immutable object holding the lower and upper bounds. 
 CasNumberRange.java in Listing 15.3; by using compareAndSet() it can update the upper or lower bound without the race conditions of NumberRange.
 
+AtomicReference гарантирует АТОМАРНУЮ замену ссылки (т.е. ты создаёшь новый объект, и его сетаешь вместо старого ис-я КАС)
+
 *** 15.3.2 Performance comparison: locks versus atomic variables ***
 Listings 15.4 and 15.5 show two implementations of a thread-safe PRNG, one using ReentrantLock and the other using AtomicInteger. 
 
@@ -179,9 +184,11 @@ In practice, atomics tend to scale better than locks because atomics deal more e
 The performance reversal between locks and atomics at differing levels of contention illustrates the strengths and weaknesses of each. 
 With LOW TO MODERATE CONTENTION, atomics offer better scalability; 
 with HIGH CONTENTION, locks offer better contention avoidance. 
-(CAS-based algorithms also outperform lock-based ones on single-CPU systems, since a CAS always succeeds on a single-CPU system except in the unlikely case that a thread is preempted in the middle of the read-modify-write operation.)
+(CAS-based algorithms also outperform lock-based ones on single-CPU systems, since a CAS always succeeds on a single-CPU system except in the unlikely case that a thread is preempted(вытеснили, прервали) in the middle of the read-modify-write operation.)
 
-Figures 15.1 and 15.2 include a third curve; an implementation of PseudoRandom that uses a ThreadLocal for the PRNG state. This implementation approach changes the behavior of the class—each thread sees its own private sequence of pseudorandom numbers, instead of all threads sharing one sequence—but illustrates that it is often cheaper to not share state at all if it can be avoided. We can improve scalability by dealing more effectively with contention, but true scalability is achieved only by eliminating contention entirely.
+Figures 15.1 and 15.2 include a third curve; an implementation of PseudoRandom that uses a ThreadLocal for the PRNG state. 
+This implementation approach changes the behavior of the class — each thread sees its own private sequence of pseudorandom numbers, instead of all threads sharing one sequence — but illustrates that it is often cheaper to not share state at all if it can be avoided. 
+We can improve scalability by dealing more effectively with contention, but true scalability is achieved only by eliminating contention entirely.
 
 *** 15.4 Nonblocking algorithms ***
 Lock-based algorithms are at risk for a number of liveness failures. 
@@ -216,10 +223,19 @@ SOME WORK IS DONE SPECULATIVELY(рисковано, допускать, дела
 
 In ConcurrentStack, when we construct the Node representing the new element, WE ARE HOPING that the value of the next reference will still be correct by the time it is installed on the stack, but ARE PREPARED TO RETRY in the event of contention(разногласие, конфликт, спор, соревнование).
 
-Nonblocking algorithms like ConcurrentStack derive their thread safety from the fact that, like locking, compareAndSet() PROVIDES BOTH ATOMICITY AND VISIBILITY GUARANTEES. 
+Nonblocking algorithms like ConcurrentStack derive their THREAD SAFETY from the fact that, like locking, compareAndSet() PROVIDES BOTH ATOMICITY AND VISIBILITY GUARANTEES. 
 ---When a thread changes the state of the stack, it does so with a compareAndSet, which has the memory effects of a VOLATILE WRITE.
 ---When a thread examines the stack, it does so by calling get on the same AtomicReference, which has the memory effects of a VOLATILE READ. 
 -So any CHANGES made by one thread are SAFELY PUBLISHED to any other thread that examines the state of the list. And the list is modified with a compareAndSet that atomically either updates the top reference or fails if it detects interference from another thread.
+
+--------------------------------------
+The visibility effects of volatile variables extend beyond the value of the volatile variable itself. When thread A writes to a volatile variable and subsequently thread B reads that same variable, the values of all variables that were visible to A prior to writing to the volatile variable become visible to B after reading the volatile variable. 
+So from a memory visibility perspective, writing a volatile variable is like exiting a synchronized block and reading a volatile variable is like entering a synchronized block. 
+However, we do not recommend relying too heavily on volatile variables for visibility; code that relies on volatile variables for visibility of arbitrary state is more fragile and harder to understand than code that uses locking.
+
+Under the new memory model, it is still true that volatile variables cannot be reordered with each other. The difference is that it is now no longer so easy to reorder normal field accesses around them. Writing to a volatile field has the same memory effect as a monitor release, and reading from a volatile field has the same memory effect as a monitor acquire. In effect, because the new memory model places stricter constraints on reordering of volatile field accesses with other field accesses, volatile or not, anything that was visible to thread A when it writes to volatile field f becomes visible to thread B when it reads f. 
+--------------------------------------
+
 
 *** 15.4.2    A nonblocking linked list *** 330
 The trick to building nonblocking algorithms is TO LIMIT THE SCOPE OF ATOMIC CHANGES TO A SINGLE VARIABLE. 
@@ -247,7 +263,7 @@ If B "helps" A by finishing A's operation, B can proceed with its own operation 
 
 Inserting a new element involves updating two pointers. The first links the new node to the end of the list by updating the next pointer of the current last element; the second swings the tail pointer around to point to the new last element. 
 Between these two operations, the queue is in the intermediate state, shown in Figure 15.4. 
-After the second update, the queue is again in the quiescent state (в состоянии покоя), shown in Figure 15.5.
+After the second update, the queue is again in the quiescent state (в состоянии покоя,устойчивый), shown in Figure 15.5.
 
 Поэтому ключ к применению тех 2х трюков:
 1) if the queue is in the quiescent state, the next field of the link node pointed to by tail is null, 
@@ -278,11 +294,17 @@ If D fails, the inserting thread returns anyway rather than retrying the CAS, be
 *** 15.4.3 Atomic field updaters *** 335
 Instead of representing each Node with an atomic reference, ConcurrentLinkedQueue uses an ORDINARY VOLATILE REFERENCE and updates it through the reflection-based AtomicReferenceFieldUpdater, as shown in Listing 15.8.
 
-The atomic field updater classes (available in Integer, Long, and Reference versions) represent a reflection-based "view" of an existing volatile field so that CAS can be used on existing volatile fields. The updater classes have no constructors; to create one, you call the newUpdater factory method, specifying the class and field name. The field updater classes are not tied to a specific instance; one can be used to update the target field for any instance of the target class. The atomicity guarantees for the updater classes are weaker than for the regular atomic classes because you cannot guarantee that the underlying fields will not be modified directly—the compareAndSet and arithmetic methods guarantee atomicity only with respect to other threads using the atomic field updater methods.
+The atomic field updater classes (available in Integer, Long, and Reference versions) represent a reflection-based "view" of an existing volatile field so that CAS can be used on existing volatile fields. 
+The updater classes have no constructors; to create one, you call the newUpdater() factory method, specifying the class and field name. 
+The field updater classes are not tied to a specific instance; one can be used to update the target field for any instance of the target class.
+The atomicity guarantees for the updater classes are weaker than for the regular atomic classes because you cannot guarantee that the underlying fields will not be modified directly — потому что the compareAndSet() and arithmetic methods guarantee atomicity only WITH RESPECT TO OTHER THREADS USING THE ATOMIC FIELD UPDATER METHODS.
+
+!!! т.е. если все потоки будут обновлять значение через этот же апдейтер -- то всё ок, атомарность гарантируется. А если кто-то будет изменять значение напрямую -- то не гарантируется.
 
 This somewhat circuitous approach(обходной путь) is used entirely for performance reasons. For frequently allocated, shortlived objects like queue link nodes, eliminating the creation of an AtomicReference for each Node is significant enough to reduce the cost of insertion operations.
 
-However, in nearly all situations, ordinary atomic variables perform just fine—in only a few cases will the atomic field updaters be needed. (The atomic field updaters are also useful when you want to perform atomic updates while preserving the serialized form of an existing class.)
+However, in nearly all situations, ordinary atomic variables perform just fine — in only a few cases will the atomic field updaters be needed. (The atomic field updaters are also useful when you want to perform atomic updates while [preserving(сохранять, оберегать) the serialized form] of an existing class.)
+Т.е. чтобы класс после любой оперции был в consistent state, и его можно было передавать в сериализованном виде.
 
 *** 15.4.4 The ABA problem ***
 A -> B -> A
@@ -295,11 +317,14 @@ For some algorithms, changing V from A to B and then back to A still counts as a
 
 This ABA problem can arise in algorithms that do their own memory management for link node objects. 
 In this case, that the head of a list still refers to a previously observed node IS NOT ENOUGH TO IMPLY that the CONTENTS of the list HAVE NOT CHANGED. 
+В ноде лежит значение, ты не изменяешь нод, а меняешь её контент, и там уже другое значение.
 
-If you cannot avoid the ABA problem by letting the garbage collector manage link nodes for you, there is still a relatively simple SOLUTION:
+If you CANNOT avoid the ABA problem by letting the garbage collector manage link nodes for you, [т.е. GC решает АБА проблему]
+[а без GC --]there is still a relatively simple SOLUTION:
 INSTEAD OF UPDATING THE VALUE OF A REFERENCE, UPDATE A PAIR OF VALUES, A REFERENCE AND A VERSION NUMBER. 
 
-Even if the value changes from A to B and back to A, the version numbers will be different. AtomicStampedReference (and its cousin AtomicMarkableReference) provide atomic conditional update on a pair of variables. 
+Even if the value changes from A to B and back to A, the version numbers will be different. 
+AtomicStampedReference (and its cousin AtomicMarkableReference) provide atomic conditional update on a pair of variables. 
 AtomicStampedReference updates an object reference-integer pair, allowing "versioned" references that are immune[8-In practice, anyway; theoretically the counter could wrap.] to the ABA problem. 
 
 Similarly, AtomicMarkableReference updates an object reference-boolean pair that is used by some algorithms to let a node remain in a list while being marked as deleted.[9-Many processors provide a double-wide CAS (CAS2 or CASX) operation that can operate on a pointer-integer pair, which would make this operation reasonably efficient. 
@@ -309,6 +334,8 @@ As of Java 6, AtomicStampedReference does not use double-wide CAS even on platfo
 
 *** Summary ***
 
-Nonblocking algorithms maintain thread safety by using low-level concurrency primitives such as compare-and-swap instead of locks. These low-level primitives are exposed through the atomic variable classes, which can also be used as "better volatile variables" providing atomic update operations for integers and object references.
+Nonblocking algorithms maintain thread safety by using low-level concurrency primitives such as compare-and-swap instead of locks. 
+These low-level primitives are exposed through the atomic variable classes, which can also be used as "better volatile variables" providing atomic update operations for integers and object references.
 
-Nonblocking algorithms are difficult to design and implement, but can offer better scalability under typical conditions and greater resistance to liveness failures. Many of the advances in concurrent performance from one JVM version to the next come from the use of nonblocking algorithms, both within the JVM and in the platform libraries.
+Nonblocking algorithms are difficult to design and implement, but can offer better scalability under typical conditions and greater resistance to liveness failures. 
+Many of the advances in concurrent performance from one JVM version to the next come from the use of nonblocking algorithms, both within the JVM and in the platform libraries.
