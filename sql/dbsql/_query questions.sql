@@ -49,7 +49,7 @@ SELECT * FROM comp.pc ORDER BY price DESC NULLS LAST;
 SELECT DISTINCT model FROM
   (SELECT model, Rank() OVER (ORDER BY price) rn
     FROM comp.pc WHERE price IS NOT NULL) X
-WHERE rn =1;
+WHERE rn=1;
 
 -- Найти максимальное значение среди средних цен ПК, посчитанных для каждого производителя отдельно.
 -- http://www.sql-tutorial.ru/ru/book_aggregate_function_to_aggregate_function.html

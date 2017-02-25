@@ -1,0 +1,37 @@
+ch02 Creating and Destroying Objects
+Item 1: Consider static factory methods instead of constructors
+
+The normal way for a class to allow a client to obtain an instance of itself is to provide a public constructor. 
+A class can provide a public static factory method, which is simply a static method that returns an instance of the class. 
+
+Note that a static factory method is not the same as the Factory Method pattern from Design Patterns. 
+The static factory method described in this item has no direct equivalent in Design Patterns.
+
+A class can provide its clients with static factory methods instead of, or in addition to, constructors. 
+Но у этого есть свои + и -
+
+11 One advantage of static factory methods is that, unlike constructors, they have names. If the parameters to a constructor do not, in and of themselves, describe the object being returned, a static factory with a well-chosen name is easier to use and the resulting client code easier to read.
+
+A class can have only a single constructor with a given signature. 
+поэтому прогеры делают второй конструктор, whose parameter lists differ only in the order of their parameter types.
+This is a really bad idea. People reading code that uses these constructors will not know what the code does without referring to the class documentation.
+
+!! In cases where a class seems to require multiple constructors with the same signature, replace the constructors with static factory methods and carefully chosen names to highlight their differences.
+
+22 A second advantage of static factory methods is that, unlike constructors, they are not required to create a new object each time they’re invoked. This allows immutable classes (Item 15) to use preconstructed instances, or to cache instances as they’re constructed, and dispense them repeatedly to avoid creating unnecessary duplicate objects.
+The ability of static factory methods to return the same object from repeated invocations allows classes to maintain strict control over what instances exist at any time.
+Classes that do this are said to be INSTANCE-CONTROLLED. 
+
+33 A third advantage of static factory methods is that, unlike constructors, they can return an object of any subtype of their return type. 
+This gives you great flexibility in choosing the class of the returned object.
+
+One application of this flexibility is that an API can return objects without making their classes public. Hiding implementation classes in this fashion leads to a very compact API. This technique lends itself to interface-based frameworks (Item 18), where interfaces provide natural return types for static factory methods.
+
+Interfaces can’t have static methods, so by convention, static factory methods for an interface named Type are put in a noninstantiable class (Item 4) named Types.
+Например, см java.util.Collections
+public class Collections {
+    // Suppresses default constructor, ensuring non-instantiability.
+    private Collections() {
+    }
+....
+
