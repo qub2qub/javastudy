@@ -132,6 +132,7 @@ Long sequences of identically typed parameters can cause subtle bugs. If the cli
 Но у него есть "минус":
 Because construction is split across multiple calls, a JavaBean may be in an inconsistent state partway through its construction.
 The class does not have the option of enforcing consistency merely by checking the validity of the constructor parameters. 
+И класс становиться muttable.
 
 A related disadvantage is that the JavaBeans pattern precludes[предотвращать, устранять, мешать, препятствовать] the possibility of making a class immutable (Item 15), and requires added effort on the part of the programmer to ensure thread safety.
 
@@ -144,6 +145,7 @@ Instead of making the desired object directly,
 
 The builder is a static member class (Item 22) of the class it builds.
 Т.е. билдер -- это статический внутренний класс внутри создаваемого класса.
+А то и нельзя было бы создать инстанс билдера, если бы он был не статик, без сознания самого класса.
 
 Note that NutritionFacts is immutable, and that all parameter default values are in a single location. The builder’s setter methods return the builder itself so that invocations can be chained. 
 
@@ -160,7 +162,8 @@ This has the advantage of detecting the invariant failure as soon as the invalid
 
 !! A minor advantage of builders over constructors is that builders can have multiple varargs parameters. Constructors, like methods, can have only one varargs parameter. Because builders use separate methods to set each parameter, they can have as many varargs parameters as you like, up to one per setter method.
 
-The Builder pattern is flexible. A single builder can be used to build multiple objects. The parameters of the builder can be tweaked between object creations to vary the objects. The builder can fill in some fields automatically, such as a serial number that automatically increases each time an object is created.
+The Builder pattern is flexible. A single builder can be used to build multiple objects. The parameters of the builder can be tweaked between object creations to vary the objects. 
+The builder can fill in some fields automatically, such as a serial number that automatically increases each time an object is created.
 
 --A builder whose parameters have been set makes a fine Abstract Factory.
 тогда client can pass such a builder to a method to enable the method to create one or more objects for the client. 
@@ -174,6 +177,7 @@ Methods that take a Builder instance would typically constrain the builder’s t
 	Tree buildTree(Builder<? extends Node> nodeBuilder) { ... }
 
 The traditional Abstract Factory implementation in Java has been the Class object, with the newInstance() method playing the part of the build() method. 
+т.е. традиционно подразумевается, что для получения инстанса в фабрику ты передаёшь класс_обжект.
 This usage is FRAUGHT WITH(полный, преисполненный; чреватый) problems. 
 
 1) The newInstance() method always attempts to invoke the class’s parameterless constructor, which may not even exist. 
@@ -181,7 +185,7 @@ You don’t get a compile-time error if the class has no accessible parameterles
 Instead, the client code must cope with InstantiationException or IllegalAccessException at runtime, which is ugly and inconvenient. 
 2) Also, the newInstance() method propagates(распространять, передавать от поколения к поколению) any exceptions thrown by the parameterless constructor, even though newInstance() lacks the corresponding throws clauses. 
 
-In other words, Class .newInstance() breaks compile-time exception checking. The Builder interface, shown above, corrects these deficiencies(недостаток, порок; неполноценность, голодание).
+In other words, Class.newInstance() breaks compile-time exception checking. The Builder interface, shown above, corrects these deficiencies(недостаток, порок; неполноценность, голодание).
 
 МИНУСЫ Builder pattern:
 1) In order to create an object, you must first create its builder. 
@@ -210,12 +214,12 @@ public class Elvis {
 	public static Elvis getInstance() { return INSTANCE; }
 }
 
-One advantage of the factory-method approach is that it gives you the flexibility to change your mind about whether the class should be a singleton without changing its API. 
+One advantage of the factory-method approach is that it gives you the flexibility to change your mind about whether the class should be a singleton without changing its API.
 The factory method returns the sole instance but could easily be modified to return, say, a unique instance for each thread that invokes it. 
 A second advantage, concerning generic types, is discussed in Item 27. Often neither of these advantages is relevant, and the final-field approach is simpler.
 
-Чтобы сделать singleton serializable (Chapter 11),недостаточно просто добавить "implements Serializable" to its declaration. 
-To maintain the singleton guarantee, you have to declare all instance fields transient and provide a readResolve() method (Item 77). 
+Чтобы сделать singleton serializable (Chapter 11), недостаточно просто добавить "implements Serializable" to its declaration. 
+To maintain the singleton guarantee, you have to declare all instance fields "transient" and provide a readResolve() method (Item 77). 
 Otherwise, each time a serialized instance is deserialized, a new instance will be created, leading, in the case of our example, to spurious Elvis sightings. To prevent this, add this readResolve() method to the Elvis class:
 	private Object readResolve() {
 		// Return the one true Elvis and let the garbage collector
@@ -256,7 +260,8 @@ As a side effect, this idiom also prevents the class from being subclassed. All 
 ******************************************************
 *** Item 5: Avoid creating unnecessary objects ***
 
-It is often appropriate to reuse a single object instead of creating a new functionally equivalent object each time it is needed. Reuse can be both faster and more stylish. 
+It is often appropriate to reuse a single object instead of creating a new functionally equivalent object each time it is needed. 
+Reuse can be both faster and more stylish. 
 An object can always be reused if it is immutable (Item 15).
 
 Если вызывать много раз в цикле, то millions of String instances can be created needlessly: String s = new String("str");
@@ -264,7 +269,8 @@ An object can always be reused if it is immutable (Item 15).
 Лучше писать так: String s = "str";
 This version uses a single String instance, rather than creating a new one each time it is executed. Furthermore, it is guaranteed that the object will be reused by any other code running in the same virtual machine that happens to contain the same string literal.
 
-You can often avoid creating unnecessary objects by using static factory methods (Item 1) in preference to constructors on immutable classes that provide both.
+You can often avoid creating unnecessary objects by using static factory methods (Item 1) in preference to constructors on immutable classes that provide both. Использовать static factory methods вместо конструкторов.
+
 For example, the static factory method Boolean.valueOf(String) is almost always preferable to the constructor Boolean(String). The constructor creates a new object each time it’s called, while the static factory method is never required to do so and won’t in practice.
 
 In addition to reusing immutable objects, you can also reuse mutable objects if you know they won’t be modified.
@@ -274,20 +280,20 @@ In addition to reusing immutable objects, you can also reuse mutable objects if 
 The isBabyBoomer() method unnecessarily creates a new Calendar, TimeZone, and two Date instances each time it is invoked. The version that follows avoids this inefficiency with a static initializer.
 The improved version of the Person class creates Calendar, TimeZone, and Date instances only once, when it is initialized, instead of creating them every time isBabyBoomer is invoked. This results in significant performance gains if the method is invoked frequently.
 
-Но бывает случай, когда статик переменные были проинициализированы, но метод, где они ис-ся так и не вызывался. 
+Но бывает случай, когда статик переменные были проинициализированы, но метод, где они ис-ся, так и не вызывался. 
 It would be possible to eliminate the unnecessary initializations by lazily initializing these fields (Item 71) the first time the isBabyBoomer method is invoked, BUT IT IS NOT RECOMMENDED. 
 As is often the case with LAZY INITIALIZATION, it would complicate the implementation and would be unlikely to result in a noticeable performance improvement beyond what we’ve already achieved (Item 55).
 
-Второй случай, где можно переиспользовать объ:
+Второй случай, где можно переиспользовать объекты:
 Consider the case of adapters, also known as views. 
 An adapter is an object that delegates to a backing object, providing an alternative interface to the backing object. 
 Because an adapter has no state beyond that of its backing object, there’s no need to create more than one instance of a given adapter to a given object.
 
-For example, the keySet method of the Map interface returns a Set view of the Map object, consisting of all the keys in the map. Naively, it would seem that every call to keySet would have to create a new Set instance, but every call to keySet on a given Map object may return the same Set instance.
-Although the returned Set instance is typically mutable, all of the returned objects are functionally identical: when one of the returned objects changes, so do all the others because they’re all backed by the same Map instance. While it is harmless to create multiple instances of the keySet view object, it is also unnecessary.
+For example, the keySet() method of the Map interface returns a Set view of the Map object, consisting of all the keys in the map. Naively, it would seem that every call to keySet() would have to create a new Set instance, but every call to keySet() on a given Map object may return the same Set instance.
+Although the returned Set instance is typically mutable, all of the returned objects are functionally identical: when one of the returned objects changes, so do all the others BECAUSE THEY’RE ALL BACKED BY THE SAME MAP INSTANCE. While it is harmless to create multiple instances of the keySet view object, it is also unnecessary.
 --- В хэшмапе: --- public Set<K> keySet(){..} --- The set is backed by the map, so changes to the map are reflected in the set, and vice-versa. If the map is modified while an iteration over the set is in progress (except through the iterator's own remove operation), the results of the iteration are undefined. 
 
-There’s a new way to create unnecessary objects in release 1.5. It is called autoboxing,
+There’s a new way to create unnecessary objects in release 1.5. It is called AUTOBOXING,
 There are subtle semantic distinctions, and not-so-subtle performance differences (Item 49). Consider the following program, which calculates the sum of all the positive int values.
 
 This program gets the right answer, but it is much slower than it should be, due to a one-character typographical error. 
@@ -295,10 +301,14 @@ The variable sum is declared as a "Long" instead of a "long", which means that t
 
 The lesson is clear: prefer primitives to boxed primitives, and watch out for unintentional autoboxing.
 * * *
-Conversely, avoiding object creation by maintaining your own object pool is a BAD IDEA unless the objects in the pool are extremely heavyweight. 
+!!! Но вообще создание объектов ДЁШЕВО, поэтому создавать новые объекты -- это хорошо, особенно если оно делает программу проще и удобнее читаемой.
 
-The counterpoint to this item is Item 39 on defensive copying. Item 5 says, “Don’t create a new object when you should reuse an existing one,” while Item 39 says, “Don’t reuse an existing object when you should create a new one.” 
-Note that the penalty for reusing an object when defensive copying is called for is far greater than the penalty for needlessly creating a duplicate object. Failing to make defensive copies where required can lead to insidious bugs and security holes; creating objects unnecessarily merely affects style and performance.
+Conversely, avoiding object creation by maintaining your own object pool is a BAD IDEA unless the objects in the pool are EXTREMELY HEAVYWEIGHT. Например, для конекшенов к БД.
+
+The counterpoint to this item is Item 39 on DEFENSIVE COPYING. 
+Item 5 says, “Don’t create a new object when you should reuse an existing one,” while Item 39 says, “Don’t reuse an existing object when you should create a new one.” 
+Note that the penalty for reusing an object when defensive copying is called for is far greater than the penalty for needlessly creating a duplicate object. 
+Failing to make defensive copies where required can lead to insidious bugs and security holes; creating objects unnecessarily merely[только, просто; единственно] affects style and performance.
 
 -- insidious [ın`sıdıəs] 
 1) хитрый, вероломный, коварный, предательский
@@ -311,7 +321,9 @@ Note that the penalty for reusing an object when defensive copying is called for
 1) устарелый, вышедший из употребления; малоупотребительный
 2) немодный, старомодный, отживший; прекративший существование
 
-So where is the memory leak? If a stack grows and then shrinks, the objects that were popped off the stack will not be garbage collected, even if the program using the stack has no more references to them. This is because the stack maintains obsolete references to these objects. An obsolete reference is simply a reference that will never be dereferenced again. In this case, any references outside of the “active portion” of the element array are obsolete. The active portion consists of the elements whose index is less than size.
+So where is the memory leak? 
+If a stack grows and then shrinks, the objects that were popped off the stack will not be garbage collected, even if the program using the stack has no more references to them. 
+This is because the stack maintains obsolete references to these objects. An obsolete reference is simply a reference that will never be dereferenced again. In this case, any references outside of the “active portion” of the element array are obsolete. The active portion consists of the elements whose index is less than size.
 
 -- insidious [ın`sıdıəs] 
 1) хитрый, вероломный, коварный, предательский
@@ -330,23 +342,26 @@ The best way to eliminate an obsolete reference is to let the variable that cont
 
 Generally speaking, whenever a class manages its own memory, the programmer should be alert for memory leaks. Whenever an element is freed, any object references contained in the element should be nulled out.
 
-**222** Another common source of memory leaks is caches. Once you put an object reference into a cache, it’s easy to forget that it’s there and leave it in the cache long after it becomes irrelevant. 
+**222** Another common source of memory leaks is CACHES. 
+Once you put an object reference into a cache, it’s easy to forget that it’s there and leave it in the cache long after it becomes irrelevant. 
 
-If you’re lucky enough to implement a cache for which an entry is relevant exactly so long as there are references to its key outside of the cache, represent the cache as a WeakHashMap; entries will be removed automatically after they become obsolete. Remember that WeakHashMap is useful only if the desired lifetime of cache entries is determined by external references to the key, not the value.
+If you’re lucky enough to implement a cache for which an entry is relevant exactly so long as there are references to its key outside of the cache, represent the cache as a WeakHashMap; 
+entries will be removed automatically after they become obsolete. Remember that WeakHashMap is useful only if the desired lifetime of cache entries is determined by external references to the key, not the value.
 
 More commonly, the useful lifetime of a cache entry is less well defined, with entries becoming less valuable over time. Under these circumstances, the cache should occasionally be cleansed of entries that have fallen into disuse. 
-This can be done by a background thread (perhaps a Timer or ScheduledThreadPoolExecu-tor) or as a side effect of adding new entries to the cache. The LinkedHashMap class facilitates the latter approach with its removeEldestEntry method. For more sophisticated caches, you may need to use java.lang.ref directly.
+This can be done by a background thread (perhaps a Timer or ScheduledThreadPoolExecutor) or as a side effect of adding new entries to the cache. The LinkedHashMap class facilitates the latter approach with its removeEldestEntry() method. For more sophisticated caches, you may need to use java.lang.ref directly.
 
-**333** A third common source of memory leaks is listeners and other CALLBACKS. 
+**333** A third common source of memory leaks is LISTENERS and other CALLBACKS. 
 If you implement an API where clients register callbacks but don’t deregister them explicitly, they will accumulate unless you take some action. 
 The best way to ensure that callbacks are garbage collected promptly is to store only weak references to them, for instance, by storing them only as keys in a WeakHashMap.
 
-Because memory leaks typically do not manifest themselves as obvious failures, they may remain present in a system for years. They are typically discovered only as a result of careful code inspection or with the aid of a debugging tool known as a heap profiler. Therefore, it is very desirable to learn to anticipate problems like this before they occur and prevent them from happening.
+Because memory leaks typically do not manifest themselves as obvious failures, they may remain present in a system for years. They are typically discovered only as a result of careful code inspection or with the aid of a debugging tool known as a heap profiler. 
+Therefore, it is very desirable to learn to anticipate problems like this before they occur and prevent them from happening.
 
 ******************************************************
 *** Item 7: Avoid finalizers ***
 
-Finalizers are unpredictable, often dangerous, and generally unnecessary.
+Finalizers are UNPREDICTABLE, often DANGEROUS, and generally UNNECESSARY.
 
 Their use can cause erratic behavior, poor performance, and portability problems. Finalizers have a few valid uses, which we’ll cover later in this item, but as a rule of thumb, you should avoid finalizers.
 
@@ -374,37 +389,50 @@ As a consequence, you should never depend on a finalizer to update critical pers
 The only methods that claim to guarantee finalization are System.runFinalizersOnExit() and its evil twin, Runtime.runFinalizersOnExit(). 
 These methods are fatally flawed and have been deprecated [ThreadStop].
 
-   !!!  if an uncaught exception is thrown during finalization, the exception is ignored, and finalization of that object terminate
-Uncaught exceptions can leave objects in a corrupt state. If another thread attempts to use such a corrupted object, arbitrary nondeterministic behavior may result. Normally, an uncaught exception will terminate the thread and print a stack trace, but not if it occurs in a finalizer—it won’t even print a warning.
+   !!!  if an uncaught exception is thrown during finalization, the exception is ignored, and finalization of that object terminate.
+Uncaught exceptions can leave objects in a corrupt state. 
+If another thread attempts to use such a corrupted object, arbitrary nondeterministic behavior may result. 
+Normally, an uncaught exception will terminate the thread and print a stack trace, but not if it occurs in a finalizer — it won’t even print a warning.
 
 !!!  there is a severe performance penalty for using finalizers.
 
 Как же тогда закрывать ресурсы?
 Just provide an explicit termination method, and require clients of the class to invoke this method on each instance when it is no longer needed. 
 One detail worth mentioning is that the instance must KEEP TRACK of whether it has BEEN TERMINATED: 
-the explicit termination method must record in a private field that the object is no longer valid, 
-and other methods must check this field and throw an IllegalStateException if they are called after the object has been terminated.
+  1) the explicit termination method must record in a private field that the object is no longer valid, 
+  2) and other methods must check this field and throw an IllegalStateException if they are called after the object has been terminated.
 
 Typical examples of explicit termination methods are the close methods on InputStream, OutputStream, and java.sql.Connection. И некоторые другие..
 
 ...другие методы.. THESE METHODS ARE OFTEN OVERLOOKED(ими пренебрагают,не замечать, пропускать, не обращать внимания, не придавать значения), WITH PREDICTABLY DIRE(ужасный, страшный, зловещий, крайний, полный) PERFORMANCE CONSEQUENCES.
 
-Explicit termination methods are typically used in combination with the try-finally construct to ensure termination. Invoking the explicit termination method inside the finally clause ensures that it will get executed even if an exception is thrown while the object is being used
+EXPLICIT TERMINATION METHODS are typically used in combination with the try-finally construct to ensure termination. Invoking the explicit termination method inside the finally clause ensures that it will get executed even if an exception is thrown while the object is being used.
 
-So what, if anything, are finalizers good for? There are perhaps two legitimate uses. One is to act as a “safety net” in case the owner of an object forgets to call its explicit termination method. While there’s no guarantee that the finalizer will be invoked promptly, it may be better to free the resource late than never, in those (hopefully rare) cases when the client fails to call the explicit termination method. But the finalizer should log a warning if it finds that the resource has not been terminated, as this indicates a bug in the client code, which should be fixed. If you are considering writing such a safety-net finalizer, think long and hard about whether the extra protection is worth the extra cost.
+So what, if anything, are finalizers good for? There are perhaps two legitimate uses. 
+1) One is to act as a “SAFETY NET” in case the owner of an object forgets to call its explicit termination method. 
+While there’s no guarantee that the finalizer will be invoked promptly, it may be better to free the resource late than never, in those (hopefully rare) cases when the client fails to call the explicit termination method. 
+But the finalizer should log a warning if it finds that the resource has not been terminated, as this indicates a bug in the client code, which should be fixed. If you are considering writing such a safety-net finalizer, think long and hard about whether the extra protection is worth the extra cost.
 
-A second legitimate use of finalizers concerns objects with native peers. A native peer is a native object to which a normal object delegates via native methods. Because a native peer is not a normal object, the garbage collector doesn’t know about it and can’t reclaim it when its Java peer is reclaimed. A finalizer is an appropriate vehicle for performing this task, assuming the native peer holds no critical resources. If the native peer holds resources that must be terminated promptly, the class should have an explicit termination method, as described above. The termination method should do whatever is required to free the critical resource. The termination method can be a native method, or it can invoke one.
+2) A second legitimate use of finalizers concerns objects with NATIVE PEERS. 
+A native peer is a native object to which a normal object delegates via native methods. 
+Because a native peer is not a normal object, the garbage collector doesn’t know about it and can’t reclaim it when its Java peer is reclaimed. 
+A finalizer is an appropriate vehicle for performing this task, assuming the native peer holds no critical resources. If the native peer holds resources that must be terminated promptly, the class should have an explicit termination method, as described above. 
+The termination method should do whatever is required to free the critical resource. The termination method can be a native method, or it can invoke one.
+- - - - - - - - - -
+It is important to note that “finalizer chaining” is not performed automatically. If a class (other than Object) has a finalizer and a subclass overrides it, the subclass finalizer must invoke the superclass finalizer manually. You should finalize the subclass in a try block and invoke the superclass finalizer in the corresponding finally block. This ensures that the superclass finalizer gets executed even if the subclass finalization throws an exception and vice versa.
 
-It is important to note that “finalizer chaining” is not performed automatically. If a class (other than Object) has a finalizer and a subclass overrides it, the subclass finalizer must invoke the superclass finalizer manually. You should finalize the subclass in a try block and invoke the superclass finalizer in the corresponding finall y block. This ensures that the superclass finalizer gets executed even if the subclass finalization throws an exception and vice versa.
-
--- Finalizer Guardian idiom--
+-- Finalizer Guardian idiom --
 If a subclass implementor overrides a superclass finalizer but forgets to invoke it, the superclass finalizer will never be invoked. 
 It is possible to defend against such a careless or malicious subclass at the cost of creating an additional object for every object to be finalized. 
     !!! Instead of putting the finalizer on the class requiring finalization, put the finalizer on an anonymous class (Item 22) whose sole purpose is to finalize its enclosing instance. 
+
 A single instance of the anonymous class, called a finalizer guardian, is created for each instance of the enclosing class. The enclosing instance stores the sole reference to its finalizer guardian in a private instance field so the finalizer guardian becomes eligible for finalization at the same time as the enclosing instance. 
 When the guardian is finalized, it performs the finalization activity desired for the enclosing instance, just as if its finalizer were a method on the enclosing class.
-   !!!Т.е. если челы забудут вызвать файналазер у суперкласса явно, он всё равно вызовется, когда будет удаляться объект вложенного анонимного класса. Дёрнется его файналазер и из в нём будет логика по очистке enclosing класса.
+   !!!Т.е. если челы забудут вызвать файналазер у суперкласса явно, он всё равно вызовется, когда будет удаляться объект вложенного анонимного класса. Дёрнется его файналазер и в нём будет логика по очистке enclosing класса.
 This technique should be considered for every nonfinal public class that has a finalizer.
 
-In summary, don’t use finalizers except as a safety net or to terminate noncritical native resources. In those rare instances where you do use a finalizer, remember to invoke super.finalize. If you use a finalizer as a safety net, remember to log the invalid usage from the finalizer. Lastly, if you need to associate a finalizer with a public, nonfinal class, consider using a finalizer guardian, so finalization can take place even if a subclass finalizer fails to invoke super.finalize.
+In summary, don’t use finalizers except as a safety net or to terminate noncritical native resources. 
+In those rare instances where you do use a finalizer, remember to invoke super.finalize(). 
+If you use a finalizer as a safety net, remember to log the invalid usage from the finalizer. 
+Lastly, if you need to associate a finalizer with a public, nonfinal class, consider using a finalizer guardian, so finalization can take place even if a subclass finalizer fails to invoke super.finalize().
 

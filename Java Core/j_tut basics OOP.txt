@@ -98,10 +98,12 @@ Variables. ПЕРЕМЕННЫЕ.
 Также можно добавить ключевое слово final, чтобы указать, что число передач никогда не изменится.
 
 3) Локальные переменные (Local Variables)
- Подобно тому, как объект сохраняет свое состояние в полях, метод будет сохранять свое временное состояние в локальных переменных. Синтаксис объявления локальной переменной похож на объявление поля (например, Int Count = 0;). Там нет специального ключевого слова, обозначающего переменную как локальную; понятие что переменная является локальной происходит из того, где (в каком месте) объявлена переменная - в данном случае находится между фигурными скобками открытия и закрытия метода. Таким образом, локальные переменные видны только методам, в которых они объявлены; они не доступны для остальной части класса.
+ Подобно тому, как объект сохраняет свое состояние в полях, метод будет сохранять свое временное состояние в локальных переменных. 
+ Синтаксис объявления локальной переменной похож на объявление поля (например, Int Count = 0;). Там нет специального ключевого слова, обозначающего переменную как локальную; понятие что переменная является локальной происходит из того, где (в каком месте) объявлена переменная - в данном случае находится между фигурными скобками открытия и закрытия метода. Таким образом, локальные переменные видны только методам, в которых они объявлены; они не доступны для остальной части класса.
 
 4) Параметры (Parameters )
-Сигнатура main method is public static void main(String[] args). Здесь args переменная -- является параметром для этого метода. Важно помнить, что параметры всегда классифицируются как "переменные", а не "поля" (parameters are always classified as "variables" not "fields"). 
+Сигнатура main метода = "public static void main(String[] args)". 
+Здесь args переменная -- является параметром для этого метода. Важно помнить, что параметры всегда классифицируются как "переменные", а не "поля" (parameters are always classified as "variables" not "fields"). 
 Это относится и к другим конструкциям параметров(например, конструкторы и обработчики исключений).
  
  Если мы говорим о "полях в общем" (исключая локальные переменные и параметры), то можно просто сказать, "поля". 
@@ -182,8 +184,8 @@ Data Type | Default Value (for fields)
 
 
 Локальные переменные немного отличаются; 
-!! компилятор никогда не назначает значение по умолчанию для неинициализированной локальной переменной !! 
-Если вы не можете инициализировать локальную переменную, где она объявлена, убедитесь, чтобы присвоить ему значение, прежде чем пытаетесь использовать её. Доступ к неинициализированной локальной переменной приведет к ошибке времени компиляции.
+!! КОМПИЛЯТОР НИКОГДА НЕ НАЗНАЧАЕТ ЗНАЧЕНИЕ ПО УМОЛЧАНИЮ ДЛЯ НЕИНИЦИАЛИЗИРОВАННОЙ ЛОКАЛЬНОЙ ПЕРЕМЕННОЙ !! 
+Если вы не можете инициализировать локальную переменную, где она объявлена, убедитесь, что присвоили ей значение прежде чем использовать её. Доступ к неинициализированной локальной переменной приведет к ошибке времени компиляции.
 ------------******************************--------------
 Literals - Литералы
 
@@ -198,12 +200,15 @@ short s = 10000;
 int i = 100000;
 
 Integer Literals - 
-Целочисленный литерал имеет тип long, если он заканчивается буквой L или l; в противном случае он имеет тип Int. Рекомендуется использовать верхний буквы L, так как строчную букву l трудно отличить от цифры 1.
+Целочисленный литерал по умолчанию имеет тип Int,
+а если он заканчивается буквой L или l -- то тип long.
+   Рекомендуется использовать верхний буквы L, так как строчную букву l трудно отличить от цифры 1.
 
-Значения целочисленных типов byte, short, int, и long могут быть создан из INT литералов. Значения типа long, которые превышают допустимый диапазон Int, поэтому могут быть создан из long литералов. 
+Значения целочисленных типов byte, short, int, и long могут быть создан из INT литералов. 
+Значения типа long, которые превышают допустимый диапазон Int, поэтому могут быть созданы из long литералов. 
 
-Integer литералы можно выразить этими системами счисления:
-1) Decimal Десятичный: Основание 10, чьи цифры состоит из чисел от 0 до 9; это система счисления вы используете каждый день
+Integer литералы можно выразить системами счисления:
+1) Decimal Десятичный: Основание 10, чьи цифры состоит из чисел от 0 до 9; эту систему счисления вы используете каждый день
 2) Hexadecimal шестнадцатеричная: Основание 16, чьи цифры состоят из чисел от 0 до 9 и буквы от А до F
 3) Двоичная Binary: Base 2 (Основание 2), чьи цифры состоит из чисел 0 и 1 (вы можете создавать бинарные литералы в Java SE 7 и более поздних версий)
 
@@ -221,7 +226,8 @@ INT binVal = 0b11010;
 Floating-Point Literals
 Литералы С плавающей точкой 
 
-A floating-point literal is of type float, если он заканчивается буквой F или f; в противном случае это будет тип double (он необязательно может заканчиваться буквой D или d).
+A floating-point literal is of type float, если он заканчивается буквой F или f; 
+в противном случае(без f или F) -- это будет тип double (он НЕОБЯЗАТЕЛЬНО может заканчиваться буквой D или d).
 
 Типы с плавающей точкой (float and double) также могут быть выражены с помощью Е или Е (для научной нотации), F или f (32-bit float literal) и D или d (64-bit double literal, это по умолчанию и по конвенция пропускается).
 
@@ -297,13 +303,18 @@ int x7 = 0x52_;
 
 МАССИВЫ Arrays
 
- Массив представляет собой объект-контейнер, который содержит определенное/ФИКСИРОВАННОЕ количество значений одного типа. Длина массива задаётся во время создания массива. После создания, его длина фиксирована.
+Массив представляет собой объект-контейнер, который содержит определенное/ФИКСИРОВАННОЕ количество значений одного типа. 
+   Длинна массива задаётся во время создания массива. 
+   После создания, его длинна фиксирована.
 Каждый элемент в массиве называется элементом, а каждый элемент доступен по его цифровому индексу.
 нумерация начинается с 0.
- 9-й элемент, поэтому, может быть доступен по индексу 8.
+ 9-й элемент будет доступен по индексу 8.
 
-Как и объявлений для переменных других типов, объявление массива состоит из двух компонентов: типа массива и имени массива. Тип массива записывается как type[], где type  является типом данных содержащихся элементов; скобки - это специальные символы, к-е указывают, что эта переменная содержит массив.
- Размер массива не является частью его типа (поэтому скобки пусты). Как и с переменными других типов, декларация массива на самом деле не создаёт массив; она просто сообщает компилятору, что эта переменная будет содержать массив указанного типа.
+Как и объявлений для переменных других типов, объявление массива состоит из двух компонентов: 
+1) типа массива 
+2) имени массива. 
+Тип массива записывается как type[], где type  является типом данных содержащихся элементов; скобки - это специальные символы, к-е указывают, что эта переменная содержит массив.
+        Размер массива не является частью его типа (поэтому скобки пусты). Как и с переменными других типов, декларация массива на самом деле не создаёт массив; она просто сообщает компилятору, что эта переменная будет содержать массив указанного типа.
  !! ДЕКЛАРАЦИЯ ТИПА НЕ СОЗДАЁТ ЭТОТ ТИП, А ЛИШЬ СООБЩАЕТ КОМПИЛЯТОРУ, ЧТО ЭТА ПЕРЕМЕННАЯ БУДЕТ СОДЕРЖАТЬ ЭЛЕМЕНТ/МАССИВ УКАЗАННОГО ТИПА. !!
 
 Можно писать скобки после имени массива:
@@ -326,12 +337,13 @@ int[] anArray = {
 
 Можно также объявить массив массивов (также известный как многомерный массив) с помощью двух или более наборов скобок, таких как String[][]. Каждый элемент, следовательно, должен быть доступен по соответствующему количеству значений индексов.
 
-В языке программирования Java, многомерный массив является массивом, компонентами которого являются сами массивы.This is unlike arrays in C or Fortran. Следствием этого является то, что количество rows может изменяться.
+В языке программирования Java, многомерный массив является массивом, компонентами которого являются сами массивы.
+This is unlike arrays in C or Fortran. Следствием этого является то, что количество rows может изменяться.
 --------------------------------------
 
 Copying Arrays
 
-Класс System имеет метод ArrayCopy , который можно использовать для эффективного копирования данных из одного массива в другой:
+Класс System имеет метод System.arrayCopy() , который можно использовать для эффективного копирования данных из одного массива в другой:
 
 public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
 
@@ -373,10 +385,11 @@ https://docs.oracle.com/javase/tutorial/java/nutsandbolts/variablesummary.html
 начать с этой:
 https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html
 *************************
-СИГНАТУРА МЕТОДА -- ЭТО ИМЯ МЕТОДА И ТИВЫ ЕГО ПАРАМЕТРОВ. 
+СИГНАТУРА МЕТОДА -- ЭТО ИМЯ МЕТОДА И ТИПЫ ЕГО ПАРАМЕТРОВ. 
 - method signature  —- the method's name and the parameter types.
+"calcSqrt(int, String)"
 
--  Parameters refers to the list of variables in a method declaration. Arguments are the actual values that are passed in when the method is invoked. When you invoke a method, the arguments used must match the declaration's parameters in type and order. 
+-  PARAMETERS refers to the list of variables in a method declaration. ARGUMENTS are the actual values that are passed in when the method is invoked. When you invoke a method, the arguments used must match the declaration's parameters in type and order. 
 ++ ПАРАМЕТРЫ ссылются на список переменых в декларации метода. 
 АРГУМЕНТЫ -- это реальные значения, которые передаются внутрь метода, когда он вызывается.
 Аргументы должны совпадать с декларированными параметрами по типу и порядку следования.
@@ -390,7 +403,7 @@ When the method returns, the parameters are gone and any changes to them are los
 
 -Reference data type parameters, such as objects, are also passed into methods by value. This means that when the method returns, the passed-in reference still references the same object as before. However, the values of the object's fields can be changed in the method, if they have the proper access level
 ++ когда ПЕРЕДАЁТСЯ ССЫЛОЧНЫЙ ТИП, т.е. ссылка на объект, она тоже передаётся по значению. 
-А значение в этом случае - это ссылка на адрес в памяти. Т.е. занчение этой ссылки. ССылка остаётся той же, что и у исходного объекта. ПОЭтому когда в методе с этим объектом просиходят какие-то действия, то они фактически просиходят не со ссылкой, а с той памятью куда она ссылается. по выходу из метода - исходная переменная также осталась ссылаться на эту же область памяти. но по факту в этой памяти метод уже что-то изменил.
+А значение в этом случае - это ссылка на адрес в памяти. Т.е. значение этой ссылки. ССылка остаётся той же, что и у исходного объекта. ПОЭтому когда в методе с этим объектом просиходят какие-то действия, то они фактически просиходят не со ссылкой, а с той памятью куда она ссылается. по выходу из метода - исходная переменная также осталась ссылаться на эту же область памяти. но по факту в этой памяти метод уже что-то изменил.
 И после выхода из метода, переданная ссылка всё ещё указывает на тот же объект, что и раньше. При этом значение полей объекта могло быть изменено внутри метода, если к ним есть должный доступ.
 НО НО НО если к локальной переменной в методе присвоится новый объект - то есть ссылка на новый оббъект -- ссылка будет ссылаться на новую область памяти для этого вновь созданного объекта, и только внутри области видимости метода. И будет изменять память там. по выходу из метода - эта ссылка потеряется, объект будет удалён gc, поэтому грубо говоря изменения в новом объекте не имеют смысла.
 
@@ -416,7 +429,7 @@ The new operator returns a reference to the object it created. This reference is
 Он (конструктор по умолчанию) вызывает родительский конструктор без аргументов. Если у класса нет родителя, то будет вызван конструктор у Object. Если у родителя нет конструктора -- компилятор откажется от программы.
 
 -- An object is eligible for garbage collection when there are no more references to that object. References that are held in a variable are usually dropped when the variable goes out of scope. Or, you can explicitly drop an object reference by setting the variable to the special value null.
-++ Объект будет подвергнут сбору мусора (garbage collection) кога на него больше нет ссылок:
+++ Объект будет подвергнут сбору мусора (garbage collection) когда на него больше нет ссылок:
 1) когда переменная выходит за область видимости
 2) можно явно задать null для переменной.
 
@@ -433,18 +446,19 @@ whichever occurs first.
 
 -- можно написать return в void методе, в этом случае метод выйдет в этой точке. надо для логического ветвления и выхода.
 -- You can override a method and define it to return a subclass of the original method.
-This technique, called covariant return type, means that the return type is allowed to vary in the same direction as the subclass.
+This technique, called "COVARIANT RETURN TYPE", means that the RETURN TYPE IS ALLOWED to VARY IN THE SAME DIRECTION AS THE SUBCLASS.
 -- Within an instance method or a constructor, "this" is a reference to the current object — the object whose method or constructor is being called. You can refer to any member of the current object from within an instance method or a constructor by using this.
--- From within a constructor, you can also use the "this" keyword to call another constructor in the same class. Doing so is called an explicit constructor invocation.
-If present, the invocation of another constructor must be the first line in the constructor.
+-- From within a constructor, you can also use the "this" keyword to call another constructor in the same class. Doing so is called an EXPLICIT CONSTRUCTOR INVOCATION.
+   !!!! If present, the INVOCATION of ANOTHER CONSTRUCTOR must be the FIRST LINE IN THE CONSTRUCTOR.
 -- A class may be declared with the modifier public, in which case that class is visible to all classes everywhere. If a class has no modifier (the default, also known as package-private), it is visible only within its own package.
 -- At the member level, you can also use the public modifier or no modifier (package-private) just as with top-level classes, and with the same meaning. For members, there are two additional access modifiers: private and protected. The private modifier specifies that the member can only be accessed in its own class. The protected modifier specifies that the member can only be accessed within its own package (as with package-private) and, in addition, by a subclass of its class in another package.
 ---------------------------------------
-Access Levels Modifier;	Class; 	Package; 	Subclass; 	World;
-public 					Y 	Y 	Y 	Y
-protected 				Y 	Y 	Y 	N
-no modifier 			Y 	Y 	N 	N (package-private, no subclass)
-private 				Y 	N 	N 	N
+Access Levels Modifier;	
+               Class; Package; Subclass; World;
+public 				Y 	Y 		Y 	Y
+protected 			Y 	Y 		Y 	N
+no modifier 		Y 	Y 		N 	N (package-private, no subclass)
+private 			Y 	N 		N 	N
 
 The first data column indicates whether the class itself has access to the member defined by the access level. As you can see, a class always has access to its own members. The second column indicates whether classes in the same package as the class (regardless of their parentage) have access to the member. The third column indicates whether subclasses of the class declared outside this package have access to the member. The fourth column indicates whether all classes have access to the member.
 
@@ -452,17 +466,18 @@ The first data column indicates whether the class itself has access to the membe
     Instance methods can access instance variables and instance methods directly.
     Instance methods can access class variables and class methods directly.
     Class methods can access class variables and class methods directly.
-    Class methods cannot access instance variables or instance methods directly—they must use an object reference. Also, class methods cannot use the "this" keyword as there is no instance for this to refer to.
+    Class methods CANNOT access instance variables or instance methods directly—they must use an object reference. Also, class methods cannot use the "this" keyword as there is no instance for this to refer to.
 -- The static modifier, in combination with the final modifier, is also used to define constants. The final modifier indicates that the value of this field cannot change.
 но для final указан для объекта (ссылочного типа) - значением этой переменной является ссылка, то в этом случае, ссылка на объект является неизменной. а сам объект можно изменять.
 -- Note: If a primitive type or a string is defined as a constant and the value is known at compile time, the compiler replaces the constant name everywhere in the code with its value. This is called a compile-time constant. If the value of the constant in the outside world changes (for example, if it is legislated that pi actually should be 3.975), you will need to recompile any classes that use this constant to get the current value.
-++ Если тип константы равен примитиву или строке, то компилятор на этапе компиляции подставляет этто значение в код, и если значение изменилось -- надо перекомпилировать весь код, где использовалась эта константа.
+++ Если тип константы равен примитиву или строке, то компилятор на этапе компиляции подставляет это значение в код, и если значение изменилось -- надо перекомпилировать весь код, где использовалась эта константа.
 
 -- A static initialization block is a normal block of code enclosed in braces, { }, and preceded by the static keyword:
 static {
 	// some code in static initialization block
 }
-A class can have any number of static initialization blocks, and they can appear anywhere in the class body. The runtime system guarantees that static initialization blocks are called in the order that they appear in the source code.
+A class can have any number of static initialization blocks, and they can appear anywhere in the class body. 
+THE RUNTIME SYSTEM GUARANTEES THAT STATIC INITIALIZATION BLOCKS ARE CALLED IN THE ORDER THAT THEY APPEAR IN THE SOURCE CODE.
 Статические блоки инициализации вызываются в том порядке, в котором они записаны.
 *********************************************
 -- Initializing Instance Members
@@ -479,7 +494,8 @@ Normally, you would put code to initialize an instance variable in a constructor
 {
     // whatever code is needed for initialization goes here
 }
-The Java compiler copies initializer blocks into every constructor. Therefore, this approach can be used to share a block of code between multiple constructors.
+THE JAVA COMPILER COPIES INITIALIZER BLOCKS INTO EVERY CONSTRUCTOR.
+     Therefore, this approach can be used to share a block of code between multiple constructors.
 ++ Инициализационный блок для переменных сущности, записываются просто в фигурных скобках, БЕЗ слова static. 
 Java compiler копирует эти initializer blocks в каждый конструктор.
 

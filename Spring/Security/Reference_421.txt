@@ -1,0 +1,50 @@
+Two major areas of application security are "authentication" and "authorization" (or "access-control"). 
+
+These are the two main areas that Spring Security targets. "Authentication" is the process of establishing a principal is who they claim to be (a "principal" generally means a user, device or some other system which can perform an action in your application).
+
+"Authorization" refers to the process of deciding whether a principal is allowed to perform an action within your application. 
+To arrive at the point where an authorization decision is needed, the identity of the principal has already been established by the authentication process.
+
+At an authentication level, Spring Security supports a wide range of authentication models. 
+
+Irrespective of the authentication mechanism, Spring Security provides a deep set of authorization capabilities. There are three main areas of interest: authorizing web requests, authorizing whether methods can be invoked and authorizing access to individual domain object instances.
+To help you understand the differences, consider the authorization capabilities found in the Servlet Specification web pattern security, EJB Container Managed Security and file system security respectively. 
+
+*** 3. What’s New in Spring Security 4.2 ***
+
+The SecurityWebApplicationInitializer will do the following things:
+1)Automatically register the springSecurityFilterChain Filter for every URL in your application
+2) Add a ContextLoaderListener that loads the WebSecurityConfig.
+
+If we were using Spring elsewhere in our application we probably already had a WebApplicationInitializer that is loading our Spring Configuration. If we use the previous configuration we would get an error. Instead, we should register Spring Security with the existing ApplicationContext. For example, if we were using Spring MVC our SecurityWebApplicationInitializer would look something like the following:
+
+import org.springframework.security.web.context.*;
+
+public class SecurityWebApplicationInitializer
+	extends AbstractSecurityWebApplicationInitializer { }
+
+This would simply only register the springSecurityFilterChain Filter for every URL in your application. After that we would ensure that WebSecurityConfig was loaded in our existing ApplicationInitializer. For example, if we were using Spring MVC it would be added in the getRootConfigClasses()
+
+public class MvcWebApplicationInitializer extends
+		AbstractAnnotationConfigDispatcherServletInitializer {
+	@Override
+	protected Class<?>[] getRootConfigClasses() {
+		return new Class[] { WebSecurityConfig.class };
+	}
+	// ... other overrides ...
+}
+
+***************************************
+*** 5.2 HttpSecurity ***
+
+WebSecurityConfigurerAdapter provides a default configuration in the configure(HttpSecurity http) method that looks like:
+
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests()
+			.anyRequest().authenticated()
+			.and()
+		.formLogin()
+			.and()
+		.httpBasic();
+}

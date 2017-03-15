@@ -1316,11 +1316,16 @@ implicit polymorphism </div></div><br>
 4) EntityManagerFactory получил методы addNamedQuery, unwrap, addNamedEntityGraph, createEntityManager (с указанием SynchronizationType)<br>
 5) Появился новый enum SynchronizationType, Entity Graphs, StoredProcedureQuery и AttributeConverter интерфейсы,<br>
 <br>
+<br>
 Подробнее, см <a href="http://download.oracle.com/otndocs/jcp/persistence-2_1-fr-eval-spec/index.html">Java Persistence 2.1</a> и <a href="http://download.oracle.com/otndocs/jcp/persistence-2.0-fr-eval-oth-JSpec/">Java Persistence 2.0</a><br>
 </div></div><br>
 </li>
 </ul><br>
-<br>
+<br><br>
+Q: query.setReadonly(true) это эквивалентно @Transaction(readOnly = true) ?﻿
+A: почти, для query - у тебя все сущности которые будут извлечены с помощью этого запроса будут в рид-онли состоянии. Transactional readOnly true ставит флажок setFlushMode для Hibernate session MANUAL (по умолчанию AUTO), это значит что flush не произойдет и не будет вызван dirtyCheck. А так же коннекшену устанавливается java.sql.Connection.setReadOnly true (это hint для драйвера чтоб он сделал оптимизацию на стороне базы данных). И в первом случае ты управляешь на уровне query, во втором на уровне метода.﻿
+https://www.youtube.com/watch?v=-EpP0Vo63FM
+<br><br>
 P.S. Если нашли техническую ошибку, ошибку в переводе или хотите что-то добавить (в том числе новые интересные вопросы), буду благодарен если напишите их в комментарии этой статьи или в личку.<br>
 <br>
 <b>P.P.S.</b> Так же советую посмотреть мой opensource проект [useful-java-links](https://github.com/Vedenin/useful-java-links/tree/master/link-rus) — возможно, наиболее полная коллекция полезных Java библиотек, фреймворков и русскоязычного обучающего видео. Так же есть аналогичная [английская версия](https://github.com/Vedenin/useful-java-links/) этого проекта и начинаю opensource подпроект [Hello world](https://github.com/Vedenin/useful-java-links/tree/master/helloworlds) по подготовке коллекции простых примеров для разных Java библиотек в одном maven проекте (буду благодарен за любую помощь).<br>
