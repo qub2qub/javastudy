@@ -1,7 +1,22 @@
 надо создать в папке ~/.ssh/config следующее:
-хост и хостнэйм должны совпадать
+хост и хостнэйм должны совпадать (или нет, см статью в Simplify git config.htm)
 
-host github.com
+Host github.com
  HostName github.com
  User git
  IdentityFile ~/.ssh/id_rsa_github_someName
+
+
+NOTE: Verify that the permissions on IdentityFile are 400.SSH will reject, in a not clearly explicit manner, SSH keys that are too readable. It will just look like a credential rejection. The solution, in this case, is:
+
+chmod 400 ~/.ssh/id_rsa_github
+
+??? -- If the config file is new, don't forget to do chmod 600 ~/.ssh/config
+
+Т.е. первая строка Хост влияет на "" username @ host "" в команде:
+git clone git@github-org:orgname/some_repository.git
+
+Host github-org
+    User git
+    HostName github.com
+    IdentityFile ~/.ssh/github.org.key
