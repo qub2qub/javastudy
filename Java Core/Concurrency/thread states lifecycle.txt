@@ -1,0 +1,64 @@
+On the Picture [JavaThreadLifeCycle.png] RUNNING is not a state.
+
+At any point of time, thread will be in any one of these states:
+NEW
+RUNNABLE
+BLOCKED
+WAITING
+TIMED_WAITING
+TERMINATED
+
+
+NEW - Thread state for a thread which has not yet started.
+
+RUNNABLE - Thread state for a runnable thread. 
+A thread in the runnable state is executing in the Java virtual machine but it may be waiting for other resources from the operating system such as processor.
+
+BLOCKED - Thread state for a thread blocked waiting for a monitor lock. Т.е. когда:
+1) A thread in the blocked state is waiting for a monitor lock to enter a synchronized block/method or 
+2) reenter a synchronized block/method after calling Object.wait().
+
+WAITING - Thread state for a waiting thread. 
+A thread is in the waiting state due to calling one of the following methods:
+     * Object.wait() with no timeout
+     * Thread.join() with no timeout
+     * LockSupport.park()
+A thread in the waiting state is waiting for another thread to perform a particular action. 
+For example, a thread that has called Object.wait() on an object is waiting for another thread to call Object.notify() or Object.notifyAll() on that object. 
+A thread that has called Thread.join() is waiting for a specified thread to terminate.
+
+TIMED_WAITING - Thread state for a waiting thread with a specified waiting time. 
+A thread is in the timed waiting state due to calling one of the following methods with a specified positive waiting time:
+     * Thread.sleep(..) -- 2 варианта метода
+     * Object.wait(..) with timeout
+     * Thread.join(..) with timeout
+     * LockSupport.parkNanos(..)
+     * LockSupport.parkUntil(..)
+
+TERMINATED - Thread state for a terminated thread. The thread has completed execution.
+
+******************** 
+
+What is the Thread.State of a thread after Thread.yield() ?
+
+Thread will still be in the RUNNABLE state. 
+
+Note that RUNNABLE signifies that a thread is available to be run and may be either currently running or waiting its turn. 
+Thread.STATE does not distinguish between a thread that is currently executing and a thread that is ready to run, they are both RUNNABLE.
+
+yield() is a notification to the system that it should give other threads a chance to run. If there is nothing else to do, the thread could simply continue executing.
+
+-------------------
+
+A thread will only enter the WAITING state when either wait(), join() or LockSupport.park() has been called.
+
+*******************
+THREAD YIELD
+
+public static void yield()
+
+A hint to the scheduler that the current thread is willing to yield its current use of a processor. The scheduler is free to ignore this hint.
+
+Yield is a heuristic attempt to improve relative progression between threads that would otherwise over-utilise a CPU. Its use should be combined with detailed profiling and benchmarking to ensure that it actually has the desired effect.
+
+It is rarely appropriate to use this method. It may be useful for debugging or testing purposes, where it may help to reproduce bugs due to race conditions. It may also be useful when designing concurrency control constructs such as the ones in the java.util.concurrent.locks package.
