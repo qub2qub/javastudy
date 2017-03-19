@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>QA SQL-JBDC</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+</head>
+<body>
+<a href="http://javastudy.ru/interview/javaee-sql-jdbc-interview/">src1</a>
+<a href="http://javastudy.ru/interview/javaee-sql-jdbc-interview-2/">src2</a>
+<h2></h2>
+<div class="entry-body">
+<h3>Вопросы</h3>
+<p>1. ANSI SQL<br>
+2. Основные элементы баз данных &ndash; таблицы, процедуры, функции, констрейнты и т.д..<br>
+3. Как вы понимаете null в базах данных?<br>
+4. Агрегатные функции, как они работают с null. Не забудьте о group by и having<br>
+5. Каким образом лучше добавлять большое количество записей в таблицу?<br>
+6. Что такое первая нормальная форма и процесс нормализации? Какие бывают нормальные формы?<br>
+7. В чем смысл индекса СУБД, как они устроены, как хранятся? Как бы вы реализовали тот же функционал?<br>
+8. Что такое JDBC API и когда его используют?<br>
+9. Что такое JDBC Driver и какие различные типы драйверов JDBC вы знаете?<br>
+10. Как JDBC API помогает достичь слабой связи между Java программой и JDBC Drivers API?<br>
+11. Что такое JDBC Connection? Покажите шаги для подключения программы к базе данных.<br>
+12. Как используется JDBC DriverManager class?<br>
+13. Как получить информацию о сервере базы данных из java программы?<br>
+14. Что такое JDBC Statement?<br>
+15. Какие различия между execute, executeQuery, executeUpdate?<br>
+16. Что такое JDBC PreparedStatement?<br>
+17. Как установить NULL значения в JDBC PreparedStatement?<br>
+18. Как используется метод getGeneratedKeys() в Statement?<br>
+19. Какие преимущества в использовании PreparedStatement над Statement?<br>
+20. Какие есть ограничения PreparedStatement и как их преодолеть?<br>
+21. Что такое JDBC ResultSet?<br>
+22. Какие существуют различные типы JDBC ResultSet?<br>
+23. Как используются методы setFetchSize() и SetMaxRows() в Statement?<br>
+24. Как вызвать Stored Procedures используя JDBC API?<br>
+25. Что такое JDBC Batch Processing и каковы его преимущества?<br>
+26. Что такое JDBC Transaction Management и зачем он нужен?<br>
+27. Как откатить JDBC транзакцию?<br>
+28. Что такое JDBC Savepoint и как он используется?<br>
+29. Расскажите о JDBC DataSource. Какие преимущества он дает?<br>
+30. Как создать JDBC пул соединений используя JDBC DataSource и JNDI в Apache Tomcat Server?</p>
+
+<p>31. Расскажите про Apache DBCP API.<br>
+32. Какие вы знаете уровни изоляции соединений в JDBC?<br>
+33. Что вы знаете о JDBC RowSet? Какие существуют различные типы RowSet?<br>
+34. В чем разница между ResultSet и RowSet?<br>
+35. Приведите пример наиболее распространенных исключений в JDBC.<br>
+36. Расскажите о типах данных CLOB и BLOB в JDBC.<br>
+37. Что вы знаете о «грязном чтении» (dirty read) в JDBC? Какой уровень изоляции предотвращает этот тип чтения?<br>
+38. Какие есть две фазы commit?<br>
+39. Приведите пример различных типов блокировки в JDBC.<br>
+40. Как вы понимаете DDL и DML выражения?<br>
+41. Какая разница между java.util.Date и java.sql.Date?<br>
+42. Как вставить изображение или необработанные данные в базу данных?<br>
+43. Что вы можете рассказать о фантомном чтении? Какой уровень изоляции его предотвращает?<br>
+44. Что такое SQL Warning? Как возвратить SQL предупреждения в JDBC программе?<br>
+45. Как запустить Oracle Stored Procedure с объектами базы данных IN/OUT?<br>
+46. Приведите пример возникновения java.sql.SQLException: No suitable driver found.<br>
+47. Best Practices в JDBC.</p>
+<h3>Ответы</h3>
+<h4>1. ANSI SQL</h4>
+<p>SQL (structured query language &mdash; «язык структурированных запросов») &mdash; формальный непроцедурный язык программирования, применяемый для создания, модификации и управления данными в произвольной реляционной базе данных, управляемой соответствующей системой управления базами данных (СУБД). SQL основывается на исчислении кортежей.&nbsp;Стандарт SQL определяется с помощью кода ANSI.<br>
+*Вопрос «расскажите о SQL» очень широкий и не вписывается в рамки этой статьи. К прочтению любая инфа из интернета, например:</p>
+<h5>SQL : ОБЗОР: http://www.sql.ru/docs/sql/u_sql/ch2.shtml<br>
+Wiki: https://ru.wikipedia.org/wiki/SQL</h5>
+<h4>2. Основные элементы баз данных &ndash; таблицы, процедуры, функции, констрейнты и т.д.</h4>
+<p><strong>Поле</strong> &mdash; это минимальный элемент базы данных, содержащий один неделимый квант информации.&nbsp;Каждое поле характеризуется <i>именем</i> и <i>типом</i> хранящихся в нем данных.<br>
+<strong>Запись</strong> &mdash; это совокупность нескольких разнородных полей, описывающая некоторую сущность предметной области.<br>
+<strong>Таблица базы данных</strong> &mdash; это набор однородных записей.</p>
+<p><strong>Хранимая процедура</strong> &mdash; объект базы данных, представляющий собой набор SQL-инструкций, который компилируется один раз и хранится на сервере. Хранимые процедуры очень похожи на обыкновенные процедуры языков высокого уровня, у них могут быть входные и выходные параметры и локальные переменные, в них могут производиться числовые вычисления и операции над символьными данными, результаты которых могут присваиваться переменным и параметрам. В хранимых процедурах могут выполняться стандартные операции с базами данных (как DDL, так и DML). Кроме того, в хранимых процедурах возможны циклы и ветвления, то есть в них могут использоваться инструкции управления процессом исполнения.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a6c769192849">
+		
+			<div class="crayon-plain-wrap"><pre>CREATE [OR REPLACE] PROCEDURE имя_процедуры
+[ (параметр [, параметр, …]) ] IS
+            [локальные объявления]
+        BEGIN
+            исполняемые предложения
+        [EXCEPTION
+            обработчики исключений]
+        END [имя_процедуры];</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0014 seconds] -->
+<p><strong>Функция</strong>&nbsp;&ndash; это подпрограмма, которая вычисляет значение. Существует большое количество встроенных функций (могут разниться для разных БД).</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a78738541417">
+		
+			<div class="crayon-plain-wrap"><pre>CREATE [OR REPLACE] FUNCTION имя_функции
+[ (параметр [, параметр, …]) ]
+RETURN тип_данных IS | AS
+            [локальные объявления]
+        BEGIN
+            исполняемые предложения
+        [EXCEPTION
+            обработчики исключений]
+        END [имя_функции];</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0013 seconds] -->
+<p>Констрейнты (constraints) &mdash; объявление правил (ограничения), которым должны соответствовать данные в таблицы.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a7d599441294">
+		
+			<div class="crayon-plain-wrap"><pre>CREATE TABLE table_name
+(
+column_name1 data_type(size) constraint_name,
+column_name2 data_type(size) constraint_name,
+column_name3 data_type(size) constraint_name,
+....
+);
+Например для задания первичного ключа, можно использовать такую запись:
+CONSTRAINT &lt;имя ограничения&gt; PRIMARY KEY (&lt;список столбцов, являющихся первичным ключом&gt;)</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0014 seconds] -->
+<p>Типы констрейнтов:</p>
+<ul>
+<li><strong>NOT NULL</strong> -колонка не может содержать NULL значений.</li>
+<li><strong>UNIQUE</strong> &mdash; каждая строка в колонке должна иметь уникальное значение.</li>
+<li><strong>PRIMARY KEY</strong> &mdash; комбинация NOT NULL и UNIQUE.</li>
+<li><strong>FOREIGN KEY</strong> &mdash; обеспечивает ссылочную целостность. Означает что ссылающиеся данные имеют соответствие в другой таблице.</li>
+<li><strong>CHECK</strong> &mdash; проверка на определенное выполнение правил.</li>
+<li><strong>DEFAULT</strong> &mdash; задает значение по умолчанию для колонки</li>
+</ul>
+<h4>3. Как вы понимаете null в базах данных?</h4>
+<p>Смысл NULL-значения &mdash; это отсутствие информации или неприменимость данного атрибута в данном кортеже.<br>
+NULL-значение может означать неприменимость значения к этому столбцу (например в колонке «скорость полета» для таблицы животные и записи «Слон»)<br>
+NULL-значение&nbsp;так же может означать отсутствие информации. Заменять отсутствующие значения, например на -1, ‘ ‘ или что-то такое, не корректно.</p>
+<h5>&nbsp;О&nbsp;NULL-значениях:&nbsp;http://www.sql-tutorial.ru/ru/book_once_more_about_null_values.html</h5>
+<h4>4. Агрегатные функции, как они работают с null. Не забудьте о group by и having</h4>
+<p>Стандартом предусмотрены следующие агрегатные функции:</p>
+<table class="sort rowstyle-alt no-arrow" id="fd-table-3">
+<thead>
+<tr>
+<th class="sortable fd-column-0"><a href="http://www.sql-tutorial.ru/ru/book_getting_summarizing_values.html#" title="Sort on “название”">название</a></th>
+<th class="sortable fd-column-1"><a href="http://www.sql-tutorial.ru/ru/book_getting_summarizing_values.html#" title="Sort on “описание”">описание</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COUNT(*)</td>
+<td>Возвращает количество строк источника записей</td>
+</tr>
+<tr>
+<td>COUNT</td>
+<td>Возвращает количество значений в указанном столбце</td>
+</tr>
+<tr>
+<td>SUM</td>
+<td>Возвращает сумму значений в указанном столбце</td>
+</tr>
+<tr>
+<td>AVG</td>
+<td>Возвращает среднее значение в указанном столбце</td>
+</tr>
+<tr>
+<td>MIN</td>
+<td>Возвращает минимальное значение в указанном столбце</td>
+</tr>
+<tr>
+<td>MAX</td>
+<td>Возвращает максимальное значение в указанном столбце</td>
+</tr>
+</tbody>
+</table>
+<p>Все эти функции возвращают единственное значение. При этом функции <span style="color: #920000;">COUNT</span>, <span style="color: #920000;">MIN</span> и <span style="color: #920000;">MAX</span> применимы к данным любого типа, в то время как <span style="color: #920000;">SUM</span> и <span style="color: #920000;">AVG</span> используются только для данных числового типа.&nbsp;Разница между функцией <span style="color: #920000;">COUNT(*)</span> и <span style="color: #920000;">COUNT(имя столбца | выражение)</span> состоит в том, что вторая (как и остальные агрегатные функции) при подсчете не учитывает NULL-значения.</p>
+<p>Предложение <span style="color: #920000;">GROUP BY</span> используется для определения групп выходных строк, к которым могут применяться агрегатные функции (<span style="color: #920000;">COUNT</span>, <span style="color: #920000;">MIN</span>, <span style="color: #920000;">MAX</span>, <span style="color: #920000;">AVG</span> и <span style="color: #920000;">SUM</span>).</p>
+<p>Если предложение <span style="color: #920000;">WHERE</span> определяет предикат для фильтрации строк, то предложение <span style="color: #920000;">HAVING</span> применяется после группировки для определения аналогичного предиката, фильтрующего группы по значениям агрегатных функций. Это предложение необходимо для проверки значений, которые получены с помощью агрегатной функции не из отдельных строк источника записей, определенного в предложении <span style="color: #920000;">FROM</span>, а из групп таких строк. Поэтому такая проверка не может содержаться в предложении <span style="color: #920000;">WHERE</span>.</p>
+<h5>Получение итоговых значений: http://www.sql-tutorial.ru/ru/book_getting_summarizing_values.html<br>
+Предложение GROUP BY: http://www.sql-tutorial.ru/ru/book_group_by_clause.html<br>
+Предложение HAVING:&nbsp;http://www.sql-tutorial.ru/ru/book_having_clause.html</h5>
+<h4>5. Каким образом лучше добавлять большое количество записей в таблицу?</h4>
+<p>Можно трактовать такой вопрос по разному. Один из ответов &mdash; использовать подзапрос:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a84231432078">
+		
+			<div class="crayon-plain-wrap"><pre>INSERT INTO &lt;имя таблицы&gt;[(&lt;имя столбца&gt;,...)]
+SELECT * 
+FROM &lt;имя таблицы&gt;
+WHERE value = 'something';</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0007 seconds] -->
+<p></p>
+<h4>6. Что такое первая нормальная форма и процесс нормализации? Какие бывают нормальные формы?</h4>
+<p>Первая нормальная форма (1NF) &mdash; базовая нормальная форма отношения в реляционной модели данных.</p>
+<p>Нормальная форма &mdash; свойство отношения в реляционной модели данных, характеризующее его с точки зрения избыточности, потенциально приводящей к логически ошибочным результатам выборки или изменения данных. Нормальная форма определяется как совокупность требований, которым должно удовлетворять отношение. Нормальные формы:&nbsp;первая&nbsp;нормальная форма, вторая нормальная форма, третья нормальная форма, нормальная форма Бойса &mdash; Кодда, четвёртая нормальная форма,&nbsp;пятая нормальная форма.</p>
+<p>Тема является базовой и необходима к детальному изучению. Размер ответа на этот вопрос не соответствует формату&nbsp;данной статьи.</p>
+<h4>7. В чем смысл индекса СУБД, как они устроены, как хранятся? Как бы вы реализовали тот же функционал?</h4>
+<p>Индекс (англ. index) &mdash; объект базы данных, создаваемый с целью повышения производительности поиска данных. Таблицы в базе данных могут иметь большое количество строк, которые хранятся в произвольном порядке, и их поиск по заданному критерию путем последовательного просмотра таблицы строка за строкой может занимать много времени. Индекс формируется из значений одного или нескольких столбцов таблицы и указателей на соответствующие строки таблицы и, таким образом, позволяет искать строки, удовлетворяющие критерию поиска. Ускорение работы с использованием индексов достигается в первую очередь за счёт того, что индекс имеет структуру, оптимизированную под поиск &mdash; например, сбалансированного дерева.<br>
+Ответ на этот вопрос так же не поместится в одну статью. Изучите самостоятельно.</p>
+<h5>Обзор типов индексов Oracle, MySQL, PostgreSQL, MS SQL:&nbsp;http://habrahabr.ru/post/102785/</h5>
+<h4>8. Что такое JDBC API и когда его используют?</h4>
+<p>JDBC &ndash; это стандарт взаимодействия приложения с различными СУБД. JDBC основан на концепции драйверов, позволяющей получать соединение с БД по специальному url. JDBC API находятся в пакетах java.sql и javax.sql. С помощью JDBC API можно создавать соединения с БД, выполнять SQL запросы, хранимые процедуры и обрабатывать результаты. JDBC API упрощает работу с базами данных из Java программ.</p>
+<h5>Урок JDBC в примерах: http://habrahabr.ru/sandbox/41444/</h5>
+<h4>9. Что такое JDBC Driver и какие различные типы драйверов JDBC вы знаете?</h4>
+<p>JDBC основан на концепции так называемых драйверов, позволяющих получать соединение с базой данных по специально описанному URL. Драйверы могут загружаться динамически (во время работы программы). Загрузившись, драйвер сам регистрирует себя и вызывается автоматически, когда программа требует URL, содержащий протокол, за который драйвер отвечает.</p>
+<p><img src="pics/JDBC-Drivers.png" width="600px" /></p>
+<p>Различают четыре типа драйверов.Java программа работает с БД в двух частях. Первая часть это JDBC API, а вторая &mdash; драйвер, который и выполняет всю работу.&nbsp;Каждый тип определяет реализацию JDBC драйвера по возрастающей степени независимости от платформы, производительности и легкости администрирования. Эти четыре типа следующие:</p>
+<p><strong>Тип 1: JDBC-ODBC бридж</strong>&nbsp;(<strong>JDBC-ODBC Bridge plus ODBC Driver)&nbsp;</strong>&mdash;&nbsp;транслирует JDBC в ODBC и для взаимодействия с базой данных использует драйвер ODBC. Компания Sun включила в состав JDK один такой драйвер &mdash; мост JDBC/ODBC. Сейчас имеются более удачные реализации.<br>
+<strong>Тип 2: Нативный API/частично Java драйвер (Native API partly Java technology-enabled driver)</strong> &mdash; переводит вызовы JDBC в вызовы специфичные к СУБД таких как например SQL Server, Informix, Oracle или Sybase. Драйвер 2-го типа общается напрямую с сервером базы данных, следовательно он требует, чтобы какой то бинарный код был на стороне клиентской машины.<br>
+<strong>Тип 3: Сетевой протокол/«чистый» Java драйвер (Pure Java Driver for Database Middleware)</strong> &mdash;&nbsp;использует трехуровневую архитектуру, где вызовы JDBC посылаются на промежуточный т.н. сервер приложений, далее этот сервер транслирует вызовы (явно или косвенно) в вызовы специфичного к СУБД нативного интерфейса для дальнейшего обращения к базе данных. Если сервер среднего слоя написан на Java то он может использовать для трансляции JDBC драйверы 1 и 2 типов.<br>
+<strong>Тип 4: Нативный протокол/«чистый» Java драйвер (Direct-to-Database Pure Java Driver)</strong> &mdash;&nbsp;конвертирует вызовы JDBC в специфический протокол вендора СУБД, так что клиентские приложения могут напрямую обращаться с сервером базы данных. Драйверы 4-го типа полностью реализуются на Java с целью достижения платформенной независимости и устранения проблем администрирования и развертывания.</p>
+<h5>В дебрях JDBC драйверов: http://www.javable.com/javaworld/07_00/02/</h5>
+<h4>10. Как JDBC API помогает достичь слабой связи между Java программой и JDBC Drivers API?</h4>
+<p>JDBC API используют рефлексию в java для достижения слабой связи между джава программой и JDBC драйверами. Драйвер фактически загружается один раз с помощью <span style="color: #920000;">Class.forName()</span>, а дальше используются возможности JDBC API в Java. Таким образом мы пишем код не особо задумываясь с какой базой данных мы будем работать. При необходимости достаточно указать другой драйвер и не переписывать большое количество кода.</p>
+<h4>11. Что такое JDBC Connection? Покажите шаги для подключения программы к базе данных.</h4>
+<p>JDBC Connection &mdash; соединение, установленное с сервером базы данных. Это своего рода сессия или Socket Connection. Для создания JDBC&nbsp;connection требуется всего два шага:<br>
+1) Зарегистрировать и загрузить драйвер с помощью <span style="color: #920000;">Class.forName()</span>. Класс драйвера будет зарегистрирован для <span style="color: #920000;">DriverManager</span> и загружен в память.<br>
+2) Используя <span style="color: #920000;">DriverManager.getConnection()</span> получить объект <span style="color: #920000;">Connection</span>. В метод необходимо передать URL базы данных, имя и пароль.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a8d033224418">
+		
+			<div class="crayon-plain-wrap"><pre>Connection con = null;
+try{
+    // load the Driver Class
+    Class.forName("com.mysql.jdbc.Driver");
+ 
+    // create the connection now
+    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/UserDB",
+                    "pankaj",
+                    "pankaj123");
+    }catch (SQLException e) {
+            System.out.println("Check database is UP and configs are correct");
+            e.printStackTrace();
+    }catch (ClassNotFoundException e) {
+            System.out.println("Please include JDBC MySQL jar in classpath");
+            e.printStackTrace();
+    }</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0015 seconds] -->
+<p></p>
+<h4>12. Как используется JDBC DriverManager class?</h4>
+<p>JDBC DriverManager &mdash; фабрика, через которую можно получить объект Database Connection. После загрузки JDBC драйвера в память, он регистрирует себя в DriverManager (что можно проверить посмотрев в исходники JDBC Driver class). DriverManager используется для получения подключения с помощью зарегистрированных драйверов (метод <span style="color: #920000;">getConnection()</span>).</p>
+<h4>13. Как получить информацию о сервере базы данных из java программы?</h4>
+<p>С помощью объекта интерфейса&nbsp;<span style="color: #920000;">DatabaseMetaData</span> можно получить детальную информацию о сервере. После подключения к БД мы можем вызывать метод <span style="color: #920000;">getMetaData()</span> и получить объект <span style="color: #920000;">DatabaseMetaData</span>. Существует множество методов для получения различной информации, например о версии БД, конфигурации и т.п..</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a92973857605">
+		
+			<div class="crayon-plain-wrap"><pre>DatabaseMetaData metaData = con.getMetaData();
+String dbProduct = metaData.getDatabaseProductName();</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p></p>
+<h4>14. Что такое JDBC Statement?</h4>
+<p>JDBC API Statement используется для выполнения SQL запросов к базе данных. Объект <span style="color: #920000;">Statement</span> можно получить с помощью метода <span style="color: #920000;">Connection.getStatement()</span>. Вызывая методы <span style="color: #920000;">execute()</span>, <span style="color: #920000;">executeQuery()</span>, <span style="color: #920000;">executeUpdate()</span> и др., можно выполнять различные статичные SQL запросы.</p>
+<p>В случае динамически созданных SQL запросов внутри java программы, когда введенные пользователем данные могут быть не проверенными, можно использовать SQL injection.</p>
+<p>По умолчанию только один объект <span style="color: #920000;">ResultSet</span> для каждого <span style="color: #920000;">Statement</span> может быть открыт в одно и то же время. Таким образом, если необходимо работать с несколькими объектами <span style="color: #920000;">ResultSet</span> одновременно, мы должны использовать различные объекты <span style="color: #920000;">Statement</span>. Все <span style="color: #920000;">execute()</span> методы в интерфейсе <span style="color: #920000;">Statement</span> закроют текущий открытый объект <span style="color: #920000;">ResultSet</span> при выполнении.</p>
+<h4>15. Какие различия между execute, executeQuery, executeUpdate?</h4>
+<p>Существует несколько способов выполнять SQL-запросы в зависимости от типа этого запроса. Для этого у интерфейса Statement существует три различных метода: <span style="color: #920000;">executeQuery()</span>, <span style="color: #920000;">executeUpdate()</span>, а так же <span style="color: #920000;">execute()</span>. Рассмотрим их отдельно.<br>
+Самый базовый метод <span style="color: #920000;">executeQuery()</span> необходим для запросов, результатом которых является один единственный набор значений, таких как у запросов SELECT. Возвращает ResultSet, который не может быть null&nbsp;даже если в результата запроса не было найдено значений.<br>
+Метод <span style="color: #920000;">execute(</span>) используется, когда операторы SQL возвращают более одного набора данных, более одного счетчика обновлений или и то, и другое.&nbsp;Метод возвращает true, если результатом является ResultSet, как у запроса SELECT. Вернет false, если ResultSet отсутствует, например при запросах вида Insert, Update. С помощью методов <span style="color: #920000;">getResultSet()</span> мы можем получить ResultSet, а <span style="color: #920000;">getUpdateCount()</span> &mdash; количество обновленных записей.<br>
+Метод <span style="color: #920000;">executeUpdate()</span> используется для выполнения операторов INSERT, UPDATE или DELETE, а также для операторов DDL (Data Definition Language &mdash; язык определения данных), например, CREATE TABLE и DROP TABLE. Результатом оператора INSERT, UPDATE, или DELETE является модификация одной или более колонок в нуле или более строках таблицы. Метод <span style="color: #920000;">executeUpdate()</span> возвращает целое число, показывающее, сколько строк было модифицировано. Для выражений типа CREATE TABLE и DROP TABLE, которые не оперируют над строками, возвращаемое методом <span style="color: #920000;">executeUpdate()</span> значение всегда равно нулю.</p>
+<p>Все методы выполнения SQL-запросов закрывают предыдущий набор результатов (result set) у данного объекта Statement. Это означает, что перед тем как выполнять следующий запрос над тем же объектом Statement, надо завершить обработку результатов предыдущего (ResultSet).</p>
+<h4>16. Что такое JDBC PreparedStatement?</h4>
+<p>Объект PreparedStatement используется для выполнения прекомпилированных SQL-запросов с или без входных (IN) параметров. Мы можем использовать сеттеры для установки значений в запрос. Т.к. PreparedStatement является предкомпилированным, то он может быть эффективно использован множество раз. PreparedStatement считается лучшим выбором нежели Statement, т.к. он автоматически обрабатывает специальные символы, а так же предотвращает, так называемые, SQL injection attack (когда в запрос можно подставить свой код).</p>
+<h4>17. Как установить NULL значения в JDBC PreparedStatement?</h4>
+<p>Используя метод <span style="color: #920000;">setNull()</span> для установки null переменной в качестве параметра. Этот метод принимает индекс и SQL тип в качестве аргументов:&nbsp;<span style="color: #920000;">s.setNull(10, java.sql.Types.INTEGER);</span></p>
+<h4>18. Как используется метод getGeneratedKeys() в Statement?</h4>
+<p>Если в таблице используется автоматическая генерация ключей, то для их получения используется метод <span style="color: #920000;">Statement getGeneratedKeys()</span>, который вернет сгенерированный ключ.</p>
+<h4>19. Какие преимущества в использовании PreparedStatement над Statement?</h4>
+<ul>
+<li>PreparedStatement позволяет предотвратить атаки типа SQL injection, т.к. он автоматически экранирует специальные символы.</li>
+<li>PreparedStatement позволяет использовать динамические запросы с внедрением параметров.</li>
+<li>PreparedStatement быстрее Statement. Это особенно заметно при частом использовании PreparedStatement или при использовании для вызова группы запросов.</li>
+<li>PreparedStatement позволяет писать объектно ориентированный код с использованием сеттеров\геттеров. В то время при использовании Statement необходимо использовать конкатенацию строк для создания запроса. Для больших запросов конкатенация выглядит, как минимум, большой, а так же несет в себе большой риск ошибки в запросе.</li>
+</ul>
+<h5>JDBC Statement vs PreparedStatement &ndash; SQL Injection Example:&nbsp;http://www.journaldev.com/2489/jdbc-statement-vs-preparedstatement-sql-injection-example</h5>
+<h4>20. Какие есть ограничения PreparedStatement и как их преодолеть?</h4>
+<p>В PreparedStatement нельзя использовать напрямую запросы с IN (входными) параметрами. Есть некоторые обходные пути:</p>
+<ol>
+<li><strong>Выполнить&nbsp;Single Queries</strong> &ndash; низкая производительность и вообще не рекомендуется так делать.</li>
+<li><strong>Использовать&nbsp;Stored Procedure (хранимые процедуры)</strong> &ndash; являются специфичными для конкретной базы данных и следовательно плохи для приложений с возможностью подключения к различным БД.</li>
+<li><strong>Создание&nbsp;PreparedStatement Query динамически&nbsp;</strong>&ndash; это хорошее решение, но с потерей кэширования PreparedStatement.</li>
+<li><strong>Использование&nbsp;NULL&nbsp;в PreparedStatement Query</strong> &ndash; хорошее решение, если вы знаете максимальное число переменных IN. Можно расширить до использования неограниченного кол-во параметров с помощью разбиения на части.</li>
+</ol>
+<h5>JDBC PreparedStatement IN clause alternative approaches:&nbsp;http://www.journaldev.com/2521/jdbc-preparedstatement-in-clause-alternative-approaches</h5>
+<h4>21. Что такое JDBC ResultSet?</h4>
+<p>JDBC ResultSet &mdash; интерфейс, объект которого создается в результате запроса к базе данных. Его можно представить в виде таблицы данных, которая была сформирована в ответ на запрос.<br>
+Объект ResultSet поддерживает курсор, который указывает на текущую строку данных. При инициализации курсор устанавливается до первой строки. Для движение по строкам используется метод <span style="color: #920000;">next()</span>. При наличии строк после текущей позиции, метод <span style="color: #920000;">next()</span> возвращает false, что можно использовать для итерации по таблице полученных результатов.</p>
+<p>По умолчанию объект ResultSet не модифицируемый и поддерживает курсор, который способен только к движение вперед. Для обхода такого ограничения можно использовать следующую конструкцию, которая даст возможность двунаправленного движения по таблице, а так же возможности обновления:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8a9b257327045">
+		
+			<div class="crayon-plain-wrap"><pre>Statement stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+                                   ResultSet.CONCUR_UPDATABLE);</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p>Объект ResultSet автоматически закрывается при закрытии объекта, который его сгенерировал. Так же закрытие произойдет при повторном выполнении запроса или возврату результата из другого набора результатов.</p>
+<p>Для использования геттера ResultSet можно использовать имя колонки или индекс, который начинается с 1.</p>
+<h4>22. Какие существуют различные типы JDBC ResultSet?</h4>
+<p>При создании Statement можно задать различные типы получаемого ResultSet.</p>
+<p>Три типа объектов ResultSet:</p>
+<ol>
+<li><strong>ResultSet.TYPE_FORWARD_ONLY</strong>: тип по умолчанию. Поддерживает движение курсора только в прямом направлении.</li>
+<li><strong>ResultSet.TYPE_SCROLL_INSENSITIVE</strong>: Двунаправленный курсор. Объект не чувствителен к изменениям, которые произошли с таблицей после получения результата.</li>
+<li><strong>ResultSet.TYPE_SCROLL_SENSITIVE</strong>: Двунаправленный курсор. Объект чувствителен к изменениям, которые произошли с базой данных после создания объекта ResultSet.</li>
+</ol>
+<p>Два типа потокобезопасных объектов ResultSet:</p>
+<ol>
+<li><strong>ResultSet.CONCUR_READ_ONLY</strong>: Поддерживает только чтение (read only). Применяется по умолчанию.</li>
+<li><strong>ResultSet.CONCUR_UPDATABLE</strong>: Поддерживает метод ResultSet update для обновления строк в таблице данных.</li>
+</ol>
+<h4>23. Как используются методы setFetchSize() и SetMaxRows() в Statement?</h4>
+<p>Для ограничения количества строк, которые может вернуть запрос, применяется метод <span style="color: #920000;">setMaxRows(int i)</span>. Конечно, этот результат можно получить используя SQL запрос (например для MySQL существует команда LIMIT).</p>
+<p>Для понимания метода <span style="color: #920000;">setFetchSize()</span> необходимо разобраться с работой Statement и ResultSet. Когда выполняется запрос к базе данных, результат обрабатывается и сохраняется в кэше базы данных и возвращается в виде ResultSet. ResultSet является курсором, которые ссылается на результат в базе данных. Теперь допустим мы имеем запрос, который возвращает 100 строк и мы установили <span style="color: #920000;">setFetchSize(10)</span>. Теперь для каждого обращения к базе данных выделено только 10 строк и понадобится 10 запросов, чтобы получить все данные. Выбор оптимального количества <span style="color: #920000;">fetchSize()</span> может улучшить производительность выполнения большого кол-ва обращений к каждой строке и в случае большого количества строк в выходном результате.</p>
+<p>Значение <span style="color: #920000;">fetchSize</span> можно указать внутри объекта Statement, но оно может быть переопределено в объекте ResultSet с помощью <span style="color: #920000;">setFetchSize()</span>.</p>
+<h4>24. Как вызвать Stored Procedures используя JDBC API?</h4>
+<p>Хранимые процедуры &mdash; это группы SQL запросов, которые компилируются в базе данных и могут быть вызваны с помощью JDBC API. Для вызова хранимых процедур используется объект CallableStatement. Нам необходимо задать параметры выхода OUT до&nbsp;выполнения&nbsp;CallableStatement.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8aa2529969435">
+		
+			<div class="crayon-plain-wrap"><pre>CallableStatement stmt = con.prepareCall("{call insertEmployee(?,?,?,?,?,?)}");
+stmt.setInt(1, id);
+stmt.setString(2, name);
+stmt.setString(3, role);
+stmt.setString(4, city);
+stmt.setString(5, country);
+ 
+//register the OUT parameter before calling the stored procedure
+stmt.registerOutParameter(6, java.sql.Types.VARCHAR);
+              
+stmt.executeUpdate();</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0014 seconds] -->
+<p></p>
+<h5>JDBC CallableStatement Stored Procedure IN, OUT, Oracle Struct, Cursor Example Tutorial:&nbsp;http://www.journaldev.com/2502/jdbc-callablestatement-stored-procedure-in-out-oracle-struct-cursor-example-tutorial</h5>
+<h4>25. Что такое JDBC Batch Processing и каковы его преимущества?</h4>
+<p>Бывает необходимо выполнить сразу группу похожих запросов, например при загрузке данных из CSV файлов реляционной базы данных. Это можно сделать просто используя Statement или PreparedStatement для пошагового выполнения этих запросов. В JDBC API существует другая возможность, которая предоставляет возможность выполнить группу запросов за один раз. Выполнение такого рода задачи происходит с помощью JDBC API Batch Processing.</p>
+<p>JDBC API поддерживает пакетную обработку с помощью&nbsp;методов <span style="color: #920000;">addBatch()</span> и <span style="color: #920000;">executeBatch()</span> у Statement и&nbsp;PreparedStatement. К преимуществам такого подхода относится более быстрая работа, т.к. вызовов к базе данных может быть существенно меньше.</p>
+<h4>26. Что такое JDBC Transaction Management и зачем он нужен?</h4>
+<p>По умолчанию, при создании подключения к базе данных будет выбран auto-commit mode. Это означает, что при каждом выполнении запроса он будет подтвержден автоматически по завершению. Каждый SQL запрос является транзакционным и выполняя какие-либо DML или DDL запросы по их завершению изменения будут приняты (сохранены) базой данных. Если у нас есть необходимость отказываться от сохранения выполнения какого-либо запроса (или групп запросов) в случае, если что-то пошло не так, то мы можем воспользоваться поддержкой транзакций в JDBC API.</p>
+<p>С помощью метода <span style="color: #920000;">setAutoCommit(boolean flag)</span> можно отключить авто коммит в конкретном соединении. Следует отметить, что при отключении auto-commit не одно изменение не будет сохранено в базе данных до вызова метода <span style="color: #920000;">commit()</span> и за этим необходимо следить. Сервер базы данных будет блокировать необходимую часть базы данных до подтверждения транзакции, а так как это ресурсоёмкая задача, то подтверждать транзакцию необходимо сразу после выполнения задачи.</p>
+<h4>27. Как откатить JDBC транзакцию?</h4>
+<p>Для этого предусмотрен метод объекта Connection <span style="color: #920000;">rollback()</span>, который откатывает транзакцию. Будут отменены все изменения в транзакции и отменен lock базы данных от этого объекта Connection.</p>
+<h4>28. Что такое JDBC Savepoint и как он используется?</h4>
+<p>JDBC Savepoint позволяет создавать «чекпоинты» в транзакции с помощью которых мы можем откатить не всю транзакцию целиком, а только часть до точки сохранения. Любая точка сохранения автоматически освобождается и становится недоступной после подтверждения транзакции или её роллбека. Откат к точке сохранения делает все последующие сейвы недоступными и к ним уже нельзя будет вернуться.</p>
+<h4>29. Расскажите о JDBC DataSource. Какие преимущества он дает?</h4>
+<p>JDBC DataSource является интерфейсом пакета javax.sql и является более продвинутым в сравнении с DriverManager для подключения к базе данных. Мы можем использовать&nbsp;DataSource для создания подключения к базе данных и реализацию класса драйвера, которая будет выполнять всю работу по поддержанию соединения. В дополнение к соединению через Database, DataSource предоставляет следующие дополнительные возможности:</p>
+<ul>
+<li>Кэширование&nbsp;PreparedStatement для ускорения обработки запросов</li>
+<li>Настройки Connection timeout</li>
+<li>Возможности логирования</li>
+<li>Порог максимального размера ResultSet</li>
+<li>Поддержка Connection Pooling в контейнере сервлетов, использующий поддержку JNDI.</li>
+</ul>
+<h4>30. Как создать JDBC пул соединений используя JDBC DataSource и JNDI в Apache Tomcat Server?</h4>
+<p>Для создания пула соединений JDBC при использовании Tomcat необходимо выполнить несколько простых действий. Необходимо&nbsp;создать JDBC JNDI ресурс&nbsp;в файле конфигурации сервера (server.xml или context.xml).</p>
+<p><span style="color: #920000;">server.xml</span>:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8aa9807908836">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;Resource name="jdbc/MyDB"
+      global="jdbc/MyDB"
+      auth="Container"
+      type="javax.sql.DataSource"
+      driverClassName="com.mysql.jdbc.Driver"
+      url="jdbc:mysql://localhost:3306/DataBaseName"
+      username="root"
+      password="admin"
+        
+      maxActive="100"
+      maxIdle="20"
+      minIdle="5"
+      maxWait="10000"/&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0009 seconds] -->
+<p><span style="color: #920000;">context.xml</span>:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8aac418850558">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;ResourceLink name="jdbc/MyLocalDB"
+                global="jdbc/MyDB"
+                auth="Container"
+                type="javax.sql.DataSource" /&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0004 seconds] -->
+<p>В веб приложении с использованием InitialContext используем следующую запись для поиска JNDI ресурса, указанного в настройке выше. А затем можно получать соединение.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce0509e8aaf561812335">
+		
+			<div class="crayon-plain-wrap"><pre>Context ctx = new InitialContext();
+DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/MyLocalDB");</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p>&nbsp;</p></div>
+
+<div class="entry-body">
+<h4>31. Расскажите про Apache DBCP API.</h4>
+<p>При&nbsp;использование DataSource&nbsp;для&nbsp;получения соединения&nbsp;с базой данных&nbsp;возникает проблема тесной связи кода с драйвером реализации DataSource.&nbsp;Кроме того, большинство из кода является шаблонно повторяющимся (т.н. boilerplate code), за исключением выбора класса реализации источника данных.</p>
+<p>Apache DBCP API помогает нам избавиться от этих проблем, предоставляя реализацию DataSource, который работает в качестве уровня абстракции между нашей программой и различными драйверами JDBC. Библиотека Apache DBCP API основана на&nbsp;библиотеке Commons Pool library, поэтому необходимо удостовериться, что все необходимые зависимости правильно подключены к проекту.</p>
+<h4>32. Какие вы знаете уровни изоляции соединений в JDBC?</h4>
+<p>Уровень изолированности транзакций &mdash; значение, определяющее уровень, при котором в транзакции допускаются несогласованные данные, то есть степень изолированности одной транзакции от другой. Более высокий уровень изолированности повышает точность данных, но при этом может снижаться количество параллельно выполняемых транзакций. С другой стороны, более низкий уровень изолированности позволяет выполнять больше параллельных транзакций, но снижает точность данных.</p>
+<p>Когда мы используем транзакции в JDBC для обеспечения целостности данных, СУБД использует блокировки, чтобы заблокировать доступ других обращений к данным, участвующим в транзакции. Такие блокировки необходимы, чтобы предотвратить грязное чтение (Dirty Read), неповторяющиеся чтение (Non-Repeatable Read) и фантомное чтение (Phantom-Read).<br>
+Уровень изоляции транзакции JDBC используемый&nbsp;СУБД для&nbsp;механизма блокировки можно задать с помощью метода <span style="color: #920000;">setTransactionIsolation()</span>. Получить информацию о применяемом уровне изоляции поможет метод <span style="color: #920000;">Connection getTransactionIsolation()</span>.</p>
+<table class="tg">
+<tbody>
+<tr>
+<th class="tg-031e">Isolation Level</th>
+<th class="tg-031e">Transaction</th>
+<th class="tg-031e">Dirty Read</th>
+<th class="tg-031e">Non-Repeatable Read</th>
+<th class="tg-031e">Phantom Read</th>
+</tr>
+<tr class="tg-even">
+<td class="tg-4eph">TRANSACTION_NONE</td>
+<td class="tg-4eph">Not Supported</td>
+<td class="tg-4eph">Not Applicable</td>
+<td class="tg-4eph">Not Applicable</td>
+<td class="tg-4eph">Not Applicable</td>
+</tr>
+<tr>
+<td class="tg-031e">TRANSACTION_READ_COMMITTED</td>
+<td class="tg-031e">Supported</td>
+<td class="tg-031e">Prevented</td>
+<td class="tg-031e">Allowed</td>
+<td class="tg-031e">Allowed</td>
+</tr>
+<tr class="tg-even">
+<td class="tg-4eph">TRANSACTION_READ_UNCOMMITTED</td>
+<td class="tg-4eph">Supported</td>
+<td class="tg-4eph">Allowed</td>
+<td class="tg-4eph">Allowed</td>
+<td class="tg-4eph">Allowed</td>
+</tr>
+<tr>
+<td class="tg-031e">TRANSACTION_REPEATABLE_READ</td>
+<td class="tg-031e">Supported</td>
+<td class="tg-031e">Prevented</td>
+<td class="tg-031e">Prevented</td>
+<td class="tg-031e">Allowed</td>
+</tr>
+<tr class="tg-even">
+<td class="tg-4eph">TRANSACTION_SERIALIZABLE</td>
+<td class="tg-4eph">Supported</td>
+<td class="tg-4eph">Prevented</td>
+<td class="tg-4eph">Prevented</td>
+<td class="tg-4eph">Prevented</td>
+</tr>
+</tbody>
+</table>
+<h4>33. Что вы знаете о JDBC RowSet? Какие существуют различные типы RowSet?</h4>
+<p>JDBC RowSet содержит табличные данные в более гибком формате по сравнению с&nbsp;ResultSet. Все объекты RowSet являются производными&nbsp;из ResultSet, так что они имеют все возможности ResultSet с некоторыми дополнительными функциями. RowSet интерфейс определяется в javax.sql пакета. Можно выделить следующие дополнительные&nbsp;функции, предоставляемые RowSet:</p>
+<ul>
+<li>Функции похожие на&nbsp;Java Beans со свойствами и get\set методами для работы с ними. RowSet использует модель событий JavaBeans. В результате можно посылать&nbsp;уведомления любого зарегистрированного компонента для таких событий, например, движение курсора, обновления / вставка / удаление из строки и изменять&nbsp;содержимое&nbsp;RowSet.</li>
+<li>Объекты RowSet поддерживают скроллинг по данным (scrollable), а так же являются&nbsp;обновляемыми по умолчанию. Так что если СУБД не поддерживает скроллинг&nbsp;или обновляемый ResultSet, мы можем использовать RowSet, чтобы получить эти функции.</li>
+</ul>
+<p>RowSet можно разделить на два типа:</p>
+<ol>
+<li><strong>Connected RowSet Objects</strong> &ndash; эти объекты подключаются к БД и очень похожи на объекты ResultSet. JDBC API предоставляет только одно подключение объекта&nbsp;RowSet &mdash;&nbsp;<span style="color: #920000;">javax.sql.rowset.JdbcRowSet</span>&nbsp;и это является стандартной реализации класса&nbsp;<span style="color: #920000;">com.sun.rowset.JdbcRowSetImpl</span>.</li>
+<li><strong>Disconnected RowSet Objects</strong> &ndash; эти объекты&nbsp;RowSet не требуют подключения к базе данных. Они более легковесные и могут быть сериализованы. Такие объекты хорошо подходят для передачи данных по сети. Существуют четыре реализации такого типа объектов&nbsp;(disconnected RowSet objects).</li>
+</ol>
+<p>Кратко рассмотрим четыре реализации <strong>Disconnected RowSet Objects</strong>:</p>
+<ul>
+<li><strong>CachedRowSet</strong> &mdash; объекты могут получить соединение и выполнить запрос, считать данные ResultSet для заполнения данных RowSet. Мы можем управлять и обновлять данные на время отключения от БД и записать измененные&nbsp;данные при очередном подключении.</li>
+<li><strong>WebRowSet</strong> получены из CachedRowSet &mdash; такие объекты&nbsp;могут читать и записывать&nbsp;XML документы.</li>
+<li><strong>JoinRowSet</strong> получены из WebRowSet &mdash; могут образовывать SQL JOIN без подключения к источнику данных.</li>
+<li><strong>FilteredRowSet</strong> получены из WebRowSet &mdash; поддержка применения критериев фильтрации, поэтому видны только&nbsp;выбранные (полученные) данные.</li>
+</ul>
+<h4>34. В чем разница между ResultSet и RowSet?</h4>
+<p>Объекты RowSet являются производными из ResultSet, так что они имеют все возможности ResultSet с некоторыми дополнительными функциями.&nbsp;Одним из существенных преимуществ является возможность работы с данными без соединения с базой, а так же их легковесность и возможности пересылки данных объектов по сети.</p>
+<p>Следует ли использовать ResultSet или RowSet зависит от ваших требований. ResultSet, возможно, подойдет к длительным подключениям, в то время как RowSet будет лучшим выбором для подключений к базам данных с возможностью дисконекта и обработки полученных данных.</p>
+<h4>35. Приведите пример наиболее распространенных исключений в JDBC.</h4>
+<p>Некоторые из наиболее распространенных исключений&nbsp;JDBC:</p>
+<ul>
+<li>java.sql.SQLException &mdash; это базовый класс для исключений JDBC.</li>
+<li>java.sql.BatchUpdateException &mdash; возникает при исключительных ситуациях пакетной обработки запросов. Может зависеть от типа драйвера JDBC, который может выбросить взамен базовый SQLException.</li>
+<li>java.sql.SQLWarning &mdash; для предупреждающих сообщений различных&nbsp;SQL операций.</li>
+<li>java.sql.DataTruncation &mdash; когда значения данных неожиданно усекаются по причинам, не зависящим от превышения&nbsp;MaxFieldSize.</li>
+</ul>
+<h4>36. Расскажите о типах данных CLOB и BLOB в JDBC.</h4>
+<p>Character Large OBjects (CLOBs) &mdash; тип данных (внутренний символьный объект), используемый для хранения больших объектов. При выборе значения любого LOB-типа посредством оператора SELECT возвращается указатель, а не само значение; кроме того, типы LOB могут быть и внешними. Этот тип данных является подходящим для хранения текстовой информации, которая может выходить&nbsp;за пределы обычного типа данных VARCHAR (верхний предел 32 Кбайт).<br>
+Внутренний большой двоичный объект (BLOB) &mdash; двоичный объект большого размера, который может содержать переменное количество данных. Этот тип данных может хранить данные объемом более VARBINARY (32K предел). Тип данных, предназначенный, в первую очередь, для хранения изображений, аудио и видео, а также компилированного программного кода.</p>
+<h4>37. Что вы знаете о «грязном чтении» (dirty read) в JDBC? Какой уровень изоляции предотвращает этот тип чтения?</h4>
+<p>«Грязное» чтение (англ. dirty read) &mdash; чтение данных, добавленных или изменённых транзакцией, которая впоследствии не подтвердится (откатится). Получение недействительного в последствии значения (после отката транзакции) может приводить к непредвиденным результатам.</p>
+<table class="wikitable">
+<tbody>
+<tr>
+<th>Транзакция 1</th>
+<th>Транзакция 2</th>
+</tr>
+<tr>
+<td></td>
+<td><code>SELECT f2 FROM tbl1 WHERE f1=1;</code></td>
+</tr>
+<tr>
+<td><code>UPDATE tbl1 SET f2=f2+1 WHERE f1=1;</code></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><code>SELECT f2 FROM tbl1 WHERE f1=1;</code></td>
+</tr>
+<tr>
+<td><code>ROLLBACK WORK;</code></td>
+</tr>
+</tbody>
+</table>
+<p><span style="color: #920000;">Dirty Read</span> можно предотвратить, используя следующие уровни изоляции:&nbsp;<span style="color: #920000;">TRANSACTION_READ_COMMITTED</span>, <span style="color: #920000;">TRANSACTION_REPEATABLE_READ</span> и <span style="color: #920000;">TRANSACTION_SERIALIZABLE</span>.</p>
+<h4>38. Какие есть две фазы commit?</h4>
+<p>Когда мы работаем в распределенных системах, где участвуют несколько баз данных, мы должны использовать протокол с 2 фазами фиксации. 2 фазовый протокол фиксации является атомарным протоколом для распределенных систем. На первом этапе, менеджер транзакций передает commit-request&nbsp;всем ресурсам транзакции. Если все ресурсы транзакции ответили&nbsp;ОК, то менеджер транзакций фиксирует изменения транзакций для всех ресурсов. Если какой-либо из ресурсов транзакций уведомляет об отмене, то менеджер транзакций может откатить все изменения транзакций.</p>
+<h4>39. Приведите пример различных типов блокировки в JDBC.</h4>
+<p>На более широком уровне есть два типа механизма блокировки для предотвращения повреждения данных из-за одновременной&nbsp;работы с данными несколькими пользователями. По логике реализации различают два вида блокировок.</p>
+<p><strong>Оптимистическая блокировка</strong> &mdash; не ограничивает модификацию обрабатываемых данных сторонними сессиями, однако перед началом предполагаемой модификации запрашивает значение некоторого выделенного атрибута каждой из строк данных (обычно используется наименование VERSION и целочисленный тип с инициальным значением 0). Перед записью модификаций в базу данных перепроверяется значение выделенного атрибута, и если оно изменилось, то транзакция откатывается или применяются различные схемы разрешения коллизий. Если значение выделенного атрибута не изменилось &mdash; производится фиксация модификаций с одновременным изменением значения выделенного атрибута (например, инкрементом) для сигнализации другим сессиям о том, что данные изменились.<br>
+<strong>Пессимистическая&nbsp;блокировка</strong> &mdash; накладывается перед предполагаемой модификацией данных на все строки, которые такая модификация предположительно затрагивает. Всё время действия такой блокировки исключена модификация данных из сторонних сессий, данные из блокированных строк доступны согласно уровню изолированности транзакции. По завершению предполагаемой модификации гарантируется непротиворечивая запись результатов.</p>
+<h4>40. Как вы понимаете DDL и DML выражения?</h4>
+<p>Data Definition Language (DDL) (язык описания данных) &mdash; это семейство компьютерных языков, используемых в компьютерных программах для описания структуры баз данных.&nbsp;Функции языков DDL определяются первым словом в предложении (часто называемом запросом), которое почти всегда является глаголом. В случае с SQL это глаголы &mdash; «create» («создать»), «alter» («изменить»), «drop» («удалить»).</p>
+<p>Data Manipulation Language (DML) (язык управления (манипулирования) данными) &mdash; это семейство компьютерных языков, используемых в компьютерных программах или пользователями баз данных для получения, вставки, удаления или изменения данных в базах данных.&nbsp;Функции языков DML определяются первым словом в предложении (часто называемом запросом), которое почти всегда является глаголом. В случае с SQL эти глаголы &mdash; «select» («выбрать»), «insert» («вставить»), «update» («обновить»), и «delete» («удалить»). Это превращает природу языка в ряд обязательных утверждений (команд) к базе данных.</p>
+<h4>41. Какая разница между java.util.Date и java.sql.Date?</h4>
+<p>java.util.Date содержит информацию о дате и времени, тогда как java.sql.Date содержит информацию только о дате, но&nbsp;не имеет информации о времени. Если необходимо сохранить&nbsp;информацию о времени в базе данных, то желательно использовать поля Timestamp или DateTime.<br>
+Java.util.Date &mdash; основной универсальный объект. В нем просто сохраняется дата (как long).</p>
+<p>java.sql.Date расширяет&nbsp;java.util.Date и добавляет&nbsp;следующую функциональность:</p>
+<p>1) toString выводит дату в качестве «yyyy-mm-dd», а не как у конкретного языкового стандарта строки (локали).</p>
+<p>2) Добавлен&nbsp;метод valueOf для чтения строк&nbsp;формата «yyyy-mm-dd» и дальнейшего разбора ее в объект sql.Date.</p>
+<h4>42. Как вставить изображение или необработанные данные в базу данных?</h4>
+<p>Для этого можно использовать тип данных BLOB, чтобы вставить картинку или двоичные данные в базу данных.</p>
+<h4>43. Что вы можете рассказать о фантомном чтении? Какой уровень изоляции его предотвращает?</h4>
+<p>Ситуация, когда при повторном чтении в рамках одной транзакции одна и та же выборка дает разные множества строк.&nbsp;Предположим, имеется две транзакции, открытые различными приложениями, в которых выполнены следующие SQL-операторы:</p>
+<table class="wikitable">
+<tbody>
+<tr>
+<th>Транзакция 1</th>
+<th>Транзакция 2</th>
+</tr>
+<tr>
+<td></td>
+<td><code>SELECT SUM(f2) FROM tbl1;</code></td>
+</tr>
+<tr>
+<td><code>INSERT INTO tbl1 (f1,f2) VALUES (15,20);</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>COMMIT;</code></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><code>SELECT SUM(f2) FROM tbl1;</code></td>
+</tr>
+</tbody>
+</table>
+<p>В транзакции 2 выполняется SQL-оператор, использующий все значения поля f2. Затем в транзакции 1 выполняется вставка новой строки, приводящая к тому, что повторное выполнение SQL-оператора в транзакции 2 выдаст другой результат. Такая ситуация называется фантомным чтением. От неповторяющегося чтения оно отличается тем, что результат повторного обращения к данным изменился не из-за изменения/удаления самих этих данных, а из-за появления новых (фантомных) данных.<br>
+<span style="color: #920000;">Phantom read</span> можно предотвратить только на уровне изоляции &mdash;&nbsp;<span style="color: #920000;">TRANSACTION_SERIALIZABLE</span>.</p>
+<h4>44. Что такое SQL Warning? Как возвратить SQL предупреждения в JDBC программе?</h4>
+<p><span style="color: #920000;">SQLWarning</span> это подкласс <span style="color: #920000;">SQLException</span>, который мы можем получить вызвав метод <span style="color: #920000;">getWarnings()</span>&nbsp;у&nbsp;объектов&nbsp;<span style="color: #920000;">Connection</span>, <span style="color: #920000;">Statement</span>, <span style="color: #920000;">ResultSet</span>. SQL Предупреждения не останавливает выполнение запроса, но показывает предупреждающие сообщения для&nbsp;пользователя.</p>
+<h4>45. Как запустить Oracle Stored Procedure с объектами базы данных IN/OUT?</h4>
+<p>Если хранимая процедура Oracle содержит <span style="color: #920000;">IN / OUT</span> параметры как DB объекты, то мы должны создать массив объектов такого же размера в программе, а затем использовать его для создания Oracle <span style="color: #920000;">STRUCT&nbsp;</span>объекта. Тогда мы можем установить этот <span style="color: #920000;">STRUCT</span> объект в объект базы данных, вызвав метод <span style="color: #920000;">setSTRUCT()</span>.</p>
+<h4>46. Приведите пример возникновения java.sql.SQLException: No suitable driver found.</h4>
+<p>Исключение <span style="color: #920000;">java.sql.SQLException: No suitable driver found</span> может быть вызвано, например, неправильно отформатированной строкой SQL-адреса. Вы можете получить это исключение&nbsp;в простом&nbsp;Java приложении как&nbsp;через&nbsp;<span style="color: #920000;">DriverManager</span>, тик и используя JNDI <span style="color: #920000;">DataSource</span>. Трассировка стека исключений приведена ниже:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce5c6fe1cfe222172528">
+		
+			<div class="crayon-plain-wrap"><pre>org.apache.tomcat.dbcp.dbcp.SQLNestedException: Cannot create JDBC driver of class 'com.mysql.jdbc.Driver' for connect URL ''jdbc:mysql://localhost:3306/UserDB'
+    at org.apache.tomcat.dbcp.dbcp.BasicDataSource.createConnectionFactory(BasicDataSource.java:1452)
+    at org.apache.tomcat.dbcp.dbcp.BasicDataSource.createDataSource(BasicDataSource.java:1371)
+    at org.apache.tomcat.dbcp.dbcp.BasicDataSource.getConnection(BasicDataSource.java:1044)
+ 
+ 
+java.sql.SQLException: No suitable driver found for 'jdbc:mysql://localhost:3306/UserDB
+    at java.sql.DriverManager.getConnection(DriverManager.java:604)
+    at java.sql.DriverManager.getConnection(DriverManager.java:221)
+    at com.journaldev.jdbc.DBConnection.getConnection(DBConnection.java:24)
+    at com.journaldev.jdbc.DBConnectionTest.main(DBConnectionTest.java:15)
+Exception in thread "main" java.lang.NullPointerException</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0030 seconds] -->
+<p>Можно увидеть, что мы используем URL вида &mdash; <span style="color: #920000;">‘jdbc:mysql://localhost:3306/UserDB</span>, в то время как должен быть указан URL &mdash; <span style="color: #920000;">jdbc:mysql://localhost:3306/UserDB</span>.</p>
+<h4>47. Best Practices в JDBC.</h4>
+<p>Некоторые Best Practices в JDBC:</p>
+<ul>
+<li>Всегда закрывайте ресурсы базы данных сразу после работы с ними.&nbsp;Connection, Statement, ResultSet и другие&nbsp;JDBC объекты имеют метод&nbsp;close(), который позволяет закрыть их.</li>
+<li>Всегда явно закрывайте результирующий набор ResultSet, Statement&nbsp;и&nbsp;Connection в коде, потому что если вы используете&nbsp;пул соединений, то соединение может быть возвращено в пул, оставляя открытые result sets и statement objects&nbsp;и будет происходить утечка.</li>
+<li>Закрывайте ресурсы в конце finally&nbsp;блока, чтобы убедиться, что они закрыты даже в случае возникновения&nbsp;исключения.</li>
+<li>Используйте пакетную обработку (batch processing) для повторяющихся запросов.</li>
+<li>Всегда используйте PreparedStatement вместо Statement, чтобы избежать SQL Injection и получить преимущества заранее прекомпилированного и кэшированного запроса PreparedStatement.</li>
+<li>Если вы извлекаете большие массивы данных в&nbsp;result set, то заранее установите оптимальное значение fetchSize, что поможет получить&nbsp;лучшую производительность.</li>
+<li>Сервер базы данных может не поддерживать все уровни изоляции, так что проверьте их&nbsp;заранее.</li>
+<li>Более строгие уровни изоляции могут привести&nbsp;к снижению производительности, поэтому убедитесь, что у вы используете оптимальный набор уровней изоляции для ваших соединений с базой данных.</li>
+<li>Если вы создаете подключения к базе данных из веб-приложения, попробуйте использовать ресурсы JDBC DataSource с помощью применения контекста JNDI для возможности повторного использования соединений.</li>
+<li>Попробуйте использовать отключенный (disconnected) RowSet, когда вам нужно работать с ResultSet в течение длительного времени.</li>
+</ul>
+</div>
+</body>
+</html>

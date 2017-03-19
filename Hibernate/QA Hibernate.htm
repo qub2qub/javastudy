@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>QA Hibernate</title>
+    <link rel="stylesheet" href="../Git Guide/grey.css">
+</head>
+<body>
+<a href="http://javastudy.ru/interview/jee-hibernate-questions-answers/">src1</a>
+<a href="http://javastudy.ru/interview/jee-hibernate-questions-answers-2/">src2</a>
+<h2>Hibernate Framework</h2>
+<div class="entry-body">
+<h3>Вопросы</h3>
+<p>1. Что такое Hibernate Framework?<br>
+2. Какие важные преимущества дает использование Hibernate Framework?<br>
+3. Каковы преимущества Hibernate над JDBC?<br>
+4. Назовите некоторые важные интерфейсы Hibernate.<br>
+5. Что такое конфигурационный файл Hibernate?<br>
+6. Что такое Hibernate mapping file?<br>
+7. Назовите некоторые важные аннотации, используемые для отображения в Hibernate.<br>
+8. Что вы знаете о Hibernate SessionFactory и как его сконфигурировать?<br>
+9. Является ли Hibernate SessionFactory потокобезоспансым?<br>
+10. Как получить Hibernate Session и что это такое?<br>
+11. Является ли Hibernate Session потокобезоспаным?<br>
+12. В чем разница между openSession и getCurrentSession?<br>
+13. Какая разница между методами Hibernate Session get() и load()?<br>
+14. Что вы знаете о кэширование в Hibernate? Объясните понятие кэш первого уровня в Hibernate?<br>
+15. Как настроить кэш второго уровня в Hibernate с помощью EHCache?<br>
+16. Каковы существуют различные состояния у entity bean?<br>
+17. Как используется вызов метода Hibernate Session merge()?<br>
+18. В чем разница между Hibernate save(), saveOrUpdate() и persist()?<br>
+19. Что произойдет, если будет отсутствовать конструктор без аргументов у Entity Bean?<br>
+20. В чем разница между sorted collection и ordered collection? Какая из них лучше?<br>
+21. Какие типы коллекций в Hibernate вы знаете?<br>
+22. Как реализованы Join’ы Hibernate?<br>
+23. Почему мы не должны делать Entity class как final?<br>
+24. Что вы знаете о HQL и каковы его преимущества?<br>
+25. Что такое Query Cache в Hibernate?<br>
+26. Можем ли мы выполнить нативный запрос SQL (sql native) в Hibernate?<br>
+27. Назовите преимущества поддержки нативного sql в Hibernate.<br>
+28. Что такое Named SQL Query?<br>
+29. Каковы преимущества Named SQL Query?<br>
+30. Расскажите о преимуществах использования Hibernate Criteria API.</p>
+
+<p>31. Как логировать созданные Hibernate SQL запросы в лог-файлы?<br>
+32. Что вы знаете о Hibernate прокси и как это помогает в ленивой загрузке (lazy load)?<br>
+33. Как реализованы отношения в Hibernate?<br>
+34. Как управлять транзакциями с помощью Hibernate?<br>
+35. Что такое каскадные связи (обновления) и какие каскадные типы есть в Hibernate?<br>
+36. Как добавить логирование log4j в Hibernate приложение?<br>
+37. Как использовать JNDI DataSource сервера приложений с Hibernate Framework?<br>
+38. Как интегрировать Hibernate и Spring?<br>
+39. Что вы знаете о классе HibernateTemplate?<br>
+40. Как интегрировать Hibernate с Servlet или Struts2 веб приложением?<br>
+41. Какие&nbsp;паттерны применяются в Hibernate?<br>
+42. Расскажите о Hibernate Validator Framework.<br>
+43. Какие преимущества дает использование плагина Hibernate Tools Eclipse?<br>
+44. Best Practices в Hibernate.</p>
+<h3>Ответы</h3>
+<h4>1. Что такое Hibernate Framework?</h4>
+<p>Hibernate &mdash; библиотека для языка программирования Java, предназначенная для решения задач объектно-реляционного отображения (object-relational mapping &mdash; ORM). Она представляет собой свободное программное обеспечение с открытым исходным кодом (open source), распространяемое на условиях GNU Lesser General Public License. Данная библиотека предоставляет легкий в использовании каркас (фреймворк) для отображения объектно-ориентированной модели данных в традиционные реляционные базы данных.&nbsp;Hibernate совместима с JSR-220/317 и предоставляет стандартные средства JPA.</p>
+<h4>2. Какие важные преимущества дает использование Hibernate Framework?</h4>
+<p>Hibernate является одним из самых востребованных ORM фреймворков для Java. И вот почему:</p>
+<ol>
+<li>Hibernate устраняет множество спагетти кода (повторяющегося), который постоянно преследует разработчика при работе с&nbsp;JDBC. Скрывает от разработчика множество кода, необходимого для управления ресурсами и позволяет сосредоточиться на бизнес логике.</li>
+<li>Hibernate поддерживает&nbsp;XML так же как и JPA аннотации, что позволяет сделать реализацию кода независимой.</li>
+<li>Hibernate предоставляет собственный мощный язык запросов&nbsp;(HQL), который похож на SQL. Стоит отметить, что HQL полностью объектно-ориентирован и понимает такие принципы, как наследование, полиморфизм и ассоциации (связи).</li>
+<li>Hibernate &mdash; широко распространенный open source проект. Благодаря этому доступны тысячи открытых статей, примеров, а так же документации по использованию фреймворка.</li>
+<li>Hibernate легко интегрируется с другими&nbsp;Java EE фреймворками, например, Spring Framework поддерживает встроенную интеграцию с Hibernate.</li>
+<li>Hibernate поддерживает ленивую инициализацию используя proxy объекты и выполняет запросы к базе данных только по необходимости.</li>
+<li>Hibernate поддерживает разные уровни cache, а следовательно может повысить производительность.</li>
+<li>Важно, что Hibernate может использовать чистый SQL, а значит поддерживает возможность оптимизации запросов и работы с любым сторонним вендором БД и его фичами.</li>
+</ol>
+<h4>3. Каковы преимущества Hibernate над JDBC?</h4>
+<p>Hibernate имеет ряд преимуществ перед JDBC API:</p>
+<ol>
+<li>Hibernate удаляет множество повторяющегося кода из&nbsp;JDBC API, а следовательно его легче читать, писать и поддерживать.</li>
+<li>Hibernate поддерживает наследование, ассоциации и коллекции, что не доступно в&nbsp;JDBC API.</li>
+<li>Hibernate неявно использует управление транзакциями. Большинство запросов нельзя выполнить вне транзакции. При использовании&nbsp;JDBC API для управления транзакциями нужно явно использовать <span style="color: #920000;">commit</span> и <span style="color: #920000;">rollback</span>.</li>
+<li>JDBC API <span style="color: #920000;">throws</span> <span style="color: #920000;">SQLException</span>, которое относится к проверяемым исключениям, а значит необходимо постоянно писать множество&nbsp;блоков&nbsp;<span style="color: #920000;">try-catch</span>. В большинстве случаев это не нужно для каждого вызова JDBC и используется для управления транзакциями. Hibernate оборачивает исключения JDBC через непроверяемые&nbsp;<span style="color: #920000;">JDBCException</span> или&nbsp;<span style="color: #920000;">HibernateException</span>, а значит нет необходимости проверять их в коде каждый раз. Встроенная поддержка управления транзакциями в Hibernate убирает блоки <span style="color: #920000;">try-catch</span>.</li>
+<li>Hibernate Query Language (HQL) более объектно ориентированный и близкий к Java язык программирования, чем SQL в JDBC.</li>
+<li>Hibernate поддерживает кэширование, а запросы JDBC &mdash; нет, что может понизить производительность.</li>
+<li>Конфигурация Hibernate позволяет использовать&nbsp;JDBC вроде соединения по типу&nbsp;JNDI DataSource для пула соединений. Это важная фича для энтерпрайз приложений, которая полностью отсутствует в JDBC API.</li>
+<li>Hibernate поддерживает аннотации&nbsp;JPA, а значит код является переносимым на другие ORM фреймворки, реализующие стандарт, в&nbsp;то время как код JDBC сильно привязан к приложению.</li>
+</ol>
+<h4>4. Назовите некоторые важные интерфейсы Hibernate.</h4>
+<ol>
+<li><strong>SessionFactory (org.hibernate.SessionFactory)</strong> &mdash;&nbsp;неизменяемый потокобезопасный объект с компилированным маппингом для одной базы данных.&nbsp;Необходимо инициализировать <span style="color: #920000;">SessionFactory</span> всего один раз. Экземпляр <span style="color: #920000;">SessionFactory&nbsp;</span>используется для получения объектов&nbsp;<span style="color: #920000;">Session</span>, которые используются для операций с базами данных.</li>
+<li><strong>Session (org.hibernate.Session)</strong>&nbsp;&mdash; однопоточный короткоживущий объект, который предоставляет связь между&nbsp;объектами приложения и базой данных. Он оборачивает JDBC <span style="color: #920000;">java.sql.Connection</span> и работает как фабрика для <span style="color: #920000;">org.hibernate.Transaction</span>. Разработчик должен&nbsp;открывать сессию по необходимости и закрывать ее сразу после использования. Экземпляр <span style="color: #920000;">Session</span> является интерфейсов между кодом в java приложении и hibernate framework и предоставляет методы для операций CRUD.</li>
+<li><strong>Transaction (org.hibernate.Transaction)</strong>&nbsp;&mdash; однопоточный короткоживущий объект, используемый для атомарных операций. Это абстракция приложения от основных&nbsp;JDBC или JTA транзакций. <span style="color: #920000;">org.hibernate.Session</span>&nbsp;может занимать несколько <span style="color: #920000;">org.hibernate.Transaction</span>&nbsp;в определенных случаях.</li>
+</ol>
+<h4>5. Что такое конфигурационный файл Hibernate?</h4>
+<p>Файл конфигурации Hibernate содержит в себе данные о базе данных и необходим для инициализации SessionFactory. В .xml файле необходимо указать вендора базы данных или JNDI ресурсы, а так же информацию об используемом диалекте, что поможет hibernate выбрать режим работы с конкретной базой данных.</p>
+<h4>6. Что такое Hibernate mapping file?</h4>
+<p>Файл отображения (mapping file) используется для связи entity бинов и колонок в таблице базы данных. В случаях, когда не используются аннотации JPA, файл отображения .xml может быть полезен (например при использовании сторонних библиотек).</p>
+<h4>7. Назовите некоторые важные аннотации, используемые для отображения в Hibernate.</h4>
+<p>Hibernate поддерживает как аннотации из JPA, так и свои собственные, которые находятся в пакете org.hibernate.annotations. Наиболее важные аннотации JPA и Hibernate:</p>
+<ol>
+<li><strong>javax.persistence.Entity</strong>: используется для указания класса как entity bean.</li>
+<li><strong>javax.persistence.Table</strong>: используется для определения имени таблицы из БД, которая будет отображаться на entity bean.</li>
+<li><strong>javax.persistence.Access</strong>: определяет тип доступа, поле или свойство. Поле &mdash; является значением по умолчанию и если нужно, чтобы hibernate использовать методы getter/setter, то их необходимо задать для нужного свойства.</li>
+<li><strong>javax.persistence.Id</strong>: определяет&nbsp;primary key в entity bean.</li>
+<li><strong>javax.persistence.EmbeddedId</strong>: используется для определения составного ключа в бине.</li>
+<li><strong>javax.persistence.Column</strong>:&nbsp;определяет имя колонки из таблицы в базе данных.</li>
+<li><strong>javax.persistence.GeneratedValue</strong>: задает стратегию создания основных ключей. Используется в сочетании с <span style="color: #920000;">javax.persistence.GenerationType</span>&nbsp;enum.</li>
+<li><strong>javax.persistence.OneToOne</strong>: задает связь один-к-одному между двумя сущностными бинами. Соответственно есть другие аннотации&nbsp;<span style="color: #920000;">OneToMany</span>, <span style="color: #920000;">ManyToOne </span>и&nbsp;<span style="color: #920000;">ManyToMany</span>.</li>
+<li><strong>org.hibernate.annotations.Cascade</strong>: определяет каскадную связь между двумя&nbsp;entity бинами. Используется в связке с <span style="color: #920000;">org.hibernate.annotations.CascadeType</span>.</li>
+<li><strong>javax.persistence.PrimaryKeyJoinColumn</strong>: определяет внешний ключ для свойства. Используется вместе с&nbsp;<span style="color: #920000;">org.hibernate.annotations.GenericGenerator</span> и&nbsp;<span style="color: #920000;">org.hibernate.annotations.Parameter</span>.</li>
+</ol>
+<h4>8. Что вы знаете о Hibernate SessionFactory и как его сконфигурировать?</h4>
+<p>SessionFactory является фабрикой классов и используется для получения объектов session. SessionFactory отвечает за считывание параметров конфигурации Hibernate и подключение к базе данных.&nbsp;Обычно в приложении имеется только один экземпляр SessionFactory и потоки, обслуживающие клиентские запросы, получают экземпляры&nbsp;session с помощью объекта SessionFactory.&nbsp;Внутреннее состояние SessionFactory неизменно (immutable). Internal state (внутреннее состояние)&nbsp;включает в себя все метаданные об Object/ Relational Mapping и задается при создании SessionFactory.</p>
+<p>SessionFactory также предоставляет&nbsp;методы для получения метаданных класса и статистики, вроде данных о втором уровне кэша, выполняемых запросах и т.д.</p>
+<h4>9. Является ли Hibernate SessionFactory потокобезоспансым?</h4>
+<p>Т.к. объект&nbsp;SessionFactory immutable (неизменяемый), то да, он потокобезопасный. Множество потоков может обращаться к одному объекту одновременно.</p>
+<h4>10. Как получить Hibernate Session и что это такое?</h4>
+<p>Объект Hibernate Session является связью между кодом java приложения и hibernate. Это основной интерфейс для выполнения операций с базой данных. Жизненный цикл объекта session связан с началом и окончанием транзакции. Этот объект предоставляет методы&nbsp;для CRUD (<span style="color: #920000;">create</span>, <span style="color: #920000;">read</span>, <span style="color: #920000;">update</span>, <span style="color: #920000;">delete</span>) операций для объекта персистентности. С помощью этого экземпляра можно выполнять HQL, SQL запросы и задавать критерии выборки.</p>
+<h4>11. Является ли Hibernate Session потокобезоспаным?</h4>
+<p>Объект Hibernate Session не является потокобезопасным. Каждый поток должен иметь свой собственный объект Session и закрывать его по окончанию.</p>
+<h4>12. В чем разница между openSession и getCurrentSession?</h4>
+<p>Hibernate <span style="color: #920000;">SessionFactory getCurrentSession()</span> возвращает сессию, связанную с контекстом. Но для того, чтобы это работало, нам нужно настроить его в конфигурационном файле hibernate. Так как этот объект session&nbsp;связан с&nbsp;контекстом hibernate, то отпадает необходимость к его закрытию.&nbsp;Объект <span style="color: #920000;">session</span> закрывается вместе с закрытием <span style="color: #920000;">SessionFactory</span>.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		 margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd56f4522047501">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;property name="hibernate.current_session_context_class"&gt;thread&lt;/property&gt;</pre>
+			
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p>Метод&nbsp;Hibernate <span style="color: #920000;">SessionFactory openSession()</span> всегда создает новую сессию. Мы должны обязательно контролировать закрытие объекта сеанса&nbsp;по завершению всех операций с базой данных. Для многопоточной среды необходимо создавать новый объект session для каждого запроса.</p>
+<p>Существует еще один метод <span style="color: #920000;">openStatelessSession()</span>, который возвращает <span style="color: #920000;">session</span> без поддержки состояния. Такой объект не реализует первый уровень кэширования и не взаимодействует с вторым уровнем. Сюда же можно отнести игнорирование коллекций и некоторых обработчиков событий. Такие объекты могут быть полезны при загрузке&nbsp;больших объемов данных без удержания большого кол-ва информации в кэше.</p>
+<h4>13. Какая разница между методами Hibernate Session get() и load()?</h4>
+<p>Hibernate session обладает&nbsp;различными методами для загрузки&nbsp;данных из базы данных. Наиболее часто используемые методы для этого &mdash; <span style="color: #920000;">get()</span> и <span style="color: #920000;">load()</span>.</p>
+<ul>
+<li><span style="color: #920000;">get()</span> загружает данные&nbsp;сразу при вызове, в то время как <span style="color: #920000;">load()</span> использует&nbsp;прокси объект и загружает данные только тогда, когда это&nbsp;требуется на самом деле. В этом плане <span style="color: #920000;">load()</span> имеет преимущество в плане ленивой загрузки данных.</li>
+<li><span style="color: #920000;">load()</span> бросает исключение, когда данные не найдены. Поэтому его нужно использовать только при уверенности в существовании данных.</li>
+<li>Нужно использовать метод&nbsp;<span style="color: #920000;">get()</span>,&nbsp;если необходимо удостовериться в наличии данных в БД.</li>
+</ul>
+<h4>14. Что вы знаете о кэширование в Hibernate? Объясните понятие кэш первого уровня в Hibernate?</h4>
+<p>Hibernate использует кэширование, чтобы сделать наше приложение быстрее. Кэш Hibernate может быть очень полезным в получении высокой производительности&nbsp;приложения при правильном использовании.&nbsp;Идея кэширования заключается в сокращении количества запросов к базе данных.</p>
+<p>Кэш первого уровня Hibernate&nbsp;связан с объектом Session. Кэш первого уровня у Hibernate &nbsp;включен по умолчанию и не существует&nbsp;никакого способа, чтобы его отключить. Однако Hibernate предоставляет методы, с помощью&nbsp;которых&nbsp;мы можем удалить выбранные объекты из кэша или полностью очистить кэш.<br>
+Любой объект закэшированный&nbsp;в session&nbsp;не будет виден другим объектам session. После закрытия объекта сессии все кэшированные объекты будут потеряны.</p>
+<h4>15. Как настроить кэш второго уровня в Hibernate с помощью EHCache?</h4>
+<p>EHCache является лучшим выбором для организации кэширования второго уровня в хибернейт. Для настройки второго уровня кэширования в хибернейт требуется выполнить несколько шагов.</p>
+<ul>
+<li>Добавить зависимость&nbsp;hibernate-ehcache в проект.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd5701348679475">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;dependency&gt;
+        &lt;groupId&gt;org.hibernate&lt;/groupId&gt;
+        &lt;artifactId&gt;hibernate-ehcache&lt;/artifactId&gt;
+        &lt;version&gt;4.3.5.Final&lt;/version&gt;
+&lt;/dependency&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0006 seconds] -->
+<p></p>
+<ul>
+<li>Добавить несколько записей в конфигурационный файл Hibernate.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd5705253668670">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;property name="hibernate.cache.region.factory_class"&gt;org.hibernate.cache.ehcache.EhCacheRegionFactory&lt;/property&gt;
+          
+&lt;!-- For singleton factory --&gt;
+&lt;!-- &lt;property name="hibernate.cache.region.factory_class"&gt;org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory&lt;/property&gt;
+--&gt;
+           
+&lt;!-- enable second level cache and query cache --&gt;
+&lt;property name="hibernate.cache.use_second_level_cache"&gt;true&lt;/property&gt;
+&lt;property name="hibernate.cache.use_query_cache"&gt;true&lt;/property&gt;
+&lt;property name="net.sf.ehcache.configurationResourceName"&gt;/myehcache.xml&lt;/property&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0016 seconds] -->
+<p></p>
+<ul>
+<li>Создать файл конфигурации EHCache.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd5708614936474">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="true"
+    monitoring="autodetect" dynamicConfig="true"&gt;
+  
+    &lt;diskStore path="java.io.tmpdir/ehcache" /&gt;
+  
+    &lt;defaultCache maxEntriesLocalHeap="10000" eternal="false"
+        timeToIdleSeconds="120" timeToLiveSeconds="120" diskSpoolBufferSizeMB="30"
+        maxEntriesLocalDisk="10000000" diskExpiryThreadIntervalSeconds="120"
+        memoryStoreEvictionPolicy="LRU" statistics="true"&gt;
+        &lt;persistence strategy="localTempSwap" /&gt;
+    &lt;/defaultCache&gt;
+  
+    &lt;cache name="employee" maxEntriesLocalHeap="10000" eternal="false"
+        timeToIdleSeconds="5" timeToLiveSeconds="10"&gt;
+        &lt;persistence strategy="localTempSwap" /&gt;
+    &lt;/cache&gt;
+  
+    &lt;cache name="org.hibernate.cache.internal.StandardQueryCache"
+        maxEntriesLocalHeap="5" eternal="false" timeToLiveSeconds="120"&gt;
+        &lt;persistence strategy="localTempSwap" /&gt;
+    &lt;/cache&gt;
+  
+    &lt;cache name="org.hibernate.cache.spi.UpdateTimestampsCache"
+        maxEntriesLocalHeap="5000" eternal="true"&gt;
+        &lt;persistence strategy="localTempSwap" /&gt;
+    &lt;/cache&gt;
+&lt;/ehcache&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0049 seconds] -->
+<p></p>
+<ul>
+<li>Использовать аннотацию <span style="color: #920000;">@Cache</span> и указание настройки стратегии кэширование над entity bean.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd570b190167618">
+		
+			<div class="crayon-plain-wrap"><pre>import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+ 
+@Entity
+@Table(name = "ADDRESS")
+@Cache(usage=CacheConcurrencyStrategy.READ_ONLY, region="employee")
+public class Address {
+ 
+}</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0008 seconds] -->
+<p></p>
+<h4>16. Каковы существуют различные состояния у entity bean?</h4>
+<ol>
+<li><strong>Transient</strong>: состояние, при котором объект никогда не был связан с какой-либо сессией и не является персистентностью. Этот объект находится во временном состоянии. Объект в этом состоянии может стать персистентным при вызове метода&nbsp;<span style="color: #920000;">save()</span>, <span style="color: #920000;">persist()</span> или&nbsp;<span style="color: #920000;">saveOrUpdate()</span>. Объект персистентности может перейти в <span style="color: #920000;">transient</span> состоянии после вызова метода <span style="color: #920000;">delete()</span>.</li>
+<li><strong>Persistent</strong>: когда объект связан с уникальной сессией он находится в состоянии <span style="color: #920000;">persistent</span> (персистентности). Любой экземпляр, возвращаемый методами <span style="color: #920000;">get()</span> или <span style="color: #920000;">load()</span> находится в состоянии&nbsp;<span style="color: #920000;">persistent</span>.</li>
+<li><strong>Detached</strong>: если объект был персистентным, но сейчас не связан с какой-либо сессией, то он находится в отвязанном (<span style="color: #920000;">detached</span>) состоянии. Такой объект можно сделать персистентным используя методы <span style="color: #920000;">update()</span>, <span style="color: #920000;">saveOrUpdate()</span>, <span style="color: #920000;">lock()</span> или&nbsp;<span style="color: #920000;">replicate()</span>. Состояния&nbsp;<span style="color: #920000;">transient</span> или&nbsp;<span style="color: #920000;">detached</span> так же могут перейти в состояние&nbsp;persistent как новый объект персистентности после вызова метода&nbsp;<span style="color: #920000;">merge()</span>.</li>
+</ol>
+<h4>17. Как используется вызов метода Hibernate Session merge()?</h4>
+<p>Hibernate <span style="color: #920000;">merge()</span>&nbsp;может быть использован для обновления существующих значений, однако этот метод создает&nbsp;копию из переданного объекта сущности и возвращает его. Возвращаемый объект является частью контекста персистентности и отслеживает любые изменения, а переданный объект не отслеживается.</p>
+<h4>18. В чем разница между Hibernate save(), saveOrUpdate() и persist()?</h4>
+<p>Hibernate <span style="color: #920000;">save()</span> используется для&nbsp;сохранения сущности&nbsp;в базу данных. Проблема с использованием метода <span style="color: #920000;">save()</span> заключается в том, что он может быть вызван без транзакции. А следовательно если у нас&nbsp;имеется отображение&nbsp;нескольких объектов, то только первичный объект будет сохранен и мы получим несогласованные данные. Также <span style="color: #920000;">save()</span> немедленно возвращает сгенерированный идентификатор.</p>
+<p>Hibernate <span style="color: #920000;">persist()</span>&nbsp;аналогичен <span style="color: #920000;">save()</span> с транзакцией. <span style="color: #920000;">persist()</span> не возвращает сгенерированный идентификатор сразу.</p>
+<p>Hibernate <span style="color: #920000;">saveOrUpdate()</span> использует запрос&nbsp;для&nbsp;вставки или обновления, основываясь&nbsp;на предоставленных данных. Если данные уже присутствуют в базе данных, то будет выполнен запрос обновления. Метод&nbsp;<span style="color: #920000;">saveOrUpdate()</span> можно применять без транзакции, но это может привести к аналогичным проблемам, как и в случае с методом <span style="color: #920000;">save()</span>.</p>
+<h4>19. Что произойдет, если будет отсутствовать конструктор без аргументов у Entity Bean?</h4>
+<p>Hibernate использует рефлексию для создания экземпляров Entity бинов при вызове методов <span style="color: #920000;">get()</span> или <span style="color: #920000;">load()</span>. Для этого используется метод <span style="color: #920000;">Class.newInstance()</span>, который требует наличия конструктора без параметров. Поэтому, в случае его отсутствия, вы получите ошибку <span style="color: #920000;">HibernateException</span>.</p>
+<h4>20. В чем разница между sorted collection и ordered collection? Какая из них лучше?</h4>
+<p>При использовании алгоритмов сортировки из Collection API для сортировки коллекции используется&nbsp;сортированный список (<span style="color: #920000;"><strong>sorted list</strong></span>). Для маленьких коллекций это не приводит к излишнему расходу ресурсов, но на больших коллекциях это может привести к потери производительности и ошибкам <span style="color: #920000;">OutOfMemory</span>. Так же entity бины должны реализовывать интерфейс <span style="color: #920000;">Comparable</span> или <span style="color: #920000;">Comparator</span> для работы с сортированными коллекциями.</p>
+<p>При использовании фреймворка Hibernate для загрузки данных из базы данных мы можем применить Criteria API и команду <span style="color: #920000;">order by</span> для получения отсортированного списка (<span style="color: #920000;"><strong>ordered list</strong></span>). <span style="color: #920000;">Ordered list</span> является лучшим выбором к <span style="color: #920000;">sorted list</span>, т.к. он использует сортировку на уровне базы данных. Она быстрее и не может привести к утечке памяти. Пример запроса к БД для получения <span style="color: #920000;">ordered list</span>:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd5712384337929">
+		
+			<div class="crayon-plain-wrap"><pre>List&lt;Employee&gt; empList = session.createCriteria(Employee.class)
+                        .addOrder(Order.desc("id")).list();</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p></p>
+<h4>21. Какие типы коллекций&nbsp;в Hibernate вы знаете?</h4>
+<ol>
+<li>Bag</li>
+<li>Set</li>
+<li>List</li>
+<li>Array</li>
+<li>Map</li>
+</ol>
+<h4>22. Как реализованы Join’ы Hibernate?</h4>
+<p>Существует несколько способов реализовать связи в Hibernate.</p>
+<ul>
+<li>Использовать ассоциации, такие как&nbsp;<span style="color: #920000;">one-to-one</span>, <span style="color: #920000;">one-to-many</span>, <span style="color: #920000;">many-to-many</span>.</li>
+<li>Использовать в HQL запросе команду <span style="color: #920000;">JOIN</span>. Существует другая форма «<span style="color: #920000;">join fetch</span>«, позволяющая загружать данные немедленно (не lazy).</li>
+<li>Использовать чистый SQL запрос с командой <span style="color: #920000;">join</span>.</li>
+</ul>
+<h4>23. Почему мы не должны делать Entity class как final?</h4>
+<p>Хибернейт использует прокси классы для&nbsp;ленивой загрузки данных (т.е. по необходимости, а не сразу).&nbsp;Это достигается с помощью расширения entity bean и, следовательно, если бы он был <span style="color: #920000;">final</span>, то это было бы невозможно. Ленивая загрузка данных во многих случаях повышает производительность, а следовательно важна.</p>
+<h4>24. Что вы знаете о HQL и каковы его преимущества?</h4>
+<p>Hibernate Framework поставляется с мощным объектно-ориентированным&nbsp;языком запросов &mdash; Hibernate Query Language (HQL). Он&nbsp;очень похож на SQL, за исключением, что в нем&nbsp;используются&nbsp;объекты вместо имен таблиц, что делает язык ближе к объектно-ориентированному программированию.</p>
+<p>HQL является&nbsp;регистронезависимым, кроме использования в запросах имен java переменных и классов, где он подчиняется правилам Java. Например, <span style="color: #920000;">SelECt</span> то же самое, что и <span style="color: #920000;">select</span>, но <span style="color: #920000;">ru.javastudy.MyClass</span> отличен от&nbsp; <span style="color: #920000;">ru.javastudy.MyCLASS</span>. Запросы HQL кэшируются (это как плюс так и минус).</p>
+<p>Подробнее можете посмотреть в&nbsp;<a href="http://javastudy.ru/hibernate/hibernate-hql-examples/">Hibernate &mdash; Hibernate Query (HQL) примеры: SELECT, INSERT, UPDATE, DELETE</a>&nbsp;и в общем разделе&nbsp;<a href="http://javastudy.ru/frameworks/hibernate/">Hibernate</a>.</p>
+<h4>25. Что такое Query Cache в Hibernate?</h4>
+<p>Hibernate реализует область кэша для запросов <span style="color: #920000;">resultset</span>, который тесно взаимодействует с&nbsp;кэшем второго уровня Hibernate. Для подключения этой&nbsp;дополнительной функции требуется несколько дополнительных шагов в коде. Query Cache полезны только для часто выполняющихся запросов с повторяющимися параметрами. Для начала необходимо добавить эту запись в файле конфигурации Hibernate:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd5717960702925">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;property name="hibernate.cache.use_query_cache"&gt;true&lt;/property&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0003 seconds] -->
+<p>Уже внутри кода приложения для запроса применяется метод&nbsp;<span style="color: #920000;">setCacheable(true)</span>, как показано ниже:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd571a663120031">
+		
+			<div class="crayon-plain-wrap"><pre>Query query = session.createQuery("from Employee");
+query.setCacheable(true);
+query.setCacheRegion("ALL_EMP");</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p></p>
+<h4>26. Можем ли мы выполнить нативный запрос SQL (sql native) в Hibernate?</h4>
+<p>С помощью использования SQLQuery можно выполнять чистый запрос SQL. В общем случае это не рекомендуется, т.к. вы потеряете все преимущества HQL (ассоциации, кэширование). Выполнить можно примерно так:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce398dd571c777595368">
+		
+			<div class="crayon-plain-wrap"><pre>Transaction tx = session.beginTransaction();
+SQLQuery query = session.createSQLQuery("select emp_id, emp_name, emp_salary from Employee");
+List&lt;Object[]&gt; rows = query.list();
+for(Object[] row : rows){
+    Employee emp = new Employee();
+    emp.setId(Long.parseLong(row[0].toString()));
+    emp.setName(row[1].toString());
+    emp.setSalary(Double.parseDouble(row[2].toString()));
+    System.out.println(emp);
+}</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0018 seconds] -->
+<p></p>
+<h4>27. Назовите преимущества поддержки нативного sql в Hibernate.</h4>
+<p>Использование нативного SQL может быть необходимо при выполнении запросов к некоторым базам данных, которые могут не поддерживаться в Hibernate. Примером может служить некоторые специфичные запросы и «фишки» при работе с БД от Oracle.</p>
+<h4>28. Что такое Named SQL Query?</h4>
+<p>Hibernate поддерживает&nbsp;именованный запрос, который мы можем задать&nbsp;в каком-либо центральном месте и потом использовать его в любом месте в коде. Именованные запросы поддерживают как&nbsp;HQL, так и Native SQL. Создать именованный запрос можно с помощью JPA аннотаций&nbsp;<span style="color: #920000;">@NamedQuery</span>,&nbsp;<span style="color: #920000;">@NamedNativeQuery</span> или в конфигурационном файле отображения (mapping files).</p>
+<p><a href="http://javastudy.ru/hibernate/hibernate-namedquery/">Hibernate &mdash; примеры именованных запросов NamedQuery</a>.</p>
+<h4>29. Каковы преимущества Named SQL Query?</h4>
+<p>Именованный запрос Hibernate&nbsp;позволяет собрать множество запросов в одном месте, а затем вызывать их в любом классе. Синтаксис Named Query проверяется при создании session factory, что позволяет заметить ошибку на раннем этапе, а не при запущенном приложении и выполнении запроса. Named Query глобальные, т.е. заданные однажды, могут быть использованы в любом месте.</p>
+<p>Однако одним из основных недостатков именованного&nbsp;запроса является то, что его очень трудно отлаживать (могут быть сложности с поиском места определения запроса).</p>
+<h4>30. Расскажите о преимуществах использования Hibernate Criteria API.</h4>
+<p>Hibernate Criteria API является более объектно-ориентированным для запросов, которые получают результат из базы данных. Для операций update, delete или других DDL манипуляций использовать Criteria API нельзя. Критерии используются только для выборки из базы данных в более объектно-ориентированном стиле.</p>
+<p>Вот некоторые области применения Criteria API:</p>
+<ul>
+<li>Criteria API поддерживает&nbsp;проекцию, которую мы можем использовать для агрегатных функций вроде <span style="color: #920000;">sum()</span>, <span style="color: #920000;">min()</span>, <span style="color: #920000;">max()</span> и т.д.</li>
+<li>Criteria API может использовать&nbsp;<span style="color: #920000;">ProjectionList</span> для извлечения данных только из выбранных колонок.</li>
+<li>Criteria API может быть использована для join запросов с помощью соединения нескольких таблиц, используя методы&nbsp;<span style="color: #920000;">createAlias()</span>, <span style="color: #920000;">setFetchMode()</span> и&nbsp;<span style="color: #920000;">setProjection()</span>.</li>
+<li>Criteria API поддерживает выборку результатов согласно условиям (ограничениям). Для этого используется метод <span style="color: #920000;">add()</span> с помощью которого добавляются ограничения (Restrictions).</li>
+<li>Criteria API позволяет добавлять порядок (сортировку) к результату с помощью метода <span style="color: #920000;">addOrder()</span>.</li>
+</ul>
+<p><a href="http://javastudy.ru/hibernate/hibernate-criteria-examples/">Hibernate &mdash; примеры Criteria. Обзор Hibernate Criteria API</a></p>
+<p>&nbsp;</p>	</div>
+
+<div class="entry-body">
+	           
+<h4>31. Как логировать созданные Hibernate SQL запросы в лог-файлы?</h4>
+<p>Для логирования запросов SQL добавьте в файл конфигурации Hibernate строчку:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c8367639729629">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;property name="hibernate.show_sql"&gt;true&lt;/property&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0005 seconds] -->
+<p>Отметьте, что это необходимо использовать на уровне Development или Testing и должно быть отключено в продакшн.</p>
+<h4>32. Что вы знаете о Hibernate прокси и как это помогает в ленивой загрузке (lazy load)?</h4>
+<p>Hibernate использует прокси объект для поддержки отложенной загрузки. Обычно при загрузке данных из таблицы&nbsp;Hibernate не загружает все отображенные (замаппинные) объекты. Как только вы ссылаетесь на дочерний объект или ищите объект с помощью геттера, если связанная сущность не находиться в кэше сессии, то прокси код перейдет к базе данных для загрузки связанной сущности. Для этого используется javassist, чтобы эффективно и динамически создавать реализации подклассов ваших entity объектов.</p>
+<h4>33. Как реализованы отношения в Hibernate?</h4>
+<p>Реализовать отношение <span style="color: #920000;">one-to-one</span>, <span style="color: #920000;">one-to-many</span>, <span style="color: #920000;">many-to-many</span> можно с помощью JPA аннотаций или конфигурирования xml файла. За примерами посетите раздел&nbsp;<a href="http://javastudy.ru/frameworks/hibernate/">Hibernate</a>.</p>
+<h4>34. Как управлять транзакциями с помощью Hibernate?</h4>
+<p>Hibernate вообще не допускает большинство операций без использования транзакций. Поэтому после получения экземпляра <span style="color: #920000;">session</span> от <span style="color: #920000;">SessionFactory</span> необходимо выполнить <span style="color: #920000;">beginTransaction()</span> для начала транзакции. Метод вернет ссылку, которую мы можем использовать для подтверждения или отката транзакции.</p>
+<p>В целом, управление транзакциями в фреймворке выполнено гораздо лучше, чем в JDBC, т.к. мы не должны полагаться на возникновение исключения для отката транзакции. Любое исключение автоматически вызовет rollback.</p>
+<h4>35. Что такое каскадные связи (обновления)&nbsp;и какие каскадные типы есть&nbsp;в Hibernate?</h4>
+<p>Если у нас имеются зависимости между сущностями (entities), то нам необходимо определить как различные операции будут влиять на другую сущность. Это реализуется с помощью каскадных связей (или обновлений). Вот пример кода с использованием аннотации <span style="color: #920000;">@Cascade</span>:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c8379869540759">
+		
+			<div class="crayon-plain-wrap"><pre>import org.hibernate.annotations.Cascade;
+ 
+@Entity
+@Table(name = "EMPLOYEE")
+public class Employee {
+ 
+@OneToOne(mappedBy = "employee")
+@Cascade(value = org.hibernate.annotations.CascadeType.ALL)
+private Address address;
+ 
+}</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0009 seconds] -->
+<p>Обратите внимание, что есть некоторые различия между enum CascadeType в Hibernate и в JPA. Поэтому обращайте внимание какой пакет вы импортируете при использовании аннотации и константы типа. Наиболее часто используемые CascadeType перечисления описаны ниже.</p>
+<ol>
+<li><strong>None</strong>: без&nbsp;Cascading. Формально это не тип, но если мы не указали каскадной связи, то никакая операция для родителя не будет иметь эффекта для ребенка.</li>
+<li><strong>ALL</strong>: Cascades save, delete, update, evict, lock, replicate, merge, persist. В общем &mdash; всё.</li>
+<li><strong>SAVE_UPDATE</strong>: Cascades save и&nbsp;update. Доступно только для hibernate.</li>
+<li><strong>DELETE</strong>: передает в&nbsp;Hibernate native <strong>DELETE</strong>&nbsp;действие. Только для hibernate.</li>
+<li><strong>DETATCH</strong>, <strong>MERGE</strong>, <strong>PERSIST</strong>, <strong>REFRESH</strong> и&nbsp;<strong>REMOVE</strong> &ndash;&nbsp;для простых операций.</li>
+<li><strong>LOCK</strong>: передает в&nbsp;Hibernate native <strong>LOCK</strong>&nbsp;действие.</li>
+<li><strong>REPLICATE</strong>: передает в Hibernate native <strong>REPLICATE</strong>&nbsp;действие.</li>
+</ol>
+<h4>36. Как добавить логирование log4j в Hibernate приложение?</h4>
+<ul>
+<li>Добавить зависимость log4j в проект.</li>
+<li>Создать log4j.xml или log4j.properties файл и добавить его в classpath.</li>
+<li>Для веб приложений используйте&nbsp;ServletContextListener, а для автономных приложений&nbsp;DOMConfigurator или&nbsp;PropertyConfigurator для настройки логирования.</li>
+<li>Создайте экземпляр&nbsp;org.apache.log4j.Logger и используйте его согласно задачи.</li>
+</ul>
+<p>Может быть полезно посетить&nbsp;<a href="http://javastudy.ru/tools/log4j/">раздел Log4j2</a>.</p>
+<h4>37. Как использовать JNDI DataSource сервера приложений с Hibernate Framework?</h4>
+<p>В веб приложении лучше всего использовать контейнер сервлетов для управления пулом соединений. Поэтому лучше определить JNDI ресурс для DataSource и использовать его в веб приложении. Для этого в Hibernate нужно удалить все специфичные для базы данных свойства и использовать указания свойства JNDI DataSource:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c8382772035396">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;property name="hibernate.connection.datasource"&gt;java:comp/env/jdbc/MyLocalDB&lt;/property&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0004 seconds] -->
+<p></p>
+<h4>38. Как интегрировать Hibernate и Spring?</h4>
+<p>Лучше всего прочитать о настройках на сайтах фреймворков для текущей версии. Оба фреймворка поддерживают интеграцию из коробки и в общем настройка их взаимодействия не составляет труда. Общие шаги выглядят следующим образом.</p>
+<ul>
+<li>Добавить зависимости для&nbsp;hibernate-entitymanager, hibernate-core и&nbsp;spring-orm.</li>
+<li>Создать классы модели и передать реализации DAO операции над базой данных. Важно, что DAO классы используют SessionFactory, который внедряется в конфигурации бинов Spring.</li>
+<li>Настроить конфигурационный файл Spring (смотрите в офф. документации или из примера на этом сайте).</li>
+<li>Дополнительно появляется возможность использовать аннотацию @Transactional и перестать беспокоиться об управлении транзакцией Hibernate.</li>
+</ul>
+<p>Пример использования&nbsp;<a href="http://javastudy.ru/spring-data-jpa/spring-data-jpa-helloworld/">Spring Data JPA &mdash; пример приложения Hello World. Настройки Spring Data + JPA + Hibernate + MySQL.</a></p>
+<h4>39. Что вы знаете о классе HibernateTemplate?</h4>
+<p>Spring Framework предоставляет различные подходы для интеграции с Hibernate. Тем не менее, мы наиболее часто будем использовать подход, использующий HibernateTemplate. Есть две основные причины:</p>
+<ul>
+<li>Класс скрывает детали управления сессиями и транзакциями.</li>
+<li>Предоставляет подход основанный на шаблонах</li>
+</ul>
+<p>HibernateTemplate класс скрывает трудности управления сессиями и транзакциями при использовании Hibernate для доступа к данным. Нужно только инициализировать HibernateTemplate путем передачи экземпляра SessionFactory. Spring Framework берет на себя беспокойство за детали связанные с сессиями и транзакциями. Это помогает устранить инфраструктурный код, который может вносить суматоху при увеличении сложности.<br>
+HibernateTemplate, так же как и JdbcTemplate, предоставляет шаблонный подход для доступа к данным. Когда вы используете HibernateTemplate, вы будете работать с callbacks. Обратные вызовы &mdash; это единственный механизм в шаблонном подходе, который уведомляет шаблон запускать нужную задачу. Преимущество наличия обратного вызова в том, что там только одна точка входа в слой доступа к данным. И эта точка входа определяется шаблоном, в этом случае HibernateTemplate.</p>
+<p>В комментариях дополнили, что использование&nbsp;HibernateTemplate не явлется рекомендуемым. Вместо использования HibernateTemplate из пакета org.springframework.orm рекомендуется использовать декларативный подход (@Transactional). Таким образом фреймворк сам позаботится об операциях open, commit, close, flush.</p>
+<h5>Доступ к данным используя Spring Framework: Hibernate template:&nbsp;http://www.spring-source.ru/articles.php?type=manual&amp;theme=articles&amp;docs=article_08<p></p>
+<p>Stackoverflow: http://stackoverflow.com/questions/18002768/why-hibernatetemplate-isnt-recommended</p></h5>
+<h4>40. Как интегрировать Hibernate с Servlet или Struts2 веб приложением?</h4>
+<p>Для интеграции необходимо использовать ServletContextListener. Более подробный пример смотрите по ссылке</p>
+<h5>http://www.journaldev.com/3557/struts2-hibernate-integration-example-tutorial</h5>
+<h4>41. Какие&nbsp;паттерны применяются в Hibernate?</h4>
+<ul>
+<li>Domain Model Pattern &ndash;&nbsp;объектная модель предметной области, включающая в себя как поведение так и данные.</li>
+<li>Data Mapper &ndash; слой мапперов (Mappers), который передает данные между объектами и базой данных, сохраняя их независимыми друг от друга и&nbsp;себя.</li>
+<li>Proxy Pattern&nbsp;&mdash; применяется для ленивой загрузки.</li>
+<li>Factory pattern&nbsp;&mdash; используется в&nbsp;SessionFactory</li>
+</ul>
+<h4>42. Расскажите о Hibernate Validator Framework.</h4>
+<p>Проверка данных является неотъемлемой частью любого приложения. Hibernate Validator обеспечивает эталонную реализацию двух&nbsp;спецификаций JSR-303 и JSR-349 применяемых в Java. Для настройки валидации в Hibernate необходимо сделать следующие шаги.</p>
+<ul>
+<li>Добавить hibernate validation зависимости в проект.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c838e527250412">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;dependency&gt;
+    &lt;groupId&gt;javax.validation&lt;/groupId&gt;
+    &lt;artifactId&gt;validation-api&lt;/artifactId&gt;
+    &lt;version&gt;1.1.0.Final&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.hibernate&lt;/groupId&gt;
+    &lt;artifactId&gt;hibernate-validator&lt;/artifactId&gt;
+    &lt;version&gt;5.1.1.Final&lt;/version&gt;
+&lt;/dependency&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0010 seconds] -->
+<p></p>
+<ul>
+<li>Так же требуются зависимости из JSR 341, реализующие&nbsp;Unified Expression Language для обработки динамических выражений и сообщений о нарушении ограничений.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c8394503331123">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;dependency&gt;
+    &lt;groupId&gt;javax.el&lt;/groupId&gt;
+    &lt;artifactId&gt;javax.el-api&lt;/artifactId&gt;
+    &lt;version&gt;2.2.4&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.glassfish.web&lt;/groupId&gt;
+    &lt;artifactId&gt;javax.el&lt;/artifactId&gt;
+    &lt;version&gt;2.2.4&lt;/version&gt;
+&lt;/dependency&gt;</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0010 seconds] -->
+<p></p>
+<ul>
+<li>Использовать необходимые аннотации в бинах.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce32e2c839a990087462">
+		
+			<div class="crayon-plain-wrap"><pre>import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+ 
+import org.hibernate.validator.constraints.CreditCardNumber;
+import org.hibernate.validator.constraints.Email;
+ 
+public class Employee {
+ 
+    @Min(value=1, groups=EmpIdCheck.class)
+    private int id;
+     
+    @NotNull(message="Name cannot be null")
+    @Size(min=5, max=30)
+    private String name;
+     
+    @Email
+    private String email;
+     
+    @CreditCardNumber
+    private String creditCardNumber;
+....</pre></div>
+			
+		</div>
+<!-- [Format Time: 0.0020 seconds] -->
+<p></p>
+<h4>43. Какие преимущества дает использование плагина Hibernate Tools Eclipse?</h4>
+<p>Плагин Hibernate Tools упрощает настройку маппинга, конфигурационного файла. Упрощает работы с файлами свойств или xml тегами. Помогает минимизировать ошибки написания кода.</p>
+<h4>44. Best Practices в Hibernate.</h4>
+<p>При использовании фреймворка Hibernate рекомендуется придерживаться некоторых правил.</p>
+<ul>
+<li>Всегда проверяйте доступ к primary key. Если он создается базой данных, то вы не должны иметь сеттера.</li>
+<li>По умолчанию hibernate устанавливает значения в поля напрямую без использования сеттеров. Если необходимо заставить хибернейт их применять, то проверьте использование аннотации&nbsp;<span style="color: #920000;">@Access(value=AccessType.PROPERTY)</span> над свойством.</li>
+<li>Если тип доступа &mdash; property, то удостоверьтесь, что аннотация используется с геттером. Избегайте смешивания использования аннотации над обоими полями и геттером.</li>
+<li>Используйте нативный sql запрос только там, где нельзя использовать HQL.</li>
+<li>Используйте <span style="color: #920000;">ordered list</span> вместо сортированного списка из Collection API, если вам необходимо получить отсортированные данные.</li>
+<li>Применяйте именованные запросы разумно &mdash; держите их в одном месте и используйте только для часто применяющихся запросов. Для специфичных запросов пишите их внутри конкретного бина.</li>
+<li>В веб приложениях используйте&nbsp;JNDI DataSource вместо файла конфигурации для соединения с БД.</li>
+<li>Избегайте отношений многие-ко-многим, т.к. это можно заменить двунаправленной&nbsp;One-to-Many и&nbsp;Many-to-One связью.</li>
+<li>Для&nbsp;collections&nbsp;попробуйте использовать&nbsp;Lists, maps и&nbsp;sets. Избегайте массивов (array), т.к. они не дают преимуществ ленивой загрузки.</li>
+<li>Не обрабатывайте&nbsp;исключения, которые могут откатить транзакцию и закрыть сессию. Если это проигнорировать, то Hibernate не сможет гарантировать, что состояние в памяти соответствует состоянию персистентности (могут быть коллизии данных).</li>
+<li>Применяйте шаблон DAO для методов, которые могут использоваться в entity бинах.</li>
+<li>Предпочитайте ленивую выборку для ассоциаций.</li>
+</ul>
+<p>&nbsp;</p>	</div>
+</body>
+</html>

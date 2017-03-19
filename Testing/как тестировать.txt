@@ -1,0 +1,158 @@
+TestDox  plugin для идеи, который имена тестов преобразует в предложения.
+имена тестов -- как описание, что должен/может проверяемый объект, чтобы прочитав все тесты можно было понять все обязанности/функционал данного тестируемого объекта.
+Т.е. описать что проверяется и какой должен быть результат.
+runArchiverAndGetArchiveFile
+ifFileIsMissingThrowExc
+saveNewUserAndIfFailedShowPopupMessage
+ifJobIsPendigAndAnotherIsRunningThenWholeBundleIsPending
+domainPolicyRecordIsStored
+
+***********************************
+
+1. Бизнес логика
+
+Бизнес логика должна быть выделена в 1 место, т.е. быть достаточно явной и не размазанной по разным слоям.
+например, она в сервисах, если ui или ивенты -- то в обработчиках ивентов.
+
+Она представляет собой:
+ - обычно это логика трансформации каких-то данных
+ - либо вызов кого-то ещё (и этот кто-то не Обязан содержать в себе какую-то логику или предоставлять какой-то жёсткий api)
+
+поэтому всё БЛ стоит тестировать только моками, т.к. они могут возвращать всё что угодно.
+
+доменные объекты никогда не выступают моками и не покрываются моками.
+моками должны покрываться только протоколы (т.е. интерфейсы, действия). т.е. не реализацию, а интерфейсы.
+----------------------------
+моки на статические методы -- это неправильно.
+т.к. нет контракта, и нет возможности контролировать, какие другие статические методы из других статических классов он(данный static метод) вызывает.
+Поэтому надо переходить от статических к нестатическим, простейшими рефакторингами.
+Для этого дублируется обычный инстанс метод с таким же названием, как и статик, потом вызывается через getInstance, потом оборачивается. Потом делается DI и выделяется/извлекается интрефейс.
+И теперь работаем как с обычным инстанс методом.
+
+***********************************
+
+2. MVC (20:20)
+
+Сам фреймворк должен предоставлять возможность для тестирования себя.
+MockMvc -- делает standalone setup, в который задать только наш контрллер.
+И потом вызывать методы mvc.perform(post(...))... и т.д.
+и потом assetSuccessResponse() -- results.andExpect(status.isOK()).andExpect(..)...
+
+т.е. тестируем  только данный контроллер в изоляции от всего остального.
+поэтому это не даёт гарантии что в общем контексте он взлетит, или что в зависимости с другими сервисами он заработает, или что сама прилага вообще стартанёт. ПОэтому для этого всего надо ещё доп. отдельные тесты.
+
+*************************************
+
+2. DB Layer -- 39:20
+
+Всё мега просто.
+Любой код, который работает с БД, берёт данные и по определённому протоколу отправляет их в хранилище.
+
+В тестах подключать исходный datasource.xml, потом тестовый test-datasource.xml, в котором переопределены hibernateProperties, подчищаются нативные запросы.
+Также подключается исходный дао бин, и с ним работает тест.
+
+***************************************
+
+4. Object transformation (1:07:00)
+
+Не тестируем Object transformation как отдельную логики, и причина такая же как и с сервисами-интеграторами:
+если Object transformation включён в дао -- то мы уже и так его протестируем.
+если же дао возвращает entity, а сервис принимает dto -- а посреди этот трансформатор -- то логика плоская. 
+И т.о. имея наверху на UI хоть один вызов этих всех 3х участников -- мы уже протестируем, что всё это работает.
+
+*******************************
+
+5. Spring Security (1:08:00)
+
+Само Spring Security уже предоставляет удобный способ их тестировать, как и MVC.
+
+**************************************
+
+6. Multithreading (1:08:40)
+
+Тестить на multi-core pc, 
+запускать максимально одновременно (барьер),
+в конце подождать всех (лэч), чтобы проверить результат.
+
+или если есть подозрение -- то моками специально сэмулировать эту проблемную ситуацию.
+
+*************************************
+
+6. UI (1:16:50)
+
+Есть 1 победитель -- WebDriver
+Тесты должны быть очень и очень хорошо написаны -- лучше писать тесты до того, как писать код.
+
+*************************************
+
+7. REST (1:35:05)
+
+Тестить Специализированными инструментами или спринговыми тестами.
+Jersy Client - например.
+Лимитированный по возможностям протокол http, request-response.
+
+Если рест на spring mvc - то mvc тестируем отдельно, а rest -- это end-to-end test.
+
+spok для тестирования на groovy
+
+*************************************
+
+9. File System Integration (1:38:45)
+
+Они обращаются к файловой системе напрямую.
+обязательно почистить файловую систему ДО и ПОСЛЕ запуска теста.
+
+*************************************
+
+10. Часы - Clock - (1:42:00)
+
+Проще ввести утилитный класс Clock и все обязаны пользоваться только им!
+И тогда можно изменить время во всей системе.
+
+------------------------------
+https://intellij-support.jetbrains.com/hc/en-us/community/posts/206127879-JUnit-plugin
+
+https://plugins.jetbrains.com/plugin/96-testdox/update/16110
+
+The TestDox plugin is a great plugin that is really useful (I use it myself) and you certainly are very commited to improving it (btw when you update the download count on your page http://www.intellij.org/twiki/bin/view/Main/TestDoxPlugin, please save it as a minor edit. Right now, anybody that has notification turned on gets spammed every time you get 50 additional downloads!). 
+
+To some extent, this is supported too in the JUnitTestPlugin: test method names can be converted into english sentence in the test method navigation popup.
+
+So now which plugin should you use?
+
+You can certainly do like me and use both plugins. They unfortunately overlap a lot but both have unique features that are useful:
+
+    TestDox gives you a tool window that shows all test methods converted into english sentences: testPopEmptyStackThrowException() would show as "Pop empty stack throw exception". You can create/rename/delete tests through it using sentences. The plugin will manage the test methods accordingly. Neat!
+
+    JUnitTestPlugin gives you a primitive method coverage feedback (little editor gutter icons for methods w/o any associated tests) and more powerful test method management/creation.
+
+
+
+Philosophically speaking they differ slightly:
+TestDox assumes that you are testing behaviors of a class not methods. It doesn't provide any support for "method" testing. However it is great to look at a test class as the specification of the behaviors of the associated tested class. If you are careful about not revealing private parts of a class, you are most likely doing that already since you will test groups of methods that together form an observable behavior (cannot test Stack.pop() independently of Stack.push()).
+
+JUnitTestPlugin does not provide anything special for that. It only has the same navigation/refactoring support. However if you want to manage the tests at the method level, the JUnitTestPlugin provides additional management features like automatic test method refactoring (on method rename), untested highlighting, templatized creation, filtered navigation...
+
+I hope this helps a little.
+
+------------------------
+http://www.rojotek.com/blog/2008/06/13/testdox-intellij-plugin-reviewed/
+https://plugins.jetbrains.com/plugin/96-testdox
+
+ I’ve recently started using the TestDox plugin with IntelliJ. It’s a nice little tool that fits in well with agile test driven development practices. It’s easy to get started with, either installing it from the IntelliJ plugins repository using your IDE, or downloading it directly from the plugins repository, and copying it into the plugins directory.
+
+The premise on which the test dox plugin is based on is the idea that your test methods should be long sentences using CamelCase to break up words. By doing this your tests become your documentation. The plugin takes this premise, and exposes the following behaviour in IntelliJ:
+
+    automatic translation of CamelCase test names to sentences. This is exposed through two different views, which, when coupled with nice navigation synchronisation options, makes it possible to use your tests to understand what the code is meant to do at a high level, and makes it easy to drill down to the specifics when needed.
+    There is a simple mapping between classes and tests – TestDox knows that HelloWorldTest is the test for HelloWorld. This is configurable to suit your environment (test classname prefixes and suffixes can be specified, as well as test packages).
+    documentation windows will be context sensitive, using the above mapping to show the appropriate documentation for the class/test currently being edited.
+    alt-shift-t swapping between the test class and the base class – great for navigation
+    alt-shift-t will prompt to create a test class if it doesn’t exist. Very cool fr the cases where you have created a class before the test (for whatever reason)
+
+Overall this is a great little tool. There’s only a couple of minor tweaks I’d like to see made to the tool.
+
+    The biggest that would be nice for the open source project, would be to make editing the source code of the IntelliJ plugin slightly easier. It would be cool to be able to make slight changes to the software, and help improve the project, but the cost of entry was slightly too high for me.
+    It would be good for the alt-shift-t auto creation to work both ways. That is I want alt-shift-t to help me automatically create the class as well as the test.
+    I saw a couple of minor screen repaint issues on 7.0.3 on OSX 10.5
+
+TestDox is a good tool for IntelliJ, and you really should install it and use it. 

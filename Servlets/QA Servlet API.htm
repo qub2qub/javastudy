@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>QA Servlet API</title>
+    <link rel="stylesheet" href="../Git Guide/grey.css">
+</head>
+<body>
+<a href="http://javastudy.ru/interview/jee-servlet-api-questions/">src1</a>
+<a href="http://javastudy.ru/interview/jee-servlet-api-questions-2/">src2</a>
+<h2>Servlet API (вопросы и ответы)</h2>
+<div>
+
+<h3>Вопросы</h3>
+<p>1. Что такое сервлет?<br>
+2.&nbsp;Какова структура веб-проекта?<br>
+3. Что такое контейнер сервлетов?<br>
+4. Каковы задачи, функциональность контейнера сервлетов?<br>
+5. Что вы знаете о сервлет фильтрах?<br>
+6. Зачем нужны слушатели в сервлетах?<br>
+7. Когда вы будете использовать фильтры, а когда слушатели?<br>
+8. Как обработать исключения, выброшенные другим сервлетом в приложении?<br>
+9. Что такое дескриптор развертывания?<br>
+10. Как реализовать запуск сервлета с запуском приложения?<br>
+11. Что представляет собой объект ServletConfig?<br>
+12. Что представляет собой объект ServletContext?<br>
+13. В чем отличия ServletContext и ServletConfig?<br>
+14. Что такое Request Dispatcher?<br>
+15. Как можно создать блокировку (deadlock) в сервлете?<br>
+16. Как получить адрес сервлета на сервере?<br>
+17. Как получить информацию о сервере из&nbsp;сервлета?<br>
+18. Как получить ip адрес клиента на сервере?<br>
+19. Что вы знаете о классах обертках (wrapper) для сервлетов?<br>
+20. Каков жизненный цикл сервлета и когда какие методы вызываются?<br>
+21. Какие методы необходимо определить при создании сервлетов?<br>
+22. В каком случае вы будете переопределять метод service()?<br>
+23. Есть ли смысл определить конструктор для сервлета, как лучше инициализировать данные?<br>
+24. В чем отличия GenericServlet и HttpServlet?<br>
+25. Как вызвать из сервлета другой сервлет этого же и другого приложения?<br>
+26. Что вы знаете и в чем отличия методов forward() и sendRedirect()?<br>
+27. Стоит ли волноваться о “многопоточной безопасности” работая с сервлетами?<br>
+28. В чем отличие между веб сервером и сервером приложений?<br>
+29. Какой метод HTTP не является неизменяемым?<br>
+30. Почему HttpServlet класс объявлен как абстрактный?</p>
+<p>31. В чем разница между методами GET и POST?<br>
+32. Что такое MIME-тип?<br>
+33. Назовите преимущества Servlet над CGI?<br>
+34. Каковы наиболее распространенные задачи выполняются в Servlet контейнере?<br>
+35. В чем разница между PrintWriter и ServletOutputStream?<br>
+36. Можем ли мы получить PrintWriter и ServletOutputStream одновременно в сервлете?<br>
+37. Расскажите о интерфейсе SingleThreadModel.<br>
+38. Какие существуют атрибуты у сервлетов и какая сфера их применения?<br>
+39. Почему необходимо переопределить только init() метод без аргументов?<br>
+40. Что означает URL encoding?&nbsp;Зачем нужны методы java.net.URLEncoder.encode() и decode()?<br>
+41. Зачем нужны и чем отличаются методы encodeUrl() и encodeRedirectUrl()?<br>
+42. Какие различные методы управления сессией в сервлетах вы знаете?<br>
+43. Что означает URL Rewriting?<br>
+44. Как применяются Cookies в сервлетах?<br>
+45. Как уведомить объект в сессии, что сессия недействительна или закончилась?<br>
+46. Какой существует эффективный способ удостоверится, что все сервлеты доступны только для пользователя с валидной сессией?<br>
+47. Как мы можем обеспечить transport layer security для нашего веб приложения?<br>
+48. Как организовать подключение к базе дынных и обеспечить логирование log4j в сервлете?<br>
+49. Какие важные особенности существуют в Servlet 3?<br>
+50. Каковы различные способы аутентификации сервлета?<br>
+51. Написать сервлет, реализующий загрузку файла на сервер.</p>
+<h3>Ответы</h3>
+<h4>1. Что такое сервлет?</h4>
+<p>Сервлет является интерфейсом Java, реализация которого расширяет функциональные возможности сервера. Сервлет взаимодействует с клиентами посредством принципа запрос-ответ.<br>
+Хотя сервлеты могут обслуживать любые запросы, они обычно используются для расширения веб-серверов. Для таких приложений технология Java Servlet определяет HTTP-специфичные сервлет классы.&nbsp;Пакеты <span style="color: #920000;">javax.servlet</span> и <span style="color: #920000;">javax.servlet.http</span> обеспечивают интерфейсы и классы для создания сервлетов.</p>
+<p> <img src="pics/Servlet-Hierarchy.png" /> </p>
+<h4>2. Какова структура веб-проекта?</h4>
+<table border="1" class="table table-striped">
+<tbody>
+<tr class="a">
+<td align="left"><tt>src/main/java</tt></td>
+<td align="left">Application/Library sources</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>src/main/resources</tt></td>
+<td align="left">Application/Library resources</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>src/main/filters</tt></td>
+<td align="left">Resource filter files</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>src/main/webapp</tt></td>
+<td align="left">Web application sources</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>src/test/java</tt></td>
+<td align="left">Test sources</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>src/test/resources</tt></td>
+<td align="left">Test resources</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>src/test/filters</tt></td>
+<td align="left">Test resource filter files</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>src/it</tt></td>
+<td align="left">Integration Tests (primarily for plugins)</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>src/assembly</tt></td>
+<td align="left">Assembly descriptors</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>src/site</tt></td>
+<td align="left">Site</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>LICENSE.txt</tt></td>
+<td align="left">Project’s license</td>
+</tr>
+<tr class="b">
+<td align="left"><tt>NOTICE.txt</tt></td>
+<td align="left">Notices and attributions required by libraries that the project depends on</td>
+</tr>
+<tr class="a">
+<td align="left"><tt>README.txt</tt></td>
+<td align="left">Project’s readme</td>
+</tr>
+</tbody>
+</table>
+<h5>http://maven.apache.org/guides/introduction/introduction-to-the-standard-directory-layout.html</h5>
+<h4>3. Что такое контейнер сервлетов?</h4>
+<p><b>Контейнер сервлетов</b> &nbsp;&mdash; программа, представляющая собой сервер, который занимается системной поддержкой сервлетов и обеспечивает их жизненный цикл в соответствии с правилами, определёнными в спецификациях.</p>
+<p>Известные реализации:Apache Tomcat,&nbsp;Jetty,&nbsp;JBoss, GlassFish, IBM WebSphere, Oracle Weblogic.</p>
+<h4>4. Каковы задачи, функциональность контейнера сервлетов?</h4>
+<p>Контейнер сервлетов&nbsp;может работать как полноценный самостоятельный веб-сервер, быть поставщиком страниц для другого веб-сервера, например Apache, или интегрироваться в Java EE сервер приложений. Обеспечивает обмен данными между сервлетом и клиентами, берёт на себя выполнение таких функций, как создание программной среды для функционирующего сервлета, идентификацию и авторизацию клиентов, организацию сессии для каждого из них.</p>
+<h4>5. Что вы знаете о сервлет фильтрах?</h4>
+<p>Сервлетный фильтр, в соответствии со спецификацией, это Java-код, пригодный для повторного использования и позволяющий преобразовать содержание HTTP-запросов, HTTP-ответов и информацию, содержащуюся в заголовках HTTP. Сервлетный фильтр занимается предварительной обработкой запроса, прежде чем тот попадает в сервлет, и/или последующей обработкой ответа, исходящего из сервлета.Сервлетные фильтры могут:</p>
+<p>&mdash; перехватывать инициацию сервлета прежде, чем сервлет будет инициирован;<br>
+&mdash; определить содержание запроса прежде, чем сервлет будет инициирован;<br>
+&mdash; модифицировать заголовки и данные запроса, в которые упаковывается поступающий запрос;<br>
+&mdash; модифицировать заголовки и данные ответа, в которые упаковывается получаемый ответ;<br>
+&mdash; перехватывать инициацию сервлета после обращения к сервлету.</p>
+<p>Сервлетный фильтр может быть сконфигурирован так, что он будет работать с одним сервлетом или группой сервлетов. Основой для формирования фильтров служит интерфейс <span style="color: #920000;">javax.servlet.Filter</span>, который реализует три метода:<br>
+<span style="color: #920000;">void init (FilterConfig config) throws ServletException;</span><br>
+<span style="color: #920000;">void destroy();</span><br>
+<span style="color: #920000;">void doFilter (ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException;</span></p>
+<p>Метод <span style="color: #920000;">init()&nbsp;</span>вызывается прежде, чем фильтр начинает работать,и настраивает конфигурационный объект фильтра. Метод <span style="color: #920000;">doFilter</span> выполняет непосредственно работу фильтра. Таким образом, сервер вызывает <span style="color: #920000;">init() </span>один раз, чтобы запустить фильтр в работу, а затем вызывает <span style="color: #920000;">doFilter()</span> столько раз, сколько запросов будет сделано непосредственно к данному фильтру. После того, как фильтр заканчивает свою работу, вызывается метод <span style="color: #920000;">destroy()</span><i>.</i></p>
+<h5>Java Servlet Filter Example Tutorial:&nbsp;http://www.journaldev.com/1933/java-servlet-filter-example-tutorial</h5>
+<h4>6. Зачем нужны слушатели в сервлетах?</h4>
+<p>Слушатели контекста и сессий&nbsp;&mdash; это классы, которые могут следить за тем, когда контекст или сессия были инициализированы, или отслеживать время, когда они должны быть уничтожены, и когда атрибуты были добавлены или удалены из контекста или сессии. Servlet 2.4 расширяет модель слушателей запроса, позволяя отслеживать, как запрос создается и уничтожается, и, как атрибуты добавляются и удаляются из сервлета В Servlet 2.4 добавлены следующие классы:</p>
+<ul>
+<li><span class="codefrag">ServletRequestListener</span></li>
+<li><span class="codefrag">ServletRequestEvent</span></li>
+<li><span class="codefrag">ServletRequestAttributeListener</span></li>
+<li><span class="codefrag">ServletRequestAttributeEvent</span></li>
+</ul>
+<h4>7. Когда вы будете использовать фильтры, а когда слушатели?</h4>
+<p>&nbsp;</p>
+<h5>Servlet Listener Example:&nbsp;http://www.journaldev.com/1945/servlet-listener-example-servletcontextlistener-httpsessionlistener-and-servletrequestlistener</h5>
+<h4>8. Как обработать исключения, выброшенные другим сервлетом в приложении?</h4>
+<p>Т.к. браузер понимает только HTTP, то когда приложение выбросит исключение контейнер сервлетов обработает исключение и создаст HTTP response. Это аналогично тому что происходит при кодах ошибок вроде 404, 403 и т.д. Servlet API предоставляет поддержку собственных сервлетов для обработки исключений и ошибок, которые мы можем задать в дескрипторе развертывания. Главная задача таких сервлетов &mdash; обработать ошибку или исключение и отправить понятный HTTP ответ пользователю. Например, можно предоставить ссылку на главную страницу, а так же описание некоторых деталей об ошибке.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce5a883f468191571168">
+		
+			<div class="crayon-plain-wrap">
+			<pre class="note" >    &lt;error-page&gt;
+        &lt;error-code&gt;404&lt;/error-code&gt;
+        &lt;location&gt;/AppExceptionHandler&lt;/location&gt;
+    &lt;/error-page&gt;
+
+    &lt;error-page&gt;
+        &lt;exception-type&gt;javax.servlet.ServletException&lt;/exception-type&gt;
+        &lt;location&gt;/AppExceptionHandler&lt;/location&gt;
+    &lt;/error-page&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0013 seconds] -->
+<p></p>
+<h5>Servlet Exception and Error Handling Example Tutorial:&nbsp;http://www.journaldev.com/1973/servlet-exception-and-error-handling-example-tutorial</h5>
+<h4>9. Что такое дескриптор развертывания?</h4>
+<p>Дескриптор развертывания &mdash; это конфигурационный файл артефакта, который будет развернут в контейнере сервлетов. В спецификации Java Platform, Enterprise Edition дескриптор развертывания описывает то, как компонент, модуль или приложение (такое, как веб-приложение или приложение предприятия) должно быть развернуто.</p>
+<p>Этот конфигурационный файл указывает параметры развертывания для модуля или приложения с определенными настройками, параметры безопасности и описывает конкретные требования к конфигурации. Для синтаксиса файлов дескриптора развертывания используется язык XML.</p>
+<p><a href="http://javastudy.ru/jsf-2/description-settings-web-xml-with-spring/">Настройка и описание web.xml в приложении с Spring и JSF</a></p>
+<h4>10. Как реализовать запуск сервлета с запуском приложения?</h4>
+<p>Контейнер сервлетов обычно загружает сервлет при первом запросе клиента, но иногда необходимо загрузить сервлет прямо на старте приложения (например если сервлет объемный и будет долго грузиться). Для этого необходимо использовать элемент <span style="color: #920000;">load-on-startup</span> в дескрипторе (или аннотацию <span style="color: #920000;">loadOnStartup</span>), который укажет необходимость загрузки сервлета&nbsp;при запуске.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce5a883f473251338720">
+		
+			<div class="crayon-plain-wrap"><pre class="note">&lt;servlet&gt;
+    &lt;servlet-name&gt;foo&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;com.foo.servlets.Foo&lt;/servlet-class&gt;
+    &lt;load-on-startup&gt;5&lt;/load-on-startup&gt;
+&lt;/servlet&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0008 seconds] -->
+<p>Значение должно быть <span style="color: #920000;">int</span>. Если значение отрицательное, то сервлет будет загружен при запросе клиента, а если 0 и далее, то загрузится на старте приложения. Чем меньше число, тем раньше в очереди на загрузку будет сервлет.</p>
+<h4>11. Что представляет собой объект ServletConfig?</h4>
+<p>Интерфейс <span style="color: #920000;">javax.servlet.ServletConfig</span> используется для передачи конфигурационной информации сервлету. Каждый сервлет имеет свой собственный объект ServletConfig, за создание экземпляра которого ответственен контейнер сервлетов. Для установки параметров конфигурации используются init параметры в web.xml (или аннотации WebInitParam). Для получения объекта ServletConfig данного сервлета используется метод <span style="color: #920000;">getServletConfig()</span>.</p>
+<h4>12. Что представляет собой объект ServletContext?</h4>
+<p>Интерфейс <span style="color: #920000;">javax.servlet.ServletContext</span> предоставляет доступ к параметрам веб приложения сервлету. Объект <span style="color: #920000;">ServletContext</span> является уникальным и доступен всем сервлетам веб приложения. Мы можем использовать объект <span style="color: #920000;">ServletContext</span>, когда нам необходимо предоставить доступ одному или нескольким сервлетам к инициализированным параметрам веб приложения. Для этого используется элемент <span style="color: #920000;">&lt;context-param&gt;</span> в <span style="color: #920000;">web.xml</span>. Объект ServletContext можно получить с помощью метода <span style="color: #920000;">getServletContext()</span> у интерфейса <span style="color: #920000;">ServletConfig</span>.<br>
+Контейнеры сервлетов так же могут предоставлять context объекты,&nbsp;уникальные для группы сервлетов. Каждая из групп&nbsp;будет связана со своим набором URL путей хоста.<br>
+<span style="color: #920000;">ServletContext</span> был расширен в спецификации Servlet 3 и предоставляет программное добавление слушателей и фильтров в приложение. Так же у этого интерфейса имеются множество полезных методов вроде <span style="color: #920000;">getMimeType()</span>, <span style="color: #920000;">getResourceAsStream()</span> и т.д..</p>
+<h4>13. В чем отличия ServletContext и ServletConfig?</h4>
+<ul>
+<li><span style="color: #920000;">ServletConfig</span> является уникальным объектом для каждого сервлета, в то время как <span style="color: #920000;">ServletContext</span> уникальный для всего приложения.</li>
+<li><span style="color: #920000;">ServletConfig&nbsp;</span>используется для предоставления параметров инициализации сервлету, а <span style="color: #920000;">ServletContext</span> для предоставления параметров инициализации приложения для всех сервлетов.</li>
+<li>У нас нет возможности устанавливать атрибуты в объекте <span style="color: #920000;">ServletConfig</span>, в то время как можно установить атрибуты в объекте <span style="color: #920000;">ServletContext</span>, которые будут доступны другим сервлетам.</li>
+</ul>
+<h4>14. Что такое Request Dispatcher?</h4>
+<p>Интерфейс <span style="color: #920000;">RequestDispatcher</span> используется для передачи запроса другому ресурсу (это может быть HTML, JSP или другой сервлет в том же приложении). Мы можем использовать это для добавления контента другого ресурса к ответу. Этот интерфейс используется для внутренней коммуникации между сервлетами в одном контексте. В интерфейса реализовано два метода:<br>
+<span style="color: #920000;">void forward(ServletRequest var1, ServletResponse var2)</span> &mdash; передает запрос из сервлета к другому ресурсу (сервлету, JSP или HTML файлу) на сервере.<br>
+<span style="color: #920000;">void include(ServletRequest var1, ServletResponse var2)</span> &mdash;&nbsp;включает контент ресурса (сервлет, JSP или HTML страница) в ответ.<br>
+Доступ к интерфейсу можно получить с помощью метода <span style="color: #920000;">ServletContext getRequestDispatcher(String s)</span>. Путь должен начинаться с <span style="color: #920000;">/</span> , который будет интерпретироваться относительным текущего корневого пути контекста.</p>
+<h4>15. Как можно создать блокировку (deadlock) в сервлете?</h4>
+<p>Дедлок можно получить реализовав зацикленный&nbsp;вызов метода, например вызвав метод <span style="color: #920000;">doPost()</span> в методе <span style="color: #920000;">doGet()</span> и вызвать <span style="color: #920000;">doGet()</span> в методе <span style="color: #920000;">doPost()</span>.</p>
+<h4>16. Как получить адрес сервлета на сервере?</h4>
+<p>Для получения актуального пути сервлета на сервере можно использовать эту конструкцию: <span style="color: #920000;">getServletContext().getRealPath(request.getServletPath())</span></p>
+<h4>17. Как получить информацию о сервере из&nbsp;сервлета?</h4>
+<p>Информацию о сервере можно получить с использованием объекта ServletContext с помощью метода <span style="color: #920000;">getServerInfo()</span>. Т.е. <span style="color: #920000;">getServletContext().getServerInfo()</span>.</p>
+<h4>18. Как получить ip адрес клиента на сервере?</h4>
+<p>Использовать <span style="color: #920000;">request.getRemoteAddr()</span> для получения ip клиента в сервлете.</p>
+<h4>19. Что вы знаете о классах обертках (wrapper) для сервлетов?</h4>
+<p>В Servlet HTTP API предоставляются два класса обертки &mdash;&nbsp;<span style="color: #920000;">HttpServletRequestWrapper</span> и&nbsp;<span style="color: #920000;">HttpServletResponseWrapper</span>. Они помогают разработчикам реализовывать собственные реализации типов <span style="color: #920000;">request</span> и <span style="color: #920000;">response</span> сервлета. Мы можем расширить эти классы и&nbsp;переопределить только необходимые методы для реализации собственных типов объектов ответов и запросов. Эти классы не используются в стандартном программировании сервлетов.</p>
+<h4>20. Каков жизненный цикл сервлета и когда какие методы вызываются?</h4>
+<p>Контейнер сервлетов управляет четырьмя фазами жизненного цикла сервлета:</p>
+<ul>
+<li><strong>Загрузка класса сервлета</strong> &mdash; когда контейнер получает запрос для сервлета, то происходит загрузка класса сервлета в память и вызов конструктора без параметров.</li>
+<li><strong>Инициализация класса сервлета</strong> &mdash; после того как класс загружен контейнер инициализирует объект <span style="color: #920000;">ServletConfig</span>&nbsp;для этого сервлета и внедряет его через <span style="color: #920000;">init()</span> метод. Это и есть место где сервлет класс преобразуется из обычного класса в сервлет.</li>
+<li><strong>Обработка запросов</strong> &mdash; после инициализации сервлет готов к обработке запросов. Для каждого запроса клиента сервлет контейнер порождает новую нить (поток) и вызывает метод&nbsp;<span style="color: #920000;">service()</span> путем передачи ссылки на объект ответа и запроса.</li>
+<li><strong>Удаление из Service</strong> &mdash; когда контейнер останавливается или останавливается приложение, то контейнер сервлетов уничтожает классы сервлетов путем вызова <span style="color: #920000;">destroy()</span> метода.</li>
+</ul>
+<p>Можно описать как последовательность вызова методов: <span style="color: #920000;">init()</span>, <span style="color: #920000;">service()</span>, <span style="color: #920000;">destroy()</span>.</p>
+<ul>
+<li><span style="color: #920000;">public void init(ServletConfig config)</span> &ndash; используется контейнером для инициализации сервлета. Вызывается один раз за время жизни сервлета.</li>
+<li><span style="color: #920000;">public void service(ServletRequest request, ServletResponse response)</span> &ndash; вызывается для каждого запроса. Метод не может быть вызван раньше выполнения <span style="color: #920000;">init()</span> метода.</li>
+<li><span style="color: #920000;">public void destroy()</span> &ndash; вызывается для уничтожения сервлета (один раз за время жизни сервлета).</li>
+</ul>
+<h4>21. Какие методы необходимо определить при создании сервлетов?</h4>
+<p>Чтобы создать сервлет, необходимо описать сервлет с помощью:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce5a883f47d650442291">
+		
+			<div class="crayon-plain-wrap"><pre class="note">&lt;servlet-mapping&gt; 
+  &lt;servlet-name&gt;MyOwnDefaultServlet&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/myservlet/*&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;
+
+&lt;servlet&gt;
+  &lt;servlet-name&gt;HelloWorld2&lt;/servlet-name&gt; 
+  &lt;servlet-class&gt;examples.servlets.HelloWorld2&lt;/servlet-class&gt;
+   &lt;init-param&gt;
+    &lt;param-name&gt;greeting&lt;/param-name&gt; 
+    &lt;param-value&gt;Welcome&lt;/param-value&gt; 
+  &lt;/init-param&gt;
+   &lt;init-param&gt;
+    &lt;param-name&gt;person&lt;/param-name&gt; 
+    &lt;param-value&gt;WebLogic Developer&lt;/param-value&gt; 
+  &lt;/init-param&gt;
+&lt;/servlet&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0023 seconds] -->
+<p>Затем расширить класс сервлета от класса <span style="color: #920000;">HttpServlet</span>.<br>
+Реализовать метод <span style="color: #920000;">service()</span> или <span style="color: #920000;">doGet()</span>, <span style="color: #920000;">doPost()</span> (или первый или вторые).</p>
+<h4>22. В каком случае вы будете переопределять метод service()?</h4>
+<p>Метод <span style="color: #920000;">service()</span> переопределяется, когда мы хотим, чтобы сервлет обрабатывал как GET так и POST запросы в одном методе. Когда контейнер сервлетов получает запрос клиента, то происходит вызов метода <span style="color: #920000;">service()</span>, который в свою очередь вызывает <span style="color: #920000;">doGet()</span>, <span style="color: #920000;">doPost()</span> методы, основанные на HTTP методе запроса. Есть мнение, что метод <span style="color: #920000;">service()</span> переопределять особого смысла нет, кроме указанного вначале случая использования одного метода на два типа запросов.</p>
+<h4>23. Есть ли смысл определить конструктор для сервлета, как лучше инициализировать данные?</h4>
+<p>Такая возможность есть, но считается бессмысленной. Инициализировать данные лучше переопределив метод <span style="color: #920000;">init()</span>, в котором получить доступ к параметрам инициализации сервлета через использование объекта <span style="color: #920000;">ServletConfig</span>.</p>
+<h4>24. В чем отличия GenericServlet и HttpServlet?</h4>
+<p>Абстрактный класс <span style="color: #920000;">GenericServlet</span> &mdash; независимая от используемого протокола реализация интерфейса <span style="color: #920000;">Servlet</span>. <span style="color: #920000;">HttpServlet</span>, как понятно из название, реализация интерфейса сервлета для протокола HTTP. Следует отметить, что HttpServlet <span style="color: #920000;">extends</span> GenericServlet.</p>
+<h4>25. Как вызвать из сервлета другой сервлет этого же и другого приложения?</h4>
+<p>Если необходимо вызывать сервлет из того же приложения, то необходимо использовать механизм внутренней коммуникации сервлетов (inter-servlet communication mechanisms). Мы можем вызвать другой сервлет с помощью <span style="color: #920000;">RequestDispatcher forward()</span> и <span style="color: #920000;">include()</span> методов для доступа к дополнительным атрибутам в запросе для использования в другом сервлете. Метод <span style="color: #920000;">forward()</span> используется для передачи обработки запроса в другой сервлет. Метод <span style="color: #920000;">include()</span> используется, если мы хотим вложить результат работы другого сервлета в возвращаемый ответ.</p>
+<p>Если необходимо вызывать сервлет из другого приложения, то использовать <span style="color: #920000;">RequestDispatcher</span> уже не получится (определен для приложения). Поэтому можно использовать <span style="color: #920000;">ServletResponse</span> <span style="color: #920000;">sendRedirect()</span> метод и предоставить полный URL из другого сервлета. Для передачи данных можно использовать cookies как часть ответа сервлета, а потом использовать их в нашем сервлете.</p>
+<h4>26. Что вы знаете и в чем отличия методов forward() и sendRedirect()?</h4>
+<ul>
+<li><span style="color: #920000;">RequestDispatcher forward()</span> используется для проброски того же самого запроса к другому ресурсу, в то время как <span style="color: #920000;">ServletResponse sendRedirect()</span> это двухшаговый метод. Во втором методе веб приложение возвращает ответ клиенту с status code 302 (redirect) с ссылкой для отправки запроса. Запрос посылает полностью новый запрос.</li>
+<li><span style="color: #920000;">forward()</span> обрабатывается внутри контейнера, а <span style="color: #920000;">sendRedirect()</span> обрабатывается браузером.</li>
+<li>Необходимо использовать <span style="color: #920000;">forward()</span> для организации доступа внутри одного и того же приложения, т.к. он быстрее <span style="color: #920000;">sendRedirect()</span>, которому требуется дополнительная сетевая работа.</li>
+<li>В методе <span style="color: #920000;">forward()</span> браузер не знает о фактически обрабатываемом ресурсе и URL в строке остается прежним. В <span style="color: #920000;">sendRedirect()</span> методе URL адрес изменяется на пробрасываемый ресурс.</li>
+<li>В методе <span style="color: #920000;">forward()</span> нельзя использовать для внедрения сервлета в другой контекст. Для этого можно использовать только <span style="color: #920000;">sendRedirect()</span>.</li>
+</ul>
+<h4>27. Стоит ли волноваться о “многопоточной безопасности” работая с сервлетами?</h4>
+<p>Методы класса <span style="color: #920000;">HTTPServlet init()</span> и <span style="color: #920000;">destroy()</span> вызываются один раз за жизненный цикл сервлета &mdash; поэтому по поводу них беспокоиться не стоит. Методы <span style="color: #920000;">doGet()</span>, <span style="color: #920000;">doPost()</span> вызываются на каждый запрос клиента и т.к. сервлеты используют многопоточность, то здесь нужно задумываться о потокобезопасной работе.</p>
+<p>В случае наличия локальных переменных в этих методах нет необходимости думать о многопоточной безопасности, т.к. они будут созданы отдельно для каждой нити. Но если используются глобальные ресурсы, то необходимо использовать синхронизацию как и в любом многопоточном приложении Java.</p>
+<h4>28. В чем отличие между веб сервером и сервером приложений?</h4>
+<p>Веб сервер необходим для обработки HTTP request&nbsp;от браузера клиента и ответа клиенту с помощью HTTP response. Веб сервер понимает язык HTTP и запускается по HTTP протоколу. Примером веб сервера может служить реализация от Apache &mdash; Tomcat.</p>
+<p>Сервер приложений предоставляет дополнительные возможности, такие как поддержка JavaBeans, JMS Messaging, Transaction Management и др. Можно сказать, что сервер приложений &mdash; это веб сервер с дополнительными возможностями, которые помогают разрабатывать корпоративные приложения.</p>
+<h4>29. Какой метод HTTP не является неизменяемым?</h4>
+<p>HTTP метод называется неизменяемым, если он всегда возвращает одинаковый результат. HTTP методы GET, PUT, DELETE, HEAD, OPTIONS являются неизменяемыми. Необходимо реализовывать приложение так, чтобы эти методы возвращали одинаковый результат. К изменяемым методам относится HTTP метод POST. Post метод используется для реализации чего-либо, что изменяется при каждом запросе.</p>
+<p>К примеру, для доступа к HTML странице или изображению необходимо использовать метод GET, т.к. он возвращает одинаковый результат. Но если нам необходимо сохранить информацию о заказе в базе данных, то нужно использовать POST метод. Неизменяемые методы так же известны как безопасные методы и нет необходимости заботится о повторяющихся запросах от клиента для этих методов.</p>
+<h4>30. Почему HttpServlet класс объявлен как абстрактный?</h4>
+<p>Класс <span style="color: #920000;">HTTPServlet</span> предоставляет реализацию HTTP протокола сервлета (а следовательно помогает избежать постоянного кодинга повторяющейся информации), но он не имеет реализованных методов <span style="color: #920000;">doGet()</span> и <span style="color: #920000;">doPost()</span> (у них по умолчанию возвращение HTTP 405 Method Not Implemented error), а следовательно объявлен абстрактным. Реализация этих методов перекладывается на разработчика.</p>
+
+	</div>
+
+<div>
+	
+<h4>&nbsp;31. В чем разница между методами GET и POST?</h4>
+<ul>
+<li>GET метод является неизменяемым, тогда как POST &mdash; изменяемый.</li>
+<li>С помощью метода GET можно посылать ограниченное кол-во данных, которые будут пересланы в заголовке URL. В случае POST метода мы можем пересылать большие объемы данных, т.к. они будут находится в теле метода.</li>
+<li>Данные GET метода передаются в открытом виде, что может использоваться в зловредных целях. POST данные передаются в теле запроса и скрыты от пользователя.</li>
+<li>GET метод&nbsp;является HTTP методом по умолчанию, а POST метод необходимо указывать явно, чтобы отправить запрос.</li>
+<li>GET метод используется гиперссылками на странице.</li>
+</ul>
+<h4>32. Что такое MIME-тип?</h4>
+<p>MIME (произн. «майм», англ. Multipurpose Internet Mail Extensions &mdash; многоцелевые расширения интернет-почты) &mdash; стандарт, описывающий передачу различных типов данных по электронной почте, а также, в общем случае, спецификация для кодирования информации и форматирования сообщений таким образом, чтобы их можно было пересылать по Интернету. Content-Type response header это и есть MIME тип. Сервер посылает MIME тип клиенту для того, чтобы он понял какой тип данных пересылается. Это помогает верно отобразить полученные данные на клиенте. Наиболее часто используемые MIME типы:&nbsp;<span style="color: #920000;">text/html</span>, <span style="color: #920000;">text/xml</span>, <span style="color: #920000;">application/xml</span> и многие др.</p>
+<p>В <span style="color: #920000;">ServletContext</span> существует метод <span style="color: #920000;">getMimeType()</span> для получения корректного MIME типа файла и дальнейшего использования этой информации для указания типа контента в&nbsp;ответе.</p>
+<h4>33. Назовите преимущества Servlet над CGI?</h4>
+<p>Технология сервлетов была создана для преодоления недостатков Common Gateway Interface (общий интерфейс шлюза). Можно выделить следующие преимущества сервлетов над CGI:</p>
+<ul>
+<li>Сервлеты предоставляют лучшую производительность в условиях обработки запросов, лучшее использование памяти за счет использования преимущество многопоточности (на каждый запрос создается новая нить, что быстрее выделения памяти под новый объект для каждого запроса, как это происходит в CGI).</li>
+<li>Сервлеты, платформа и система являются независимыми. Таким образом веб приложение написанное с использованием сервлетов может быть запущена в любом контейнере сервлетов, реализующим стандарт и в любой операционной системе.</li>
+<li>&nbsp;Использование сервлетов повышает надежность программы, т.к. контейнер сервлетов самостоятельно заботиться о жизненном цикле сервлетов (а значит и за утечками памяти), безопасности и сборщике мусора.</li>
+<li>Сервлеты относительно легки в изучении и поддержке, таким образом разработчику необходимо заботиться только о бизнес логике приложения, а не внутренней реализации веб технологий.</li>
+</ul>
+<h4>34. Каковы наиболее распространенные задачи выполняются в Servlet контейнере?</h4>
+<ul>
+<li><strong>Поддержка обмена данными</strong>. Контейнер сервлетов предоставляет легкий способ обмена данными между веб клиентом (браузером) и сервлетом. Благодаря контейнеру нет необходимости создавать слушателя сокета на сервере для отслеживания запросов от клиента, а так же разбирать запрос и генерировать ответ. Все эти важные и комплексные задачи решаются с помощью контейнера и разработчик может сосредоточиться на бизнес логике приложения.</li>
+<li><strong>Управление&nbsp;жизненным циклом сервлетов и ресурсов</strong>. Начиная от загрузки сервлета в память, инициализации, внедрения методов и заканчивая уничтожением сервлета. Контейнер так же предоставляет дополнительные утилиты, например JNDI, для управления пулом ресурсов.</li>
+<li><strong>Поддержка многопоточности</strong>. Контейнер самостоятельно создает новую нить для каждого запроса и предоставляет ей запрос и ответ для обработки. Таким образом сервлет не инициализируется заново для каждого запроса и тем самым сохраняет память и уменьшает время до обработки запроса.</li>
+<li style="text-align: justify;"><strong>Поддержка JSP</strong>. JSP классы не похожи на стандартные классы джавы, но контейнер сервлетов преобразует каждую JSP в сервлет и далее управляется контейнером как обычным сервлетом.</li>
+<li style="text-align: justify;"><strong>Различные задачи</strong>.&nbsp;Контейнер сервлетов управляет пулом ресурсов, памятью приложения, сборщиком мусора. Предоставляются возможности настройки безопасности и многое другое.</li>
+</ul>
+<h4>35. В чем разница между PrintWriter и ServletOutputStream?</h4>
+<p><span style="color: #920000;">PrintWriter</span> &mdash; это класс для работы с символьным потоком, а&nbsp;<span style="color: #920000;">ServletOutputStream</span> &mdash; класс для работы байтовым потоком. <span style="color: #920000;">PrintWriter</span> используется для записи информации на основе символов, вроде массива символов или строки в ответ, в то время как <span style="color: #920000;">ServletOutputStream</span> используется для записи в ответ массива байтов. Для получения экземпляра&nbsp;<span style="color: #920000;">ServletOutputStream</span> используется метод ServletResponse <span style="color: #920000;">getOutputStream()</span>, а для <span style="color: #920000;">PrintWriter</span> &mdash; метод&nbsp;<span style="color: #920000;">ServletResponse getWriter()</span>.</p>
+<h4>36. Можем ли мы получить PrintWriter и ServletOutputStream одновременно в сервлете?</h4>
+<p>Мы не можем создать два объекта этих классов в одном сервлете. При попытке внедрить оба метода <span style="color: #920000;">getWriter()</span> и <span style="color: #920000;">getOutputStream()</span> в ответе, мы получим исключение&nbsp;<span style="color: #920000;">java.lang.IllegalStateException</span> с сообщением, что уже другой метод был вызван для этого ответа.</p>
+<h4>37. Расскажите об интерфейсе SingleThreadModel.</h4>
+<p>Интерфейс был создан, чтобы гарантировать потокобезопасность и невозможности создания двух нитей в сервис методе сервлета. Однако интерфейс&nbsp;<span style="color: #920000;">SingleThreadModel</span> не решает всех проблем потокобезопасности. Например, атрибуты сессии или статические переменные могут быть доступны различным запросам в различных потоках в одно и тоже время (даже при использовании этого интерфейса). В общем это убило весь профит от многопоточности и интерфейс объявлен deprecated начиная с Servlet 2.4.</p>
+<h4>38. Какие существуют атрибуты у сервлетов и какая сфера их применения?</h4>
+<p>Атрибуты сервлетов ипользуются для внутренней коммуникации сервлетов. Мы можем использовать атрибуты set, get, remove в веб приложении. Существует три области видимости атрибутов &mdash; <span style="color: #920000;">request scope</span>, <span style="color: #920000;">session scope</span>, <span style="color: #920000;">application scope</span>.</p>
+<p>Интерфейсы&nbsp;<span style="color: #920000;">ServletRequest</span>, <span style="color: #920000;">HttpSession</span> и&nbsp;<span style="color: #920000;">ServletContext</span> предоставляют методы для <span style="color: #920000;">get()</span>, <span style="color: #920000;">set()</span>, <span style="color: #920000;">remove()</span> атрибутов из request scope, session scope, application scope соответственно.</p>
+<h4>39. Почему необходимо переопределить только init() метод без аргументов?</h4>
+<p>Если нам необходимо инициализировать какие-то ресурсы до того как сервлет начнет обрабатывать запросы, то необходимо переопределить метод <span style="color: #920000;">init()</span>. Если переопределить метод <span style="color: #920000;">init(ServletConfig config</span>), то первым должен быть вызван метод <span style="color: #920000;">super(config)</span>, который обеспечит вызов метода <span style="color: #920000;">init(ServletConfig config)</span> суперкласса. Именно поэтому <span style="color: #920000;">GenericServlet</span> предоставляет другой метод <span style="color: #920000;">init()</span> без параметров, который будет вызываться в конце метода <span style="color: #920000;">init(ServletConfig config)</span>. Разработчик должен использовать переопределенный метод <span style="color: #920000;">init()</span> без параметров для инициализации переменных для избежания каких-либо проблем, например не указав вызов <span style="color: #920000;">super()</span> в переопределенном методе <span style="color: #920000;">init(ServletConfig config)</span>.</p>
+<h4>40. Что означает URL encoding?&nbsp;Зачем нужны методы encode() и decode()?</h4>
+<p>URL Encoding &mdash; процесс преобразования данных в форму CGI (Common Gateway Interface), который позволит путешествовать по сети без проблем. URL Encoding разделяет пробелы и&nbsp;заменяет специальные символы с помощью escape-симолов. Например, для кодирования строки используется метод &nbsp;<span style="color: #920000;">java.net.URLEncoder.encode(String str, String unicode)</span>. Обратная операция декодирования возможна благодаря методу<span style="color: #920000;">&nbsp;java.net.URLDecoder.decode(String str, String unicode)</span>. Пример работы метода: строка «<span style="color: #920000;">Java for study .ru</span>» будет преобразована в <span style="color: #920000;">Java%20for%20study%20.ru</span>.</p>
+<h4>41. Зачем нужны и чем отличаются методы encodeUrl() и encodeRedirectUrl()?</h4>
+<p><span style="color: #920000;">HttpServletResponse</span> предоставляет методы преобразования URL в HTML гиперссылки с преобразованием&nbsp;спец символов и пробелов, а так же добавления session id к URL. Такое поведение аналогично <span style="color: #920000;">URLEncoder encode()</span>, но с добавлением дополнительного параметра <span style="color: #920000;">jsessionid</span> в конец URL.</p>
+<p>Метод <span style="color: #920000;">HttpServletResponse encodeRedirectUrl()</span> применяется для преобразования redirect URL в ответе. Таким образом при предоставлении поддержки URL rewriting для HTML гиперссылок необходимо использовать <span style="color: #920000;">encodeURL()</span>, а для редирект URL’ов использовать <span style="color: #920000;">encodeRedirectUrl()</span>.</p>
+<h4>42. Какие различные методы управления сессией в сервлетах вы знаете?</h4>
+<p>Сессия является обычным состоянием взаимодействия сервера и клиента и может содержать в себе множество запросов и ответов клиент-сервер. Т.к. HTTP и веб сервер&nbsp;не запоминают состояния (stateless), то единственным способом поддерживать сессию является пересылка уникальной информации (session id) в каждом запросе и ответе между клиентом и сервером.</p>
+<p>Существуют несколько распространенных способов управления сессией в сервлетах:</p>
+<ul>
+<li>Аутентификация пользователя</li>
+<li>HTML hidden field (скрытое поле)</li>
+<li>Cookies</li>
+<li>URL Rewriting</li>
+<li>Session Management API</li>
+</ul>
+<h5>Java Servlet Session Management Tutorial with Examples of Cookies, HttpSession and URL Rewriting:&nbsp;http://www.journaldev.com/1907/java-servlet-session-management-tutorial-with-examples-of-cookies-httpsession-and-url-rewriting</h5>
+<h4>43. Что означает URL Rewriting?</h4>
+<p>Для управления сессией в сервлетах мы можем использовать <span style="color: #920000;">HTTPSession</span>, но он работает с Cookies, а их иногда отключают. Для этого случая в сервлетах предусмотрена возможность URL Rewriting.&nbsp;С точки зрения программирования необходимо всего одно действие &mdash; кодирование URL. Другим достоинством является то, что этот метод является как бы запасным и включается только при выключенных куках.</p>
+<p>Применяя метод <span style="color: #920000;">HttpServletResponse encodeURL()</span> мы можем закодировать URL. Если необходим редирект к другому ресурсу, то для предоставления информации о сессии применяется метод&nbsp;<span style="color: #920000;">encodeRedirectURL()</span>.</p>
+<h4>44. Как применяются Cookies в сервлетах?</h4>
+<p>Cookies (куки) используются в клиент-серверном&nbsp;взаимодействии и они не являются чем-то конкретным к Java. Servlet API предоставляет поддержку cookies через класс<span style="color: #920000;">&nbsp;javax.servlet.http.Cookie implements Serializable, Cloneable</span>. Для получения массива cookies из запроса необходимо воспользоваться методом&nbsp;<span style="color: #920000;">HttpServletRequest getCookies()</span>. Для добавления cookies в запрос методов не предусмотрено.</p>
+<p>Аналогично&nbsp;<span style="color: #920000;">HttpServletResponse addCookie(Cookie c)</span> &mdash; может добавить cookie&nbsp;в response header, но не существует геттера для этого типа передачи данных.</p>
+<h5>Servlet Cookie Example Tutorial:&nbsp;http://www.journaldev.com/1956/servlet-cookie-example-tutorial</h5>
+<h4>45. Как уведомить объект в сессии, что сессия недействительна или закончилась?</h4>
+<p>Чтобы быть уверенным об оповещение объекта о прекращении сессии, объект должен реализовывать интерфейс&nbsp;<span style="color: #920000;">javax.servlet.http.HttpSessionBindingListener</span>. Два метода этого интерфейса: <span style="color: #920000;">valueBound()</span> и <span style="color: #920000;">valueUnbound()</span> применяются для реализации логики при добавлении объекта в качестве атрибута к сессии и при&nbsp;уничтожения сессии.</p>
+<h5>Servlet Listener Example &ndash; ServletContextListener, HttpSessionListener and ServletRequestListener:&nbsp;http://www.journaldev.com/1945/servlet-listener-example-servletcontextlistener-httpsessionlistener-and-servletrequestlistener</h5>
+<h4>46. Какой существует эффективный способ удостоверится, что все сервлеты доступны только для пользователя с валидной сессией?</h4>
+<p>Сервлет фильтры используются для перехвата всех запросов между контейнером сервлетов и сервлетом. Поэтому логично использовать фильтр для проверки необходимой информации (например валидности сессии) в запросе.</p>
+<h4>47. Как мы можем обеспечить transport layer security для нашего веб приложения?</h4>
+<p>Для этого необходимо настроить SSL для вашего сервлет контейнера. Как это сделать описано в мануалах для конкретной реализации контейнера.</p>
+<h4>48. Как организовать&nbsp;подключение к базе данных и обеспечить логирование log4j в сервлете?</h4>
+<p>При работе с большим количеством подключений к базе данных рекомендуется инициализировать их в servlet context listener и установить в качестве атрибута контекста для возможности использования другими сервлетами. Логирование Log4j подключается с помощью конфигурации XML (или файла property) и далее эта информация используется при конфигурировании context listener’а.</p>
+<h5>Servlet Example in Java with Database Connection and Log4j integration:&nbsp;http://www.journaldev.com/1997/servlet-example-in-java-with-database-connection-and-log4j-integration</h5>
+<h4>49. Какие важные особенности существуют в Servlet 3?</h4>
+<ul>
+<li><strong>Servlet Annotations</strong>. До Servlet 3 весь маппинг был в web.xml, что приводило к ошибкам и банально неудобно при большом количестве сервлетов. Примеры аннотаций:&nbsp;&nbsp;<span style="color: #920000;">@WebServlet</span>, <span style="color: #920000;">@WebInitParam</span>, <span style="color: #920000;">@WebFilter</span>, <span style="color: #920000;">@WebListener</span>.</li>
+<li><strong>Web Fragments. </strong>С появлением веб фрагментов мы можем содержать множество модулей в одностраничном веб приложении. Все модули прописываются в fragment.xml в META-INF директории. Это позволяет разделять веб приложение на отдельные модули, включенные как JAR файлы в отдельной lib директории.</li>
+<li><strong>Динамическое добавление веб компонентов</strong>. Используя ServletContext объект, мы можем программно добавлять фильтры и слушатели. Это помогает построить динамическую систему, в которой необходимый объект будет вызван только по необходимости. Для этого применяются методы&nbsp;<span style="color: #920000;">addServlet()</span>, <span style="color: #920000;">addFilter()</span>, <span style="color: #920000;">addListener()</span>.</li>
+<li><strong>Асинхронное выполнение</strong>. Поддержка асинхронной обработки позволяет передать выполнение запроса в другой поток без удержания всего сервера занятым.</li>
+</ul>
+<h5>Асинхронный сервлет: http://www.journaldev.com/2008/async-servlet-feature-of-servlet-3</h5>
+<h4>50. Каковы различные способы аутентификации сервлета?</h4>
+<p>Контейнер сервлетов предоставляет различные способы аутентификации:</p>
+<ul>
+<li>HTTP Basic Authentication</li>
+<li>HTTP Digest Authentication</li>
+<li>HTTPS Authentication</li>
+<li>Form Based Login</li>
+</ul>
+<h4>51. Написать сервлет, реализующий загрузку файла на сервер.</h4>
+<h5>Servlet Upload File and Download File Example:&nbsp;http://www.journaldev.com/1964/servlet-upload-file-and-download-file-example</h5>
+<h5><a href="http://javastudy.ru/interview/list-of-questions-javaee-interview/">к списку вопросов раздела JEE</a></h5>
+<p><a href="http://javastudy.ru/interview/jee-servlet-api-questions/">Вопросы и ответы по сервлетам в Java EE &mdash; JEE Servlet API. Часть 1.</a></p>
+</div>
+</body>
+</html>

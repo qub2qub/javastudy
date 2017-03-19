@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>QA JSP</title>
+    <link rel="stylesheet" href="../Git Guide/grey.css">
+</head>
+<body>
+<a href="http://javastudy.ru/interview/jee-jsp-questions-answers/">src</a>
+<h2>Java Server Pages (JSP)</h2>
+<div class="entry-body">
+<h3>Вопросы</h3>
+<p>1. Что такое jsp и зачем он нужен?<br>
+2. Расскажите об этапах (фазах) жизненного цикла jsp.<br>
+3. Расскажите о методах жизненного цикла jsp.<br>
+4. Какие методы жизненного цикла JSP могут быть переопределены?<br>
+5. Как можно предотвратить прямой доступ к JSP странице из браузера?<br>
+6. Как закомментировать код в jsp?<br>
+7. Объясните Scriptlet, Expression и Declaration в JSP.<br>
+8. Какие неявные, внутренние объекты и методы есть на jsp странице?<br>
+9. Почему неявные объекты не доступны в обычной JSP странице?<br>
+10. Что вы знаете о PageContext и какие преимущества его использования?<br>
+11. Как сконфигурировать init параметры для JSP?<br>
+12. Почему не рекомендуется использовать скриптовые элементы в jsp?<br>
+13. Можем ли мы определить класс внутри JSP страницы?<br>
+14. Какие есть способы вставки java кода в jsp страницу?<br>
+15. Как можно запретить использование скриптов и java кода на jsp странице?<br>
+16. Что вы знаете о jsp тегах? Объясните как вы понимаете Action tag и JSP Action Elements.<br>
+17. Какая разница между директивой include и jsp:include action?<br>
+18. Что вы знаете о языке выражений jsp (JSP Expression Language &ndash; EL)?<br>
+19. Назовите неявные, внутренние объекты JSP EL и их отличия от объектов jsp.<br>
+20. Как узнать имя http метода используя JSP EL?<br>
+21. Что такое JSTL (Jsp Standard tag library)?<br>
+22. На какие категории можно разделить JSTL теги, приведите примеры.<br>
+23. Что вы знаете о написании пользовательских jsp тегов?<br>
+24. Приведите пример использования собственных тегов.<br>
+25. Почему не нужно конфигурировать стандартные JSP теги в web.xml?<br>
+26. Как можно обработать ошибки jsp страниц?<br>
+27. Как происходит обработка ошибок с помощью jstl?<br>
+28. Как сделать «новую линию&nbsp;в HTML» в JSP?<br>
+29. Приведите пример конфигурации JSP в дескрипторе развертывания.<br>
+30. Как деактивировать использование EL на JSP?<br>
+31. Когда контейнер проинициализирует множество JSP/Servlet объектов?<br>
+32. Можно ли использовать javascript на jsp странице?<br>
+33. Всегда ли создается объект сессии на jsp странице, можно ли отключить его создание?<br>
+34. Какая разница между JspWriter и Servlet PrintWriter?<br>
+35. Как можно расширить функциональность jsp?<br>
+36. Best Practices в JSP.</p>
+<h3>Ответы</h3>
+<h4>1. Что такое jsp и зачем он нужен?</h4>
+<p>JSP&nbsp;&mdash; это&nbsp;JavaServer Pages. JSP является серверной&nbsp;технологией&nbsp;для создания динамических веб-страниц. JSP расширяет технологию сервлетов, чтобы помочь разработчикам создавать динамические страницы с HTML подобным синтаксисом.</p>
+<p>Создание представлений поддерживается и в сервлетах, но в таком случае код выглядит ужасным и подвержен ошибкам. Так же было замечено, что большинство элементов веб страницы является статическими и поэтому JSP страница больше подходит к веб-страницам. По возможности необходимо избегать бизнес логики на странице JSP и использовать страницу только в качестве представления. Поэтому рекомендуется использовать JSP actions элементы или JSTL теги вместо написания JSP скриптов.</p>
+<p>Еще одним преимуществом в JSP является горячее развертывание. Мы можем заменить старую страницу на другую в контейнере и пользователям будет отображаться новая JSP страница. Таким образом нет необходимости компилировать весь проект или перезапускать сервер для обновления части страниц.</p>
+<h4>2. Расскажите об этапах (фазах) жизненного цикла jsp.</h4>
+<p>Если посмотреть код внутри созданной JSP страницы, то он будет выглядеть как HTML и не будет похож на java класс. Конвертацией JSP страниц в HTML код занимается контейнер, который так же создает сервлет для использования в веб приложении. Жизненный цикл JSP состоит из нескольких фаз:</p>
+<ol>
+<li><strong>Translation</strong> &ndash; JSP контейнер проверяет код JSP страницы, парсит ее для создания кода сервлета. К примеру, в Tomcat вы можете найти классы сервлетов в директории <strong>TOMCAT/work/Catalina/localhost/WEBAPP/org/apache/jsp</strong>. Если страница&nbsp;JSP называется&nbsp;home.jsp,&nbsp;то созданный сервлет обычно будет иметь имя&nbsp;<strong>home_jsp</strong> и имя файла &mdash;&nbsp;<strong>home_jsp.java</strong>.</li>
+<li><strong>Compilation</strong> &ndash; JSP контейнер компилирует исходный код jsp класса и создает класс на этой фазе.</li>
+<li><strong>Class Loading</strong> &ndash; контейнер загружает классы в память на этой фазе.</li>
+<li><strong>Instantiation</strong> &ndash; внедрение конструкторов без параметров созданных классов для инициализации в памяти классов.</li>
+<li><strong>Initialization</strong> &ndash; в контейнере вызывается init метод объекта JSP класса и инициализируется конфигурация сервлета с init параметрами, которые указаны в дескрипторе развертывания (<strong>web.xml</strong>). После этой фазы JSP способен обрабатывать запросы клиентов.Обычно эти фазы происходят после первого запроса клиента (т.е. ленивая загрузка), но можно настроить загрузку и инициализацию JSP на старте приложения по аналогии с сервлетами.</li>
+<li><strong>Request Processing</strong> &ndash; длительный жизненный цикл &nbsp;обработки запросов клиента JSP страницей. Обработка является многопоточной и аналогична сервлетам &mdash; для каждого запроса создается новая нить, создаются объекты&nbsp;ServletRequest и&nbsp;ServletResponse и происходит внедрение сервис методов JSP.</li>
+<li><strong>Destroy</strong> &ndash; последняя фаза жизненного цикла JSP на которой JSP класс удаляется из памяти. Обычно это происходит при выключении сервера или андеплое приложения.</li>
+</ol>
+<h4>3. Расскажите о методах жизненного цикла jsp.</h4>
+<p>Жизненные циклы методов JSP:</p>
+<ul>
+<li><strong>jspInit()</strong> &mdash; метод объявлен&nbsp;в JSP странице &nbsp;и реализуется с помощью реализаций контейнера. Этот метод вызывается один раз в жизненном цикле JSP для того, чтобы инициализировать конфигурационные параметры, указанные в дескрипторе развертывания. Этот метод можно переопределить с помощью определения элемента JSP scripting и указания необходимых параметров для инициализации.</li>
+<li><strong>_jspService()</strong> &mdash; этот JSP метод внедряется JSP контейнером для каждого запроса клиента с помощью передачи объекта запроса и ответа. Отметьте, что имя метода начинается с нижнего подчеркивания и отличается от других методов жизненного цикла тем, что его невозможно переопределить. Весь JSP код проходит через этот метод и он переопределен по умолчанию. Этот метод определен в HttpJspPage интерфейсе.</li>
+<li><strong>jspDestroy()</strong> &mdash; метод вызывается контейнером JSP для удаления объекта из памяти (на последней фазе жизненного цикла JSP &mdash; Destroy). Метод вызывается только один раз и мы можем его переопределить для очищения любых ресурсов, которые были созданы в JSP init методе.</li>
+</ul>
+<h4>4. Какие методы жизненного цикла JSP могут быть переопределены?</h4>
+<p>Мы можем переопределить <span style="color: #920000;">jspInit()</span> и <span style="color: #920000;">jspDestroy()</span> методы с помощью использования скриптов JSP. Метод&nbsp;<strong>jspInit()</strong>&nbsp;переопределяется для создания общих ресурсов, которые мы хотели бы использовать в методе обслуживания JSP, а <strong>jspDestroy()</strong> метод переопределяется, чтобы освободить общие ресурсы на фазе уничтожения.</p>
+<h4>5. Как можно предотвратить прямой доступ к JSP странице из браузера?</h4>
+<p>Директория WEB-INF не имеет прямого доступа из веб приложения. Поэтому мы можем положить JSP страницы внутри этой папки и тем самым запретить доступ к странице из браузера. Однако в этом случае необходимо настраивать дескриптор развертывания наподобие сервлетов. Простая конфигурация дескриптора web.xml показана ниже.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce343024488203771738">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;servlet&gt;
+  &lt;servlet-name&gt;Test&lt;/servlet-name&gt;
+  &lt;jsp-file&gt;/WEB-INF/test.jsp&lt;/jsp-file&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;test&lt;/param-name&gt;
+    &lt;param-value&gt;Test Value&lt;/param-value&gt;
+  &lt;/init-param&gt;
+&lt;/servlet&gt;
+    
+&lt;servlet-mapping&gt;
+  &lt;servlet-name&gt;Test&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/Test.do&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0023 seconds] -->
+<p></p>
+<h4>6. Как закомментировать код в jsp?</h4>
+<p>JSP предоставляет две возможности закомментировать код:</p>
+<ul>
+<li>HTML комментарии &mdash; <span style="color: #920000;">&lt;&mdash; HTML Comment &mdash;&gt;</span>&nbsp;. Такие комментарии будут видны клиенту при просмотре кода страницы.</li>
+<li>JSP комментарии &mdash; <span style="color: #920000;">&lt;%&mdash; JSP Comment &mdash;&gt;</span>. Такие комментарии создаются в созданном сервлете и не посылаются клиенту. Для любых комментариев по коду или отладочной информации необходимо использовать этот тип комментариев.</li>
+</ul>
+<h4>7. Объясните Scriptlet, Expression и Declaration в JSP.</h4>
+<p>Scriptlet, Expression и Declaration &mdash; скриптовые элементы внутри JSP страницы, которые могут выполнять Java код. Скриптлеты задаются тегом <span style="color: #920000;">&lt;% .. %&gt;</span>. Любой код внутри этих тегов будет передан <span style="color: #920000;">_jspService()</span> методу.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce343024493238867423">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%
+Date d = new Date();
+System.out.println("Current Date="+d);
+%&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0034 seconds] -->
+<p>Достаточно часто требуется показать динамическую информацию с использованием метода <span style="color: #920000;">out.print()</span>. Для этого существует язык выражений (expression), который записывается как <span style="color: #920000;">&lt;%= .. %&gt;</span>. Например, выражение <span style="color: #920000;">&lt;% out.print(«I love javastudy.ru»); %&gt;</span> может быть переписано с помощью JSP выражения <span style="color: #920000;">&lt;%=&nbsp;«I love javastudy.ru» %&gt;</span>. Отметьте, что всё, что находится внутри тегов <span style="color: #920000;">&lt;%= .. %&gt;</span> будет передано в <span style="color: #920000;">out.print()</span> метод. Так же обратите внимание, что скриптлеты могут содержать несколько java выражений, разделенных точкой с запятой, в то время как выражения не должны заканчиваться на точку с запятой.</p>
+<p>JSP Declaration используется для объявления методов и переменных класса сервлета. Declaration записываются с помощью тега <span style="color: #920000;">&lt;%! .. %&gt;</span>, например &mdash;&nbsp;<span style="color: #920000;">&lt;%! public static int count=0; %&gt;</span>.</p>
+<h4>8. Какие неявные, внутренние объекты и методы есть на jsp странице?</h4>
+<p>JSP implicit objects (неявные объекты) создаются контейнером при конвертации JSP страницы в код сервлета для помощи разработчикам. Эти объекты можно использовать напрямую в скриптлетах для передачи информации в сервис методы, однако мы не можем использовать неявные объекты в JSP Declaration, т.к. такой код пойдет на уровень класса.<br>
+Существует 9 видов неявных объектов, которые можно использовать прямо на JSP странице. Семь из них объявлены как локальные переменные в начале <span style="color: #920000;">_jspService()</span> метода, а два оставшихся могут быть использованы как аргументы метода <span style="color: #920000;">_jspService()</span>.</p>
+<ol>
+<li><strong>out</strong> Object</li>
+<li><strong>request</strong> Object</li>
+<li><strong>response</strong> Object</li>
+<li><strong>config</strong> Object</li>
+<li><strong>application</strong> Object</li>
+<li><strong>session</strong> Object</li>
+<li><strong>pageContext</strong> Object</li>
+<li><strong>page</strong> Object</li>
+<li><strong>exception</strong> Object</li>
+</ol>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce343024499889436972">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%@ page language="java" contentType="text/html; charset=US-ASCII"
+    pageEncoding="US-ASCII"%&gt;
+&lt;%@ page import="java.util.Date" %&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"&gt;
+&lt;title&gt;Index JSP Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;%-- out object example --%&gt;
+&lt;h4&gt;Hi There&lt;/h4&gt;
+&lt;strong&gt;Current Time is&lt;/strong&gt;: &lt;% out.print(new Date()); %&gt;&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- request object example --%&gt;
+&lt;strong&gt;Request User-Agent&lt;/strong&gt;: &lt;%=request.getHeader("User-Agent") %&gt;&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- response object example --%&gt;
+&lt;%response.addCookie(new Cookie("Test","Value")); %&gt;
+ 
+&lt;%-- config object example --%&gt;
+&lt;strong&gt;User init param value&lt;/strong&gt;:&lt;%=config.getInitParameter("User") %&gt;&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- application object example --%&gt;
+&lt;strong&gt;User context param value&lt;/strong&gt;:&lt;%=application.getInitParameter("User") %&gt;&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- session object example --%&gt;
+&lt;strong&gt;User Session ID&lt;/strong&gt;:&lt;%=session.getId() %&gt;&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- pageContext object example --%&gt;
+&lt;% pageContext.setAttribute("Test", "Test Value"); %&gt;
+&lt;strong&gt;PageContext attribute&lt;/strong&gt;: {Name="Test",Value="&lt;%=pageContext.getAttribute("Test") %&gt;"}&lt;br&gt;&lt;br&gt;
+ 
+&lt;%-- page object example --%&gt;
+&lt;strong&gt;Generated Servlet Name&lt;/strong&gt;:&lt;%=page.getClass().getName() %&gt;
+ 
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0074 seconds] -->
+<p></p>
+<h4>9. Почему неявные объекты не доступны в обычной JSP странице?</h4>
+<p>Неявный объект исключений JSP недоступен в обычных JSP страницах и используется на страницах ошибок JSP только для того, чтобы перехватить исключение, брошенное JSP страницей и далее предоставить какую-либо полезную информацию клиенту.</p>
+<h4>10. Что вы знаете о PageContext и какие преимущества его использования?</h4>
+<p>Неявный объект JSP <span style="color: #920000;">pageContext</span> является экземпляром реализации абстрактного класса&nbsp;<span style="color: #920000;">javax.servlet.jsp.PageContext</span>. Мы можем использовать объект pageContext для получения и установки атрибутов с различной областью видимости и для проброса запросов к другому ресурсу. Этот объект так же обладает ссылкой на другой неявный объект. Это единственный объект, который представлен в JSP implicit objects и JSP EL implicit&nbsp;objects.</p>
+<h4>11. Как сконфигурировать init параметры для JSP?</h4>
+<p>Мы можем задать параметры инициализации для JSP аналогично сервлетам в web.xml файле. Мы должны сконфигурировать init параметры JSP с элементами servlet и servlet-mapping. Единственным отличием будет указание местонахождения JSP страницы.</p>
+<h4>12. Почему не рекомендуется использовать скриптовые элементы в jsp?</h4>
+<p>JSP страницы в основном используются для целей отображения представления, а вся бизнес логика и модели должны быть реализованы в сервлетах или классах моделях. Мы должны передавать параметры к JSP странице через атрибуты и затем использовать их для создания HTML ответа на JSP странице. Большая часть JSP содержит HTML код и для того, чтобы помочь дизайнерам понять код JSP страницы и разрабатывать их, предоставляют элементы action, JSP EL, JSP Standart Tag Library. Именно эти элементы необходимо использовать вместо скриптлетов для создания моста между JSP HTML и JSP java частями.</p>
+<h4>13. Можем ли мы определить класс внутри JSP страницы?</h4>
+<p>Определить класс внутри JSP страницы можно, но это считается плохой практикой. Это можно сделать так</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244a5950657126">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%!
+private static class NestedClass { //static is better because Servlet is multi-threaded
+  private final int num = 0;
+  public int getNum() {
+    return num;
+  }
+}
+%&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0012 seconds] -->
+<p>или так:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244ab189139366">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%      
+    class Person { 
+        //this will go inside method body, so can't be public
+    }
+%&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0007 seconds] -->
+<p></p>
+<h4>14. Какие есть способы вставки java кода в jsp страницу?</h4>
+<p><strong>Выражение</strong>, <strong>скриптлет</strong>, <strong>объявление</strong>:</p>
+<table>
+<tbody>
+<tr>
+<td>Выражение JSP <span style="color: #920000;">&lt;%= выражение %&gt;</span></td>
+<td>&lt;%= выражение %&gt;</td>
+<td>Эквивалент на XML:<br>
+&lt;jsp:expression&gt;expression&lt;/jsp:expression&gt;.<br>
+Заранее определенные переменные: request, response, out, session, application, config и pageContext (также доступны в скриптлетах).</td>
+</tr>
+<tr>
+<td>Скриптлет JSP<span style="color: #920000;">&nbsp;&lt;% код %&gt;</span></td>
+<td>Код добавляется в метод service.</td>
+<td>Эквивалент на XML:<br>
+&lt;jsp:scriptlet&gt;код&lt;/jsp:scriptlet&gt;.</td>
+</tr>
+<tr>
+<td>Объявление JSP <span style="color: #920000;">&lt;%! код %&gt;</span></td>
+<td>Код добавляется в тело класса сервлета вне метода service</td>
+<td>Эквивалент на XML:<br>
+&lt;jsp:declaration&gt;код&lt;/jsp:declaration&gt;.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Директива</strong>:</p>
+<table>
+<tbody>
+<tr>
+<td><span style="color: #920000;">&lt;%@ page</span> att= «значение» <span style="color: #920000;">%&gt;</span></td>
+<td>Директивы для движка сервлета с информацией об основных настройках.</td>
+<td>Эквивалент на XML:<br>
+&lt;jsp:directive.page att = «val»\&gt;. Допустимые атрибуты (жирным выделены значения, принимаемые по умолчанию):<br>
+import= «пакет.class»<br>
+contentType= «MIME-Type»<br>
+isThreadSafe= «<strong>true</strong>|false<br>
+» session= «<strong>true</strong>|false»<br>
+buffer= «размерkb|none»<br>
+autoflush= «<strong>true</strong>|false»<br>
+extends= «пакет.class»<br>
+info= «сообщение»<br>
+errorPage= «url»<br>
+isErrorPage= «true|<strong>false</strong>»<br>
+language= «java»</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;%@ include</span> file= «url» <span style="color: #920000;">%&gt;</span></td>
+<td>Файл в локальной системе, подключаемый<br>
+при трансляции JSP в сервлет.</td>
+<td>Эквивалент на XML:<br>
+&lt;jsp:directive.include&nbsp;file= «url»\&gt;.<br>
+URL должен быть относительным . Для подключения файла в процессе запроса а не в ходе трансляции используйте действие jsp:include.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Комментарий</strong>:</p>
+<table>
+<tbody>
+<tr>
+<td><span style="color: #920000;">&lt;%&mdash;</span> комментарий <span style="color: #920000;">&mdash;%&gt;</span></td>
+<td>Комментарий; игнорируется при трансляции JSP страницы в сервлет.</td>
+<td>Если вы хотите чтобы комментарий сохранился в конечном HTML, используйте обычный синтаксис HTML для описания комментариев: &lt;&mdash; комментарий &mdash;&gt;.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Действия</strong>:</p>
+<table>
+<tbody>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:include</span> page= «относительный URL» flush= «true»<span style="color: #920000;"> /&gt;</span></td>
+<td>Подключает файл при запросе страницы.</td>
+<td>Если вы хотите чтобы файл подключался в процессе трансляции страницы, используйте директиву page совместно с атрибутом include. Внимание: некоторые сервера требуют чтобы подключаемые файлы были в формате HTML или JSP, в зависимости от настроек сервера (обычно данное ограничение базируется на указании расширений файлов).</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:useBean</span> att=значение*/&gt; or<br>
+&lt;jsp:useBean att=значение*&gt;<br>
+…<br>
+<span style="color: #920000;">&lt;/jsp:useBean&gt;</span></td>
+<td>Найти или создать Java Bean.</td>
+<td>Возможные атрибуты:<br>
+id= «имя»<br>
+scope=<strong>«page</strong>|request|session|application»<br>
+class= «пакет.class»<br>
+type= «пакет.class»<br>
+beanName= «пакет.class»</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:setProperty</span> att=значение*<span style="color: #920000;">/&gt;</span></td>
+<td>Устанавливает свойства bean, или явно, или указанием на соответствующее значение параметра, передаваемое при запросе.</td>
+<td>Допустимые атрибуты:<br>
+name= «имяBean»<br>
+property= «имяСвойства|*»<br>
+param= «имяПараметра»<br>
+value= «значение»</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:getProperty</span> name= «ИмяСвойства» value= «значение» <span style="color: #920000;">/&gt;</span></td>
+<td>Получение и вывод свойств bean.</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:forward</span> page= «отн. URL»<span style="color: #920000;">/&gt;</span></td>
+<td>Передает запрос другой странице.</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="color: #920000;">&lt;jsp:plugin</span> attribute= &nbsp;«значение»*&gt;..</td>
+<td>Генерирует теги OBJECT или EMBED,в зависимости от типа бразуера, в котором будет выполняться апплет, использующий Java Plugin.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4>15. Как можно запретить использование скриптов и java кода на jsp странице?</h4>
+<p>Запретить использование скриптов можно внутри дескриптора развертывания. Например с помощью паттерна из примера ниже можно запретить выполнения скриптов для всех JSP страниц. Соответственно для отключения скриптов конкретной страницы необходимо указать ее имя.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244b1562194339">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;jsp-config&gt;
+    &lt;jsp-property-group&gt;
+        &lt;url-pattern&gt;*.jsp&lt;/url-pattern&gt;
+        &lt;scripting-invalid&gt;true&lt;/scripting-invalid&gt;
+    &lt;/jsp-property-group&gt;
+&lt;/jsp-config&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0009 seconds] -->
+<p></p>
+<h4>16. Что вы знаете о jsp тегах? Объясните как вы понимаете Action tag и JSP Action Elements.</h4>
+<p>JSP элементы или теги action предоставляют полезную функциональность для работы с Java Bean, вложения ресурсов, проброса запроса и создания динамических XML элементов. Элементы jsp action всегда начинаются с записи <span style="color: #920000;">jsp:</span> и мы можем использовать их прямо внутри страницы JSP без необходимости подключения библиотек или других настроек.</p>
+<p>Наиболее часто используемыми элементами action являются: <span style="color: #920000;">jsp:useBean</span>, <span style="color: #920000;">jsp:getProperty</span>, <span style="color: #920000;">jsp:setProperty</span>, <span style="color: #920000;">jsp:include</span>, <span style="color: #920000;">jsp:forward</span>.</p>
+<h4>17. Какая разница между директивой include и jsp:include action?</h4>
+<p>Разница между директивой JSP <span style="color: #920000;">include</span> и <span style="color: #920000;">jsp:include</span> action заключается в том, что для директивы include, контент для другого ресурса будет добавлен в созданный сервлет на этапе трансляции JSP (фаза Translation), в то время как <span style="color: #920000;">jsp:include</span> action работает в рантайме.<br>
+Другое&nbsp;отличие <span style="color: #920000;">JSP include action</span> в том, что мы можем передать параметры для вложения с помощью команды <span style="color: #920000;">jsp:params</span>, в то время как директива jsp <span style="color: #920000;">include</span> не имеет возможности передавать параметры.<br>
+Использовать директиву JSP include необходимо для статических ресурсов вроде header, footer, image file для повышения производительности. Если же нам необходима динамика, передача параметров для обработки, то необходимо использовать тег jsp:include action.</p>
+<h4>18. Что вы знаете о языке выражений jsp (JSP Expression Language &ndash; EL)?</h4>
+<p>В большинстве случаев мы используем JSP для целей просмотра, а&nbsp;вся бизнес-логика присутствует в сервлете или классах&nbsp;модели. После получения запроса клиента он обрабатывается в сервлете, а затем добавляем атрибуты в request/session/context scope, которые должны быть извлечены в JSP коде.&nbsp;Для создания ответа представлений так же используются <span style="color: #920000;">request</span>, <span style="color: #920000;">headers</span>, <span style="color: #920000;">cookies</span> и <span style="color: #920000;">init</span> параметры.<br>
+Мы можем использовать скриптлеты&nbsp;в JSP выражениях для получения атрибутов и параметров в JSP с Java кодом и использовать его для представлений.&nbsp;Проблема заключается в том, что веб дизайнеры обычно не знают java код, и именно поэтому в JSP 2.0 введен язык выражений (EL), через который мы можем получить атрибуты и параметры с помощью тегов HTML.<br>
+Синтаксис expression language выглядит как&nbsp;<span style="color: #920000;">$ {имя}</span>, и мы можем использовать EL неявные объекты и операторы языка выражений для извлечения атрибутов из разных scopes и использовать их в JSP странице.</p>
+<h4>19. Назовите неявные, внутренние объекты JSP EL и их отличия от объектов jsp.</h4>
+<p>Язык выражений JSP предоставляет множество неявных объектов, которые можно использовать для получения атрибутов в различных областях видимости (scopes) и для значений&nbsp;параметров. Важно отметить, что они отличаются&nbsp;от неявных объектов JSP и содержат атрибуты в заданной области видимости. Наиболее часто использующийся implicit object в JSP EL и JSP page &mdash; это объект pageContext. Ниже представлена таблица неявных объектов JSP EL.</p>
+<table>
+<tbody>
+<tr>
+<th class="tg-bf">JSP EL Implicit Objects</th>
+<th class="tg-bf">Type</th>
+<th class="tg-bf">Description</th>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">pageScope</span></td>
+<td>Map</td>
+<td>Карта атрибутов для page scope.</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">requestScope</span></td>
+<td>Map</td>
+<td>Используется для получения атрибутов в request scope.</td>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">sessionScope</span></td>
+<td>Map</td>
+<td>Используется для получения атрибутов из&nbsp;session scope.</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">applicationScope</span></td>
+<td>Map</td>
+<td>Используется для получения атрибутов&nbsp;из&nbsp;application scope.</td>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">param</span></td>
+<td>Map</td>
+<td>Используется для получения значения параметра request,&nbsp;возвращает одно значение.</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">paramValues</span></td>
+<td>Map</td>
+<td>Используется для получения значений параметров запроса в массиве. Удобно для параметров запроса, который содержит множество значений.</td>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">header</span></td>
+<td>Map</td>
+<td>Используется для получения &nbsp;информации о&nbsp;request header.</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">headerValues</span></td>
+<td>Map</td>
+<td>Используется для получения значений header values в массиве.</td>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">cookie</span></td>
+<td>Map</td>
+<td>Используется для получения значения&nbsp;cookie в JSP</td>
+</tr>
+<tr>
+<td><span style="color: #920000;">initParam</span></td>
+<td>Map</td>
+<td>Используется для получения параметров&nbsp;context init. Мы не можем использовать их для параметров инициализации сервлета&nbsp;(servlet init params).</td>
+</tr>
+<tr class="tg-even">
+<td><span style="color: #920000;">pageContext</span></td>
+<td>pageContext</td>
+<td>Такой же как и&nbsp;объект JSP implicit pageContext. Используется для получения request, session references и т.д. К примеру, получение имени&nbsp;request HTTP Method.</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<h4>20. Как узнать имя http метода используя JSP EL?</h4>
+<p>Вот так:&nbsp;<span style="color: #920000;">${pageContext.request.method}</span>.</p>
+<h4>21. Что такое JSTL (Jsp Standard tag library)?</h4>
+<p>Стандартная библиотека тегов JSP (англ. JavaServer Pages Standard Tag Library, JSTL) &mdash; расширение спецификации JSP, добавляющее библиотеку JSP тегов для общих нужд, таких как разбор XML данных, условная обработка, создание циклов и поддержка интернационализации. JSTL &mdash; конечный результат JSR 52, разработанного в рамках процесса сообщества Java.</p>
+<p>JSTL является альтернативой такому виду встроенной в JSP логики, как скриптлеты, то есть прямые вставки Java кода. Использование стандартизованного множества тегов предпочтительнее, поскольку получаемый код легче поддерживать и проще отделять бизнес-логику от логики отображения. Для использования JSTL тегов необходимо подключить библиотеку и указать на страницах пространство имен.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244bb411213654">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;dependency&gt;
+    &lt;groupId&gt;jstl&lt;/groupId&gt;
+    &lt;artifactId&gt;jstl&lt;/artifactId&gt;
+    &lt;version&gt;1.2&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;taglibs&lt;/groupId&gt;
+    &lt;artifactId&gt;standard&lt;/artifactId&gt;
+    &lt;version&gt;1.1.2&lt;/version&gt;
+&lt;/dependency&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0009 seconds] -->
+<p>Для подключения пространства имен основных тегов JSTL необходимо указать на JSP странице код:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244be229579215">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/sql" prefix="sql" %&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/xml" prefix="x" %&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0013 seconds] -->
+<p></p>
+<h4>22. На какие категории можно разделить JSTL теги, приведите примеры.</h4>
+<p>JSTL теги разделяются на пять категорий согласно их функциональности:</p>
+<ol>
+<li>Core Tags &ndash; Core tags предоставляют возможности итерации, обработки исключений, url, forward и&nbsp;redirect response и т.д.</li>
+<li>Formatting и&nbsp;Localization Tags &ndash; предоставляют возможности по форматированию Numbers, Dates и поддержки i18n локализации и&nbsp;resource bundles.</li>
+<li>SQL Tags &ndash; JSTL SQL Tags&nbsp;поддержка работы с базами данных вроде MySQL, Oracle и т.д.</li>
+<li>XML Tags &ndash; используются для работы с&nbsp;XML документами. Например для парсинга&nbsp;XML, преобразования данных&nbsp;XML и выполнения выражений&nbsp;XPath.</li>
+<li>JSTL Functions Tags &ndash; предоставляет набор функций, которые позволяют выполнять различные операции со строками и т.п.. Например по конкатенации или разбиению строк.</li>
+</ol>
+<h4>23. Что вы знаете о написании пользовательских jsp тегов?</h4>
+<p>JSP позволяет создавать свои собственные теги с необходимой функциональностью. Мы можем добавить библиотеку тегов на страницу JSP используя указание пространства имен. Для создания своего тега&nbsp;мы можем использовать следующие компоненты:</p>
+<ul>
+<li>JSP Custom Tag Handler</li>
+<li>Создание файла&nbsp;Tag Library Descriptor (TLD)</li>
+<li>Deployment Descriptor конфигурацию для&nbsp;TLD</li>
+</ul>
+<h4>24. Приведите пример использования собственных тегов.</h4>
+<p>Например нам необходимо отформатировать в каком-либо стиле очень длинное число. Для этого можно использовать собственный тег вроде:</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244c2277804632">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;mytags:formatNumber number="123456.789" format="#,###.00"/&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0003 seconds] -->
+<p>Используя входные параметры, число должно быть преобразовано на JSP странице в таком виде&nbsp;123,456.79 согласно шаблону. Т.к. JSTL не предоставляет такой функциональности, то нам придется создать собственный тег для получения необходимого результата.</p>
+<h4>25. Почему не нужно конфигурировать стандартные JSP теги в web.xml?</h4>
+<p>Нам не нужно настраивать стандартные теги JSP в web.xml, потому что TLD файлы уже находятся внутри каталога META-INF в&nbsp;JSTL jar файлах. Когда контейнер загружает веб-приложение и находит&nbsp;TLD файлы в директории META-INF в JAR файле, то он автоматически настраивает их для непосредственного использования на JSP страницах. Остается только задать пространство имен на jsp странице.</p>
+<h4>26. Как можно обработать ошибки jsp страниц?</h4>
+<p>Для обработки исключений выброшенных на jsp странице необходимо всего лишь задать страницу ошибки. Для создания страницы ошибки JSP мы должны установить&nbsp;значение page directive attribute isErrorPage в значение true. Тогда мы получим доступ к неявным объектам исключений в JSP и сможем передавать собственные сообщение об ошибках клиенту (обычно более информативных).</p>
+<p>Настройка дескриптора развертывания выглядит так.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244c6414724204">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;error-page&gt;
+     &lt;error-code&gt;404&lt;/error-code&gt;
+     &lt;location&gt;/error.jsp&lt;/location&gt;
+&lt;/error-page&gt;
+  
+&lt;error-page&gt;
+     &lt;exception-type&gt;java.lang.Throwable&lt;/exception-type&gt;
+     &lt;location&gt;/error.jsp&lt;/location&gt;
+&lt;/error-page&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0011 seconds] -->
+<p></p>
+<h4>27. Как происходит обработка ошибок с помощью jstl?</h4>
+<p>Перехватывать исключения и обрабатывать их в служебных методах класса можно с помощью JSTL Core Tags <span style="color: #920000;">c:catch</span> и <span style="color: #920000;">c:if</span>. Тег <span style="color: #920000;">c:catch</span> перехватывает исключение и обертывает его в переменную exception, которую мы можем обработать в теге <span style="color: #920000;">c:if</span>.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244c9440009661">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;c:catch var ="exception"&gt;
+   &lt;% int x = 5/0;%&gt;
+&lt;/c:catch&gt;
+  
+&lt;c:if test = "${exception ne null}"&gt;
+   &lt;p&gt;Exception is : ${exception} &lt;br /&gt;
+   Exception Message: ${exception.message}&lt;/p&gt;
+&lt;/c:if&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0012 seconds] -->
+<p>Обратите внимание что используется язык выражений JSP EL&nbsp;в теге <span style="color: #920000;">c:if</span>.</p>
+<h4>28. Как сделать «новую линию&nbsp;в HTML» в JSP?</h4>
+<p>Для переноса строки можно использовать тег c:out и атрибут escapeXml для отключения обработки HTML элементов и браузер получит следующий код как строку (и обработает элемент &lt;br&gt; как требуется).</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244cd752413658">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;c:out value="&lt;br&gt; creates a new line in HTML" escapeXml="true"&gt;&lt;/c:out&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0004 seconds] -->
+<p></p>
+<h4>29. Приведите пример конфигурации JSP в дескрипторе развертывания.</h4>
+<p>Элемент jsp-config используется для настройки различных параметров jsp страниц.</p>
+<ul>
+<li>управление элементами скриптлетов на странице,</li>
+<li>управления выполнением в языке выражений,</li>
+<li>определение шаблона URL для encoding,</li>
+<li>определение размера буфера, который используется для объектов на странице</li>
+<li>обозначение групп ресурсов, соответствующих шаблону URL, которые должны быть обработаны как XML документ.</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244cf369397312">
+		
+			<div class="crayon-plain-wrap"><pre>jsp-config&gt;
+        &lt;taglib&gt;
+            &lt;taglib-uri&gt;http://journaldev.com/jsp/tlds/mytags&lt;/taglib-uri&gt;
+            &lt;taglib-location&gt;/WEB-INF/numberformatter.tld&lt;/taglib-location&gt;
+        &lt;/taglib&gt;
+&lt;/jsp-config&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0008 seconds] -->
+<p></p>
+<h4>30. Как деактивировать использование EL на JSP?</h4>
+<p>Для игнорирования выполнения языка выражений на странице существует два способа:</p>
+<ul>
+<li>использовать директиву&nbsp;<span style="color: #920000;">&lt;%@ page isELIgnored = «true» %&gt;</span>,</li>
+<li>настроить web.xml (лучше подходит для отключения на EL на многих страницах)</li>
+</ul>
+<p></p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244d2681542724">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;jsp-config&gt;
+    &lt;jsp-property-group&gt;
+        &lt;url-pattern&gt;*.jsp&lt;/url-pattern&gt;
+        &lt;el-ignored&gt;true&lt;/el-ignored&gt;
+    &lt;/jsp-property-group&gt;
+&lt;/jsp-config&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0009 seconds] -->
+<p></p>
+<h4>31. Когда контейнер проинициализирует множество JSP/Servlet объектов?</h4>
+<p>Если имеется несколько сервлетов и элементов servlet-mapping в дескрипторе развертывания для одного сервлета или JSP страницы, тогда контейнер инициализирует объект для каждого элемента и каждый из этих объектов имеет свой собственный объект ServletConfig и параметры инициализации.</p>
+<p>Например, если мы будем использовать одну страницу JSP в web.xml как показано ниже.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce3430244d6215990052">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;servlet&gt;
+  &lt;servlet-name&gt;Test&lt;/servlet-name&gt;
+  &lt;jsp-file&gt;/WEB-INF/test.jsp&lt;/jsp-file&gt;
+  &lt;init-param&gt;
+    &lt;param-name&gt;test&lt;/param-name&gt;
+    &lt;param-value&gt;Test Value&lt;/param-value&gt;
+  &lt;/init-param&gt;
+&lt;/servlet&gt;
+    
+&lt;servlet-mapping&gt;
+  &lt;servlet-name&gt;Test&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/Test.do&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;
+    
+&lt;servlet&gt;
+  &lt;servlet-name&gt;Test1&lt;/servlet-name&gt;
+  &lt;jsp-file&gt;/WEB-INF/test.jsp&lt;/jsp-file&gt;
+&lt;/servlet&gt;
+    
+&lt;servlet-mapping&gt;
+  &lt;servlet-name&gt;Test1&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/Test1.do&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0028 seconds] -->
+<p>То при доступе к одной JSP страницы с двумя шаблонами URI будет существовать два набора параметров инициализации.</p>
+<h4>32. Можно ли использовать javascript на jsp странице?</h4>
+<p>Да, это возможно. Несмотря на то, что JSP серверная технология, она всё равно создает HTML страницу, на которую можно так же добавлять javascript код и css стили.</p>
+<h4>33. Всегда ли создается объект сессии на jsp странице, можно ли отключить его создание?</h4>
+<p>По умолчанию jsp страница создает сессию, но иногда это не нужно. Мы можем использовать директиву page с атрибутом session для указания не создавать новую сессию по умолчанию. Для отключения создания сессии используется код, показанный ниже.</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div style="margin-top: 12px; margin-bottom: 12px; font-size: 14px ! important; line-height: 18px ! important; height: auto;" data-settings=" minimize scroll-mouseover wrap" class="crayon-syntax crayon-theme-familiar crayon-font-arial crayon-os-pc print-yes notranslate crayon-wrapped" id="crayon-58ce343024538267419073">
+		
+			<div class="crayon-plain-wrap"><pre>&lt;%@ page session ="false" %&gt;</pre></div>
+			<div style="position: relative; z-index: 1; overflow: hidden;" class="crayon-main">
+				
+			</div>
+		</div>
+<!-- [Format Time: 0.0003 seconds] -->
+<p></p>
+<h4>34. Какая разница между JspWriter и Servlet PrintWriter?</h4>
+<p>PrintWriter является объектом ответа для записи&nbsp;контента в ответе. JspWriter использует объект PrintWriter незаметно для пользователя и&nbsp;обеспечивают поддержку буферизации. Когда буфер заполнен или очищен, JspWriter использует объект PrintWriter для записи содержания (контента) в ответ.</p>
+<h4>35. Как можно расширить функциональность jsp?</h4>
+<p>Мы можем расширить технологию JSP с помощью создания собственных тегов для избегания использования скриптлетов и java кода на JSP страницах.</p>
+<h4>36. Best Practices в JSP.</h4>
+<p>Хорошей практикой работы с технологией JSP являются следующие советы:</p>
+<ul>
+<li>Избегайте использования элементов скриптлетов на странице. Если элементы action, JSTL, JSP EL не удовлетворяют потребностям, то напишите собственный тег.</li>
+<li>Используйте разные виды комментариев как предполагается. JSP комментарии необходимы для уровня кода и отладки, т.к. они не будут показаны клиенту.</li>
+<li>Избегайте написания бизнес логики внутри JSP страницы. Страницы должны использоваться только для создания ответов клиенту.</li>
+<li>Отключайте создание сессии на странице, когда это не требуется. Это повысит производительность.</li>
+<li>Используйте директивы taglib, page в начале JSP страницы для повышения читабельности кода.</li>
+<li>Используйте должным образом директиву include и jsp:include action. Первая используется для статических ресурсов, а элемент jsp:include action для динамических рантайм ресурсов.</li>
+<li>Обрабатывайте исключения с помощью использования страниц ошибки. Это поможет избежать обработки на стороне служебных методов исключения и может повысить производительность.</li>
+<li>При использовании CSS и JavaScript разделяйте их по разным файлам и включайте в начале страницы.</li>
+<li>В большинстве случаев JSTL должно хватать для всех нужд. Если это не так, то вначале посмотрите на логику своего приложения, а так же попробуйте перенести выполнения кода в сервлет, а далее с помощью установки атрибутов использовать результат на JSP странице.</li>
+</ul>
+<p>&nbsp;</p>
+	</div>
+</body>
+</html>
