@@ -1,0 +1,90 @@
+I am confused about how to use @SessionAttributes
+I am trying to understand architecture of Spring MVC. However, I am completely confused by behavior of @SessionAttributes.
+Please look at SampleController below , it is handling post method by SuperForm class. In fact, just field of SuperForm class is only binding as I expected.
+However, After I put @SessionAttributes in Controller, handling method is binding as SubAForm. Can anybody explain me what happened in this binding.
+-------------------------------------------------------
+
+@Controller
+@SessionAttributes("form")
+@RequestMapping(value = "/sample")
+public class SampleController {
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String getCreateForm(Model model) {
+        model.addAttribute("form", new SubAForm());
+        return "sample/input";
+    }
+
+    @RequestMapping(method = RequestMethod.POST)
+    public String register(@ModelAttribute("form") SuperForm form, Model model) {
+        return "sample/input";
+    }
+}
+-------------------------------------------------------
+public class SuperForm {
+    private Long superId;
+    public Long getSuperId() {
+        return superId;
+    }
+    public void setSuperId(Long superId) {
+        this.superId = superId;
+    }
+}
+-------------------------------------------------------
+
+public class SubAForm extends SuperForm {
+    private Long subAId;
+    public Long getSubAId() {
+        return subAId;
+    }
+    public void setSubAId(Long subAId) {
+        this.subAId = subAId;
+    }
+}
+
+-------------------------------------------------------
+<form:form modelAttribute="form" method="post">
+    <fieldset>
+        <legend>SUPER FIELD</legend>
+        <p>
+            SUPER ID：<form:input path="superId" />
+        </p>
+    </fieldset>
+    <fieldset>
+        <legend>SUB A FIELD</legend>
+        <p>
+            SUB A ID：<form:input path="subAId" />
+        </p>
+    </fieldset>
+    <p>
+        <input type="submit" value="register" />
+    </p>
+</form:form>
+*************************************
+
+>>>>>>>>>>>
+When processing POST request, Spring does the following:
+
+Without @SessionAttributes: Spring instantiates a new instance of SuperForm (type is inferred from the signature of register()), populates its properties by values from the form fields and passes it to the register() method.
+
+With @SessionAttributes: Spring obtains an instance of model attribute from the session (where it was placed when processing GET due to presence of @SessionAttributes), updates its properties by values from the form fields and passes it to the register() method.
+
+That is, with @SessionAttributes , register() gets the same instance of the model attribute object that was placed into the Model by getCreateForm().
+
+>>> Suppose, in getCreateForm() you are putting some values for a drop-down (list or map), or you are putting some values in form that you want in register method but you don't want them to show in form (not even in hidden fields). 
+Now suppose that an error occurred in register method and you need to show the form again. To populate drop down values and other values that you would need in next post, you would have to repopulate them in form. 
+The  @SessionAttribute helps here as @axtavt very well described above.
+
+****************
+http://stackoverflow.com/questions/17143116/integration-testing-posting-an-entire-object-to-spring-mvc-controller/17143677#17143677
+
+>>> One of the main purposes of integration testing with MockMvc is to verify that model objects are correclty populated with form data.
+
+In order to do it you have to pass form data as they're passed from actual form (using .param()). 
+If you use some automatic conversion from NewObject to from data, your test won't cover particular class of possible problems (modifications of NewObject incompatible with actual form).
+
+*************
+Проблема со SessionAttributes: https://jira.spring.io/browse/SPR-4160
+@SessionAttributes doesn't work with tabbed browsing
+
+A @SessionAttributes value is stored in the session using the name provided to the annotation. This is wrong in my opinion. When I open the same page in two different tabs (so same session) my first session attribute is overridden.

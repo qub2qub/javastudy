@@ -1,0 +1,103 @@
+
+* Для упрощения работы я предпочитаю наследоваться от класса Assert, хотя это необязательно.
+
+* Аннотация @Before обозначает методы, которые будут вызваны до исполнения теста, методы должны быть public void. Здесь обычно размещаются предустановки для теста, в нашем случае это генерация тестовых данных (метод setUpToHexStringData).
+
+* Аннотация @BeforeClass обозначает методы, которые будут вызваны до создания экземпляра тест-класса, методы должны быть public static void. Имеет смысл размещать предустановки для теста в случае, когда класс содержит несколько тестов использующих различные предустановки, либо когда несколько тестов используют одни и те же данные, чтобы не тратить время на их создание для каждого теста.
+
+* Аннотация @After обозначает методы, которые будут вызваны после выполнения теста, методы должны быть public void. Здесь размещаются операции освобождения ресурсов после теста, в нашем случае — очистка тестовых данных (метод tearDownToHexStringData).
+
+* Аннотация @AfterClass связана по смыслу с @BeforeClass, но выполняет методы после теста, как и в случае с @BeforeClass, методы должны быть public static void.
+
+* Аннотация @Test обозначает тестовые методы. Как и ранее, эти методы должны быть public void. Здесь размещаются сами проверки. Кроме того, у данной аннотации есть два параметра, expected — задает ожидаемое исключение и timeout — задает время, по истечению которого тест считается провалившимся.
+
+-----------------------------------------------------
+
+Запускалки
+
+То, как запускается тест, тоже может быть сконфигурировано с помощью @RunWith. При этом класс, указанный в аннотации должен наследоваться от Runner. Рассмотрим запускалки, идущие в комплекте с самим фреймворком.
+
+JUnit4 — запускалка по умолчанию, как понятно из названия, предназначена для запуска JUnit 4 тестов.
+
+JUnit38ClassRunner предназначен для запуска тестов, написанных с использованием JUnit 3.
+
+SuiteMethod либо AllTests тоже предназначены для запуска JUnit 3 тестов. В отличие от предыдущей запускалки, в эту передается класс со статическим методом suite возвращающим тест(последовательность всех тестов).
+
+Suite — эквивалент предыдущего, только для JUnit 4 тестов. Для настройки запускаемых тестов используется аннотация @SuiteClasses:
+
+@Suite.SuiteClasses( { OtherJUnit4Test.class, StringUtilsJUnit4Test.class })
+@RunWith(Suite.class)
+public class JUnit4TestSuite {
+	//...
+}
+
+Enclosed — то же, что и предыдущий вариант, но вместо настройки с помощью аннотации используются все внутренние классы.
+
+Categories — попытка организовать тесты в категории(группы). Для этого тестам задается категория с помощью @Category, затем настраиваются запускаемые категории тестов в сюите. Это может выглядеть так:
+
+public class StringUtilsJUnit4CategoriesTest extends Assert {
+  //...
+
+  @Category(Unit.class)
+  @Test
+  public void testIsEmpty() {
+    //...
+  }
+
+  //...
+}
+
+@RunWith(Categories.class)
+@Categories.IncludeCategory(Unit.class)
+@Suite.SuiteClasses( { OtherJUnit4Test.class, StringUtilsJUnit4CategoriesTest.class })
+public class JUnit4TestSuite {
+}
+
+Parameterized — довольно интересная запускалка, позволяет писать параметризированные тесты. Для этого в тест-классе объявляется статический метод возвращающий список данных, которые затем будут использованы в качестве аргументов конструктора класса.
+@RunWith(Parameterized.class)
+public class StringUtilsJUnit4ParameterizedTest extends Assert {
+  private final CharSequence testData;
+  private final boolean expected;
+
+  public StringUtilsJUnit4ParameterizedTest(final CharSequence testData, final boolean expected) {
+    this.testData = testData;
+    this.expected = expected;
+  }
+
+  @Test
+  public void testIsEmpty() {
+    final boolean actual = StringUtils.isEmpty(testData);
+    assertEquals(expected, actual);
+  }
+
+  @Parameterized.Parameters
+  public static List<Object[]> isEmptyData() {
+    return Arrays.asList(new Object[][] {
+      { null, true },
+      { "", true },
+      { " ", false },
+      { "some string", false },
+    });
+  }
+}
+
+Theories — чем-то схожа с предыдущей, но параметризирует тестовый метод, а не конструктор. Данные помечаются с помощью @DataPoints и @DataPoint, тестовый метод — с помощью @Theory. Тест использующий этот функционал будет выглядеть примерно так:
+@RunWith(Theories.class)
+public class StringUtilsJUnit4TheoryTest extends Assert {
+
+  @DataPoints
+  public static Object[][] isEmptyData = new Object[][] {
+      { "", true },
+      { " ", false },
+      { "some string", false },
+  };
+
+  @DataPoint
+  public static Object[] nullData = new Object[] { null, true };
+
+  @Theory
+  public void testEmpty(final Object... testData) {
+    final boolean actual = StringUtils.isEmpty((CharSequence) testData[0]);
+    assertEquals(testData[1], actual);
+  }
+}

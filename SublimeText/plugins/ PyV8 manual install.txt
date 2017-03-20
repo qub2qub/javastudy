@@ -1,0 +1,44 @@
+http://did5.ru/it/programming/oshibka-zagruzki-pyv8-pri-ustanovke-emmet-v-sublime-text-3.html
+
+Про АйТи и около айтишные темы
+Ошибка загрузки PyV8 при установке Emmet в Sublime Text 3
+
+При попытке установить плагин Emmet на Sublime Text 3 вылезла ошибка – 
+Error while loading PyV8 binary: exit code 1. Try to manually install PyV8 from https://github.com/emmetio/pyv8-binaries.
+
+Воспользовался советом, начал ставить этот пакет вручную. 
+Перешел по ссылке, скачал архив с PyV8 для Windows 7 x64 — pyv8-win64-p3.zip. 
+Распаковал содержимое архива в каталог C:\Users\user\AppData\Roaming\Sublime Text 3\Installed Packages\PyV8\pyv8-win64-p3.
+
+Перезапустил Sublime Text. Ошибка исчезла, проблема решена! Но появилась другая…
+
+При загрузке Sublime Text 3 в консоле появилась ошибка — 
+emmet.pyv8loader: Unable to download packages list. URL error Tunnel connection failed: 407 Proxy Authentication Required ( The ISA Server requires authorization to fulfill the request. Access to the Web Proxy filter is denied.  ) downloading https://api.github.com/repos/emmetio/pyv8-binaries/contents.
+
+Саблайм установлен на компьютере, который выходит в интернет через proxy server. Как настроить Package Control через прокси я уже рассказывал. 
+Но, видимо, emmet.pyv8loader – не уммет рабоать через прокси. 
+Я нашел только одно решение, кроме простого — не обращать внимание на ошибку, можно отключить запрос обновления в настройках. 
+Для этого открываем 
+Preferences -> Package Settings -> Emmet -> Settings – User, 
+дописываем следующую строку:
+{
+"disable_pyv8_update": true,
+}
+sublime text error pyv8 3 thumb Ошибка загрузки PyV8 при установке Emmet в Sublime Text 3
+
+Сохраняем файл конфигурации и перезапускаем Sublime Text.
+
+*****************************************
+https://github.com/emmetio/pyv8-binaries
+
+Manual installation
+
+If you experience issues with automatic PyV8 download of Emmet for Sublime Text plugin, you can manually install it:
+
+Download PyV8 binary for your OS version (see notes below).
+
+For Sublime Text 2 Unpack contents of downloaded archive into PyV8/%filename% folder inside Sublime Text Packages (find Browse Packages... menu item in ST2 editor to get into Packages folder), where %filename% is the name of downloaded file (e.g. it will be pyv8-win64-p3 if you download pyv8-win64-p3.zip file).
+
+For Sublime Text 3 Unpack contents of downloaded archive into PyV8/%filename% folder inside Sublime Text Installed Packages (find Browse Packages... menu item under preferences in ST3 editor to get into Packages folder, go up one level and go into Installed Packages), where %filename% is the name of downloaded file (e.g. it will be pyv8-win64-p3 if you download pyv8-win64-p3.zip file).
+
+Restart ST editor.
