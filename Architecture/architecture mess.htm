@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>architecture mess</title>
+    <link rel="stylesheet" href="../Git Guide/grey.css">
+</head>
+<body>
+<a href="http://olivergierke.de/2013/01/whoops-where-did-my-architecture-go/">src</a>
+<h2>Whoops! Where did my architecture go</h2>
+<div id="post" class="cye-lm-tag">
+  
+<p class="cye-lm-tag">I am currently travelling conferences and Java User Groups with a talk called “Whoops! Where did my architecture go?”. It discusses approaches to create and maintain logical architectues in Java code bases, challenges, tools and tries to outline some ideas how one can accomplish this. A core part of the argumentation is the discussion about the importance of Java packages. Jens Schauder has written a <a href="http://blog.schauderhaft.de/2013/01/13/the-importance-of-packages/">blog post</a> about that topic recently and I felt I had some things to add. The more I though about it I got the conclusion that a comment I envision would exceed the length of a reasonable reply I thought I’ll write up a blog post. I will point to the slides of the presentation in places where it comes in handy. The talk is also based on a lot of sample code which we will get to a bit later. The code can be found on <a href="https://github.com/olivergierke/Whoops-Architecture">GitHub</a>.</p>
+
+<p class="cye-lm-tag">I’d like to take a step back at first and briefly discuss some general concepts and ideas that will be necessary to understand the approach I’ll present later. I’ll use the Java software development space as posterchild for this to make sure we can build relations into the day-to-day practice but the concepts apply to software systems in other languages, too.</p>
+
+<h2 id="divide-and-conquer">Divide and conquer</h2>
+
+<p class="cye-lm-tag">A core principle of complex problem solving is “divide and conquer”. We split up a complex problem into smaller ones and approach those smaller ones individually. In Java software this is usually done in several artifact levels: deployment units (WARs, JARs), packages and classes eventually. As a side effect of that we create dependencies between these artifacts and we need some means to manage them. </p>
+
+<p class="cye-lm-tag">As a consequence of that we create artifacts with different (in)stability metrics (see <a href="http://en.wikipedia.org/wiki/Software_package_metrics">Wikipedia</a> for details). This metric essentially expresses the <em>risk of a change</em> made to an artifact. Assume we have two artifacts A and B, A depending on B. A change in A will never affect B, whereas a change in B potentially breaks A. Thus, there’s value in potentially splitting up a big artifact into two smaller ones with a defined dependency direction as it reduces the risk of a change in (in my just given case) A. If a dependency from B to A is introduced, both artifacts essentially become a single one from an “the effect of change” point of view as we cannot touch one without potentially affecting the other.</p>
+
+<h2 id="layers">Layers</h2>
+
+<p class="cye-lm-tag">A practical example of this aproach is the layered architecture pattern where you split up you system in presentation layer, service layer and repository layer with directed dependencies from top to bottom. The exact number and names don’t really matter. Still you can see that you can definitely change the presentation layer without any chance of breaking something in the repsoitory layer given you haven’t violated the dependency rules.</p>
+
+<p class="cye-lm-tag">Layering is a reasonably understood by developers as it’s decomposes the software system by by a <em>technical aspect</em>. It’s tought in university, probably practitioned in most of the development shops out there. So here’s the interesting question:</p>
+
+<blockquote>
+  <p class="cye-lm-tag">If we understand and value the benefits of the general approach of slicing code horizontally, why do we so horribly neglect that approach when it comes to vertical decomposition, i.e. business functionality?</p>
+</blockquote>
+
+<p class="cye-lm-tag">I know this is a bold question, but it’s essentially what I’ve seen through most of the code reviews I’ve done in the last couple of years. In general, I’d even argue that splitting up business functionality in dedicated slices and monitoring and making sure the allowed defined dependencies are not violated is much more important for long-term maintainability of software. This is mostly do the cost of a change correlating to the risk of a change.</p>
+
+<h2 id="slices">Slices</h2>
+
+<p class="cye-lm-tag">Take a CRM system as example: you’ll probably have a Core slice that contains some code that other slices will depend on. You’ll find a Customer management slice, that keeps track of customers, their addresses etc. On top of that you might then build a Contract management slice that clearly needs to know about the Customer and use the Core slice as well (see <a href="https://speakerdeck.com/olivergierke/whoops-where-did-my-architecture-go-2?slide=10">this slide</a>).</p>
+
+<h2 id="architecture-vs-codebase">Architecture VS. Codebase</h2>
+
+<p class="cye-lm-tag">So let’s assume we defined both slices and layers as architectural concepts, how do we make sure these architecture concepts are embodied in our Java codebase? What we usually do is creating naming conventions and map our layers and slices into package and class names. There are some great tools like <a href="http://www.hello2morrow.com/products/sonargraph">Sonargraph</a> and <a href="http://structure101.com/products/">Structure 101</a> available out there that help you at doing exactly that. Being a happy day-to-day user of Sonargraph I still asked myself: “How far could we actually get with plain Java (language, compiler runtime) means only?”. </p>
+
+<p class="cye-lm-tag">We already identified that controlling dependencies between code artifacts is key to reduce the risk of change effectively. Let’s have a look how this is approached in general. A key aspect to dependency control is that an artifact is able to explicitly express a dependency. Interestingly we have solutions to do exactly that for two of the three artifact levels (JARs, packages, classes) mentioned above. </p>
+
+<p class="cye-lm-tag">Deployment units are usually managed through either Gradle, Maven or Ivy. At the class level dependency injection comes into play as a core aspect of it is to expose dependencies through either constructor arguments or setters (an interesting <a href="http://blog.schauderhaft.de/2012/01/01/the-one-correct-way-to-do-dependency-injection">post</a> on this at Jens Schauders blog again). Still this is not entirely sufficient cause at runtime the type space in the JVM is flat and a class can potentially “ask” for a dependency it shouldn’t be able to and get it injected. This is where the aforementioned tools would step in again and veto at build time. But yeah, we wanted to see how far we can get without them.</p>
+
+<p class="cye-lm-tag">At this point, I’d like to throw in another question:</p>
+
+<blockquote>
+  <p class="cye-lm-tag">Dear Java developer, have you ever wondered why you make your class’ properties private by default but the class itself public by default? Hint: ‘Because my IDE generates it this way’ is not a valid answer.</p>
+</blockquote>
+
+<p class="cye-lm-tag">The observation that should lead you to is that Java developers usually just skip packages as means to control visibility of types. We practice information hiding in classes/properties (we actually don’t as most developers run “Generate getters and setters” right away) but don’t on the classes-in-a-package level. We just discovered that inside a JAR we essentially have to manage which type can see which other type as the class space of public types is flat in a JVM. Essentially this means that if a class is not public (i.e. package private), we don’t have to dependency manage it on the global level but within the package only.</p>
+
+<h2 id="packages">Packages</h2>
+
+<p class="cye-lm-tag">The reason packages are usually not used as dependency managment mean is that designing packages is not a trivial task, even you use an architecture tool like Sonargraph to help you. An aspect of that is that there are hardly any guidelines on how to do it and thus various kinds of crazy patterns have evolved over the years. Arbitrarily restricting the number of classes in a package is just - arbitrary (actually one of the few points I disagree with Jens Schauder’s blog post). Simply grouping all exception types into a <code>exceptions</code> package is not really reasonable either as it groups types by technical commonalities which usually doesn’t provide any architectural benefit.</p>
+
+<p class="cye-lm-tag">Assuming we’d like to map our previously defined architecture onto Java packages, here’s what you’ll probably see something like this. You find actual code backing this approach in the <a href="https://github.com/olivergierke/Whoops-Architecture/tree/master/packages-before">packages-before project</a> of this GitHub repo:</p>
+
+<pre><code>….account.domain
+….account.presentation
+….account.repository
+….account.service
+….core.domain
+….customer.domain
+….customer.presentation
+….customer.service
+….customer.repository
+</code></pre>
+
+<p class="cye-lm-tag">This is not bad in general but there are a few things to consider here. First, having the slice first is a good idea as you can easily separate or externalice and entire chunk of functionality. Remember that in our example, the <code>account</code> slice was not depended on by anything else so we should be able to remove this package and all of it’s sub folders to ditch the features implemented in the slice and the app should still work with the customer features only. </p>
+
+<p class="cye-lm-tag">Second, you see that the core slice does not have code in any of the actual layers, but a <code>domain</code> package only. This essentially shows that we expose something that can be considered an implementation detail to the public: the layering. That might be considered not too important but it has a consequence that completely subverts our idea of reducing the number of types to manage. Let’s have a more detailed look at that:</p>
+
+<pre><code>….customer.domain
+  + Customer
+….customer.service
+  + CustomerManagement
+  + CustomerManagementImpl
+  + CustomerNumberGenerator
+….customer.repository
+  + CustomerRepository
+</code></pre>
+
+<p class="cye-lm-tag">Assume the following: <code>CustomerRepository</code> is simply persisting <code>Customer</code> instances. The core part of the service implementation is generating customer numbers when a new <code>Customer</code> is created. This creates the need to make sure all customers are created through the service interface to make sure this behavior gets applied. Unfortunately, <code>CustomerRepository</code> needs to be a public type so that it can be referred to from the service implementation. This opens it up to be an injection candidate into virtually any other component of the system, which is exactly what we want to avoid. So what if we ditched the layer packages entirely? (The code can be found <a href="https://github.com/olivergierke/Whoops-Architecture/tree/master/packages-after">here</a>.)</p>
+
+<pre><code>….customer
+  + Customer
+  + CustomerManagement
+  o CustomerManagementImpl
+  o CustomerNumberGenerator
+  o CustomerRepository
+</code></pre>
+
+<p class="cye-lm-tag">We end up with less then a half of public types to manage. <code>CustomerRepository</code> cannot be used from anywhere else as the Java compiler prevents us from doing so. <code>CustomerNumberGenerator</code> and the layering in general becomes an implementation detail. Architecturally this creates stronger gates between the slices (the packages actually) and thinner ones between the layers (simple class-to-class dependencies) as illustrated in <a href="https://speakerdeck.com/olivergierke/whoops-where-did-my-architecture-go-2?slide=35">this slide</a> (compare to the slide before to see the difference).</p>
+
+<h2 id="summary">Summary</h2>
+
+<p class="cye-lm-tag">The basic approach I recommend is to move the vertical slices into the focus of the package naming and try to model them in a way that the public API of a slice is as tiny as possible in the first place. This is of course no silver bullet approach as packages can grow significantly and it might make sense to extract certain types into a sub-package or the like which then usually leads you to the need to use an architecture management tool. The core idea here is to try to use the means of visibility control that are available in Java to write code that is not a giant potential dependency mess in the first place. Packages can actually help you to achieve exactly that.</p>
+<br><hr>
+<div class="wrapper cye-lm-tag">
+        
+        
+        
+        <p class="cye-lm-tag">I remember approximately 15 years ago when I started learning Java. I read a lot about this 'package' thing and 'namespaces' and I totally didn't get it.</p>
+<p class="cye-lm-tag">Sad thing is: While some aspects of package are understood by pretty much everybody in the industry others aren't. So lets have a look what packages are good for.</p>
+<p class="cye-lm-tag"><strong>Namespaces</strong>: By prefixing all your packages with a domain you control, you make sure that your class names are unique. This is essential for the success of an unbelievable number of open source projects. Every project can (and probably does at some stage) define a 'Filter' class without having that class interfere with all the other classes of that same name (apart from the poor developer that copied some code without import statements from the web and now has to figure out which Filter class was actually referenced). This one is pretty well understood and I haven't seen any relevant usage of the root package in ages.</p>
+<p class="cye-lm-tag"><strong>Organization</strong>: My son has a huge box of Lego bricks. Probably multiple thousands maybe tens of thousands of them. When he looks for a simple 2x4 brick this is not a problem. But when he is searching for that special brick that only exists 4 times in the collection or even just once!? It might take a loooooong time to find it. Compare that to an apothecary cabinet. Hundreds of drugs and it normally takes only seconds to find the right one. And they don't even use Google for that! They just have a strict ordering principle where each drug belongs, including a rule how the right box for a new drug is determined. Since everybody involved knows that principle it is easy to determine the correct box where the drug is to be found. Such an ordering principle is tremendously helpful when established early in a project.</p>
+<p class="cye-lm-tag">When defining such a principle one criteria isn't sufficient most of the time. But if you use more then one make sure they don't interfere, by making the rules orthogonal. This means don't have a rule saying: "All database access code has to go in package x" and another rule stating "All code related to customers has to go into package y". Otherwise you won't know where to put the CustomerDAO. Instead apply orthogonal rules on different depths of the package tree. My default package structure looks like this:</p>
+<pre class="cye-lm-tag"><organisational-prefix>.<application>.<deployment-unit>.<module>.<layer>.<br>
+<optional further="" substructure="" if="" needed=""></optional></layer></module></deployment-unit></application></organisational-prefix></pre><br>
+This results in package names like<p class="cye-lm-tag"></p>
+<p class="cye-lm-tag"><tt>com.mycompany.theCoolApp.server.user.persistence</tt></p>
+<p class="cye-lm-tag">or</p>
+<p class="cye-lm-tag"><tt>com.mycompany.theCoolApp.client.shoppingCart.presentation</tt></p>
+<p class="cye-lm-tag">If you look at a package structure like this, it becomes pretty obvious where a new class belongs, or where to look if something like this already exists. It gets even better when you avoid names like <tt>util</tt> or <tt>misc</tt> which can hide more or less everything. Also you can look at these packages and immediately learn something about the architecture. As soon as you see a level of packages named <tt>client</tt>, <tt>webserver</tt> and <tt>batchserver</tt> you'll form a model in your head how the application is structured and if the names are picked well it is probably close to the real thing. Since in each <tt>module</tt> the same rules for <tt>layers</tt> apply you can find out more about the structure of the application in the lower packages as well.</p>
+<p class="cye-lm-tag">The <tt>module</tt>s in between communicate the kind of domain the application deals with. Quite naturally the important concepts get their own package and thereby make a statement to everyone inspecting the code: this is an important concept in this application.</p>
+<p class="cye-lm-tag">I also like adding the rule "A package should contain <em><tt>a</tt>-<tt>b</tt></em> classes, but must not contain <em><tt>c</tt></em> or more" with appropriate values for a, b and c. This forces the creation of new packages as the application grows, keeping each package to a manageable size.</p>
+<p class="cye-lm-tag">Of course on smaller applications the structure might get scaled down. For example if there is just one deployment unit there is no need for a separate package level for that classification.</p>
+<p class="cye-lm-tag">The last usage for package is the most ignored: the <strong>intermediate modeling block</strong>: Joe Average Developer concerns herself mostly with classes and methods and single lines of code, while trying to come up with a code structure on that level that fits the needs of the application. Often there is some kind of architect who figures out how to deploy the application and thereby determines the necessary deployment units (think separate jars). If you look at the scale of these artifacts something interesting might catch your eye:</p>
+<p class="cye-lm-tag">1 method consists of approximately 10 lines of code.</p>
+<p class="cye-lm-tag">1 class consists of approximately 10 methods.</p>
+<p class="cye-lm-tag">1 jar consists of approximately 100 - 1000 classes.</p>
+<p class="cye-lm-tag">If nobody takes care of packages there is at least one, often two levels of structure missing! This gap can and should be filled with packages. This doesn't only mean the packages should exist and be of reasonable size, it also means they should adhere to common design guide lines. Especially <a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">Single Responsibility Principle</a> and proper handling of dependencies:</p>
+<p class="cye-lm-tag"><strong>Single Responsibility Principle</strong> With the naming scheme proposed above, a lot of work toward honoring the SRP is done. If the contents of the package does what its name says everything is fine on that front.</p>
+<p class="cye-lm-tag"><strong>Managing of Dependencies</strong> is a tougher beast. Java currently doesn't offer a proper system to control dependencies between packages and especially super packages, i.e. packages that contain multiple other packages. There is <a href="http://en.wikipedia.org/wiki/OSGi">OSGI</a>, but I found it a pain in the neck to work with, especially since I never needed all the dynamic loading stuff but suffered from the resulting class loader issues. There is also <a href="http://openjdk.java.net/projects/jigsaw/">Jigsaw</a>Â&nbsp;but this is not there yet. Therefore I prefer homegrown tests for defining and verifying the package structure of applications I work with. My tool of choice is <a href="http://clarkware.com/software/JDepend.html">JDepend</a>. It gives you lists of dependencies between packages and you can use those to compare them to rules you define. Somebody creates a dependency from package A to package B that should not exist? Boom, the test turns red.</p>
+<p class="cye-lm-tag">So what are useful rules for package dependencies? First: No cycles. Not on the package level, but also not on the <tt>layer</tt> level nor on the <tt>module</tt> level as used above. Second: Modules and Layers have a strict order in which they can depend on each other, everything else is forbidden.</p>
+<p class="cye-lm-tag">These rules considerably limit the degrees of freedom one has as a developer. But in my experience it smokes out violations of the Single Responsibility Principle, which often surfaces as cyclic dependencies. For example if you have an Order module and a Customer module it feels like these two need to know each other. If you have an Order, you want to know the Customer it belongs to. If you have a Customer you must be able to tell her the Orders she placed. Right? Yes, probably. But do you need the full blown objects and functionality on both side? Probably not. By coming up with an interface package for example containing only the very core for the customer functionality needed by the Order module and and a separate full Customer module that has the references the orders <a href="/2011/07/17/breaking-dependency-cylces/">one can break these dependencies</a> AND achieve a stronger separation of concern in your package structure.</p>
+<p class="cye-lm-tag">This in turn helps when you try to evolve your application. What today is a package might grow into a deployment-unit someday and if you have circular dependencies between deployment-units you'll have some serious problems. Or maybe your team grows into multiple teams. With a clean package structure as described above you have a obvious bounds where you can split and also an obvious criteria when the teams have to sit together to discuss changes on a package used by multiple teams.</p>
+      </div>
+</div>
+</body>
+</html>

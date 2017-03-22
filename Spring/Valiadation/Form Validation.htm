@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Form Validation</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+    <style type="text/css">
+    	div code {
+		font-family: "Trebuchet MS",Tahoma,Arial;
+		font-size: 18px;
+		font-weight: bold;
+		background-color: #999;
+	}
+    </style>
+</head>
+<body>
+<a href="http://codetutr.com/2013/04/06/spring-mvc-form-submission/">src_1</a>
+<a href="http://codetutr.com/2013/05/28/spring-mvc-form-validation/">src_2</a>
+<a href="http://codetutr.com/2013/05/29/custom-spring-mvc-validation-annotations/">src_3</a>
+
+<h2>Spring MVC Form Tutorial</h2>
+<div class="post-entry cye-lm-tag">
+					<p class="cye-lm-tag">This tutorial will show how to handle a form submission in Spring MVC. We will define a controller to handle the page load and the form submission.<br><br>You can grab the code <a href="https://github.com/stevehanson/spring-mvc-form" title="Spring MVC Form Source Code" target="_blank">on GitHub</a>.</p>
+
+<p class="cye-lm-tag"><strong>Prerequisites:</strong><br>
+You should have a working Spring MVC Application. If you do not already have a working Spring MVC application set up, follow <a href="http://codetutr.com/2013/03/24/simple-spring-mvc-web-application-using-gradle/" title="Spring MVC Web Application Tutorial">this tutorial</a>.</p>
+
+<p class="cye-lm-tag">For this tutorial, we are going to make a simple form for subscribing to a newsletter. The form will have the following fields:</p>
+
+<ul>
+<li>name – input field</li>
+<li>age – input field</li>
+<li>email – input field</li>
+<li>gender – select drop-down</li>
+<li>receiveNewsletter – checkbox</li>
+<li>newsletterFrequency – select drop-down</li>
+</ul>
+
+<p class="cye-lm-tag"><strong>Requirements:</strong><br>
+</p><ul>
+<li>The <code>newsletterFrequency</code> drop-down should only be active if the <code>receiveNewsletter</code> checkbox is checked</li>
+<li>We will not be performing any validations in this example (stay-tuned for future tutorial)</li>
+<li>When the user submits the form, the same page will reload</li>
+<li>Reloaded page should display a message that indicates that the submission was successful and shows the saved values</li>
+</ul>When we’re done, we will have a page that looks like this:<br><br><a href="pics/spring-mvc-form-screenshot.png"><img src="pics/spring-mvc-form-screenshot-1024x808.png" alt="Spring MVC form screenshot" width="550" height="433" class="alignnone size-large wp-image-256" srcset="pics/spring-mvc-form-screenshot-300x236.png 300w, pics/spring-mvc-form-screenshot-1024x808.png 1024w" sizes="(max-width: 550px) 100vw, 550px"></a><br>
+
+<p class="cye-lm-tag">First, let’s set up the object we will use to store the subscriber’s information. Create the class <code>Subscriber</code> in package <code>com.codetutr.form</code>. This is a basic Java bean. Notice we are using enumerations to store the gender and newsletter frequency fields. For simplicity, I defined the enums in the same class. Also notice that we are defining the <code>toString</code>. This is just so we can easily get the values to print after submission.</p>
+
+<code>Subscriber.java</code>
+<pre><code>package com.codetutr.form;
+
+public class Subscriber {
+
+	private String name;
+	private String email;
+	private Integer age;
+	private Gender gender;
+	private Frequency newsletterFrequency;
+	private Boolean receiveNewsletter;
+	
+	public enum Frequency {
+		HOURLY, DAILY, WEEKLY, MONTHLY, ANNUALLY
+	}
+	
+	public enum Gender {
+		MALE, FEMALE
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getEmail() {
+		return email;
+	}
+	
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public Integer getAge() {
+		return age;
+	}
+
+	public void setAge(Integer age) {
+		this.age = age;
+	}
+
+	public Gender getGender() {
+		return gender;
+	}
+
+	public void setGender(Gender gender) {
+		this.gender = gender;
+	}
+
+	public Frequency getNewsletterFrequency() {
+		return newsletterFrequency;
+	}
+
+	public void setNewsletterFrequency(Frequency newsletterFrequency) {
+		this.newsletterFrequency = newsletterFrequency;
+	}
+
+	public Boolean getReceiveNewsletter() {
+		return receiveNewsletter;
+	}
+
+	public void setReceiveNewsletter(Boolean receiveNewsletter) {
+		this.receiveNewsletter = receiveNewsletter;
+	}
+
+	@Override
+	public String toString() {
+		return "Subscriber [name=" + name + ", age=" + age + ", gender=" + gender
+				+ ", newsletterFrequency=" + newsletterFrequency
+				+ ", receiveNewsletter=" + receiveNewsletter + "]";
+	}
+	
+}</code></pre>
+
+<p class="cye-lm-tag">Now, let’s create the controller. Create class <code>FormController</code> in package <code>com.codetutr.controller</code>:</p>
+
+<code>FormController.java</code>
+<pre><code>package com.codetutr.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.codetutr.form.Subscriber;
+import com.codetutr.form.Subscriber.Frequency;
+
+@Controller
+public class FormController {
+	
+	@ModelAttribute("frequencies")
+	public Frequency[] frequencies() {
+		return Frequency.values();
+	}
+
+	@RequestMapping(value="form", method=RequestMethod.GET)
+	public String loadFormPage(Model m) {
+		m.addAttribute("subscriber", new Subscriber());
+		return "formPage";
+	}
+	
+	@RequestMapping(value="form", method=RequestMethod.POST)
+	public String submitForm(@ModelAttribute Subscriber subscriber, Model m) {
+		m.addAttribute("message", "Successfully saved person: " + subscriber.toString());
+		return "formPage";
+	}
+}</code></pre>
+
+<p class="cye-lm-tag">Let’s look at a few things in the code above. First, notice that both request handlers (methods annotated with <code>@RequestMapping</code>) are mapped to the same URL – “form”. The only difference in the mapping is that one handles an HTTP GET request, and the other a POST. The first handler (for the GET request) will be invoked when the user navigates to the “form” page, because they will access the page using a GET request. The POST handler is invoked when the form is submitted (since it will be submitted via HTTP POST to the “form” URL). You could, of course, submit your form to any URL using any HTTP method – just make sure to map your handler accordingly here.</p>
+
+<p class="cye-lm-tag">Let’s look at the GET handler. It takes a <code>Model</code>, which we populate with an empty <code>Subscriber</code> object. This object is what we will use to populate our form. We are not setting any values here, but if we wanted to, say default the <code>receiveNewsletter</code> checkbox to true and set default newsletter frequency to hourly, we could do:</p>
+
+<pre><code>Subscriber subscriber = new Subscriber();
+subscriber.setReceiveNewsletter(true);
+subscriber.setNewsletterFrequency(Frequency.HOURLY);
+m.addAttribute("subscriber", subscriber);
+</code></pre>
+
+<p class="cye-lm-tag">Also note that if we do not add an object called “subscriber” to the model, Spring would complain when we try to access the JSP, because we will be setting up the JSP to bind the form to the “subscriber” model attribute. You would see a JSP error: “Neither BindingResult nor plain target object for bean name ‘subscriber’ available as request attribute” and the JSP would not render.</p>
+
+<p class="cye-lm-tag">The last thing to look at in the controller code is the <code>@ModelAttribute</code> method. When a method is annotated with <code>@ModelAttribute</code>, Spring runs it before each handler method and adds the return value to the model. We specified in the annotation to add the Frequency values to the model as “frequencies”. This object will be used to populate the newsletter frequency drop-down box in the JSP form. Instead of using the @ModelAttribute method, we could have added the following line to each of the request handlers:</p>
+
+<pre><code>m.addAttribute("frequencies", Frequency.values());</code></pre>
+
+<p class="cye-lm-tag">Finally, let’s set up the jsp. Create a file called <code>formPage.jsp</code> in <code>WEB-INF/view</code> (or wherever you have configured your JSPs to reside):</p>
+
+<code>formPage.jsp</code>
+<pre><code>&lt;%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %&gt;
+&lt;%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %&gt;
+
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Sample Form&lt;/title&gt;
+    &lt;script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"&gt;&lt;/script&gt;
+    &lt;style&gt;
+      body { background-color: #eee; font: helvetica; }
+      #container { width: 500px; background-color: #fff; margin: 30px auto; padding: 30px; border-radius: 5px; box-shadow: 5px; }
+      .green { font-weight: bold; color: green; }
+      .message { margin-bottom: 10px; }
+      label {width:70px; display:inline-block;}
+      form {line-height: 160%; }
+      .hide { display: none; }
+    &lt;/style&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+  &lt;div id="container"&gt;
+  
+    &lt;h2&gt;Subscribe to The Newsletter!&lt;/h2&gt;
+    &lt;c:if test="${not empty message}"&gt;&lt;div class="message green"&gt;${message}&lt;/div&gt;&lt;/c:if&gt;
+    
+    &lt;form:form modelAttribute="subscriber"&gt;
+      &lt;label for="nameInput"&gt;Name: &lt;/label&gt;
+      &lt;form:input path="name" id="nameInput" /&gt;
+      &lt;br/&gt;
+      
+      &lt;label for="ageInput"&gt;Age: &lt;/label&gt;
+      &lt;form:input path="age" id="ageInput" /&gt;
+      &lt;br/&gt;
+      
+      &lt;label for="emailInput"&gt;Email: &lt;/label&gt;
+      &lt;form:input path="email" id="emailInput" /&gt;
+      &lt;br/&gt;
+      
+      &lt;label for="genderOptions"&gt;Gender: &lt;/label&gt;
+      &lt;form:select path="gender" id="genderOptions"&gt;
+        &lt;form:option value=""&gt;Select Gender&lt;/form:option&gt;
+        &lt;form:option value="MALE"&gt;Male&lt;/form:option&gt;
+        &lt;form:option value="FEMALE"&gt;Female&lt;/form:option&gt;
+      &lt;/form:select&gt;
+      &lt;br/&gt;
+      
+      &lt;label for="newsletterCheckbox"&gt;Newsletter? &lt;/label&gt;
+      &lt;form:checkbox path="receiveNewsletter" id="newsletterCheckbox" /&gt;
+      &lt;br/&gt;
+      &lt;label for="frequencySelect"&gt;Freq:&lt;/label&gt;
+      &lt;form:select path="newsletterFrequency" id="frequencySelect"&gt;
+        &lt;form:option value=""&gt;Select Newsletter Frequency: &lt;/form:option&gt;
+        &lt;c:forEach items="${frequencies}" var="frequency"&gt;
+          &lt;form:option value="${frequency}"&gt;${frequency}&lt;/form:option&gt;
+        &lt;/c:forEach&gt;
+      &lt;/form:select&gt;
+      &lt;br/&gt;
+      
+      &lt;br/&gt;
+      &lt;input type="submit" value="Submit" /&gt;
+    &lt;/form:form&gt;
+  &lt;/div&gt;
+  
+  
+  &lt;script type="text/javascript"&gt;
+  
+    $(document).ready(function() {
+      
+      toggleFrequencySelectBox(); // show/hide box on page load
+      
+      $('#newsletterCheckbox').change(function() {
+        toggleFrequencySelectBox();
+      })
+      
+    });
+    
+    function toggleFrequencySelectBox() {
+      if(!$('#newsletterCheckbox').is(':checked')) {
+        $('#frequencySelect').val('');
+        $('#frequencySelect').prop('disabled', true);
+      } else {
+        $('#frequencySelect').prop('disabled', false);
+      }
+    }
+  
+  &lt;/script&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p class="cye-lm-tag">Let’s walk through the form tags we are using. Notice the line at the top of the page: <code>&lt;%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %&gt;</code>. This imports the Spring Form tags we will be using. When we open the form with the <code>&lt;form:form&gt;</code> tag, note that we are specifying the model attribute. This tells Spring to look for an attribute in the Model and bind it to the form. The <code>action</code> and <code>method</code> attributes can also be specified. If unspecified (as in this example), they default to the current URL and “POST”, respectively (just like regular HTML forms).</p>
+
+<p class="cye-lm-tag">Notice that each of our input fields is using the Spring Form taglib (form: prefix). Each of these fields also specifies a <code>path</code> attribute. This must correspond to a getter or setter of the model attribute (in our case, the Subscriber class) according to the standard Java bean convention (get/is, set prefixed to field name with first letter capitalized). When the page is loaded, the input fields are populated by Spring, which calls the getter of each field bound to an input field. When the form is submitted, the setters are called to save the values of the form to the object.</p>
+
+<p class="cye-lm-tag">The <code>&lt;form:input&gt;</code> tags are pretty self explanatory. Notice the two instances of <code>&lt;form:select&gt;</code> used. In the first select drop-down, for the gender field, notice that we manually list all of the options. In the newsletter frequency select drop-down, though, we loop through the <code>frequencies</code> model attribute (remember we added that to the model through the <code>@ModelAttribute</code>-annotated method in the Controller) and add each item as an option in the drop-down. Spring automatically will bind the form values to the enums when the form is submitted as long as the value of the selected option is a valid enum name.</p>
+
+<p class="cye-lm-tag">When the form is submitted, the POST handler in the controller is invoked. The form is automatically bound to the subscriber argument that we passed in. The <code>@ModelAttribute</code> annotation isn’t actually necessary here. I will write more about that in another post.</p>
+
+<p class="cye-lm-tag">There you have it! I strongly recommend you download the source and run the code. Post any questions you have in the comments below.</p>
+
+<p class="cye-lm-tag">Be sure to also check out my next post on <a href="http://codetutr.com/2013/05/28/spring-mvc-form-validation/" title="Spring MVC Form Validation with Annotations Tutorial" class="cye-lm-tag">form validation using annotations</a>.</p>
+
+<p class="cye-lm-tag"><strong>Full Source:</strong> 
+<a href="https://github.com/stevehanson/spring-mvc-form/archive/master.zip" title="Full Source">ZIP</a>, <a href="https://github.com/stevehanson/spring-mvc-form" title="GitHub Repo" target="_blank" class="cye-lm-tag">GitHub</a><br>
+To run the code from this tutorial: Must have <a href="http://codetutr.com/2013/03/23/how-to-install-gradle/" title="How to install Gradle">Gradle installed</a>. Download the ZIP. Extract. Open command prompt to extracted location. Run gradle jettyRunWar. Navigate in browser to http://localhost:8080/form.</p>
+
+
+<p class="cye-lm-tag"><strong>References:</strong>:<br>
+<a href="http://static.springsource.org/spring/docs/3.2.x/spring-framework-reference/html/spring-form.tld.html" title="Spring TagLib Reference" target="_blank">Spring Form TagLib Reference Documentation</a><br>
+<a href="http://www.dzone.com/tutorials/java/spring/spring-form-tags-1.html" title="Spring Form Tutorial" target="_blank">DZone – Spring Form Tag Tutorial</a></p>
+
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-5341857426166969";
+/* Large Ad */
+google_ad_slot = "7412192734";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+				
+					
+									</div>
+<br><hr>
+<h2>Spring MVC Form Validation with Annotations Tutorial</h2>
+<div class="post-entry cye-lm-tag">
+					<p class="cye-lm-tag">This tutorial with full source code will show how to validate a form submission in Spring MVC using JSR-303 annotations. You can grab the code for this tutorial <a href="https://github.com/stevehanson/spring-mvc-validation" title="Spring MVC Validation Source Code" target="_blank">on GitHub</a> if you want to follow along.</p>
+
+<p class="cye-lm-tag">One of the most common elements of web applications is validation of user data. Any time a user submits data into your system, it needs to be validated. This is to prevent attacks, bad data, and simple user error. This tutorial will explain the basics of setting up validation with Spring MVC.</p>
+
+<p class="cye-lm-tag"><strong>Prerequisites:</strong><br>
+You should have a basic understanding of how to submit forms using Spring MVC. If you do not already understand Spring MVC basics, follow some of my other <a href="http://codetutr.com/category/spring/" title="Spring Tutorials">Spring tutorials</a> first.</p>
+
+<p class="cye-lm-tag">Let’s begin. To get started, we first need a couple JARs in our classpath. Add the Java validation API and the Hibernate Validator implementation JARs:.</p>
+
+Gradle:
+<div><div id="highlighter_255897" class="syntaxhighlighter nogutter  plain"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="plain plain">compile 'javax.validation:validation-api:1.1.0.Final'</code></div><div class="line number2 index1 alt1"><code class="plain plain">compile 'org.hibernate:hibernate-validator:5.0.1.Final'</code></div></div></td></tr></tbody></table></div></div>
+
+Or, if you’re using Maven:
+<div><div id="highlighter_109798" class="syntaxhighlighter nogutter  plain"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="plain plain">&lt;dependency&gt;</code></div><div class="line number2 index1 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;groupId&gt;javax.validation&lt;/groupId&gt;</code></div><div class="line number3 index2 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;artifactId&gt;validation-api&lt;/artifactId&gt;</code></div><div class="line number4 index3 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;version&gt;1.1.0.Final&lt;/version&gt;</code></div><div class="line number5 index4 alt2"><code class="plain plain">&lt;/dependency&gt;</code></div><div class="line number6 index5 alt1"><code class="plain plain">&lt;dependency&gt;</code></div><div class="line number7 index6 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;groupId&gt;org.hibernate&lt;/groupId&gt;</code></div><div class="line number8 index7 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;artifactId&gt;hibernate-validator&lt;/artifactId&gt;</code></div><div class="line number9 index8 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="plain plain">&lt;version&gt;5.0.1.Final&lt;/version&gt;</code></div><div class="line number10 index9 alt1"><code class="plain plain">&lt;/dependency&gt;</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Next, make sure you activate Spring `annotation-driven`:</p>
+
+Java Configuration:
+<div><div id="highlighter_171199" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Configuration</code></div><div class="line number2 index1 alt1"><code class="java color1">@EnableWebMVC</code> <code class="java comments">// this does the trick</code></div><div class="line number3 index2 alt2"><code class="java color1">@ComponentScan</code><code class="java plain">(basePackages=</code><code class="java string">"com.codetutr"</code><code class="java plain">)</code></div><div class="line number4 index3 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">WebConfig {</code></div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;</code><code class="java comments">// beans here</code></div><div class="line number6 index5 alt1"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+XML Configuration:
+<div><div id="highlighter_337970" class="syntaxhighlighter nogutter  xml"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="xml plain">&lt;</code><code class="xml keyword">mvc:annotation-driven</code> <code class="xml plain">/&gt;</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Now, we annotate our model object with the constraints we will be validating:</p><p class="cye-lm-tag">
+
+</p><div><div id="highlighter_582519" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">Subscriber {</code></div><div class="line number2 index1 alt1">&nbsp;</div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Size</code><code class="java plain">(min=</code><code class="java value">2</code><code class="java plain">, max=</code><code class="java value">30</code><code class="java plain">) </code></div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">String name;</code></div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@NotEmpty</code> <code class="java color1">@Email</code></div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">String email;</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@NotNull</code> <code class="java color1">@Min</code><code class="java plain">(</code><code class="java value">13</code><code class="java plain">) </code><code class="java color1">@Max</code><code class="java plain">(</code><code class="java value">110</code><code class="java plain">)</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">Integer age;</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Size</code><code class="java plain">(min=</code><code class="java value">10</code><code class="java plain">)</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">String phone;</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@NotNull</code></div><div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">Gender gender;</code></div><div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number18 index17 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@DateTimeFormat</code><code class="java plain">(pattern=</code><code class="java string">"MM/dd/yyyy"</code><code class="java plain">)</code></div><div class="line number19 index18 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@NotNull</code> <code class="java color1">@Past</code></div><div class="line number20 index19 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">Date birthday;</code></div><div class="line number21 index20 alt2">&nbsp;</div><div class="line number22 index21 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">...</code></div><div class="line number23 index22 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">All of the validations used above are part of the JSR-303 API, except for “NotEmpty” and “Email”, which are Hibernate-Validator annotations.</p>
+
+<p class="cye-lm-tag">Almost there! Now, let’s tell our controller to validate the form in the submission handler method:</p>
+
+<div><div id="highlighter_966784" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Controller</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">FormController {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">...</code></div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@RequestMapping</code><code class="java plain">(value=</code><code class="java string">"form"</code><code class="java plain">, method=RequestMethod.POST)</code></div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java plain">String submitForm(</code><code class="java color1">@Valid</code> <code class="java plain">Subscriber subscriber, BindingResult result, Model m) {</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">if</code><code class="java plain">(result.hasErrors()) {</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java string">"formPage"</code><code class="java plain">;</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">m.addAttribute(</code><code class="java string">"message"</code><code class="java plain">, </code><code class="java string">"Successfully saved person: "</code> <code class="java plain">+ subscriber.toString());</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java string">"formPage"</code><code class="java plain">;</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number15 index14 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Simply adding `@Valid` tells Spring to validate the “Subscriber” object. Nice! Notice we also add a “BindingResult” argument. This is Spring’s object that holds the result of the validation and binding and contains errors that may have occurred. The BindingResult must come right after the model object that is validated or else Spring will fail to validate the object and throw an exception.</p>
+
+<p class="cye-lm-tag">When Spring sees “@Valid”, it tries to find the validator for the object being validated. Spring automatically picks up validation annotations if you have “annotation-driven” enabled. Spring then invokes the validator and puts any errors in the BindingResult and adds the BindingResult to the view model.</p>
+
+<p class="cye-lm-tag">Now, our view:</p>
+
+<div><div id="highlighter_947908" class="syntaxhighlighter nogutter  xml"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="xml plain">&lt;</code><code class="xml keyword">form:form</code> <code class="xml color1">action</code><code class="xml plain">=</code><code class="xml string">"/form"</code> <code class="xml color1">modelattribute</code><code class="xml plain">=</code><code class="xml string">"subscriber"</code><code class="xml plain">&gt;</code></div><div class="line number2 index1 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"nameInput"</code><code class="xml plain">&gt;Name: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number3 index2 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:input</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"name"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"nameInput"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:input</code><code class="xml plain">&gt;</code></div><div class="line number4 index3 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"name"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number5 index4 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number6 index5 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number7 index6 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"ageInput"</code><code class="xml plain">&gt;Age: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number8 index7 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:input</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"age"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"ageInput"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:input</code><code class="xml plain">&gt;</code></div><div class="line number9 index8 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"age"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number10 index9 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number11 index10 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number12 index11 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"phoneInput"</code><code class="xml plain">&gt;Phone: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number13 index12 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:input</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"phone"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"phoneInput"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:input</code><code class="xml plain">&gt;</code></div><div class="line number14 index13 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"phone"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number15 index14 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number16 index15 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number17 index16 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"emailInput"</code><code class="xml plain">&gt;Email: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number18 index17 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:input</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"email"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"emailInput"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:input</code><code class="xml plain">&gt;</code></div><div class="line number19 index18 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"email"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number20 index19 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number21 index20 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number22 index21 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"birthdayInput"</code><code class="xml plain">&gt;Birthday: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number23 index22 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:input</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"birthday"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"birthdayInput"</code> <code class="xml color1">placeholder</code><code class="xml plain">=</code><code class="xml string">"MM/DD/YYYY"</code><code class="xml plain">&gt;</code></div><div class="line number24 index23 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"birthday"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number25 index24 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number26 index25 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number27 index26 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"genderOptions"</code><code class="xml plain">&gt;Gender: &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number28 index27 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:select</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"gender"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"genderOptions"</code><code class="xml plain">&gt;</code></div><div class="line number29 index28 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:option</code> <code class="xml color1">value</code><code class="xml plain">=</code><code class="xml string">""</code><code class="xml plain">&gt;Select Gender&lt;/</code><code class="xml keyword">form:option</code><code class="xml plain">&gt;</code></div><div class="line number30 index29 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:option</code> <code class="xml color1">value</code><code class="xml plain">=</code><code class="xml string">"MALE"</code><code class="xml plain">&gt;Male&lt;/</code><code class="xml keyword">form:option</code><code class="xml plain">&gt;</code></div><div class="line number31 index30 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:option</code> <code class="xml color1">value</code><code class="xml plain">=</code><code class="xml string">"FEMALE"</code><code class="xml plain">&gt;Female&lt;/</code><code class="xml keyword">form:option</code><code class="xml plain">&gt;</code></div><div class="line number32 index31 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;/</code><code class="xml keyword">form:select</code><code class="xml plain">&gt;</code></div><div class="line number33 index32 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"gender"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number34 index33 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number35 index34 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number36 index35 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">label</code> <code class="xml color1">for</code><code class="xml plain">=</code><code class="xml string">"newsletterCheckbox"</code><code class="xml plain">&gt;Newsletter? &lt;/</code><code class="xml keyword">label</code><code class="xml plain">&gt;</code></div><div class="line number37 index36 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:checkbox</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"receiveNewsletter"</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"newsletterCheckbox"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:checkbox</code><code class="xml plain">&gt;</code></div><div class="line number38 index37 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">form:errors</code> <code class="xml color1">path</code><code class="xml plain">=</code><code class="xml string">"receiveNewsletter"</code> <code class="xml color1">cssclass</code><code class="xml plain">=</code><code class="xml string">"error"</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:errors</code><code class="xml plain">&gt;</code></div><div class="line number39 index38 alt2"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;&lt;</code><code class="xml keyword">br</code> <code class="xml plain">/&gt;</code></div><div class="line number40 index39 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">input</code> <code class="xml color1">type</code><code class="xml plain">=</code><code class="xml string">"submit"</code> <code class="xml color1">value</code><code class="xml plain">=</code><code class="xml string">"Submit"</code> <code class="xml plain">/&gt;</code></div><div class="line number41 index40 alt2"><code class="xml plain">&lt;/</code><code class="xml keyword">form:input</code><code class="xml plain">&gt;&lt;/</code><code class="xml keyword">form:form</code><code class="xml plain">&gt;</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">The “form:errors” tag outputs errors associated with the specified path.</p>
+
+<p class="cye-lm-tag">Now, if we fire up our app and submit the form blank, we see:</p>
+
+<a href="pics/spring-mvc-validation-error.png"><img src="pics/spring-mvc-validation-error.png" alt="spring-mvc-validation-error" width="607" height="402" class="alignnone size-full wp-image-359"></a>
+
+<p class="cye-lm-tag">The form also correctly validates that the email address is a valid format, age is &nbsp;between 13 and 110, the phone number is at least 10 characters long and birthday is in the past.</p>
+
+<p class="cye-lm-tag">Cool. But the error messages are terrible! How can we customize them? The easiest (though not best) way is to use the annotations’ “message” property, like so:</p>
+
+<div><div id="highlighter_120187" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Size</code><code class="java plain">(min=</code><code class="java value">10</code><code class="java plain">, message=</code><code class="java string">"Phone number must be at least 10 characters"</code><code class="java plain">)</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">This is nice, but does not support internationalization. Plus, do we really want our messages in our Java objects? Fortunately, we can easily override the default messages in our message bundle. To do this, first set up a message bundle:</p>
+
+JavaConfig:
+<div><div id="highlighter_580190" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Bean</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java plain">MessageSource messageSource() {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">ResourceBundleMessageSource messageSource = </code><code class="java keyword">new</code> <code class="java plain">ResourceBundleMessageSource();</code></div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">messageSource.setBasename(</code><code class="java string">"messages"</code><code class="java plain">);</code></div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">messageSource;</code></div><div class="line number6 index5 alt1"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+XML Config:
+<div><div id="highlighter_379418" class="syntaxhighlighter nogutter  xml"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="xml plain">&lt;</code><code class="xml keyword">bean</code> <code class="xml color1">id</code><code class="xml plain">=</code><code class="xml string">"messageSource"</code> <code class="xml color1">class</code><code class="xml plain">=</code><code class="xml string">"org.springframework.context.support.ResourceBundleMessageSource"</code><code class="xml plain">&gt;</code></div><div class="line number2 index1 alt1"><code class="xml spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="xml plain">&lt;</code><code class="xml keyword">property</code> <code class="xml color1">name</code><code class="xml plain">=</code><code class="xml string">"basename"</code> <code class="xml color1">value</code><code class="xml plain">=</code><code class="xml string">"messages"</code><code class="xml plain">/&gt;</code></div><div class="line number3 index2 alt2"><code class="xml plain">&lt;/</code><code class="xml keyword">bean</code><code class="xml plain">&gt;</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Now, create a file called “messages.properties” in “src/main/resources”. Now, we can override the default error messages. Error messages are resolved using the following pattern: </p>
+
+<div><div id="highlighter_525577" class="syntaxhighlighter nogutter  plain"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="plain plain">{ValidationClass}.{modelObjectName}.{field}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">For example, if the age field of our “subscriber” model object fails the “NotNull” validation, the “NotNull.subscriber.age” message would be looked up. If the message isn’t found, “NotNull.subscriber” would be looked for. Finally, if not found, “NotNull” message would be looked for. If that also isn’t found, the default message (what we saw above) would be rendered. With this convention in mind, let’s define our error messages:</p>
+
+<div><div id="highlighter_693368" class="syntaxhighlighter nogutter  plain"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="plain plain">Size=the {0} field must be between {2} and {1} characters long</code></div><div class="line number2 index1 alt1"><code class="plain plain">Size.subscriber.name=Name must be between {2} and {1} characters</code></div><div class="line number3 index2 alt2"><code class="plain plain">Size.subscriber.phone=Phone must be at least {2} characters</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="plain plain">Min.subscriber.age=You must be older than {1}</code></div><div class="line number6 index5 alt1"><code class="plain plain">Max.subscriber.age= Sorry, you have to be younger than {1}</code></div><div class="line number7 index6 alt2">&nbsp;</div><div class="line number8 index7 alt1"><code class="plain plain">Email=Email address not valid</code></div><div class="line number9 index8 alt2"><code class="plain plain">Past=Date must be in the past</code></div><div class="line number10 index9 alt1">&nbsp;</div><div class="line number11 index10 alt2"><code class="plain plain">NotEmpty=Field cannot be left blank</code></div><div class="line number12 index11 alt1"><code class="plain plain">NotNull=Field cannot be left blank</code></div><div class="line number13 index12 alt2">&nbsp;</div><div class="line number14 index13 alt1"><code class="plain plain">typeMismatch=Invalid format</code></div><div class="line number15 index14 alt2"><code class="plain plain">methodInvocation.myRequest.amount=Invalid format</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Notice the use of {0}, {1}, etc. These are arguments that can be passed in to the message. Now, if we run our validations, we should see nicer messages:</p>
+
+<a href="pics/spring-mvc-validation-errors-nicer1.png"><img src="pics/spring-mvc-validation-errors-nicer1.png" alt="spring-mvc-validation-errors-nicer" width="590" height="384" class="alignnone size-full wp-image-363" srcset="pics/spring-mvc-validation-errors-nicer1-300x195.png 300w, pics/spring-mvc-validation-errors-nicer1.png 590w" sizes="(max-width: 590px) 100vw, 590px"></a>
+
+<a href="pics/spring-mvc-validation-errors-nicer21.png"><img src="pics/spring-mvc-validation-errors-nicer21.png" alt="spring-mvc-validation-errors-nicer" width="600" height="392" class="alignnone size-full wp-image-362"></a>
+
+<p class="cye-lm-tag">Before I sign out, quick usability note that is outside the scope of this tutorial: <strong>use front-end validations also!</strong> Users expect the convenience of immediately knowing if there is an error, so go ahead and duplicate some logic on the front-end.</p>
+
+<p class="cye-lm-tag">That wraps up this tutorial. Check out my next tutorial on <a href="http://codetutr.com/2013/05/29/custom-spring-mvc-validation-annotations/" title="Spring MVC Custom Validation Annotations" class="cye-lm-tag">creating custom validation annotations</a> to see how to easily create validation annotations to fit your not-so-cookie-cutter situations. I strongly recommend you download the <a href="https://github.com/stevehanson/spring-mvc-validation" title="GitHub Repo" target="_blank">source</a> and run the code. Post any questions you have in the comments below.</p>
+
+<p class="cye-lm-tag"><strong>Full Source:</strong> 
+<a href="https://github.com/stevehanson/spring-mvc-validation/archive/master.zip" title="Full Source">ZIP</a>, <a href="https://github.com/stevehanson/spring-mvc-validation" title="GitHub Repo" target="_blank" class="cye-lm-tag">GitHub</a><br>
+To run the code from this tutorial: Must have <a href="http://codetutr.com/2013/03/23/how-to-install-gradle/" title="How to install Gradle">Gradle installed</a>. Clone from GitHub or download the ZIP. Extract. Open command prompt to extracted location. Run gradle jettyRunWar. Navigate in browser to http://localhost:8080.</p>
+
+<p class="cye-lm-tag"><strong>References:</strong>:<br>
+<a href="http://static.springsource.org/spring/docs/3.2.x/spring-framework-reference/html/validation.html#validation-beanvalidation" title="Spring Validation Reference" target="_blank">Spring 3 Validation Reference</a>
+				</p>
+					
+									</div>
+<br><hr>
+<h2>Spring MVC Custom Validation Annotations</h2>
+<div class="post-entry cye-lm-tag">
+					<p class="cye-lm-tag">Last tutorial, I showed how to <a href="http://codetutr.com/2013/05/28/spring-mvc-form-validation/" title="Spring MVC Form Validation with Annotations Tutorial">validate a form using annotations</a>. This works great for simple validations, but eventually, you’ll need to validate some custom rules that aren’t available in the out-of-the-box annotations. For example, what if you need to validate that a user is over 21 years old, calculated based off their input birthdate, or, maybe you need to validate that the user’s phone area code is in Nebraska, USA. This tutorial with full source code will show how to create custom validation annotations that you can use along-side the JSR-303 and Hibernate Validator annotations we explored in the last tutorial.</p>
+
+<p class="cye-lm-tag">You can grab the code for this tutorial <a href="https://github.com/stevehanson/spring-mvc-validation" title="Spring MVC Validation Source Code" target="_blank">on GitHub</a> if you want to follow along.</p>
+
+<p class="cye-lm-tag">For this example, let’s say we have a form with a phone number field and a birthdate field, and we want to validate the the phone number is valid (simple check for format) and that the user was born in 1989. There are no out-of-the-box annotations that support these (as far as I know), so we will write custom validation annotations which we can then re-use, just like the built-in JSR-303 ones.</p>
+
+<p class="cye-lm-tag">When we are done, we will apply our annotations to our form object, like so:</p>
+
+<div><div id="highlighter_824953" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">Subscriber {</code></div><div class="line number2 index1 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">...</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Phone</code></div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">String phone;</code></div><div class="line number7 index6 alt2">&nbsp;</div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Year</code><code class="java plain">(</code><code class="java value">1989</code><code class="java plain">)</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">Date birthday;</code></div><div class="line number10 index9 alt1">&nbsp;</div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// getters setters ...</code></div><div class="line number12 index11 alt1">&nbsp;</div><div class="line number13 index12 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Let’s get started with the @Phone annotation. We will be creating two classes: <code>Phone</code>, which is the annotation, and <code>PhoneConstraintValidator</code> which contains the validation logic. The first  step is to create the <code>Phone</code> annotation class:</p>
+
+<div><div id="highlighter_56198" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Documented</code></div><div class="line number2 index1 alt1"><code class="java color1">@Constraint</code><code class="java plain">(validatedBy = PhoneConstraintValidator.</code><code class="java keyword">class</code><code class="java plain">)</code></div><div class="line number3 index2 alt2"><code class="java color1">@Target</code><code class="java plain">( { ElementType.METHOD, ElementType.FIELD })</code></div><div class="line number4 index3 alt1"><code class="java color1">@Retention</code><code class="java plain">(RetentionPolicy.RUNTIME)</code></div><div class="line number5 index4 alt2"><code class="java keyword">public</code> <code class="java color2">@interface</code> <code class="java plain">Phone {</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">String message() </code><code class="java keyword">default</code> <code class="java string">"{Phone}"</code><code class="java plain">;</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Class&lt;?&gt;[] groups() </code><code class="java keyword">default</code> <code class="java plain">{};</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Class&lt;? </code><code class="java keyword">extends</code> <code class="java plain">Payload&gt;[] payload() </code><code class="java keyword">default</code> <code class="java plain">{};</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number14 index13 alt1"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">The code above is mostly just boiler-plate. The three methods in the annotation are required by the JSR-303 spec. If our annotation accepted any arguments, we would have defined them there as methods. We will see this in our next annotation later in this tutorial. The most important part of the class above is the <code>@Constraint</code> annotation on the class which specifies that we will use our <code>PhoneConstraintValidator</code> class for the validation logic. The <code>message()</code> method defines how the message is resolved. By specifying “{Phone}”, we can override the message in a Spring resource bundle using the <code>Phone</code> key (see my other <a href="http://codetutr.com/2013/05/28/spring-mvc-form-validation/" title="Spring MVC Form Validation with Annotations Tutorial">validation tutorial</a> for details about messages). </p>
+
+<p class="cye-lm-tag">Now, we define the constraint validator:</p>
+
+<div><div id="highlighter_644007" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PhoneConstraintValidator </code><code class="java keyword">implements</code> <code class="java plain">ConstraintValidator&lt;Phone, String&gt; {</code></div><div class="line number2 index1 alt1">&nbsp;</div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">initialize(Phone phone) { }</code></div><div class="line number5 index4 alt2">&nbsp;</div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">boolean</code> <code class="java plain">isValid(String phoneField, ConstraintValidatorContext cxt) {</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">if</code><code class="java plain">(phoneField == </code><code class="java keyword">null</code><code class="java plain">) {</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java keyword">false</code><code class="java plain">;</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">phoneField.matches(</code><code class="java string">"[0-9()-\.]*"</code><code class="java plain">);</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number13 index12 alt2">&nbsp;</div><div class="line number14 index13 alt1"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Let’s look at the above code. The templated type of the superclass takes two types: the type of the annotation it supports, and the type of the property it validates (in this example, Phone, String).</p>
+
+<p class="cye-lm-tag">The “initialize” method is empty here, but it can be used to save data from the annotation, as we will see below when we define our other annotation.</p>
+
+<p class="cye-lm-tag">Finally, the actual logic happens in the “isValid” method. The field value is passed in as the first argument, and we do our validation here. As you can see, I am just validating that the phone number only contains numbers, parentheses or dashes.</p>
+
+<p class="cye-lm-tag">That’s it for this annotation! The annotation can now be used on a field as shown above on our form object.</p>
+
+<p class="cye-lm-tag">Now, let’s do our second annotation. This one is a little contrived – we will validate that the user’s birthdate is in 1989. In the future, we may need to validate dates are in other years, though, so rather than create an annotation that validates the year to be 1989, we will let it take an argument to specify the year to validate against. Example usage:
+
+</p><div><div id="highlighter_561921" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Year</code><code class="java plain">(</code><code class="java value">1989</code><code class="java plain">)</code></div><div class="line number2 index1 alt1"><code class="java keyword">private</code> <code class="java plain">Date birthDate;</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Now, the annotation:</p>
+
+<div><div id="highlighter_136217" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Documented</code></div><div class="line number2 index1 alt1"><code class="java color1">@Constraint</code><code class="java plain">(validatedBy = YearConstraintValidator.</code><code class="java keyword">class</code><code class="java plain">)</code></div><div class="line number3 index2 alt2"><code class="java color1">@Target</code><code class="java plain">( { ElementType.METHOD, ElementType.FIELD })</code></div><div class="line number4 index3 alt1"><code class="java color1">@Retention</code><code class="java plain">(RetentionPolicy.RUNTIME)</code></div><div class="line number5 index4 alt2"><code class="java keyword">public</code> <code class="java color2">@interface</code> <code class="java plain">Year {</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">int</code> <code class="java plain">value();</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">String message() </code><code class="java keyword">default</code> <code class="java string">"{Year}"</code><code class="java plain">;</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Class&lt;?&gt;[] groups() </code><code class="java keyword">default</code> <code class="java plain">{};</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Class&lt;? </code><code class="java keyword">extends</code> <code class="java plain">Payload&gt;[] payload() </code><code class="java keyword">default</code> <code class="java plain">{};</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number15 index14 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">Notice the “value()” method. This exposes the “value” argument of the annotation which we will use to pass the year that the annotation should validate against. The rest of the code is mostly boilerplate</p>
+
+<p class="cye-lm-tag">Now, the constraint validator:</p>
+
+<div><div id="highlighter_858607" class="syntaxhighlighter nogutter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">YearConstraintValidator </code><code class="java keyword">implements</code> <code class="java plain">ConstraintValidator&lt;Year, Date&gt; {</code></div><div class="line number2 index1 alt1">&nbsp;</div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">int</code> <code class="java plain">annotationYear;</code></div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">initialize(Year year) {</code></div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">this</code><code class="java plain">.annotationYear = year.value();</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number9 index8 alt2">&nbsp;</div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">boolean</code> <code class="java plain">isValid(Date target, ConstraintValidatorContext cxt) {</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">if</code><code class="java plain">(target == </code><code class="java keyword">null</code><code class="java plain">) {</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java keyword">true</code><code class="java plain">;</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Calendar c = Calendar.getInstance();</code></div><div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">c.setTime(target);</code></div><div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">int</code> <code class="java plain">fieldYear = c.get(Calendar.YEAR);</code></div><div class="line number18 index17 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">fieldYear == annotationYear;</code></div><div class="line number19 index18 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number20 index19 alt1">&nbsp;</div><div class="line number21 index20 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+
+<p class="cye-lm-tag">The first thing to notice, is that, this time, we are saving the year passed into the annotation as a member variable of the constraint validator class. This allows us to access the value in our “isValid” method.</p>
+
+<p class="cye-lm-tag">The isValid method is pretty straightforward code wrestling with the obnoxious Date/Calendar API’s to validate that the value of the annotated field matches the year that the validation annotation specified (I may post an example using JodaTime sometime if I get around to it). And now, if we start up our web application, our two validations are in place and ready to be used!</p>
+
+<a href="pics/custom-validation-example-e1372733063855.png"><img src="pics/custom-validation-example-e1372733063855.png" alt="Validation Errors" style="max-width:96%" class="size-full wp-image-396"></a>
+
+<p class="cye-lm-tag">That’s all. Did I miss anything? Have questions? Let me know in the comments.</p>
+
+<p class="cye-lm-tag"><strong>Full Source:</strong>&nbsp;<a href="https://github.com/stevehanson/spring-mvc-validation/archive/master.zip" title="Full Source" target="_blank">ZIP</a>,&nbsp;<a href="https://github.com/stevehanson/spring-mvc-validation" title="GitHub Repo" target="_blank">GitHub</a><br>To run the code from this tutorial: Must have&nbsp;<a href="http://codetutr.com/2013/03/23/how-to-install-gradle/" title="How to install Gradle">Gradle installed</a>. Clone the GitHub repo or download the ZIP and extract. Open command prompt to code location. Run gradle jettyRunWar. Navigate in browser to http://localhost:8080.</p>
+
+<p class="cye-lm-tag"><strong>References:</strong>:<br>
+<a href="http://static.springsource.org/spring/docs/3.2.x/spring-framework-reference/html/validation.html#validation-beanvalidation" title="Spring Validation Reference" target="_blank">Spring 3 Validation Reference</a></p>
+
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-5341857426166969";
+/* Wide Leaderboard */
+google_ad_slot = "8102876739";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+				
+					
+									</div>
+<br><hr>
+
+</body>
+</html>
