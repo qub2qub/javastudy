@@ -8,6 +8,8 @@
 <body>
 <a href="http://olivergierke.de/2013/01/whoops-where-did-my-architecture-go/">src</a>
 <h2>Whoops! Where did my architecture go</h2>
+<a href="https://speakerdeck.com/olivergierke/whoops-where-did-my-architecture-go-2?slide=10">presentation</a>
+
 <div id="post" class="cye-lm-tag">
   
 <p class="cye-lm-tag">I am currently travelling conferences and Java User Groups with a talk called “Whoops! Where did my architecture go?”. It discusses approaches to create and maintain logical architectues in Java code bases, challenges, tools and tries to outline some ideas how one can accomplish this. A core part of the argumentation is the discussion about the importance of Java packages. Jens Schauder has written a <a href="http://blog.schauderhaft.de/2013/01/13/the-importance-of-packages/">blog post</a> about that topic recently and I felt I had some things to add. The more I though about it I got the conclusion that a comment I envision would exceed the length of a reasonable reply I thought I’ll write up a blog post. I will point to the slides of the presentation in places where it comes in handy. The talk is also based on a lot of sample code which we will get to a bit later. The code can be found on <a href="https://github.com/olivergierke/Whoops-Architecture">GitHub</a>.</p>
@@ -40,7 +42,7 @@
 
 <p class="cye-lm-tag">So let’s assume we defined both slices and layers as architectural concepts, how do we make sure these architecture concepts are embodied in our Java codebase? What we usually do is creating naming conventions and map our layers and slices into package and class names. There are some great tools like <a href="http://www.hello2morrow.com/products/sonargraph">Sonargraph</a> and <a href="http://structure101.com/products/">Structure 101</a> available out there that help you at doing exactly that. Being a happy day-to-day user of Sonargraph I still asked myself: “How far could we actually get with plain Java (language, compiler runtime) means only?”. </p>
 
-<p class="cye-lm-tag">We already identified that controlling dependencies between code artifacts is key to reduce the risk of change effectively. Let’s have a look how this is approached in general. A key aspect to dependency control is that an artifact is able to explicitly express a dependency. Interestingly we have solutions to do exactly that for two of the three artifact levels (JARs, packages, classes) mentioned above. </p>
+<p class="cye-lm-tag">We already identified that controlling dependencies between code artifacts is key to reduce the risk of change effectively. Let’s have a look how this is approached in general. <u>A key aspect to dependency control is that an artifact is able to explicitly express a dependency. </u>Interestingly we have solutions to do exactly that for two of the three artifact levels (JARs, packages, classes) mentioned above. </p>
 
 <p class="cye-lm-tag">Deployment units are usually managed through either Gradle, Maven or Ivy. At the class level dependency injection comes into play as a core aspect of it is to expose dependencies through either constructor arguments or setters (an interesting <a href="http://blog.schauderhaft.de/2012/01/01/the-one-correct-way-to-do-dependency-injection">post</a> on this at Jens Schauders blog again). Still this is not entirely sufficient cause at runtime the type space in the JVM is flat and a class can potentially “ask” for a dependency it shouldn’t be able to and get it injected. This is where the aforementioned tools would step in again and veto at build time. But yeah, we wanted to see how far we can get without them.</p>
 
@@ -50,7 +52,7 @@
   <p class="cye-lm-tag">Dear Java developer, have you ever wondered why you make your class’ properties private by default but the class itself public by default? Hint: ‘Because my IDE generates it this way’ is not a valid answer.</p>
 </blockquote>
 
-<p class="cye-lm-tag">The observation that should lead you to is that Java developers usually just skip packages as means to control visibility of types. We practice information hiding in classes/properties (we actually don’t as most developers run “Generate getters and setters” right away) but don’t on the classes-in-a-package level. We just discovered that inside a JAR we essentially have to manage which type can see which other type as the class space of public types is flat in a JVM. Essentially this means that if a class is not public (i.e. package private), we don’t have to dependency manage it on the global level but within the package only.</p>
+<p class="cye-lm-tag">The observation that should lead you to is that Java developers usually just skip packages as means to control visibility of types. We practice information hiding in classes/properties (we actually don’t as most developers run “Generate getters and setters” right away) but don’t on the classes-in-a-package level. We just discovered that<u> inside a JAR we essentially have to manage which type can see which other type</u> as the class space of public types is flat in a JVM. Essentially this means that if a class is not public (i.e. package private), we don’t have to dependency manage it on the global level but within the package only.</p>
 
 <h2 id="packages">Packages</h2>
 
@@ -99,17 +101,19 @@
 
 <p class="cye-lm-tag">The basic approach I recommend is to move the vertical slices into the focus of the package naming and try to model them in a way that the public API of a slice is as tiny as possible in the first place. This is of course no silver bullet approach as packages can grow significantly and it might make sense to extract certain types into a sub-package or the like which then usually leads you to the need to use an architecture management tool. The core idea here is to try to use the means of visibility control that are available in Java to write code that is not a giant potential dependency mess in the first place. Packages can actually help you to achieve exactly that.</p>
 <br><hr>
+<a href="http://blog.schauderhaft.de/2013/01/13/the-importance-of-packages/">src1</a>
+<h2>The Importance of Packages</h2>
 <div class="wrapper cye-lm-tag">
-        
-        
-        
         <p class="cye-lm-tag">I remember approximately 15 years ago when I started learning Java. I read a lot about this 'package' thing and 'namespaces' and I totally didn't get it.</p>
 <p class="cye-lm-tag">Sad thing is: While some aspects of package are understood by pretty much everybody in the industry others aren't. So lets have a look what packages are good for.</p>
 <p class="cye-lm-tag"><strong>Namespaces</strong>: By prefixing all your packages with a domain you control, you make sure that your class names are unique. This is essential for the success of an unbelievable number of open source projects. Every project can (and probably does at some stage) define a 'Filter' class without having that class interfere with all the other classes of that same name (apart from the poor developer that copied some code without import statements from the web and now has to figure out which Filter class was actually referenced). This one is pretty well understood and I haven't seen any relevant usage of the root package in ages.</p>
-<p class="cye-lm-tag"><strong>Organization</strong>: My son has a huge box of Lego bricks. Probably multiple thousands maybe tens of thousands of them. When he looks for a simple 2x4 brick this is not a problem. But when he is searching for that special brick that only exists 4 times in the collection or even just once!? It might take a loooooong time to find it. Compare that to an apothecary cabinet. Hundreds of drugs and it normally takes only seconds to find the right one. And they don't even use Google for that! They just have a strict ordering principle where each drug belongs, including a rule how the right box for a new drug is determined. Since everybody involved knows that principle it is easy to determine the correct box where the drug is to be found. Such an ordering principle is tremendously helpful when established early in a project.</p>
+<p class="cye-lm-tag"><strong>Organization</strong>: My son has a huge box of Lego bricks. Probably multiple thousands maybe tens of thousands of them. When he looks for a simple 2x4 brick this is not a problem. But when he is searching for that special brick that only exists 4 times in the collection or even just once!? It might take a loooooong time to find it. Compare that to an apothecary cabinet [аптека]. Hundreds of drugs and it normally takes only seconds to find the right one. And they don't even use Google for that! They just have a strict ordering principle where each drug belongs, including a rule how the right box for a new drug is determined. Since everybody involved knows that principle it is easy to determine the correct box where the drug is to be found. Such an ordering principle is tremendously helpful when established early in a project.</p>
 <p class="cye-lm-tag">When defining such a principle one criteria isn't sufficient most of the time. But if you use more then one make sure they don't interfere, by making the rules orthogonal. This means don't have a rule saying: "All database access code has to go in package x" and another rule stating "All code related to customers has to go into package y". Otherwise you won't know where to put the CustomerDAO. Instead apply orthogonal rules on different depths of the package tree. My default package structure looks like this:</p>
-<pre class="cye-lm-tag"><organisational-prefix>.<application>.<deployment-unit>.<module>.<layer>.<br>
-<optional further="" substructure="" if="" needed=""></optional></layer></module></deployment-unit></application></organisational-prefix></pre><br>
+<xmp style="font-weight: 16px;">
+<organisational-prefix>.<application>.<deployment-unit>.<module>.<layer>.<br>
+<optional further="" substructure="" if="" needed=""></optional></layer></module></deployment-unit></application></organisational-prefix>
+</xmp>
+<br>
 This results in package names like<p class="cye-lm-tag"></p>
 <p class="cye-lm-tag"><tt>com.mycompany.theCoolApp.server.user.persistence</tt></p>
 <p class="cye-lm-tag">or</p>
@@ -124,11 +128,151 @@ This results in package names like<p class="cye-lm-tag"></p>
 <p class="cye-lm-tag">1 jar consists of approximately 100 - 1000 classes.</p>
 <p class="cye-lm-tag">If nobody takes care of packages there is at least one, often two levels of structure missing! This gap can and should be filled with packages. This doesn't only mean the packages should exist and be of reasonable size, it also means they should adhere to common design guide lines. Especially <a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">Single Responsibility Principle</a> and proper handling of dependencies:</p>
 <p class="cye-lm-tag"><strong>Single Responsibility Principle</strong> With the naming scheme proposed above, a lot of work toward honoring the SRP is done. If the contents of the package does what its name says everything is fine on that front.</p>
-<p class="cye-lm-tag"><strong>Managing of Dependencies</strong> is a tougher beast. Java currently doesn't offer a proper system to control dependencies between packages and especially super packages, i.e. packages that contain multiple other packages. There is <a href="http://en.wikipedia.org/wiki/OSGi">OSGI</a>, but I found it a pain in the neck to work with, especially since I never needed all the dynamic loading stuff but suffered from the resulting class loader issues. There is also <a href="http://openjdk.java.net/projects/jigsaw/">Jigsaw</a>Â&nbsp;but this is not there yet. Therefore I prefer homegrown tests for defining and verifying the package structure of applications I work with. My tool of choice is <a href="http://clarkware.com/software/JDepend.html">JDepend</a>. It gives you lists of dependencies between packages and you can use those to compare them to rules you define. Somebody creates a dependency from package A to package B that should not exist? Boom, the test turns red.</p>
-<p class="cye-lm-tag">So what are useful rules for package dependencies? First: No cycles. Not on the package level, but also not on the <tt>layer</tt> level nor on the <tt>module</tt> level as used above. Second: Modules and Layers have a strict order in which they can depend on each other, everything else is forbidden.</p>
-<p class="cye-lm-tag">These rules considerably limit the degrees of freedom one has as a developer. But in my experience it smokes out violations of the Single Responsibility Principle, which often surfaces as cyclic dependencies. For example if you have an Order module and a Customer module it feels like these two need to know each other. If you have an Order, you want to know the Customer it belongs to. If you have a Customer you must be able to tell her the Orders she placed. Right? Yes, probably. But do you need the full blown objects and functionality on both side? Probably not. By coming up with an interface package for example containing only the very core for the customer functionality needed by the Order module and and a separate full Customer module that has the references the orders <a href="/2011/07/17/breaking-dependency-cylces/">one can break these dependencies</a> AND achieve a stronger separation of concern in your package structure.</p>
+<p class="cye-lm-tag"><strong>Managing of Dependencies</strong> is a tougher beast. Java currently doesn't offer a proper system to control dependencies between packages and especially super packages, i.e. packages that contain multiple other packages. There is <a href="http://en.wikipedia.org/wiki/OSGi">OSGI</a>, but I found it a pain in the neck to work with, especially since I never needed all the dynamic loading stuff but suffered from the resulting class loader issues. There is also <a href="http://openjdk.java.net/projects/jigsaw/">Jigsaw</a>&nbsp;but this is not there yet. Therefore I prefer homegrown tests for defining and verifying the package structure of applications I work with. My tool of choice is <a href="http://clarkware.com/software/JDepend.html">JDepend</a>. It gives you lists of dependencies between packages and you can use those to compare them to rules you define. Somebody creates a dependency from package A to package B that should not exist? Boom, the test turns red.</p>
+<p class="cye-lm-tag">So what are useful rules for package dependencies?<br> First: No cycles. Not on the package level, but also not on the <tt>layer</tt> level nor on the <tt>module</tt> level as used above. <br>Second: Modules and Layers have a strict order in which they can depend on each other, everything else is forbidden.</p>
+<p class="cye-lm-tag">These rules considerably limit the degrees of freedom one has as a developer. But in my experience it smokes out violations of the Single Responsibility Principle, which often surfaces as cyclic dependencies. <br>For example if you have an Order module and a Customer module it feels like these two need to know each other. If you have an Order, you want to know the Customer it belongs to. If you have a Customer you must be able to tell her the Orders she placed. Right? Yes, probably. But do you need the full blown objects and functionality on both side? Probably not. By coming up with an interface package for example containing only the very core for the customer functionality needed by the Order module and and a separate full Customer module that has the references the orders <a href="/2011/07/17/breaking-dependency-cylces/">one can break these dependencies</a> AND achieve a stronger separation of concern in your package structure.</p>
 <p class="cye-lm-tag">This in turn helps when you try to evolve your application. What today is a package might grow into a deployment-unit someday and if you have circular dependencies between deployment-units you'll have some serious problems. Or maybe your team grows into multiple teams. With a clean package structure as described above you have a obvious bounds where you can split and also an obvious criteria when the teams have to sit together to discuss changes on a package used by multiple teams.</p>
       </div>
+</div>
+<br><hr>
+<a href="http://blog.schauderhaft.de/2012/01/01/the-one-correct-way-to-do-dependency-injection/">src2</a>
+<h2>The One Correct Way to do Dependency Injection</h2>
+<div class="wrapper cye-lm-tag">
+        
+        <div class="post-meta">published: 2012-01-01</div>
+        
+        <p class="cye-lm-tag">A couple of weeks ago a coworker told me that they have a little utility in their projects in order to set private fields for tests. He kind of claimed they needed that since they are using Spring, which in production sets the dependency. I was a little confused. But after looking into it I realized that there is an (anti)pattern going on that needs some fighting against. Lets have a look at the pattern.</p>
+<p class="cye-lm-tag">Spring (and other DI frameworks) can inject dependencies into private fields. It looks like people like to use this because it combines some compelling properties:</p>
+<ul>
+<li>Very little boilerplate code. All you need is a simple annotation on the field.</li>
+<li>Since the field is private nobody outside the class can change it.</li><br>
+</ul><br>
+But now when you want to test your class and want to assign e.g. a mock to the field you have to either setup a Spring context in your tests or use reflection in order to access the field (just as Spring does).<p class="cye-lm-tag"></p>
+<p class="cye-lm-tag">Now something is really starting to smell bad here. One of the purposes of Dependency Injection is to decouple code, which in turn should make the code easier to test. Now that didn't work out to well.</p>
+<p class="cye-lm-tag">So how can we clean up this mess? We can write a setter for the field. That solves the testing problem. It adds a little boiler plate code, but hey we are talking Java here, so you should be used to that. But now we have a setter which anybody can call at any time. At the very best that doesn't make any sense at all in the production environment. In the worst case somebody actually uses it and creates some ugly bug.</p>
+<p class="cye-lm-tag">So what do you do when you don't want anybody to change a field? Correct you make it final. Great, now you have a compile time error in the setter.You can only set a final field in a constructor. This leads naturally to the solution of all our problems (and possibly to world peace): <strong>Make your dependency a constructor argument!</strong></p>
+<p class="cye-lm-tag">This is the only place where dependencies really belong. If you try to stick to that rule I'd expect you'll encounter the following two problems.</p>
+<ol>
+<li>You'll find classes with lots and lots of constructor arguments. I'll bet that class does a lot of different things and really needs to get broken down into smaller pieces.</li>
+<li>You'll find cases where a class A needs an instance of B and B needs an instance of&nbsp; A. This is a typical case of a circular dependency and is obviously bad. In my experience the solution is either to make B a part of A when the two are so strongly dependent that they really should be one class. More often though there is at least one more class C hiding in there so that B doesn't need A but only C.</li><br>
+</ol><br>
+So really the problems you'll find when doing constructor based dependency injection are problems that are present in your current code already. So don't shoot the messenger, but fix the problems in your code and go for constructor arguments for dependency injection.
+      </div>
+<br><hr>
+<a href="http://olivergierke.de/2013/11/why-field-injection-is-evil/">src3</a>
+<h2>Why field injection is evil</h2>
+<div id="post" class="cye-lm-tag">
+  
+  
+  
+<p class="cye-lm-tag">I’m quite frequently getting pulled into discussions on Twitter about the different flavors of <a href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency Injection</a>. Also, I’ve repeatedly expressed my <a href="https://twitter.com/olivergierke/status/314704198908403713">distaste for field injection</a> but as Twitter is not the right communication channel to give an in-depth rational about my opinion. So here we go.</p>
+
+<p class="cye-lm-tag">Let’s discuss this stuff with a bit of (quite generic) context: we want to code a component that has a collaborator. As we know, Dependency Injection is the means to connect the two the apparently easiest way to achieve this is the following:</p>
+
+<pre><code>class MyComponent {
+ 
+  @Inject MyCollaborator collaborator;
+  
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">So what’s wrong with this code? </p>
+
+<h2 id="its-nullpointerexceptions-begging-to-happen">It’s NullpointerExceptions begging to happen</h2>
+
+<p class="cye-lm-tag">Well, first of all it’s broken by default. What’s the API you get to create instances of this class which you will need in your unit test?</p>
+
+<pre><code>MyComponent component = new MyComponent();
+component.myBusinessMethod(); // -&gt; NullPointerException
+</code></pre>
+
+<p class="cye-lm-tag">The core of the problem here is that code you’ve written allows clients to create instances of the class in an invalid state. The whole purpose of a type is clients being able to rely on the invariants it enforces. It’s one of the reasons you use an <code>EmailAddress</code> type over a plain <code>String</code> to represent email adresses in your code: clients can be sure the instance they get is a valid email address as the value object enforces this constraint during construction. A <code>String</code> can potentially be anything, validated or not - how do you know?</p>
+
+<p class="cye-lm-tag">So you can probably guess what this is heading to: constructor injection. Let’s rewrite the code shown before in a way it actually enforces the traits I just outlined:</p>
+
+<pre><code>class MyComponent {
+ 
+  private final MyCollaborator collaborator;
+  
+  @Inject
+  public MyComponent(MyCollaborator collaborator) {
+    Assert.notNull(collaborator, "MyCollaborator must not be null!");
+    this.collaborator = collaborator;
+  }
+
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">“Ohh boy!”, I can hear you say, “So much boilerplate code!”. Let me get back to this argument in a bit and just recap, what we’ve achieved:</p>
+
+<ol>
+  <li><em>You can only create instances of <code>MyComponent</code> by providing a <code>MyCollaborator</code></em>. You <em>force</em> clients to provide mandatory dependencies, making sure every object created is in a valid state after construction.</li>
+  <li><em>You communicate mandatory dependencies publicly.</em> Remember when we bashed service locators for hiding dependencies in the implementations? Field injections is just lipstick on the pig in that regard. You still don’t know about the dependencies just looking at the public interface of the type (e.g. while skimming the JavaDoc). Especially if you share code amongst projects field injection based types become a “run-and-wait-for-the-NPE-to-happen,-declare-missing-beans-and-repeat” kind of approach.</li>
+  <li><em>Final fields also add to the immutable nature application components get.</em> You can clearly distinguish between mandatory dependencies (<code>final</code>) and optional ones (non-<code>final</code>) usually injected through setter injection.</li>
+</ol>
+
+<p class="cye-lm-tag">An often faced argument I get is: “Constructors just get too verbose if I have 6 or 7 dependencies. With fields only, this is fine”. Awesome, you’ve effectively worked around a clear indicator that the code you write is doing way too much. An increase in the number of dependencies a type has <em>should</em>  hurt, as it makes you think about whether you should split up the component into multiple ones. You want to really cure the pain, not blindly apply pain killers to it, don’t you?</p>
+
+<h1 id="testability">Testability</h1>
+
+<p class="cye-lm-tag">Coming back to the amount of code to be written for the constructor injection based variant. Assuming we sticked to the field injection variant, we would have much less code to write, right? Well, I guess you’re writing tests for your code, right? So how do you actually inject a dependency into your component while testing?</p>
+
+<pre><code>MyCollaborator collaborator = … // mock dependency
+MyComponent component = new MyComponent();
+// Inject dependency by some reflection magic
+component.myBusinessMethod();
+</code></pre>
+
+<p class="cye-lm-tag">Reflection is the answer here, fine. No matter how comfortable you make this by using a helper method or the like, it’s still a messy workaround isn’t it? Especially if the alternative to that is a simple:</p>
+
+<pre><code>MyCollaborator collaborator = … // mock dependency
+MyComponent component = new MyComponent(collaborator);
+component.myBusinessMethod();
+</code></pre>
+
+<p class="cye-lm-tag">You get code completion on the constructor call and when you add a dependency to the type under test, refactoring applies, no unset dependencies etc.</p>
+
+<h1 id="boilerplate-buster-lombok">Boilerplate buster Lombok</h1>
+
+<p class="cye-lm-tag">Admittedly I’ve been turned off by the amount of code to be written for constructor injection in the first place as well. This is clearly a shortcoming of Java as a languages. Unfortunately a lot of good OO practices like value objects, favoring delegation over inheritance and constructor DI are significantly easier to implement in languages like Scala.</p>
+
+<p class="cye-lm-tag">However, <a href="http://projectlombok.org/">Project Lombok</a> is a really awesome helper to reduce the amount of boilerplate you have to write to do “the right things” (™). There’s a ton of helpful features in Lombok but I want to concentrate on the one related to the discussion here. With Lombok the constructor DI based variant of my component up there would look something like this:</p>
+
+<pre><code>@RequiredArgsConstructor(onConstructor = @__(@Inject))
+class MyComponent {
+    
+  private final @NonNull MyCollaborator collaborator;
+
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">The <code>@RequiredArgsAnnotation</code> will cause a constructor being added during the compilation process taking all final fields as parameters. The additional <code>@NonNull</code> annotation will cause the parameter be checked for <code>null</code> as well. The weird looking <code>onConstructor</code> is Lombok’s way of letting you add annotations to the constructor generated. So with an additional annotation you effectively get the API we’re looking for.</p>
+
+<p class="cye-lm-tag">To summarize, here are the results of the comparison that I get to:</p>
+
+<h3 id="field-injection">Field injection:</h3>
+
+<pre><code>++ less code to write
+-- unsafe code
+ - more complicated to test
+</code></pre>
+
+<h3 id="constructor-injection">Constructor injection:</h3>
+
+<pre><code>++ safe code
+ - more code to write (see the hint to Lombok)
+ + easy to test
+</code></pre>
+
 </div>
 </body>
 </html>
