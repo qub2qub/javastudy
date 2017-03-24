@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ControllerAdvice</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+</head>
+<body>
+<a href="https://www.javacodegeeks.com/2013/11/controlleradvice-improvements-in-spring-4.html">src</a>
+<h2>@ControllerAdvice</h2>
+<div class="entry cye-lm-tag"><div class="e3lan-post"><div id="div-gpt-ad-1415445260332-2" style="width:300px; height:250px;float:left; margin-right:20px;" bi6ihht="" hidden=""> <script type="text/javascript">googletag.cmd.push(function(){googletag.display('div-gpt-ad-1415445260332-2');});</script> </div></div><p class="cye-lm-tag">Among many new features in Spring 4 I found @ControllerAdvice improvements. @ControllerAdvice is a specialization of a @Component that is used to define @ExceptionHandler, @InitBinder, and @ModelAttribute methods that apply to all @RequestMapping methods. Prior to Spring 4, @ControllerAdvice assisted all controllers in the same Dispatcher Servlet. With Spring 4 it has changed. As of Spring 4 @ControllerAdvice may be configured to support defined subset of controllers, whereas the default behavior can be still utilized.</p>
+<p class="cye-lm-tag"><a name="more"></a></p>
+<h2 class="cye-lm-tag">@ControllerAdvice assisting all controllers</h2><p class="cye-lm-tag">Let’s assume we want to create an error handler that will print application errors to the user. Let’s assume this is a basic Spring MVC application with Thymeleaf as a view engine and we have an ArticleController with the following @RequestMapping method:</p>
+<pre>package pl.codeleak.t.articles;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("article")
+class ArticleController {
+
+    @RequestMapping("{articleId}")
+    String getArticle(@PathVariable Long articleId) {
+        throw new IllegalArgumentException("Getting article problem.");
+    }
+}</pre>
+
+<p class="cye-lm-tag">Our method throws an imaginary exception, as we can see. Let’s now create an exception handler using @ControllerAdvice. (this is not only possible method in Spring to deal with exceptions).</p>
+<pre>package pl.codeleak.t.support.web.error;
+
+import com.google.common.base.Throwables;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.ModelAndView;
+
+@ControllerAdvice
+class ExceptionHandlerAdvice {
+
+ @ExceptionHandler(value = Exception.class)
+ public ModelAndView exception(Exception exception, WebRequest request) {
+  ModelAndView modelAndView = new ModelAndView("error/general");
+  modelAndView.addObject("errorMessage", Throwables.getRootCause(exception));
+  return modelAndView;
+ }
+}</pre>
+
+<p class="cye-lm-tag">The class is not public, as it does not to be. We added @ExceptionHandler method that will handle all types of Exceptions and it will return the “error/general” view:</p>
+<xmp>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Error page</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="../../../resources/css/bootstrap.min.css" rel="stylesheet" media="screen" th:href="@{/resources/css/bootstrap.min.css}"/>
+    <link href="../../../resources/css/core.css" rel="stylesheet" media="screen" th:href="@{/resources/css/core.css}"/>
+</head>
+<body>
+<div class="container" th:fragment="content">
+    <div th:replace="fragments/alert :: alert (type='danger', message=${errorMessage})"> </div>
+</div>
+</body>
+</html>
+</xmp>
+
+<p class="cye-lm-tag">To test the solution we can either run the server or (preferably) create a test with Spring MVC Test module. Thanks to the fact that we use Thymeleaf, we can verify the rendered view:</p>
+
+<pre>@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {RootConfig.class, WebMvcConfig.class})
+@ActiveProfiles("test")
+public class ErrorHandlingIntegrationTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void before() {
+        this.mockMvc = webAppContextSetup(this.wac).build();
+    }
+
+    @Test
+    public void shouldReturnErrorView() throws Exception {
+        mockMvc.perform(get("/article/1"))
+                .andDo(print())
+                .andExpect(content().contentType("text/html;charset=ISO-8859-1"))
+                .andExpect(content().string(containsString("java.lang.IllegalArgumentException: Getting article problem.")));
+    }
+}</pre>
+
+<p class="cye-lm-tag">We expect the content type is text/html and the view contains the HTML fragment with an error message. Not really user friendly, though. But the test is green.</p>
+<p class="cye-lm-tag">Using the above solution we provide a general mechanism for handling errors of all our controllers. As mentioned earlier, we can do much more with @ControllerAdvice:. E.g:</p>
+
+<pre>@ControllerAdvice
+class Advice {
+
+    @ModelAttribute
+    public void addAttributes(Model model) {
+        model.addAttribute("attr1", "value1");
+        model.addAttribute("attr2", "value2");
+    }
+
+    @InitBinder
+    public void initBinder(WebDataBinder webDataBinder) {
+        webDataBinder.setBindEmptyMultipartFiles(false);
+    }
+}</pre>
+
+<h2>@ControllerAdvice assisting selected subset of controllers</h2><p class="cye-lm-tag">As of Spring 4, @ControllerAdvice can be customized through annotations(), basePackageClasses(), basePackages() methods to select a subset of controllers to assist. I will demonstrate a simple case how to utilize this new feature.</p>
+<p class="cye-lm-tag">Let’s assume we want to add an API to expose articles via JSON. So we can define a new controller like this:</p>
+
+<pre>@Controller
+@RequestMapping("/api/article")
+class ArticleApiController {
+
+    @RequestMapping(value = "{articleId}", produces = "application/json")
+    @ResponseStatus(value = HttpStatus.OK)
+    @ResponseBody
+    Article getArticle(@PathVariable Long articleId) {
+        throw new IllegalArgumentException("[API] Getting article problem.");
+    }
+}</pre>
+<p class="cye-lm-tag">Our controller is not very sophisticated. It returns an Article as a response body, as @ResponseBody annotation indicates. Of course, we want to deal with exceptions. And we don’t want to return an error as text/html but as application/json. Let’s create a test then:</p>
+
+
+<pre>@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {RootConfig.class, WebMvcConfig.class})
+@ActiveProfiles("test")
+public class ErrorHandlingIntegrationTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void before() {
+        this.mockMvc = webAppContextSetup(this.wac).build();
+    }
+
+    @Test
+    public void shouldReturnErrorJson() throws Exception {
+        mockMvc.perform(get("/api/article/1"))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(content().string(containsString("{\"errorMessage\":\"[API] Getting article problem.\"}")));
+    }
+}</pre>
+<p class="cye-lm-tag">The test is red. What we can do to make it green? We need to make another advice, this time targeting only our Api controller. For that, we will use @ControllerAdvice annotations() selector. In order to do it we need to either create a customer or use existing annotation. We will use @RestController predefined annotation. Controllers annotated with @RestController assume @ResponseBody semantic by default. We may slighlty modify our controller by replacing @Controller with @RestController and removing @ResponseBody from the handler’s method:</p>
+
+<PRE>@RestController
+@RequestMapping("/api/article")
+class ArticleApiController {
+
+    @RequestMapping(value = "{articleId}", produces = "application/json")
+    @ResponseStatus(value = HttpStatus.OK)
+    Article getArticle(@PathVariable Long articleId) {
+        throw new IllegalArgumentException("[API] Getting article problem.");
+    }
+}</PRE>
+
+<p class="cye-lm-tag">We also need to create another advice that will return ApiError (simple POJO):</p>
+
+
+<pre>@ControllerAdvice(annotations = RestController.class)
+class ApiExceptionHandlerAdvice {
+
+    /**
+     * Handle exceptions thrown by handlers.
+     */
+    @ExceptionHandler(value = Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public ApiError exception(Exception exception, WebRequest request) {
+        return new ApiError(Throwables.getRootCause(exception).getMessage());
+    }
+}</pre>
+
+<p class="cye-lm-tag">This time when we run our test suite, both tests are green meaning that ExceptionHandlerAdvice assisted “standard” ArticleController whereas ApiExceptionHandlerAdvice assisted ArticleApiController.</p>
+<h2>Summary</h2><p class="cye-lm-tag">In the above scenario I demonstrated how easily we can utilize new configuration capabilities of @ControllerAdvice annotation and I hope you like the change as I do.</p>
+<h2>References</h2><ul class="cye-lm-tag"><li><a href="https://jira.springsource.org/browse/SPR-10222">SPR-10222</a></li><li class="cye-lm-tag"><a href="https://github.com/bclozel/spring-framework/blob/b66bfc6221e2d752e46ffd682db5c4f9c1ef73ea/spring-web/src/main/java/org/springframework/web/bind/annotation/ControllerAdvice.java" class="cye-lm-tag">@RequestAdvice annotation documentation</a></li></ul><p class="cye-lm-tag">&nbsp;</p>
+<div style="border: 1px solid #D8D8D8; background: #FAFAFA; width: 100%; padding-left: 5px;"><b><i>Reference: </i></b><a href="http://blog.codeleak.pl/2013/11/controlleradvice-improvements-in-spring.html">@ControllerAdvice improvements in Spring 4</a> from our <a href="http://www.javacodegeeks.com/jcg">JCG partner</a> Rafal Borowiec at the <a href="http://blog.codeleak.pl/">Codeleak.pl</a> blog.</div></div>
+
+<a href="">src</a>
+<h2></h2>
+
+</body>
+</html>
