@@ -1,4 +1,12 @@
-<!DOCTYPE html> <html lang="en"> <head> 	<meta charset="UTF-8"> 	<title>j8 Streams Ibm</title>     <link rel="stylesheet" href="../../Git Guide/grey.css">     <style type="text/css">     	.code { 		font-family: "Trebuchet MS",Tahoma,Arial; 		font-size: 18px; 		font-weight: bold; 		border: 1px solid #000; 		background-color: #999; 		padding: 5px; 	}     </style> </head> 
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 	
+<meta charset="UTF-8"> 	
+<title>j8 Streams Ibm</title>     
+<link rel="stylesheet" href="../../Git Guide/grey.css">     
+<style type="text/css">     	.code { 		font-family: "Trebuchet MS",Tahoma,Arial; 		font-size: 18px; 		font-weight: bold; 		border: 1px solid #000; 		background-color: #999; 		padding: 5px; 	}     
+</style> 
+</head> 
 <body> 
 <a href="https://www.ibm.com/developerworks/library/?search_by=Java+Streams,+Part">ibm src</a>  
 <h2>Part 1 An introduction to the java.util.stream library</h2>
@@ -237,6 +245,7 @@ For reduction operations (for example, computing summary data such as <code>sum<
 <span class="dw-code-nohighlight cye-lm-tag"><div class="ibm-syntax-container"><div><div id="highlighter_906230" class="syntaxhighlighter nogutter  htmlscript"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="htmlscript plain">return new CollectorImpl&lt;&gt;(ArrayList::new,</code></div><div class="line number2 index1 alt1"><code class="htmlscript spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="htmlscript plain">List::add,</code></div><div class="line number3 index2 alt2"><code class="htmlscript spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="htmlscript plain">(left, right) -&gt; { left.addAll(right); return left; },</code></div><div class="line number4 index3 alt1"><code class="htmlscript spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="htmlscript plain">CH_ID);</code></div></div></td></tr></tbody></table>
 </div></div></div></span><p class="cye-lm-tag">This implementation uses <code>ArrayList</code> as the result container, <code>add()</code> to incorporate an element, and <code>addAll()</code> to merge one list into another, indicating through the characteristics that its finish function is the identity function (which enables the stream framework to optimize the execution).</p>
 <p class="cye-lm-tag">As you've seen before, there are some consistency requirements that are analogous to the constraints between the identity and the accumulator function in reduction. These requirements are outlined in the specification for <code>Collector</code>.</p>
+<<<<<<< HEAD
 
 <div style="border: 1px solid #920000">
 <span>from Collector's javadoc:</span><br>
@@ -262,6 +271,8 @@ The associativity constraint says that splitting the computation must produce an
 </pre>
 </div>
 
+=======
+>>>>>>> f8a536c4678db8b83ae8e727ec6020ad23c553ef
 <p class="cye-lm-tag">As a more complex example, consider the problem of creating summary statistics on a data set. It's easy to use reduction to compute the sum, minimum, maximum, or count of a numeric data set (and you can compute average from sum and count). Its harder to compute them all at once, in a single pass on the data, using reduction. But you can easily write a <code>Collector</code> to do this computation efficiently (and in parallel, if you like).</p>
 <p class="cye-lm-tag">The <code>Collectors</code> class contains a <code>collectingInt()</code> factory method that returns an <code>IntSummaryStatistics</code>, which does exactly what you want — compute <code>sum</code>, <code>min</code>, <code>max</code>, <code>count</code>, and <code>average</code> in one pass. The implementation of <code>IntSummaryStatistics</code> is trivial, and you can easily write your own similar collectors to compute arbitrary data summaries (or extend this one).</p>
 <p class="cye-lm-tag">Listing 5 shows the <code>IntSummaryStatistics</code> class. The actual implementation has more detail (including getters to return the summary statistics), but the heart of it is the simple <code>accept()</code> and <code>combine()</code> methods.</p>
