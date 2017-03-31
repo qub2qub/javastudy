@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Lambdas</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://www.oracle.com/technetwork/articles/java/architect-lambdas-part1-2080972.html">src1</a>
+<a href="http://www.oracle.com/technetwork/articles/java/architect-lambdas-part2-2081439.html">src2</a>
+<div class="orcl6w3 cye-lm-tag">
+			
+							 <h2 class="cye-lm-tag">Java 8: Lambdas, Part 1</h2> <p class="cye-lm-tag"><em>by Ted Neward</em></p> <p class="cye-lm-tag"><strong>Get to know lambda expressions in Java 8.</strong></p> <p class="cye-lm-tag">Few things excite a community of software developers more than a new release of their chosen programming language or platform. Java developers are no exception. In fact, we’re probably even more excited about new releases, partly because there was a time not too long ago when we thought that Java’s fortunes—like those  of Java’s creator, Sun—were on the wane. A brush with death tends to make one cherish renewed life all the more. But in this case, our enthusiasm also stems from the fact that unlike the prior release, Java 8 will finally get a new “modern” language feature that many of us have been requesting for years—if not decades.</p> <p class="cye-lm-tag">Of course, the major Java 8 buzz is around <em>lambdas</em> (also called <em>closures</em>), and that’s where this two-part series will focus. But a language feature, on its own, will often appear anything but useful or interesting unless there’s a certain amount of support behind it. Several features in Java 7 fit that description: enhanced numeric literals, for example, really couldn’t get most people’s eyes to light up.</p> <p class="cye-lm-tag">In this case, however, not only do Java 8 function literals change a core part of the language, but they come alongside some additional language features designed to make them easier to use, as well as some library revamping that makes use of those features directly. These will make our lives as Java developers easier.</p> <p class="cye-lm-tag"><em>Java Magazine</em> has run <a href="http://www.oraclejavamagazine-digital.com/javamagazine_open/20121112#pg35">articles on lambdas</a> before, but given that syntax and semantics might have changed since then and not all readers will have the time or inclination to read those articles, I will assume that readers have never seen any of this syntax before.</p> <p class="cye-lm-tag"><strong>Note:</strong> This article is based on a prerelease version of Java SE 8 and, as such, it might not be entirely accurate when the final release ships. Syntax and semantics are always subject to change until the final release.</p> <p class="cye-lm-tag">For those who desire a deeper, more official explanation of this material, Brian Goetz’ papers, for example his “<a href="http://cr.openjdk.java.net/~briangoetz/lambda/sotc3.html">State of the Lambda: Libraries Edition” paper</a> and others available at the <a href="http://openjdk.java.net/projects/lambda/">Project Lambda home page</a>, are priceless references.</p> <h3>Background: Functors</h3> <p class="cye-lm-tag">Java has always had a need for <em>functional objects</em> (sometimes called <em>functors</em>), though we in the community struggled mightily to downplay their usefulness and need. In Java’s early days, when building GUIs, we needed blocks of code to respond to user events such as windows opening and closing, button presses, and scrollbar movement.</p> <p class="cye-lm-tag">In Java 1.0, Abstract Window Toolkit (AWT) applications were expected, like their C++ predecessors, to extend window classes and override the event method of choice; this was deemed unwieldy and unworkable. So in  Java 1.1, Sun gave us a set of “listener” interfaces, each with one or more methods corresponding to an event within the GUI.</p> <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>CODE = OBJECT</em><br> <em>As Java grew and matured</em>, we found more places where treating blocks of code as objects (data, really) was not only useful but necessary.</p></div></div> <!-- /C44v0 --> <p class="cye-lm-tag">But in order to make it easier to write the classes that must implement these interfaces and their corresponding methods, Sun gave us inner classes, including the ability to write such a class within the body of an existing class without having to specify a name—the ubiquitous <em>anonymous inner class</em>. (By the way, the listeners were hardly the only example of these that appeared during Java’s history. As we’ll see later, other, more “core” interfaces just like them appeared, for example, <code>Runnable</code> and <code>Comparator</code>.)</p> <p class="cye-lm-tag">Inner classes had some strangeness to them, both in terms of syntax and semantics. For example, an inner class was either a <em>static inner class</em> or an <em>instance inner class</em>, depending not on any particular keyword (though static inner classes could be explicitly stated as such using the <tt>static</tt> keyword) but on the lexical context in which the instance was created. What that meant, in practical terms, is that Java developers often got questions such as those in Listing 1 wrong on programming interviews.</p> <p class="cye-lm-tag"><strong>Listing 1</strong>&nbsp;</p> <pre>class InstanceOuter {
+  public InstanceOuter(int xx) { x = xx; }
+
+  private int x;
+
+  class InstanceInner {
+    public void printSomething() {
+      System.out.println("The value of x in my outer is " + x);
+    }
+  }
+}
+
+class StaticOuter {
+  private static int x = 24;
+
+  static class StaticInner {
+    public void printSomething() {
+      System.out.println("The value of x in my outer is " + x);
+    }
+  }
+}
+
+public class InnerClassExamples {
+  public static void main(String... args) {
+    InstanceOuter io = new InstanceOuter(12);
+
+    // Is this a compile error?
+    InstanceOuter.InstanceInner ii = io.new InstanceInner();
+
+    // What does this print?
+    ii.printSomething(); // prints 12
+
+    // What about this?
+    StaticOuter.StaticInner si = new StaticOuter.StaticInner();
+    si.printSomething(); // prints 24
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><br> “Features” such as inner classes often convinced Java developers that such functionality was best relegated to the corner cases of the language, suitable for a programming interview and not much else—except when they needed them. Even then, most of the time, they were used purely for event-handling reasons.</p> <h3>Above and Beyond</h3> <p class="cye-lm-tag">As clunky as the syntax and semantics were, however, the system worked. As Java grew and matured, we found more places where treating blocks of code as objects (data, really) was not only useful but necessary. The revamped security system in Java SE 1.2 found it useful to pass in a block of code to execute under a different security context. The revamped <tt>Collection</tt> classes that came with that same release found it useful to pass in a block of code in order to know how to impose a sort order on a sorted collection. Swing found it useful to pass in a block of code in order to decide which files to display to the user in a File Open or File Save dialog box. And so on. It worked—though often through syntax that only a mother could love.</p> <p class="cye-lm-tag">But when concepts of functional programming began to enter mainstream programming, even Mom gave up. Though possible (see this <a href="http://www.functionaljava.org">remarkably complete example</a>), functional programming in Java was, by any account, obtuse and awkward. Java  needed to grow up and join the host of mainstream programming languages that offer first-class  language support for defining, passing, and storing blocks of code for later execution.</p> <h3>Java 8: Lambdas, Target Typing, and Lexical Scoping</h3> <p class="cye-lm-tag">Java 8 introduces several new language features designed to make it easier to write such blocks of code—the key feature being <em>lambda expressions</em>, also colloquially referred to as <em>closures</em> (for reasons we’ll discuss later) or <em>anonymous methods</em>. Let’s take these one at a time.</p> <p class="cye-lm-tag"><strong>Lambda expressions.</strong> Funda-men-tally, a lambda expression is just a shorter way of writing an implementation of a method for later execution. Thus, while we used to define a <tt>Runnable</tt> as shown in Listing 2, which uses the anonymous inner class syntax and clearly suffers from a “vertical problem” (meaning that the code takes too many lines to express the basic concept), the Java 8 lambda syntax allows us to write the code as shown in Listing 3.</p> <p class="cye-lm-tag"><strong>Listing 2</strong>&nbsp;</p> <pre>public class Lambdas {
+  public static void main(String... args) {
+    Runnable r = new Runnable() {
+      public void run() {
+        System.out.println("Howdy, world!");
+      }
+    };
+    r.run();
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 3</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    Runnable r2 = () -&gt; System.out.println("Howdy, world!");
+    r2.run();
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> Both approaches have the same effect: a <tt>Runnable</tt>-implementing object whose <tt>run()</tt> method is being invoked to print something to the console. Under the hood, however, the Java 8 version is doing a little more than just generating an anonymous class that implements the <tt>Runnable</tt> interface—some of which has to do with the <tt>invoke dynamic</tt> bytecode that was introduced in Java 7. We won’t get to that level of detail here, but know that this is more than “just” an anonymous class instance.</p> <p class="cye-lm-tag"><strong>Functional interfaces.</strong> The <tt>Runnable</tt> interface—like the <tt>Callable&lt;T&gt;</tt> interface, the <tt>Comparator&lt;T&gt;</tt> interface, and a whole host of other interfaces already defined within Java—is what Java 8 calls a <tt>functional interface</tt>: it is an interface that requires exactly one method to be implemented in order to satisfy the requirements of the interface. This is how the syntax achieves its brevity, because there is no ambiguity around which method of the interface the lambda is trying to define.</p> <p class="cye-lm-tag">The designers of Java 8 have chosen to give us an annotation, <tt>@FunctionalInterface</tt>, to serve as a documentation hint that an interface is designed to be used with lambdas, but the compiler does not require this—it determines “functional interfaceness” from the structure of the interface, not from the annotation.</p> <p class="cye-lm-tag">Throughout the rest of this article, we’ll continue to use the <tt>Runnable</tt> and <tt>Comparator&lt;T&gt;</tt> interfaces as working examples, but there is nothing particularly special about them, except that they adhere to this functional interface single-method restriction. Any developer can, at any time, define a new functional interface—such as the following one—that will be the interface target type for a lambda.</p> <pre>interface Something {
+  public String doit(Integer i);
+}
+</pre> <p class="cye-lm-tag"><br>The <tt>Something</tt> interface is every bit as legal and legitimate a functional interface as <tt>Runnable</tt> or <tt>Comparator&lt;T&gt;</tt>; we’ll look at it again after getting some lambda syntax under our belt.</p> <p class="cye-lm-tag"><strong>Syntax.</strong> A lambda in Java essentially consists of three parts: a parenthesized set of parameters, an arrow, and then a body, which can either be a single expression or a block of Java code. In the case of the example shown in Listing 2, <tt>run</tt> takes no parameters and returns <tt>void</tt>, so there are no parameters and no return value. A <tt>Comparator&lt;T&gt;</tt>-based example, however, highlights this syntax a little more obviously, as shown in Listing 4. Remember that <tt>Comparator</tt> takes two strings and returns an integer whose value is negative (for “less than”), positive (for “greater than”), and zero (for “equal”).&nbsp;</p> <p class="cye-lm-tag"><strong>Listing 4</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    Comparator&lt;String&gt; c = 
+      (String lhs, String rhs) -&gt; lhs.compareTo(rhs);
+    int result = c.compare("Hello", "World");
+  }
+</pre> <p class="cye-lm-tag"><br> If the body of the lambda requires more than one expression, the value returned from the expression can be handed back via the <tt>return</tt> keyword, just as with any block of Java code (see Listing 5).</p> <p class="cye-lm-tag"><strong>Listing 5</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    Comparator&lt;String&gt; c =
+      (String lhs, String rhs) -&gt;
+        {
+          System.out.println("I am comparing" +
+                             lhs + " to " + rhs);
+          return lhs.compareTo(rhs);
+        };
+    int result = c.compare("Hello", "World");
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> (Where we put the curly braces in code such as Listing 5 will likely dominate Java message boards and blogs for years to come.) There are a few restrictions on what can be done in the body of the lambda, most of which are pretty intuitive—a lambda body can’t “break” or “continue” out of the lambda, and if the lambda returns a value, every code path must return a value or throw an exception, and so on. These are much the same rules as for a standard Java method, so they shouldn’t be too surprising.</p> <p class="cye-lm-tag"><strong>Type inference.</strong> One of the features that some other languages have been touting is the idea of <tt>type inference</tt>: that the compiler should be smart enough to figure out what the type parameters should be, rather than forcing the developer to retype the parameters.</p> <p class="cye-lm-tag">Such is the case with the <tt>Comparator</tt> example in Listing 5. If the target type is a <tt>Comparator&lt;String&gt;</tt>, the objects passed in to the lambda <em>must</em> be strings (or some subtype); otherwise, the code wouldn’t compile in the first place. (This isn’t new, by the way—this is “Inheritance 101.”)</p> <p class="cye-lm-tag">In this case, then, the <tt>String</tt> declarations in front of the <tt>lhs</tt> and <tt>rhs</tt> parameters are entirely redundant and, thanks to Java 8’s enhanced type inference features, they are entirely optional (see Listing 6).</p> <p class="cye-lm-tag"><strong>Listing 6</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    Comparator&lt;String&gt; c =
+      (lhs, rhs) -&gt;
+        {
+          System.out.println("I am comparing" +
+                             lhs + " to " + rhs);
+          return lhs.compareTo(rhs);
+        };
+    int result = c.compare("Hello", "World");
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> The language specification will have precise rules as to when explicit lambda formal type declarations are needed, but for the most part, it’s proving to be the default, rather than the exception, that the parameter type declarations for a lambda expression can be left out completely.</p> <p class="cye-lm-tag">One interesting side effect of Java’s lambda syntax is that for the first time in Java’s history, we find something that cannot be assigned to a reference of type <tt>Object</tt> (see Listing 7)—at least not without some help.</p> <p class="cye-lm-tag"><strong>Listing 7</strong>&nbsp;</p> <pre>public static void main4(String... args) {
+    Object o = () -&gt; System.out.println("Howdy, world!");
+      // will not compile
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> The compiler will complain that <tt>Object</tt> is not a functional interface, though the real problem is that the compiler can’t quite figure out which functional interface this lambda should implement: <tt>Runnable</tt> or something else? We can help the compiler with, as always, a cast, as shown in Listing 8.</p> <p class="cye-lm-tag"><strong>Listing 8</strong>&nbsp;</p> <pre> public static void main4(String... args) {
+    Object o = (Runnable) () -&gt; System.out.println("Howdy, world!");
+      // now we're all good
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> Recall from earlier that lambda syntax works with any interface, so a lambda that is inferred to a custom interface will also be inferred just as easily, as shown in Listing 9.  Primitive types are equally as viable as their wrapper types in a lambda type signature, by the way.</p> <p class="cye-lm-tag"><strong>Listing 9</strong>&nbsp;</p> <pre> Something s = (Integer i) -&gt; { return i.toString(); };
+    System.out.println(s.doit(4));&nbsp;</pre> <p class="cye-lm-tag"><br> Again, none of this is really new; Java 8 is just applying Java’s long-standing principles, patterns, and syntax to a new feature. Spending a few minutes exploring type inference in code will make that clearer, if it’s not clear already.</p> <p class="cye-lm-tag"><strong>Lexical scoping.</strong> One thing that is new, however, is how the compiler treats names (identifiers) within the body of a lambda compared to how it treated them in an inner class. Consider the inner class example shown in Listing 10 for a moment.</p> <p class="cye-lm-tag"><strong>Listing 10</strong>&nbsp;</p> <pre>class Hello {
+  public Runnable r = new Runnable() {
+      public void run() {
+        System.out.println(this);
+        System.out.println(toString());
+      }
+    };
+
+  public String toString() {
+    return "Hello's custom toString()";
+  }
+}
+
+public class InnerClassExamples {
+  public static void main(String... args) {
+    Hello h = new Hello();
+    h.r.run();
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><br> When run, the code in Listing 10  counterintuitively produces “Hello$1@f7ce53” on my machine. The reason for this is simple to understand: both the keyword <tt>this</tt> and the call to <tt>toString</tt> in the implementation of the anonymous <tt>Runnable</tt> are bound to the anonymous inner class implementation, because that is the innermost scope that satisfies  the expression.</p> <p class="cye-lm-tag">If we wanted (as the example seems to imply) to print out  <tt>Hello</tt>’s version of <tt>toString</tt>, we have to explicitly qualify it using the “outer <tt>this</tt>” syntax from the inner classes portion of the Java spec,  as shown in Listing 11. How’s that for intuitive?</p> <p class="cye-lm-tag"><strong>Listing 11</strong>&nbsp;</p> <pre>class Hello {
+  public Runnable r = new Runnable() {
+      public void run() {
+        System.out.println(Hello.this);
+        System.out.println(Hello.this.toString());
+      }
+    };
+
+  public String toString() {
+    return "Hello's custom toString()";
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><br> Frankly, this is one area where inner classes simply created more confusion than they solved. Granted, as soon as the reason  for the <tt>this</tt> keyword showing up  in this rather unintuitive syntax was explained, it sort of made sense, but it made sense in the same way that politicians’ perks make sense.</p> <p class="cye-lm-tag">Lambdas, however, are <em>lexically scoped</em>, meaning that a lambda recognizes the immediate environment around its definition as the next outermost scope. So the lambda example in Listing 12 produces the same results as the second <tt>Hello</tt> nested class example in Listing 11, but with a much more intuitive syntax.</p> <p class="cye-lm-tag"><strong>Listing 12</strong>&nbsp;</p> <pre>class Hello {
+  public Runnable r = () -&gt; {
+      System.out.println(this);
+      System.out.println(toString());
+    };
+
+  public String toString() {
+    return "Hello's custom toString()";
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><br> This means, by the way, that <tt>this</tt> no longer refers to the lambda itself, which might be important in certain cases—but those cases are few and far between. What’s more, if such a case does arise (for example, perhaps the lambda needs to return a lambda and it wants to return itself), there’s a relatively easy workaround, which we’ll get to in a second.</p> <p class="cye-lm-tag">Variable capture. Part of the reason that lambdas are called  <em>closures</em> is that a function literal (such as what we’ve been writing) can “close over” variable references that are outside the body of the function literal in the enclosing scope (which, in the case of Java, would typically be the method in which the lambda is being defined). Inner classes could do this, too, but of all the subjects that frustrated Java developers the most about inner classes, the fact that inner classes could reference only “final” variables from the enclosing scope was near the top.</p> <p class="cye-lm-tag">Lambdas relax this restriction, but only by a little: as long as the variable reference is “effectively final,” meaning that it’s final in all but name, a lambda can reference it (see Listing 13). Because <tt>message</tt> is never modified within the scope of the <tt>main</tt> method enclosing the lambda being defined, it is effectively final and, therefore, eligible to be referenced from within the <tt>Runnable</tt> lambda stored in r.</p> <p class="cye-lm-tag"><strong>Listing 13</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    String message = "Howdy, world!";
+    Runnable r = () -&gt; System.out.println(message);
+    r.run();
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> While on the surface this might sound like it’s not much of anything, remember that the lambda semantics rules don’t change the nature of Java as a whole—objects on the other side of a reference are still accessible and modifiable long after the lambda’s definition, as shown in Listing 14.</p> <p class="cye-lm-tag"><strong>Listing 14</strong>&nbsp;</p> <pre>public static void main(String... args) {
+    StringBuilder message = new StringBuilder();
+    Runnable r = () -&gt; System.out.println(message);
+    message.append("Howdy, ");
+    message.append("world!");
+    r.run();
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> Astute developers familiar with the syntax and semantics of older inner classes will remember that this was also true of references declared “final” that were referenced within an inner class—the <tt>final</tt> modifier applied only to the reference, not to the object on the other side of the reference. Whether this is a bug or a feature in the eyes of the Java community remains to be seen, but it is what it is, and developers would be wise to understand how lambda variable capture works, lest a surprise bug appear. (In truth, this behavior isn’t new—it’s just recasting existing functionality of Java in fewer keystrokes and with more support from the compiler.)</p> <p class="cye-lm-tag"><strong>Method references.</strong> Thus far, all the lambdas we’ve examined have been anonymous literals—essentially, defining the lambda right at the point of use. This is great for one-off kinds of behavior, but it doesn’t really help much when that behavior is needed or wanted in several places. Consider, for example, the following <tt>Person</tt> class. (Ignore the lack of proper encapsulation for the moment.)</p> <pre>class Person {
+  public String firstName;
+  public String lastName;
+  public int age;
+});&nbsp;</pre> <p class="cye-lm-tag"><br> When a <tt>Person</tt> is put into a <tt>SortedSet</tt> or needs to be sorted in a list of some form, we want to have different mechanisms by which <tt>Person</tt> instances can be sorted—for example, sometimes by first name and sometimes by last name. This is what <tt>Comparator&lt;T&gt;</tt> is for: to allow us to define an imposed ordering by passing in the <tt>Comparator&lt;T&gt;</tt> instance.&nbsp;</p> <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>SCOPE IT OUT</em><br> <em>Lambdas are lexically scoped</em>, meaning that a lambda recognizes the immediate environment around its definition as the next outermost scope.</p></div></div> <!-- /C44v0 --> <p class="cye-lm-tag">Lambdas certainly make it easier to write the sort code, as shown in Listing 15. But sorting <tt>Person</tt> instances by first name is something that might need to be done many times in the codebase, and writing that sort of algorithm multiple times is clearly a violation of the Don’t Repeat Yourself (DRY) principle.</p> <p class="cye-lm-tag"><strong>Listing 15</strong>&nbsp;</p> <pre> public static void main(String... args) {
+    Person[] people = new Person[] {
+      new Person("Ted", "Neward", 41),
+      new Person("Charlotte", "Neward", 41),
+      new Person("Michael", "Neward", 19),
+      new Person("Matthew", "Neward", 13)
+    };
+    // Sort by first name
+    Arrays.sort(people, 
+      (lhs, rhs) -&gt; lhs.firstName.compareTo(rhs.firstName));
+    for (Person p : people)
+      System.out.println(p);
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> The <tt>Comparator</tt> can certainly be captured as a member of <tt>Person</tt> itself, as shown in Listing 16. The <tt>Comparator&lt;T&gt;</tt> could then just be referenced as any other static field could be referenced, as shown in Listing 17. And, truthfully, functional programming zealots will prefer this style, because it allows for the functionality to be combined in various ways.</p> <p class="cye-lm-tag"><strong>Listing 16</strong>&nbsp;</p> <pre>class Person {
+  public String firstName;
+  public String lastName;
+  public int age;
+
+  public final static Comparator&lt;Person&gt; compareFirstName =
+    (lhs, rhs) -&gt; lhs.firstName.compareTo(rhs.firstName);
+
+  public final static Comparator&lt;Person&gt; compareLastName =
+    (lhs, rhs) -&gt; lhs.lastName.compareTo(rhs.lastName);
+
+  public Person(String f, String l, int a) {
+    firstName = f; lastName = l; age = a;
+  }
+
+  public String toString() {
+    return "[Person: firstName:" + firstName + " " +
+      "lastName:" + lastName + " " +
+      "age:" + age + "]";
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 17</strong>&nbsp;</p> <pre> public static void main(String... args) {
+    Person[] people = . . .;
+
+    // Sort by first name
+    Arrays.sort(people, Person.compareFirstName);
+    for (Person p : people)
+      System.out.println(p);
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> But it feels strange to the traditional Java developer, as opposed to simply creating a method that fits the signature of <tt>Comparator&lt;T&gt;</tt> and then using that directly—which is exactly what a method reference allows (see Listing 18). Notice the double-colon method-naming style, which tells the  compiler that the method  <tt>compareFirstNames</tt>, defined on <tt>Person</tt>, should be used here, rather than a method literal.</p> <p class="cye-lm-tag"><strong>Listing 18</strong>&nbsp;</p> <pre>class Person {
+  public String firstName;
+  public String lastName;
+  public int age;
+
+  public static int compareFirstNames(Person lhs, Person rhs) {
+    return lhs.firstName.compareTo(rhs.firstName);
+  }
+
+  // ...
+}
+
+  public static void main(String... args) {
+    Person[] people = . . .;
+    // Sort by first name
+    Arrays.sort(people, Person::compareFirstNames);
+    for (Person p : people)
+      System.out.println(p);
+  }&nbsp;</pre> <p class="cye-lm-tag"><br> Another way to do this, for those who are curious, would be to use the <tt>compareFirstNamest</tt> method to create a <tt>Comparator&lt;Person&gt;</tt> instance, like this:</p> <pre>Comparator<person> cf =    Person::compareFirstNames; </person></pre> <p class="cye-lm-tag"><br> And, just to be even more succinct, we could avoid some of the syntactic overhead entirely by making use of some of the new library features to write the following, which makes use of a higher-order function (meaning, roughly, a function that passes around functions) to essentially avoid all of the previous code in favor of a one-line in-place usage:</p> <pre>Arrays.sort(people, comparing(
+  Person::getFirstName));
+</pre> <p class="cye-lm-tag"><br> This, in part, is why lambdas, and the functional programming techniques that come with them, are so powerful.</p> <p class="cye-lm-tag"><strong>Virtual extension methods.</strong> One of the drawbacks frequently cited about interfaces, however, is that they have no default implementation, even when that implementation is ridiculously obvious. Consider, for example, a fictitious <tt>Relational</tt> interface, which defines a series of methods to mimic relational methods (greater than, less than, greater than or equal to, and so on). As soon as any one of those methods is defined, it’s easy to see how the others could all be defined in terms of the first one. In fact, all of them could be defined in terms of a <tt>Comparable&lt;T&gt;</tt>’s <tt>compare</tt> method, if the definition of the <tt>compare</tt> method were known ahead of time. But interfaces cannot have default behavior, and an abstract class is still a class and occupies any potential subclass’ one implementation-inheritance slot.</p> <p class="cye-lm-tag">With Java 8, however, as these function literals become more widespread, it becomes more important to be able to specify default behavior without losing the “interfaceness” of the interface. Thus, Java 8 now introduces <em>virtual extension methods</em> (which used to be known in a previous draft as <em>defender methods</em>), essentially allowing an interface to specify a default behavior for a method, if none is provided in a derived implementation.</p> <p class="cye-lm-tag">Consider, for a moment, the <tt>Iterator</tt> interface. Currently, it has three methods (<tt>hasNext</tt>, <tt>next</tt>, and <tt>remove</tt>), and each must be defined. But an ability to “skip” the next object in the iteration stream might be helpful. And because the <tt>Iterator</tt>’s implementation is easily defined in terms of the other three, we can provide it, as shown in Listing 19.</p> <strong>Listing 19&nbsp;&nbsp;<br> <br> </strong> <pre>interface Iterator&lt;T&gt; {
+  boolean hasNext();
+  T next();
+  void remove();
+
+  void skip(int i) default {
+    for (; i &gt; 0 &amp;&amp; hasNext(); i--) next();
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><br> Some within the Java community will scream, claiming that this is just a mechanism to weaken the declarative power of interfaces and create a scheme that allows for multiple inheritance in Java. To a degree, this is the case, particularly because the rules around precedence of default implementations (in the event that a class implements more than one interface with different default implementations of the same method) will require significant study.</p> 
+
+
+<p class="cye-lm-tag">But as the name implies, virtual extension methods provide a powerful mechanism for extending existing interfaces, without relegating the extensions to some kind of second-class status. Using this mechanism, Oracle can provide additional, powerful behavior for existing libraries without requiring developers to track different kinds of classes. There’s no <tt>SkippingIterator</tt> class that developers now have to downcast to for those collections that support it. In fact, no code anywhere has to change, and all <tt>Iterator&lt;T&gt;</tt>s, no matter when they were written, will automatically have this skipping behavior.</p> <p class="cye-lm-tag">It is through virtual extension methods that the vast majority of the changes that are happening  in the <tt>Collection</tt> classes are coming. The good news is that your <tt>Collection</tt> classes are getting new behavior, and the even better news is that your code won’t have to change an iota in the meantime. The bad news is that we have to defer that discussion to the next article in this series.</p> <h3>Conclusion</h3> <p class="cye-lm-tag">Lambdas will bring a lot of change to Java, both in terms of how Java code will be written and how it will be designed. Some of these changes, inspired by functional programming languages, will change the way Java programmers think about writing code—which is both an opportunity and a hassle.</p> <p class="cye-lm-tag">We’ll talk more about the impact these changes will have on the Java libraries in the next article in this series, and we’ll spend a little bit of time talking about how these new APIs, interfaces, and classes open up some new design approaches that previously wouldn’t have been practical due to the awkwardness of the inner classes syntax.</p> <p class="cye-lm-tag">Java 8 is going to be a very interesting release. Strap in, it’s going to be a rocket-ship ride.</p> <hr>
+						
+		</div>
+
+<br><hr>
+
+<div class="orcl6w3 cye-lm-tag">
+			
+							 <h2 class="cye-lm-tag">Java 8: Lambdas, Part 2</h2> <p class="cye-lm-tag"><em>by Ted Neward</em></p> <p class="cye-lm-tag"><strong>Learn how to use lambda expressions to your advantage.</strong></p> <p class="cye-lm-tag">The release of Java SE 8  swiftly approaches.  With it come not only the new linguistic lambda expressions (also called  <em>closures</em> or <em>anonymous  methods</em>)—along with some supporting language features—but also API and library enhancements that will make parts of the traditional Java core libraries easier to use. Many of these enhancements and additions are on the Collections API, and because the Collections API is pretty ubiquitous across applications, it makes the most sense to spend the majority of this article on it.</p> <p class="cye-lm-tag">However, it’s likely that most Java developers will be unfamiliar with the concepts behind lambdas and with how designs incorporating lambdas look and behave. So, it’s best to examine why these designs look the way they do before showing off the final stage. Thus, we’ll look at some before and after approaches to see how to approach a problem pre-lambda and post-lambda.</p> <p class="cye-lm-tag"><strong>Note:</strong> This article was written against the b92 (May 30, 2013) build of Java SE 8, and the APIs, syntax, or semantics might have changed by the time you read this or by the time Java SE 8 is released. However, the concepts behind these APIs, and the approach taken by the Oracle engineers, should be close to what we see here.</p> <h3>Collections and Algorithms</h3> <p class="cye-lm-tag"><!-- C44v0 --></p> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>BE ATTENTIVE</em><br> <em>Algorithms, a more functional-centric way of interacting with collections,</em> have been a part of the Collections API since its initial release, but they often get little attention, despite their usefulness.</p></div></div> <p class="cye-lm-tag"><!-- /C44v0 --> The Collections API has been with us since JDK 1.2, but not all parts of it have received equal attention or love from the developer community. Algorithms, a more functional-centric way of interacting with collections, have been a part of the Collections API since its initial release, but they often get little attention, despite their usefulness. For example, the <tt>Collections</tt> class sports a dozen or so methods all designed to take a collection as a parameter and perform some operation against the collection or its contents.&nbsp;</p> <p class="cye-lm-tag">Consider, for example, the <tt>Person</tt> class shown in Listing 1,  which in turn is used by a <tt>List</tt> that holds a dozen or so <tt>Person</tt> objects, as shown in Listing 2.</p> <p class="cye-lm-tag"><strong>Listing 1</strong></p> <pre>public class Person {
+  public Person(String fn, String ln, int a) {
+    this.firstName = fn; this.lastName = ln; this.age = a;
+  }
+
+  public String getFirstName() { return firstName; }
+  public String getLastName() { return lastName; }
+        public int getAge() { return age; }
+}&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 2</strong>&nbsp;</p> <pre>List&lt;Person&gt; people = Arrays.asList(
+      new Person("Ted", "Neward", 42),
+      new Person("Charlotte", "Neward", 39),
+      new Person("Michael", "Neward", 19),
+      new Person("Matthew", "Neward", 13),
+      new Person("Neal", "Ford", 45),
+      new Person("Candy", "Ford", 39),
+      new Person("Jeff", "Brown", 43),
+      new Person("Betsy", "Brown", 39)
+    );
+}&nbsp;</pre> <p class="cye-lm-tag"><br> Now, assuming we want to examine or sort this list by last name and then by age, a naive approach is to write a <tt>for</tt> loop (in other words, implement the sort by hand each time we need to sort). The problem with this, of course, is that this violates DRY (the Don’t Repeat Yourself principle) and, worse, we have to reimplement it each time, because <tt>for</tt> loops are not reusable.</p> <p class="cye-lm-tag">The Collections API has a better  approach: the <tt>Collections</tt> class sports a <tt>sort</tt> method that will sort the contents of the <tt>List</tt>. However, using this requires the <tt>Person</tt> class to implement the <tt>Comparable</tt> method (which is called a <em>natural ordering</em>,  and defines a default ordering for all <tt>Person</tt> types) or you have to pass in a <tt>Comparator</tt> instance to define how <tt>Person</tt> objects should be sorted.</p>  <p class="cye-lm-tag">So, if we want to sort first by last name and then by age (in the event the last names are the same), the code will look something like Listing 3. But that’s a lot of work to do something as simple as sort by last name and then by age. This is exactly where the new closures feature will be of help, making it easier to write the <tt>Comparator</tt> (see Listing 4).</p> <p class="cye-lm-tag"><strong>Listing 3</strong>&nbsp;</p> <pre> Collections.sort(people, new Comparator&lt;Person&gt;() {
+      public int compare(Person lhs, Person rhs) {
+        if (lhs.getLastName().equals(rhs.getLastName())) {
+          return lhs.getAge() - rhs.getAge();
+        }
+        else
+          return lhs.getLastName().compareTo(rhs.getLastName());
+      }
+    });&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 4</strong>&nbsp;</p> <pre>Collections.sort(people, (lhs, rhs) -&gt; {
+      if (lhs.getLastName().equals(rhs.getLastName()))
+        return lhs.getAge() - rhs.getAge();
+      else
+        return lhs.getLastName().compareTo(rhs.getLastName());
+    });&nbsp;</pre> <p class="cye-lm-tag"><br> The <tt>Comparator</tt> is a prime example of the need for lambdas in the language: it’s one of the dozens of places where a one-off anonymous method is useful. (Bear in mind, this is probably the easiest—and weakest—benefit of lambdas. We’re essentially trading one syntax for another, admittedly terser, syntax, but even if you put this article down and walk away right now, a significant amount of code will be saved just from that terseness.)</p> <p class="cye-lm-tag">If this particular comparison is something that we use over time, we can always capture the lambda as a <tt>Comparator</tt> instance, because that is the signature of the method—in this case, <tt>"int compare(Person, Person)"</tt>—that the lambda fits, and store it on the <tt>Person</tt> class directly, making the implementation of the lambda easier (see Listing 5) and its use even more readable (see Listing 6).</p> <p class="cye-lm-tag"><strong>Listing 5</strong>&nbsp;</p> <pre>public class Person {
+  // . . .
+
+  public static final Comparator&lt;Person&gt; BY_LAST_AND_AGE =
+    (lhs, rhs) -&gt; {
+      if (lhs.lastName.equals(rhs.lastName))
+        return lhs.age - rhs.age;
+      else
+        return lhs.lastName.compareTo(rhs.lastName);
+    };
+}&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 6</strong>&nbsp;</p> <pre> Collections.sort(people, Person.BY_LAST_AND_AGE);&nbsp;</pre> <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>BE ANONYMOUS</em><br> <em>The Comparator is a prime example</em> of the need for lambdas in the language: it’s one of the dozens of places where a one-off anonymous method is useful.</p></div></div> <!-- /C44v0 -->  <p class="cye-lm-tag"><br> Storing a <tt>Comparator&lt;Person&gt;</tt> instance on the <tt>Person</tt> class is a bit odd, though. It would make more sense to define a method that does the comparison, and use that instead of a <tt>Comparator</tt> instance. Fortunately, Java will allow any method to be used that satisfies the same signature as the method on <tt>Comparator</tt>, so it’s equally possible to write the <tt>BY_LAST_AND_AGE Comparator</tt> as a standard instance or static method on <tt>Person</tt> (see Listing 7) and use it instead (see Listing 8).</p> <p class="cye-lm-tag"><strong>Listing 7</strong>&nbsp;</p> <pre>  public static int compareLastAndAge(Person lhs, Person rhs) {
+    if (lhs.lastName.equals(rhs.lastName))
+      return lhs.age - rhs.age;
+    else
+      return lhs.lastName.compareTo(rhs.lastName);
+  }&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 8</strong>&nbsp;</p> <pre>Collections.sort(people, Person::compareLastAndAge);&nbsp;</pre> <p class="cye-lm-tag"><br> Thus, even without any changes to the Collections API, lambdas are already helpful and useful. Again, if you walk away from this article right here, things are pretty good. But they’re about to get a lot better.</p> <h3>Changes in the Collections API</h3> <p class="cye-lm-tag">With some additional APIs on the <tt>Collection</tt> classes themselves, a variety of new and more powerful approaches and techniques open up, most often leveraging techniques drawn from the world of functional programming. No knowledge of functional programming is necessary to use them, fortunately, as long you can open your mind to the idea that functions are just as valuable to manipulate and reuse as are classes and objects.</p> <p class="cye-lm-tag"><strong>Comparisons.</strong> One of the drawbacks to the <tt>Comparator</tt> approach shown earlier is hidden inside the <tt>Comparator</tt> implementation. The code is actually doing two comparisons, one as a “dominant” comparison over the other, meaning that last names are compared first, and age is compared only if the last names are identical. If project requirements later demand that sorting be done by age first and by last names second, a new <tt>Comparator</tt> must be written—no parts of <tt>compareLastAndAge</tt> can  be reused.</p> <p class="cye-lm-tag">This is where taking a more functional approach can add some powerful benefits. If we look at that comparison as entirely separate <tt>Comparator</tt> instances, we can combine them to create the precise kind of comparison needed (see Listing 9).</p> <p class="cye-lm-tag"><strong>Listing 9</strong>&nbsp;</p> <pre>public static final Comparator&lt;Person&gt; BY_FIRST =
+    (lhs, rhs) -&gt; lhs.firstName.compareTo(rhs.firstName);
+  public static final Comparator&lt;Person&gt; BY_LAST =
+    (lhs, rhs) -&gt; lhs.lastName.compareTo(rhs.lastName);
+  public static final Comparator&lt;Person&gt; BY_AGE =
+    (lhs, rhs) -&gt; lhs.age – rhs.age;&nbsp;</pre> <p class="cye-lm-tag"><br> Historically, writing the combination by hand has been less productive, because by the time you write the code to do the combination, it would be just as fast (if not faster) to write the multistage comparison by hand.</p> <p class="cye-lm-tag">As a matter of fact, this “I want to compare these two X things by comparing values returned to me by a method on each <em>X</em>” approach is such a common thing, the platform gave us that functionality out of the box. On the <tt>Comparator</tt> class, a <tt>comparing</tt> method takes a function (a lambda) that extracts a comparison key out of the object and returns a <tt>Comparator</tt> that sorts based on that. This means that Listing 9 could be rewritten even more easily as shown in Listing 10.</p> <p class="cye-lm-tag"><strong>Listing 10</strong>&nbsp;</p> <pre> public static final Comparator&lt;Person&gt; BY_FIRST =
+    Comparators.comparing(Person::getFirstName);
+  public static final Comparator&lt;Person&gt; BY_LAST =
+    Comparators.comparing(Person::getLastName);
+  public static final Comparator&lt;Person&gt; BY_AGE =
+    Comparators.comparing(Person::getAge);&nbsp;</pre> <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>BE REDUCTIONIST</em><br> Doing this bypasses an interesting opportunity to explore <em>one of the more powerful features of the new Java API, that of doing a reduction</em>—coalescing a collection of values down into a single one through some custom operations.</p></div></div> <!-- /C44v0 -->  <p class="cye-lm-tag"><br> Think for a moment about  what this is doing: the <tt>Person</tt> is no longer about sorting, but just about extracting the key by which the sort should be done. This is a good thing—<tt>Person</tt> shouldn’t have to think about how to sort; <tt>Person</tt> should just focus on being  a <tt>Person</tt>.</p> <p class="cye-lm-tag">It gets better, though, particularly when we want to compare based on two or more of those values.</p> <p class="cye-lm-tag"><strong>Composition.</strong> As of Java 8, the <tt>Comparator</tt> interface comes with several methods to combine <tt>Comparator</tt> instances in various ways by stringing them together. For example, the <tt>Comparator .thenComparing()</tt> method takes a <tt>Comparator</tt> to use for comparison after the first one compares. So, re-creating the “last name then age” comparison can now be  written in terms of the two <tt>Comparator</tt> instances <tt>LAST</tt> and <tt>AGE</tt>, as shown in Listing 11. Or, if you prefer to use methods rather than <tt>Comparator</tt> instances, use the code in Listing 12.</p> <p class="cye-lm-tag"><strong>Listing 11</strong>&nbsp;</p> <pre> Collections.sort(people, Person.BY_LAST.
+                                   .thenComparing(Person.BY_AGE));&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 12</strong>&nbsp;</p> <pre>Collections.sort(people,
+      Comparators.comparing(Person::getLastName)
+                 .thenComparing(Person::getAge));&nbsp;</pre> <p class="cye-lm-tag"><br> By the way, for those who didn’t grow up using <tt>Collections.sort()</tt>, there’s now a <tt>sort()</tt> method directly on <tt>List</tt>. This is one of the neat things about the introduction of interface default methods: where we used to have to put that kind of noninheritance-based reusable behavior in static methods, now it can be hoisted up into interfaces. (See the <a href="/technetwork/articles/java/architect-lambdas-part1-2080972.html">previous article in this series</a> for more details.)</p> <p class="cye-lm-tag">Similarly, if the code needs to sort the collection of <tt>Person</tt> objects by last name and then by first name, no new <tt>Comparator</tt> needs to be written, because this comparison can, again, be made of the two particular atomic comparisons shown in Listing 13.</p> <p class="cye-lm-tag"><strong>Listing 13</strong>&nbsp;</p> <pre>    Collections.sort(people,
+      Comparators.comparing(Person::getLastName)
+      .thenComparing(Person::getFirstName));&nbsp;</pre> <p class="cye-lm-tag"><br> This combinatory “connection” of methods, known as <em>functional composition</em>, is common in functional programming and at the heart of why functional programming is as powerful as it is.</p> <p class="cye-lm-tag">It’s important to understand that the real benefit here isn’t just in the APIs that enable us to do comparisons, but the ability to pass bits of executable code (and then combine them in new and interesting ways) to create opportunities for reuse and design. <tt>Comparator</tt> is just the tip of the iceberg. Lots of things can be made more flexible and powerful, particularly when combining and composing them.</p> <p class="cye-lm-tag"><strong>Iteration.</strong> As another example of how lambdas and functional approaches change the approach to code, consider one of the fundamental operations done with collections: that of iterating over them. Java 8 will bring to collections a change via the <tt>forEach()</tt> default method defined on the <tt>Iterator</tt> and <tt>Iterable</tt> interfaces. Using it to print each of the items in the collection, for example, requires passing a lambda to the <tt>forEach</tt> method on an <tt>Iterator</tt>, as shown in Listing 14.</p> <p class="cye-lm-tag"><strong>Listing 14</strong>&nbsp;</p> <pre>people.forEach((it) -&gt; System.out.println("Person: " + it));&nbsp;</pre> <p class="cye-lm-tag"><br> Officially, the type of lambda being passed in is a <tt>Consumer</tt> instance, defined in the <tt>java.util.function</tt> package. Unlike traditional Java interfaces, however, <tt>Consumer</tt> is one of the new functional interfaces, meaning that direct implementations will likely never happen—instead, the new way to think about it is solely in terms of its single, important method, <tt>accept</tt>, which is the method the lambda provides. The rest (such as <tt>compose</tt> and <tt>andThen</tt>) are utility methods defined in terms of the important method, and they are designed to support the important method.</p> <p class="cye-lm-tag">For example, <tt>andThen()</tt> chains two <tt>Consumer</tt> instances together, so the first one is called first and the second is called immediately after into a single <tt>Consumer</tt>. This provides useful composition techniques that are a little outside the scope of this article.</p> <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>BE A COLLECTOR</em><br> It is ugly enough to fix. <em>The code is actually a lot easier to write if we use the built-in Collector interface</em> and its partner Collectors, which specifically do this kind of mutable-reduction operation.</p></div></div> <!-- /C44v0 --> <p class="cye-lm-tag">Many of the use cases involved in walking through a collection have the purpose of finding items that fit a particular criterion—for example, determining which of the <tt>Person</tt> objects in the collection are of drinking age, because the automated code system needs to send everyone in that collection a beer. This “act upon a thing coming from a group of things” is actually far more widespread than just operating upon a collection. Think about operating on each line in a file, each row from a result set, each value generated by a random-number generator, and so on. Java SE 8 generalized this concept one step further, outside collections, by lifting it into its own interface: <tt>Stream</tt>.</p> <p class="cye-lm-tag"><strong>Stream.</strong> Like several other interfaces in the JDK, the <tt>Stream</tt> interface is a fundamental interface that is intended for use in a variety of scenarios, including the Collections API. It represents a stream of objects, and on the surface of things, it feels similar to how <tt>Iterator</tt> gives us access one object at a time through a collection.</p> <p class="cye-lm-tag">However, unlike collections, <tt>Stream</tt> does not guarantee that the collection of objects is finite. Thus, it is a viable candidate for pulling strings from a file, for example, or other kinds of on-demand operations, particularly because it is designed not only to allow for composition of functions, but also to permit parallelization “under the hood.”</p> <p class="cye-lm-tag">Consider the earlier requirement: the code needs to filter out any <tt>Person</tt> object that is not at least 21 years of age. Once a <tt>Collection</tt> converts to a <tt>Stream</tt> (via the <tt>stream()</tt> method defined on the <tt>Collection</tt> interface), the <tt>filter</tt> method can be used to produce a new <tt>Stream</tt> through which only the filtered objects come (see Listing 15).</p> <p class="cye-lm-tag"><strong>Listing 15</strong>&nbsp;</p> <pre>people
+      .stream()
+      .filter(it -&gt; it.getAge() &gt;= 21)&nbsp;</pre> <p class="cye-lm-tag"><br> The parameter to <tt>filter</tt> is a <tt>Predicate</tt>, an interface defined as taking one genericized parameter and returning a Boolean. The intent of the <tt>Predicate</tt> is to determine whether the parameter object is included as part of the returned set.</p> <p class="cye-lm-tag">The return from <tt>filter()</tt> is another <tt>Stream</tt>, which means that the filtered <tt>Stream</tt> is also available for further manipulation, such as to <tt>forEach()</tt> through each of the elements that come through the <tt>Stream</tt>, in this case to display the results (see Listing 16).</p> <p class="cye-lm-tag"><strong>Listing 16</strong>&nbsp;</p> <pre> people.stream()
+      .filter((it) -&gt; it.getAge() &gt;= 21)
+      .forEach((it) -&gt; 
+        System.out.println("Have a beer, " + it.getFirstName()));&nbsp;</pre> <p class="cye-lm-tag"><br> This neatly demonstrates the composability of streams—we can take streams and run them through a variety of atomic operations, each of which do one—and only one—thing to the stream. Additionally, it’s important to note that <tt>filter()</tt> is lazy—it will filter only as it needs to, on demand, rather than going through the entire collection of <tt>Person</tt> objects and filtering ahead of time (which is what we’re used to with the Collections API).</p> <p class="cye-lm-tag"><strong>Predicates.</strong> It might seem odd at first that the <tt>filter()</tt> method takes only a single <tt>Predicate</tt>. After all, if a goal was to find all the <tt>Person</tt> objects whose age is greater than 21 and whose last name is Neward, it would seem that <tt>filter()</tt> could or should take a pair of <tt>Predicate</tt> instances. Of course, this opens a Pandora’s box of possibilities. What if the goal is to find all <tt>Person</tt> objects with an age greater than 21 and less than 65, and with a first name of at least four or more characters? Infinite possibilities suddenly open up, and the <tt>filter()</tt> API would need to somehow approach all of these.</p> <p class="cye-lm-tag">Unless, of course, a mechanism were available to somehow coalesce all of these possibilities down into a single <tt>Predicate</tt>. Fortunately, it’s fairly easy to see that any combination of <tt>Predicate</tt> instances can themselves be a single <tt>Predicate</tt>. In other words, if a given filter needs to have condition A be <tt>true</tt> and condition B be <tt>true</tt> before an object can be included in the filtered stream, that is itself a <tt>Predicate (A and B)</tt>, and we can combine those two together into a single <tt>Predicate</tt> by writing a <tt>Predicate</tt> that takes any two <tt>Predicate</tt> instances and returns <tt>true</tt> only if both <tt>A</tt> and <tt>B</tt> each yield <tt>true</tt>.</p> <p class="cye-lm-tag">This “and”ing <tt>Predicate</tt> is—by virtue of the fact that it knows only about the two <tt>Predicate</tt> instances that it needs to call (and nothing about the parameters being passed in to each of those)— completely generic and can be written well ahead of time.</p> <p class="cye-lm-tag">If the <tt>Predicate</tt> closures are stored in <tt>Predicate</tt> references (similar to how <tt>Comparator</tt> references were used earlier, as members on <tt>Person</tt>), they can be strung together using the <tt>and()</tt> method on them, as shown in Listing 17.</p> <p class="cye-lm-tag"><strong>Listing 17</strong>&nbsp;</p> <pre> Predicate&lt;Person&gt; drinkingAge = (it) -&gt; it.getAge() &gt;= 21;
+    Predicate&lt;Person&gt; brown = (it) -&gt; it.getLastName().equals("Brown");
+    people.stream()
+      .filter(drinkingAge.and(brown))
+      .forEach((it) -&gt;
+                System.out.println("Have a beer, " +
+                                   it.getFirstName()));</pre> <p class="cye-lm-tag">&nbsp;<br> As might be expected, <tt>and()</tt>, <tt>or()</tt>, and <tt>xor()</tt> are all available. Make sure to check the Javadoc for a full introduction to all the possibilities.</p> <p class="cye-lm-tag"><strong>map() and reduce().</strong> Other common <tt>Stream</tt> operations include <tt>map()</tt>, which applies a function across each element present within a <tt>Stream</tt> to produce a result out of each element. So, for example, we can obtain the age of each <tt>Person</tt> in the collection by applying a simple function to retrieve the age out of each <tt>Person</tt>, as shown in Listing 18.</p> <p class="cye-lm-tag"><strong>Listing 18</strong></p> <pre>  IntStream ages =
+      people.stream()
+            .mapToInt((it) -&gt; it.getAge());&nbsp;</pre> <p class="cye-lm-tag"><br> For all practical purposes, <tt>IntStream</tt> (and its cousins <tt>LongStream</tt> and <tt>DoubleStream</tt>) is a specialization of the <tt>Stream&lt;T&gt;</tt> interface (meaning that it creates custom versions of that interface) for those primitive types.</p> <p class="cye-lm-tag">This, then, produces a <tt>Stream</tt> of integers out of a <tt>Collection</tt> of <tt>Person</tt> instances. This is also sometimes known as a <em>transformation operation</em>, because the code is transforming or projecting a <tt>Person</tt> into an <tt>int</tt>.</p> <p class="cye-lm-tag">Similarly, <tt>reduce()</tt> is an operation that takes a stream of values and, through some kind of operation, reduces them into a single value. Reduction is an operation already familiar to developers, though they might not recognize it at first: the <tt>COUNT()</tt> operator from SQL is one such operation (reducing from a collection of rows to a single integer), as are the <tt>SUM()</tt>, <tt>MAX()</tt>, and <tt>MIN()</tt> operators. Each of these takes a stream of values (rows) and produces a single value (the integer) by applying some operation (for example, increment a counter, add the value to a running total, select the highest, or select the lowest) to each of the values in the stream.</p> <p class="cye-lm-tag">So, for example, you could sum the values prior to dividing by the number of elements in the stream to obtain an average age. Given the new APIs, it’s easiest to just use the built-in methods, as shown in Listing 19.</p> <p class="cye-lm-tag"><strong>Listing 19</strong></p> <pre>int sum = people.stream()
+                .mapToInt(Person::getAge)
+                .sum();&nbsp;</pre> <p class="cye-lm-tag"><br> But doing this bypasses an interesting opportunity to explore one of the more powerful features of the new Java API, that of doing a reduction—coalescing a collection of values down into a single one through some custom operation. So, let’s rewrite the summation part of this using the new <tt>reduce()</tt> method:&nbsp;</p> <pre>.reduce(0, (l, r) -&gt; l + r);&nbsp;</pre> <p class="cye-lm-tag"><br> This reduction, also known in functional circles as a <em>fold</em>, starts with a seed value (0, in this case), and applies the closure to the seed and the first element in the stream, taking the result and storing it as the accumulated value that will be used as the seed for the next element in the stream.</p> <p class="cye-lm-tag">In other words, in a list of integers such as 1, 2, 3, 4, and 5, the seed 0 is added to 1 and the result (1) is stored as the accumulated value, which then serves as the left-hand value in addition to serving as the next number in the stream (1+2). The result (3) is stored as the accumulated value and used in the next addition (3+3). The result (6) is stored and used in the next addition (6+4), and the result is used in the final addition (10+5), yielding the final result 15. And, sure enough, if we run the code in Listing 20, we get that result.</p> <p class="cye-lm-tag"><strong>Listing 20</strong>&nbsp;</p> <pre>List&lt;Integer&gt; values = Arrays.asList(1, 2, 3, 4, 5);
+    int sum = values.stream().reduce(0, (l,r) -&gt; l+r);
+    System.out.println(sum);&nbsp;</pre> <p class="cye-lm-tag"><br> Note that the type of closure accepted as the second argument to <tt>reduce</tt> is an <tt>IntBinaryOperator</tt>, defined as taking two integers and returning an <tt>int</tt> result. <tt>IntBinaryOperator</tt> and <tt>IntBiFunction</tt> are examples of specialized functional interfaces—including other specialized versions for <tt>Double</tt> and <tt>Long</tt>—which take two parameters (of one or two different types) and return an <tt>int</tt>. These specialized versions were created mostly to ease the work required for using the common primitive types.</p> <p class="cye-lm-tag"><tt>IntStream</tt> also has a couple of helper methods, including the <tt>average()</tt>, <tt>min()</tt>, and <tt>max()</tt> methods, that do some of the more common integer operations. Additionally, binary operations (such as summing two numbers) are also often defined on the primitive wrapper classes for that type (<tt>Integer::sum</tt>, <tt>Long::max</tt>, and so on).</p> <p class="cye-lm-tag"><strong>More maps and reduction.</strong> Maps and reduction are useful in a variety of situations beyond just simple math. After all, in any case where a collection of objects can be transformed into a different object (or value) and then collected into a single value, map and reduction operations work.</p> <p class="cye-lm-tag">The map operation, for example, can be useful as an extraction or projection operation to take an object and extract portions of it, such as extracting the last name out of a <tt>Person</tt> object:&nbsp;</p> <pre>Stream<string> lastNames =   people.stream()      .map(Person::getLastName); </string>&nbsp;</pre> <p class="cye-lm-tag"><br> Once the last names have been retrieved from the <tt>Person</tt> stream, the reduction can concatenate strings together, such as transforming the last name into a data representation for XML. See  Listing 21.</p> <p class="cye-lm-tag"><strong>Listing 21</strong>&nbsp;</p> <pre>String xml =
+      "&lt;people data='lastname'&gt;" +
+      people.stream()
+            .map(it -&gt; "&lt;person&gt;" + it.getLastName() + "&lt;/person&gt;")
+            .reduce("", String::concat)
+      + "&lt;/people&gt;";
+    System.out.println(xml);&nbsp;</pre> <p class="cye-lm-tag"><br> And, naturally, if different XML formats are required, different operations can be used to control the contents of each format, supplied either ad hoc, as in Listing 21, or from methods defined on other classes, such as from the <tt>Person</tt> class itself, as shown in Listing 22, which can then be used as part of the <tt>map()</tt> operation to transform the stream of <tt>Person</tt> objects into a JSON array of object elements, as shown in Listing 23.</p> <p class="cye-lm-tag"><strong>Listing 22</strong></p> <pre>public class Person {
+  // . . .
+  public static String toJSON(Person p) {
+    return
+      "{" +
+        "firstName: \"" + p.firstName + "\", " +
+        "lastName: \"" + p.lastName + "\", " +
+        "age: " + p.age + " " +
+      "}";
+  }
+}&nbsp;</pre> <p class="cye-lm-tag"><strong><br> Listing 23</strong>&nbsp;</p> <pre>String json =
+      people.stream()
+        .map(Person::toJSON)
+        .reduce("[", (l, r) -&gt; l + (l.equals("[") ? "" : ",") + r)
+        + "]";
+    System.out.println(json);&nbsp;</pre> <p class="cye-lm-tag"><br> <!-- C44v0 --></p> <div class="c44 c44v0"><div class="c44w1"><p class="cye-lm-tag"><em>BE READY</em><br> <em>The release of Java SE 8 swiftly approaches.</em> With it come not only the new linguistic lambda expressions (also called closures or anonymous methods)—along with some supporting language features—but also API and library enhancements that will make parts of the traditional Java core libraries easier to use.</p></div></div> <!-- /C44v0 --> The ternary operation in the middle of the <tt>reduce</tt> operation is there to avoid putting a comma in front of the first <tt>Person</tt> serialized to JSON. Some JSON parsers might accept this format, but that is not guaranteed, and it looks ugly to have it there. <p class="cye-lm-tag">&nbsp;</p> <p class="cye-lm-tag">It is ugly enough, in fact, to fix. The code is actually a lot easier to write if we use the built-in <tt>Collector</tt> interface and its partner <tt>Collectors</tt>, which specifically do this kind of mutable-reduction operation (see  Listing 24). This has the added benefit of being much faster than the versions using the explicit <tt>reduce</tt> and <tt>String::concat</tt> from the earlier examples, so it’s generally a better bet.</p> <p class="cye-lm-tag"><strong>Listing 24</strong></p> <pre>  String joined = people.stream()
+                          .map(Person::toJSON)
+                          .collect(Collectors.joining(", "));System.out.println("[" + joined + "]");&nbsp;</pre> <p class="cye-lm-tag"><br> Oh, and lest we forget our old friend <tt>Comparator</tt>, note that <tt>Stream</tt> also has an operation to sort a stream in-flight, so the sorted JSON representation of the <tt>Person</tt> list looks like Listing 25.</p> <p class="cye-lm-tag"><strong>Listing 25</strong></p> <pre>String json = people.stream()
+                        .sorted(Person.BY_LAST)
+                        .collect(Collectors.joining(", " "[", "]"));
+    System.out.println(json);&nbsp;</pre> <p class="cye-lm-tag"><br> This is powerful stuff.</p> <p class="cye-lm-tag"><strong>Parallelization.</strong> What’s even more powerful is that these operations are entirely independent of the logic necessary to pull each object through the <tt>Stream</tt> and act on each one, which means that the traditional <tt>for</tt> loop will break down when attempting to iterate, map, or reduce a large collection by breaking the collection into segments that will each be processed by a separate thread.</p>  <p class="cye-lm-tag">The <tt>Stream</tt> API, however, already has that covered, making the XML or JSON <tt>map()</tt> and <tt>reduce()</tt> operations shown earlier a slightly different operation—instead of calling <tt>stream()</tt> to obtain a <tt>Stream</tt> from the collection, use <tt>parallelStream()</tt> instead, as demonstrated in Listing 26.</p> <p class="cye-lm-tag"><strong>Listing 26</strong></p> <pre>  people.parallelStream()
+      .filter((it) -&gt; it.getAge() &gt;= 21)
+      .forEach((it) -&gt;
+                System.out.println("Have a beer " + it.getFirstName() +
+                  Thread.currentThread()));&nbsp;</pre> <p class="cye-lm-tag"><br> For a collection of at least a dozen items, at least on my laptop, two threads are used to process the collection: the thread named <tt>main</tt>, which is the traditional one used to invoke the <tt>main()</tt> method of a Java class, and another thread named <tt>ForkJoinPool.commonPool worker-1</tt>, which is obviously not of our creation.</p> <p class="cye-lm-tag">Obviously, for a collection of a dozen items, this would be hideously unnecessary, but for several hundred or more, this would be the difference between “good enough” and “needs to go faster.” Without these new methods and approaches, you would be staring at some significant code and algorithmic study. With them, you can write parallelized code literally by adding eight keystrokes (nine if you count the Shift key required to capitalize the s in <em>stream</em>) to the previously sequential processing.</p> <p class="cye-lm-tag">And, where necessary, a parallel <tt>Stream</tt> can be brought back to a sequential one by calling—you can probably guess—<tt>sequential()</tt> on it.</p> <p class="cye-lm-tag">The important thing to note is that regardless of whether the processing is better done sequentially or in parallel, the same <tt>Stream</tt> interface is used for both. The sequential or parallel implementation becomes entirely an implementation detail, which is exactly where we want it to be when working on code that focuses on business needs (and value); we don’t want to focus on the low-level details of firing up threads in thread pools and synchronizing across them.</p> <h3>Conclusion</h3> <p class="cye-lm-tag">Lambdas will bring a lot of change to Java, both in terms of how Java code will be written and how it will be designed. Some of these changes are already taking place within the Java SE libraries, and they will slowly make their way through many other libraries—both those owned by the Java platform and those out in “the wilds” of open source—as developers grow more comfortable with the abilities (and drawbacks) of lambdas.</p> <p class="cye-lm-tag">Numerous other changes are present within the Java SE 8 release. But if you understand how lambdas on collections work, you will have a strong advantage when thinking about how to leverage lambdas within your own designs and code, and you can create better-decoupled code for years to come.</p> <hr>
+						
+		</div>
+<br><hr>
+
+<a href="http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html">j_tut</a>
+<div id="MainFlow" class="MainFlow_indented cye-lm-tag">
+    <div class="PrintHeaders">
+        <b>Trail:</b> Learning the Java Language
+        <br><b>Lesson:</b> Classes and Objects
+        <br><b>Section:</b> Nested Classes
+    </div>
+            <div id="BreadCrumbs">
+                <a href="../../index.html" target="_top">Home Page</a>
+                &gt;
+                <a href="../index.html" target="_top">Learning the Java Language</a>
+                &gt;
+                <a href="index.html" target="_top">Classes and Objects</a>
+            </div>
+            <div class="NavBit">
+                <a target="_top" href="anonymousclasses.html">«&nbsp;Previous</a>&nbsp;•&nbsp;<a target="_top" href="../TOC.html">Trail</a>&nbsp;•&nbsp;<a target="_top" href="methodreferences.html">Next&nbsp;»</a>
+            </div>
+            <div id="PageTitle"><h1>Lambda Expressions</h1></div>
+            <div id="PageContent" class="cye-lm-tag">
+
+<p class="cye-lm-tag">One issue with anonymous classes is that if the implementation of your anonymous class is very simple, such as an interface that contains only one method, then the syntax of anonymous classes may seem unwieldy and unclear. In these cases, you're usually trying to pass functionality as an argument to another method, such as what action should be taken when someone clicks a button. Lambda expressions enable you to do this, to treat functionality as method argument, or code as data.</p>
+
+<p class="cye-lm-tag">The previous section,
+<a class="TutorialLink" target="_top" href="anonymousclasses.html">Anonymous Classes</a>, shows you how to implement a base class without giving it a name.
+Although this is often more concise than a named class, for classes
+with only one method, even an anonymous class seems a bit
+excessive and cumbersome. Lambda expressions let you express instances of
+single-method classes more compactly.</p>
+
+<p class="cye-lm-tag">This section covers the following topics:</p>
+
+<ul class="cye-lm-tag">
+  <li class="cye-lm-tag"><a href="#use-case">Ideal Use Case for Lambda Expressions</a>
+    <ul class="cye-lm-tag">
+      <li><a href="#approach1">Approach 1: Create Methods That Search for Members That Match One Characteristic</a></li>
+      <li><a href="#approach2">Approach 2: Create More Generalized Search Methods</a></li>
+      <li><a href="#approach3">Approach 3: Specify Search Criteria Code in a Local Class</a></li>
+      <li class="cye-lm-tag"><a href="#approach4" class="cye-lm-tag">Approach 4: Specify Search Criteria Code in an Anonymous Class</a></li>
+      <li><a href="#approach5">Approach 5: Specify Search Criteria Code with a Lambda Expression</a></li>
+      <li><a href="#approach6">Approach 6: Use Standard Functional Interfaces with Lambda Expressions</a></li>
+      <li><a href="#approach7">Approach 7: Use Lambda Expressions Throughout Your Application</a></li>
+      <li><a href="#approach8">Approach 8: Use Generics More Extensively</a></li>
+      <li><a href="#approach9">Approach 9: Use Aggregate Operations That Accept Lambda Expressions as Parameters</a></li>
+    </ul>
+  </li>
+  <li><a href="#lambda-expressions-in-gui-applications">Lambda Expressions in GUI Applications</a></li>
+  <li><a href="#syntax">Syntax of Lambda Expressions</a></li>
+  <li><a href="#accessing-local-variables">Accessing Local Variables of the Enclosing Scope</a></li>
+  <li><a href="#target-typing">Target Typing</a>
+    <ul>
+      <li><a href="#target-types-and-method-arguments">Target Types and Method Arguments</a></li>
+    </ul>
+  </li>
+  <li><a href="#serialization">Serialization</a></li>
+</ul>
+
+<h2><a name="use-case">Ideal Use Case for Lambda Expressions</a></h2>
+
+<p class="cye-lm-tag">Suppose that you are creating a social networking application. You
+want to create a feature that enables an administrator to perform
+any kind of action, such as sending a message, on members of the
+social networking application that satisfy certain criteria. The following table describes this use case in detail:</p>
+
+<table border="1" summary="Use case for social networking application">
+  <tbody><tr>
+    <th id="h1">Field</th>
+    <th id="h2">Description</th>
+  </tr>
+
+  <tr>
+    <td headers="h1">Name</td>
+    <td headers="h2">Perform action on selected members</td>
+  </tr>
+
+  <tr>
+    <td headers="h1">Primary Actor</td>
+    <td headers="h2">Administrator</td>
+  </tr>
+
+  <tr>
+     <td headers="h1">Preconditions</td>
+     <td headers="h2">Administrator is logged in to the system.</td>
+  </tr>
+
+  <tr>
+    <td headers="h1">Postconditions</td>
+    <td headers="h2">Action is performed only on members that fit the specified criteria.</td>
+  </tr>
+
+  <tr>
+    <td headers="h1">Main Success Scenario</td>
+    <td headers="h2">
+      <ol>
+        <li>Administrator specifies criteria of members on which to perform a certain action.</li>
+        <li>Administrator specifies an action to perform on those selected members.</li>
+        <li>Administrator selects the <strong>Submit</strong> button.</li>
+        <li>The system finds all members that match the specified criteria.</li>
+        <li>The system performs the specified action on all matching members.</li>
+      </ol>
+    </td>
+  </tr>
+
+  <tr>
+    <td headers="h1">Extensions</td>
+    <td headers="h2">
+      <p class="cye-lm-tag">1a. Administrator has an option to preview those members who match the specified criteria before he or she specifies the action to be performed or before selecting the <strong>Submit</strong> button.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td headers="h1">Frequency of Occurrence</td>
+    <td headers="h2">Many times during the day.</td>
+  </tr>
+</tbody></table>
+
+<p class="cye-lm-tag">Suppose that members of this social networking application are
+represented by the following
+<a class="SourceLink" target="_blank" href="examples/Person.java" onclick="showCode('../../displayCode.html', 'examples/Person.java'); return false;"><code>Person</code></a> class:</p>
+
+<pre class="codeblock">public class Person {
+
+    public enum Sex {
+        MALE, FEMALE
+    }
+
+    String name;
+    LocalDate birthday;
+    Sex gender;
+    String emailAddress;
+
+    public int getAge() {
+        // ...
+    }
+
+    public void printPerson() {
+        // ...
+    }
+}</pre>
+
+<p class="cye-lm-tag">Suppose that the members of your social networking application
+are stored in a <code>List&lt;Person&gt;</code> instance.</p>
+
+<p class="cye-lm-tag">This section begins with a naive approach to this use case. It improves upon this approach with local and anonymous classes, and then finishes with an efficient and concise approach using lambda expressions. Find the code excerpts described in this section in the example
+<a class="SourceLink" target="_blank" href="examples/RosterTest.java" onclick="showCode('../../displayCode.html', 'examples/RosterTest.java'); return false;"><code>RosterTest</code></a>.
+</p>
+
+<h3><a name="approach1">Approach 1: Create Methods That Search for Members That Match One Characteristic</a></h3>
+
+<p class="cye-lm-tag">One simplistic approach is to create several methods; each method searches for members that match one characteristic, such as gender or age. The following method prints members that are older than a specified
+age:</p>
+
+
+<pre class="codeblock">public static void printPersonsOlderThan(List&lt;Person&gt; roster, int age) {
+    for (Person p : roster) {
+        if (p.getAge() &gt;= age) {
+            p.printPerson();
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag"><b>Note</b>: A
+<a class="APILink" target="_blank" href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html"><code>List</code></a> is an ordered
+<a class="APILink" target="_blank" href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html"><code>Collection</code></a>. A <em>collection</em> is an object
+that groups multiple elements into a single unit. Collections are
+used to store, retrieve, manipulate, and communicate aggregate
+data. For more information about collections, see the
+<a class="TutorialLink" target="_top" href="../../collections/index.html">Collections</a> trail.</p>
+
+<p class="cye-lm-tag">This approach can potentially make your application <em>brittle</em>, which is the likelihood of an application not working because of the introduction of updates (such as newer data types). Suppose that you upgrade your application and change the structure of the <code>Person</code> class such that it contains different member variables; perhaps the class records and measures ages with a different data type or algorithm. You would have to rewrite a lot of your API to accommodate this change. In addition, this approach is unnecessarily restrictive; what if you
+wanted to print members younger than a certain age, for example?</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach2">Approach 2: Create More Generalized Search Methods</a></h3>
+
+<p class="cye-lm-tag">The following method is more generic than <code>printPersonsOlderThan</code>; it prints members within a specified range of ages:</p>
+
+<pre class="codeblock">public static void printPersonsWithinAgeRange(
+    List&lt;Person&gt; roster, int low, int high) {
+    for (Person p : roster) {
+        if (low &lt;= p.getAge() &amp;&amp; p.getAge() &lt; high) {
+            p.printPerson();
+        }
+    }
+}</pre>
+
+
+<p class="cye-lm-tag">What if you want to print members of a specified sex, or a combination of a specified gender and age range? What if you decide to change the <code>Person</code> class and add other attributes such as relationship status or geographical location? Although this method is more generic than <code>printPersonsOlderThan</code>, trying to create a separate method for each possible search query can still lead to brittle code. You can instead separate the code that specifies the criteria for which you want to search in a different class.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach3">Approach 3: Specify Search Criteria Code in a Local Class</a></h3>
+
+<p class="cye-lm-tag">The following method prints members that match search criteria that you specify:</p>
+
+<pre class="codeblock">public static void printPersons(
+    List&lt;Person&gt; roster, CheckPerson tester) {
+    for (Person p : roster) {
+        if (tester.test(p)) {
+            p.printPerson();
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag">This method checks each <code>Person</code> instance contained in the <code>List</code> parameter <code>roster</code> whether it satisfies the search criteria specified in the <code>CheckPerson</code> parameter <code>tester</code> by invoking the method <code>tester.test</code>. If the method <code>tester.test</code> returns a <code>true</code> value, then the method <code>printPersons</code> is invoked on the <code>Person</code> instance.</p>
+
+<p class="cye-lm-tag">To specify the search criteria, you implement the
+<code>CheckPerson</code> interface:</p>
+
+<pre class="codeblock">interface CheckPerson {
+    boolean test(Person p);
+}</pre>
+
+<p class="cye-lm-tag">The following class implements the <code>CheckPerson</code> interface by specifying an implementation for the method <code>test</code>. This method filters members that are eligible for Selective Service in the United States: it returns a <code>true</code> value if its <code>Person</code> parameter is male and between the ages of 18 and 25:</p>
+
+<pre class="codeblock">class CheckPersonEligibleForSelectiveService implements CheckPerson {
+    public boolean test(Person p) {
+        return p.gender == Person.Sex.MALE &amp;&amp;
+            p.getAge() &gt;= 18 &amp;&amp;
+            p.getAge() &lt;= 25;
+    }
+}</pre>
+
+<p class="cye-lm-tag">To use this class, you create a new
+instance of it and invoke the <code>printPersons</code> method:</p>
+
+<pre class="codeblock">printPersons(
+    roster, new CheckPersonEligibleForSelectiveService());</pre>
+
+<p class="cye-lm-tag">Although this approach is less brittle—you don't have to rewrite methods if you change the structure of the <code>Person</code>—you still have additional code: a new interface and a local class for each search you plan to perform in your application. Because <code>CheckPersonEligibleForSelectiveService</code>
+implements an interface, you can use an anonymous class
+instead of a local class and bypass the need to declare a new class for each search.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach4">Approach 4: Specify Search Criteria Code in an Anonymous Class</a></h3>
+
+<p class="cye-lm-tag">One of the arguments of the following invocation of the method <code>printPersons</code> is an anonymous class that filters members that are eligible for Selective Service in the United States: those who are male and between the ages of 18 and 25:</p>
+
+<pre class="codeblock">printPersons(
+    roster,
+    new CheckPerson() {
+        public boolean test(Person p) {
+            return p.getGender() == Person.Sex.MALE
+                &amp;&amp; p.getAge() &gt;= 18
+                &amp;&amp; p.getAge() &lt;= 25;
+        }
+    }
+);</pre>
+
+<p class="cye-lm-tag">This approach reduces the amount of code required because you don't have to create a new class for each search that you want to perform. However, the syntax of anonymous classes is bulky considering that the <code>CheckPerson</code> interface contains only one method. In this
+case, you can use a lambda expression instead of an anonymous class, as
+described in the next section.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach5">Approach 5: Specify Search Criteria Code with a Lambda Expression</a></h3>
+
+<p class="cye-lm-tag">The <code>CheckPerson</code>
+interface is a <i>functional interface</i>. A functional
+interface is any interface that contains only one
+<a class="TutorialLink" target="_top" href="../../java/IandI/abstract.html">abstract method</a>. (A functional interface may contain one or more 
+<a class="TutorialLink" target="_top" href="../../java/IandI/defaultmethods.html">default methods</a> or
+<a class="TutorialLink" target="_top" href="../../java/IandI/defaultmethods.html#static">static methods</a>.) Because
+a functional interface contains only one abstract method, you can
+omit the name of that method
+when you implement it. To do this, instead of using an anonymous
+class expression, you use a <i>lambda
+expression</i>, which is
+highlighted in the following method invocation:</p>
+
+<pre class="codeblock">printPersons(
+    roster,
+    <strong>(Person p) -&gt; p.getGender() == Person.Sex.MALE
+        &amp;&amp; p.getAge() &gt;= 18
+        &amp;&amp; p.getAge() &lt;= 25</strong>
+);</pre>
+
+<p class="cye-lm-tag">See <a href="#syntax">Syntax of Lambda Expressions</a> for information about how to define lambda expressions.</p>
+
+<p class="cye-lm-tag">You can use a standard functional interface in place of the interface <code>CheckPerson</code>, which reduces even further the amount of code required.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach6">Approach 6: Use Standard Functional Interfaces with Lambda Expressions</a></h3>
+
+<p class="cye-lm-tag">Reconsider the <code>CheckPerson</code> interface:</p>
+
+<pre class="codeblock">interface CheckPerson {
+    boolean test(Person p);
+}</pre>
+
+<p class="cye-lm-tag">This is a very
+simple interface. It's a functional interface because it contains
+only one abstract method. This method takes one parameter and returns a
+<code>boolean</code> value. The method is so simple that it might not be worth
+it to define one in your application. Consequently, the JDK
+defines several standard functional interfaces, which you can
+find in the package <code>java.util.function</code>.</p>
+
+<p class="cye-lm-tag">For example, you can use the
+<code>Predicate&lt;T&gt;</code>
+
+ interface in place of <code>CheckPerson</code>. This
+interface contains the method <code>boolean
+test(T t)</code>:</p>
+
+
+<pre class="codeblock">interface Predicate&lt;T&gt; {
+    boolean test(T t);
+}</pre>
+
+<p class="cye-lm-tag">The interface <code>Predicate&lt;T&gt;</code> is an example of a generic interface. (For more information about generics, see the
+<a class="TutorialLink" target="_top" href="../../java/generics/index.html">Generics (Updated)</a> lesson.) Generic types (such as generic interfaces) specify one or more type parameters within angle brackets (<code>&lt;&gt;</code>). This interface contains only one type parameter, <code>T</code>. When you declare or instantiate a generic type with actual type arguments, you have a parameterized type. For example, the parameterized type <code>Predicate&lt;Person&gt;</code> is the following:</p>
+
+<pre class="codeblock">interface Predicate&lt;<code>Person</code>&gt; {
+    boolean test(<code>Person</code> t);
+}</pre>
+
+<p class="cye-lm-tag">This parameterized type contains a method that has the same return type and parameters as <code>CheckPerson.boolean test(Person p)</code>. Consequently, you can use <code>Predicate&lt;T&gt;</code> in place of <code>CheckPerson</code> as the following method demonstrates:</p>
+
+<pre class="codeblock">public static void printPersonsWithPredicate(
+    List&lt;Person&gt; roster, Predicate&lt;Person&gt; tester) {
+    for (Person p : roster) {
+        if (tester.test(p)) {
+            p.printPerson();
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag">As a result,
+the following method invocation is the same as when you invoked
+<code>printPersons</code> in <a href="#approach3">Approach 3: Specify Search Criteria Code in a Local Class</a> to obtain members who are eligible for Selective Service:</p>
+
+<pre class="codeblock">printPersonsWithPredicate(
+    roster,
+    p -&gt; p.getGender() == Person.Sex.MALE
+        &amp;&amp; p.getAge() &gt;= 18
+        &amp;&amp; p.getAge() &lt;= 25
+);</pre>
+
+<p class="cye-lm-tag">This is not the only possible place in this method to use a lambda expression. The following approach suggests other ways to use lambda expressions.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach7">Approach 7: Use Lambda Expressions Throughout Your Application</a></h3>
+
+<p class="cye-lm-tag">Reconsider the method <code>printPersonsWithPredicate</code>
+to see where else you could use lambda expressions:</p>
+
+<pre class="codeblock">public static void printPersonsWithPredicate(
+    List&lt;Person&gt; roster, Predicate&lt;Person&gt; tester) {
+    for (Person p : roster) {
+        if (tester.test(p)) {
+            p.printPerson();
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag">This method checks each <code>Person</code> instance contained in the <code>List</code> parameter <code>roster</code> whether it satisfies the criteria specified in the <code>Predicate</code> parameter <code>tester</code>. If the <code>Person</code> instance does satisfy the criteria specified by <code>tester</code>, the method <code>printPersron</code> is invoked on the <code>Person</code> instance.</p>
+
+<p class="cye-lm-tag">Instead of invoking the method <code>printPerson</code>, you can specify a different action to perform on those <code>Person</code> instances that satisfy the criteria specified by <code>tester</code>. You can specify this action with a lambda expression. Suppose you want a lambda expression similar to <code>printPerson</code>, one that takes one argument (an object of type <code>Person</code>) and returns void. Remember, to use a lambda expression, you need to implement a functional interface. In this case, you need a functional interface that contains an abstract method that can take one argument of type <code>Person</code> and returns void. The
+<code>Consumer&lt;T&gt;</code>
+ interface contains the method
+<code>void accept(T t)</code>, which has these characteristics. The
+following method replaces the invocation
+<code>p.printPerson()</code> with an
+instance of <code>Consumer&lt;Person&gt;</code> that invokes the method <code>accept</code>:</p>
+
+<pre class="codeblock">public static void processPersons(
+    List&lt;Person&gt; roster,
+    Predicate&lt;Person&gt; tester,
+    <strong>Consumer&lt;Person&gt; block</strong>) {
+        for (Person p : roster) {
+            if (tester.test(p)) {
+                <strong>block.accept(p);</strong>
+            }
+        }
+}</pre>
+
+<p class="cye-lm-tag">As a
+result, the following method invocation is the same as when you invoked <code>printPersons</code> in <a href="#approach3">Approach 3: Specify Search Criteria Code in a Local Class</a> to obtain members who are eligible for Selective Service. The lambda expression used to
+print members is highlighted:</p>
+
+<pre class="codeblock">processPersons(
+     roster,
+     p -&gt; p.getGender() == Person.Sex.MALE
+         &amp;&amp; p.getAge() &gt;= 18
+         &amp;&amp; p.getAge() &lt;= 25,
+     <strong>p -&gt; p.printPerson()</strong>
+);</pre>
+
+<p class="cye-lm-tag">What if you want to do more with your members' profiles than printing them out. Suppose that you want to validate the members' profiles or retrieve
+their contact information? In this case, you need a functional
+interface that contains an abstract method that returns a value.
+The
+<code>Function&lt;T,R&gt;</code>
+ interface contains the
+method <code>R apply(T
+t)</code>. The following method retrieves the data
+specified by the parameter <code>mapper</code>, and
+then performs an action on it specified by the
+parameter <code>block</code>:</p>
+
+<pre class="codeblock">public static void processPersonsWithFunction(
+    List&lt;Person&gt; roster,
+    Predicate&lt;Person&gt; tester,
+    Function&lt;Person, String&gt; mapper,
+    Consumer&lt;String&gt; block) {
+    for (Person p : roster) {
+        if (tester.test(p)) {
+            String data = mapper.apply(p);
+            block.accept(data);
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag">The following method retrieves the email address from each member
+contained in <code>roster</code> who is eligible for Selective Service and
+then prints it:</p>
+
+<pre class="codeblock">processPersonsWithFunction(
+    roster,
+    p -&gt; p.getGender() == Person.Sex.MALE
+        &amp;&amp; p.getAge() &gt;= 18
+        &amp;&amp; p.getAge() &lt;= 25,
+    p -&gt; p.getEmailAddress(),
+    email -&gt; System.out.println(email)
+);</pre>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach8">Approach 8: Use Generics More Extensively</a></h3>
+
+<p class="cye-lm-tag">Reconsider the method <code>processPersonsWithFunction</code>. The following is a generic version of it that accepts, as a parameter, a collection that contains elements of any data type:</p>
+
+<pre class="codeblock">public static &lt;X, Y&gt; void processElements(
+    Iterable&lt;X&gt; source,
+    Predicate&lt;X&gt; tester,
+    Function &lt;X, Y&gt; mapper,
+    Consumer&lt;Y&gt; block) {
+    for (X p : source) {
+        if (tester.test(p)) {
+            Y data = mapper.apply(p);
+            block.accept(data);
+        }
+    }
+}</pre>
+
+<p class="cye-lm-tag">To print the e-mail address of members who are eligible for Selective Service, invoke the <code>processElements</code> method as follows:</p>
+
+<pre class="codeblock">processElements(
+    roster,
+    p -&gt; p.getGender() == Person.Sex.MALE
+        &amp;&amp; p.getAge() &gt;= 18
+        &amp;&amp; p.getAge() &lt;= 25,
+    p -&gt; p.getEmailAddress(),
+    email -&gt; System.out.println(email)
+);</pre>
+
+<p class="cye-lm-tag">This method invocation performs the following actions:</p>
+
+<ol>
+  <li>Obtains a source of objects from the collection <code>source</code>. In this example, it obtains a source of <code>Person</code> objects from the collection <code>roster</code>. Notice that the collection <code>roster</code>, which is a collection of type <code>List</code>, is also an object of type <code>Iterable</code>.</li>
+  
+  <li>Filters objects that match the <code>Predicate</code> object <code>tester</code>. In this example, the <code>Predicate</code> object is a lambda expression that specifies which members would be eligible for Selective Service.</li>
+  
+  <li>Maps each filtered object to a value as specified by the <code>Function</code> object <code>mapper</code>. In this example, the <code>Function</code> object is a lambda expression that returns the e-mail address of a member.</li>
+  
+  <li>Performs an action on each mapped object as specified by the <code>Consumer</code> object <code>block</code>. In this example, the <code>Consumer</code> object is a lambda expression that prints a string, which is the e-mail address returned by the <code>Function</code> object.</li>
+  
+</ol>
+
+<p class="cye-lm-tag">You can replace each of these actions with an aggregate operation.</p>
+
+<!-- ********************************************************************** -->
+<h3><a name="approach9">Approach 9: Use Aggregate Operations That Accept Lambda Expressions as Parameters</a></h3>
+
+<p class="cye-lm-tag">The following example uses aggregate operations to print the e-mail addresses of those members contained in the collection <code>roster</code> who are eligible for Selective Service:</p>
+
+<pre class="codeblock">roster
+    .stream()
+    .filter(
+        p -&gt; p.getGender() == Person.Sex.MALE
+            &amp;&amp; p.getAge() &gt;= 18
+            &amp;&amp; p.getAge() &lt;= 25)
+    .map(p -&gt; p.getEmailAddress())
+    .forEach(email -&gt; System.out.println(email));</pre>
+
+<p class="cye-lm-tag">The following table maps each of the operations the method <code>processElements</code> performs with the corresponding aggregate operation:</p>
+
+<table border="1" summary="Mapping of each of the actions the method processElements performs with the corresponding aggregate operation">
+<tbody><tr>
+  <th id="h101"><code>processElements</code> Action</th>
+  <th id="h102">Aggregate Operation</th>
+</tr>
+
+<tr>
+  <td headers="h101">Obtain a source of objects</td>
+  
+  <td headers="h102"><code>Stream&lt;E&gt; <strong>stream</strong>()</code></td>
+</tr>
+
+<tr>
+  <td headers="h101">Filter objects that match a <code>Predicate</code> object</td>
+  <td headers="h102"><code>Stream&lt;T&gt; <strong>filter</strong>(Predicate&lt;? super T&gt; predicate)</code></td>
+</tr>
+
+<tr>
+
+  <td headers="h101">Map objects to another value as specified by a <code>Function</code> object</td>
+  
+  <td headers="h102"><code>&lt;R&gt; Stream&lt;R&gt; <strong>map</strong>(Function&lt;? super T,? extends R&gt; mapper)</code></td>
+  
+</tr>
+
+<tr>
+  <td headers="h101">Perform an action as specified by a <code>Consumer</code> object</td>
+  <td headers="h102"><code>void <strong>forEach</strong>(Consumer&lt;? super T&gt; action)</code></td>
+</tr>
+
+</tbody></table>
+
+<p class="cye-lm-tag">The operations <code>filter</code>, <code>map</code>, and <code>forEach</code> are <em>aggregate operations</em>. Aggregate operations process elements from a stream, not directly from a collection (which is the reason why the first method invoked in this example is <code>stream</code>). A <em>stream</em> is a sequence of elements. Unlike a collection, it is not a data structure that stores elements. Instead, a stream carries values from a source, such as collection, through a pipeline. A <em>pipeline</em> is a sequence of stream operations, which in this example is <code>filter</code>- <code>map</code>-<code>forEach</code>. In addition, aggregate operations typically accept lambda expressions as parameters, enabling you to customize how they behave.</p>
+
+<p class="cye-lm-tag">For a more thorough discussion of aggregate operations, see the
+<a class="TutorialLink" target="_top" href="../../collections/streams/index.html">Aggregate Operations</a> lesson.</p>
+
+
+<h2><a name="lambda-expressions-in-gui-applications">Lambda Expressions in GUI Applications</a></h2>
+
+<p class="cye-lm-tag">To process events in a graphical user interface (GUI) application, such as keyboard
+actions, mouse actions, and scroll actions, you typically create
+event handlers, which usually involves implementing a particular
+interface. Often, event handler interfaces are functional
+interfaces; they tend to have only one method.</p>
+
+<p class="cye-lm-tag">In the JavaFX example <a href="https://docs.oracle.com/javase/8/javafx/get-started-tutorial/hello_world.htm">
+<code>HelloWorld.java</code></a> (discussed in the previous section
+<a class="TutorialLink" target="_top" href="anonymousclasses.html">Anonymous Classes</a>), you can
+replace the highlighted anonymous class with a lambda expression in this
+statement:</p>
+
+<pre class="codeblock">        btn.setOnAction(<b>new EventHandler&lt;ActionEvent&gt;() {</b>
+
+            <b>@Override</b>
+            <b>public void handle(ActionEvent event) {</b>
+                <b>System.out.println("Hello World!");</b>
+            <b>}</b>
+        <b>}</b>);</pre>
+
+<p class="cye-lm-tag">The method invocation <code>btn.setOnAction</code> specifies what
+happens when you select the button represented by the <code>btn</code> object. This method requires
+an object of type <code>EventHandler&lt;ActionEvent&gt;</code>. The <code>EventHandler&lt;ActionEvent&gt;</code>
+interface contains only one method, <code>void handle(T event)</code>.
+This interface is a functional interface, so you could use the following highlighted lambda expression to replace it:</p>
+
+<pre class="codeblock">        btn.setOnAction(
+          <b>event -&gt; System.out.println("Hello World!")</b>
+        );</pre>
+
+<h2><a name="syntax">Syntax of Lambda Expressions</a></h2>
+
+<p class="cye-lm-tag">A lambda expression consists of the following:</p>
+
+<ul>
+  <li><p class="cye-lm-tag">A
+comma-separated list of formal parameters enclosed in
+parentheses. The <code>CheckPerson.test</code> method contains one parameter,
+<code>p</code>, which represents an instance of the
+<code>Person</code> class.</p>
+  <p class="cye-lm-tag"><b>Note</b>: You can
+omit the data type of the parameters in a lambda expression. In
+addition, you can omit the parentheses if there is only one
+parameter. For example, the following lambda expression is also
+valid:</p>
+
+<pre class="codeblock">p -&gt; p.getGender() == Person.Sex.MALE 
+    &amp;&amp; p.getAge() &gt;= 18
+    &amp;&amp; p.getAge() &lt;= 25</pre></li>
+
+  <li><p class="cye-lm-tag">The arrow token, <code>-&gt;</code></p></li>
+  <li><p class="cye-lm-tag">A
+body, which consists of a single expression or a statement block. This example uses the following expression:</p>
+
+<pre class="codeblock">p.getGender() == Person.Sex.MALE 
+    &amp;&amp; p.getAge() &gt;= 18
+    &amp;&amp; p.getAge() &lt;= 25</pre>
+
+<p class="cye-lm-tag">If you
+specify a single expression, then the Java runtime evaluates the
+expression and then returns its value. Alternatively, you can use
+a return statement:</p>
+
+<pre class="codeblock">p -&gt; {
+    return p.getGender() == Person.Sex.MALE
+        &amp;&amp; p.getAge() &gt;= 18
+        &amp;&amp; p.getAge() &lt;= 25;
+}</pre>
+
+  <p class="cye-lm-tag">A return statement is not an expression; in a lambda expression,
+you must enclose statements in braces (<code>{}</code>). However, you do not have to enclose a void method invocation in braces. For example, the following is a valid lambda expression:</p>
+
+<pre class="codeblock">email -&gt; System.out.println(email)</pre>
+</li>
+
+</ul>
+
+<p class="cye-lm-tag">Note that a lambda expression looks a lot like a method
+declaration; you can consider lambda expressions as anonymous
+methods—methods without a name.</p>
+
+<p class="cye-lm-tag">The following example,
+<a class="SourceLink" target="_blank" href="examples/Calculator.java" onclick="showCode('../../displayCode.html', 'examples/Calculator.java'); return false;"><code>Calculator</code></a>, is an example of lambda expressions that take
+more than one formal parameter:</p>
+
+<pre class="codeblock">
+public class Calculator {
+  
+    interface IntegerMath {
+        int operation(int a, int b);   
+    }
+  
+    public int operateBinary(int a, int b, IntegerMath op) {
+        return op.operation(a, b);
+    }
+ 
+    public static void main(String... args) {
+    
+        Calculator myApp = new Calculator();
+        IntegerMath addition = (a, b) -&gt; a + b;
+        IntegerMath subtraction = (a, b) -&gt; a - b;
+        System.out.println("40 + 2 = " +
+            myApp.operateBinary(40, 2, addition));
+        System.out.println("20 - 10 = " +
+            myApp.operateBinary(20, 10, subtraction));    
+    }
+}
+
+</pre>
+
+<p class="cye-lm-tag">The method <code>operateBinary</code> performs a
+mathematical operation on two integer operands. The operation
+itself is specified by an instance of <code>IntegerMath</code>. The example defines two operations with lambda expressions, <code>addition</code> and <code>subtraction</code>. The example prints
+the following:</p>
+
+<pre class="codeblock">40 + 2 = 42
+20 - 10 = 10</pre>
+
+
+<h2><a name="accessing-local-variables">Accessing Local Variables of the Enclosing Scope</a></h2>
+
+<p class="cye-lm-tag">Like local and anonymous classes, lambda expressions can
+<a class="TutorialLink" target="_top" href="localclasses.html#accessing-members-of-an-enclosing-class">capture variables</a>; they have the same access to local variables of the enclosing scope. However, unlike local and anonymous classes, lambda expressions do not have any shadowing issues (see
+<a class="TutorialLink" target="_top" href="../../java/javaOO/nested.html#shadowing">Shadowing</a> for more information). Lambda expressions are lexically scoped. This means that they do not inherit any names from a supertype or introduce a new level of scoping. Declarations in a lambda expression are interpreted just as they are in the enclosing environment. The following example,
+<a class="SourceLink" target="_blank" href="examples/LambdaScopeTest.java" onclick="showCode('../../displayCode.html', 'examples/LambdaScopeTest.java'); return false;"><code>LambdaScopeTest</code></a>, demonstrates this:</p>
+
+<pre class="codeblock">
+import java.util.function.Consumer;
+
+public class LambdaScopeTest {
+
+    public int x = 0;
+
+    class FirstLevel {
+
+        public int x = 1;
+
+        void methodInFirstLevel(int x) {
+            
+            // The following statement causes the compiler to generate
+            // the error "local variables referenced from a lambda expression
+            // must be final or effectively final" in statement A:
+            //
+            // x = 99;
+            
+            Consumer&lt;Integer&gt; myConsumer = (y) -&gt; 
+            {
+                System.out.println("x = " + x); // Statement A
+                System.out.println("y = " + y);
+                System.out.println("this.x = " + this.x);
+                System.out.println("LambdaScopeTest.this.x = " +
+                    LambdaScopeTest.this.x);
+            };
+
+            myConsumer.accept(x);
+
+        }
+    }
+
+    public static void main(String... args) {
+        LambdaScopeTest st = new LambdaScopeTest();
+        LambdaScopeTest.FirstLevel fl = st.new FirstLevel();
+        fl.methodInFirstLevel(23);
+    }
+}
+</pre>
+
+<p class="cye-lm-tag">This example generates the following output:</p>
+
+<pre class="codeblock">x = 23
+y = 23
+this.x = 1
+LambdaScopeTest.this.x = 0</pre>
+
+<p class="cye-lm-tag">If you substitute the parameter <code>x</code> in place of <code>y</code> in the declaration of the lambda expression <code>myConsumer</code>, then the compiler generates an error:</p>
+
+<pre class="codeblock">Consumer&lt;Integer&gt; myConsumer = (x) -&gt; {
+    // ...
+}</pre>
+
+<p class="cye-lm-tag">The compiler generates the error "variable x is already defined in method methodInFirstLevel(int)" because the lambda expression does not introduce a new level of scoping. Consequently, you can directly access fields, methods, and local variables of the enclosing scope. For example, the lambda expression directly accesses the parameter <code>x</code> of the method <code>methodInFirstLevel</code>. To access variables in the enclosing class, use the keyword <code>this</code>. In this example, <code>this.x</code> refers to the member variable <code>FirstLevel.x</code>.</p>
+
+<p class="cye-lm-tag">However, like local and anonymous classes, a lambda expression can only access local variables and parameters of the enclosing block that are final or
+effectively final. For example, suppose that you add
+the following assignment statement immediately after the <code>methodInFirstLevel</code> definition statement:</p>
+
+<pre class="codeblock">void methodInFirstLevel(int x) {
+    <strong>x = 99;</strong>
+    // ...
+}</pre>
+
+<p class="cye-lm-tag">Because of this assignment
+statement, the variable <code>FirstLevel.x</code> is not effectively final anymore. As a result, the Java compiler generates an error message similar to
+"local variables referenced from a lambda expression must be final or effectively final" where the lambda expression <code>myConsumer</code> tries to access the <code>FirstLevel.x</code> variable:</p>
+
+<pre class="codeblock">System.out.println("x = " + x);</pre>
+
+<h2><a name="target-typing">Target Typing</a></h2>
+
+<p class="cye-lm-tag">How do you determine the type of a lambda expression? Recall
+the lambda expression that selected members who are male and
+between the ages 18 and 25 years:</p>
+
+<pre class="codeblock">p -&gt; p.getGender() == Person.Sex.MALE
+    &amp;&amp; p.getAge() &gt;= 18
+    &amp;&amp; p.getAge() &lt;= 25</pre>
+
+<p class="cye-lm-tag">This lambda expression was used in the following two methods:</p>
+
+<ul>
+
+<li><p class="cye-lm-tag"><code>public static void printPersons(List&lt;Person&gt; roster, CheckPerson tester)</code> in <a href="#approach3">Approach 3: Specify Search Criteria Code in a Local Class</a></p></li>
+
+<li><p class="cye-lm-tag"><code>public void printPersonsWithPredicate(List&lt;Person&gt; roster, Predicate&lt;Person&gt; tester)</code> in <a href="#approach6">Approach 6: Use Standard Functional Interfaces with Lambda Expressions</a></p></li>
+
+</ul>
+
+<p class="cye-lm-tag">When the Java runtime invokes the method <code>printPersons</code>, it's expecting a data type of <code>CheckPerson</code>, so the
+lambda expression is of this type. However,
+when the Java runtime invokes the method <code>printPersonsWithPredicate</code>,
+it's expecting a data type of <code>Predicate&lt;Person&gt;</code>,
+so the lambda expression is of this type. The data type that
+these methods expect is called the <em>target type</em>. To determine the type of a lambda
+expression, the Java compiler uses the target type of the context
+or situation in which the lambda expression was found. It follows
+that you can only use lambda expressions in situations in which
+the Java compiler can determine a target type:</p>
+
+<ul>
+  <li><p class="cye-lm-tag">Variable declarations</p></li>
+  <li><p class="cye-lm-tag">Assignments</p></li>
+  <li><p class="cye-lm-tag">Return statements</p></li>
+  <li><p class="cye-lm-tag">Array initializers</p></li>
+  <li><p class="cye-lm-tag">Method or constructor arguments</p></li>
+  <li><p class="cye-lm-tag">Lambda expression bodies</p></li>
+  <li><p class="cye-lm-tag">Conditional expressions, <code>?:</code></p></li>
+  <li><p class="cye-lm-tag">Cast expressions</p></li>
+</ul>
+
+<h3><a name="target-types-and-method-arguments">Target Types and Method Arguments</a></h3>
+
+<p class="cye-lm-tag">For method arguments, the Java compiler determines the target
+type with two other language features: overload resolution and
+type argument inference.</p>
+
+<p class="cye-lm-tag">Consider the following two functional interfaces (
+<a class="APILink" target="_blank" href="https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html"><code>java.lang.Runnable</code></a> and
+<a class="APILink" target="_blank" href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html"><code>java.util.concurrent.Callable&lt;V&gt;</code></a>):</p>
+
+<pre class="codeblock">public interface Runnable {
+    void run();
+}
+
+public interface Callable&lt;V&gt; {
+    V call();
+}</pre>
+
+<p class="cye-lm-tag">The method <code>Runnable.run</code> does not return a value, whereas <code>Callable&lt;V&gt;.call</code> does.</p>
+
+<p class="cye-lm-tag">Suppose that you have overloaded the method <code>invoke</code> as follows
+(see
+<a class="TutorialLink" target="_top" href="methods.html">Defining Methods</a> for more information about overloading methods):</p>
+
+<pre class="codeblock">void invoke(Runnable r) {
+    r.run();
+}
+
+&lt;T&gt; T invoke(Callable&lt;T&gt; c) {
+    return c.call();
+}</pre>
+
+<p class="cye-lm-tag">Which method will be invoked in the following statement?</p>
+
+<pre class="codeblock">String s = invoke(() -&gt; "done");</pre>
+
+<p class="cye-lm-tag">The method <code>invoke(Callable&lt;T&gt;)</code> will be
+invoked because that method returns a value; the method
+<code>invoke(Runnable)</code> does not. In this case, the type of the lambda expression <code>() -&gt; "done"</code> is <code>Callable&lt;T&gt;</code>.</p>
+
+<h2><a name="serialization">Serialization</a></h2>
+
+<p class="cye-lm-tag">You can 
+<a class="TutorialLink" target="_top" href="../../jndi/objects/serial.html">serialize</a> a lambda expression if its target type and its captured arguments are serializable. However, like
+<a class="TutorialLink" target="_top" href="nested.html#serialization">inner classes</a>, the serialization of lambda expressions is strongly discouraged.</p>
+
+        </div>
+        <div class="NavBit">
+            <a target="_top" href="anonymousclasses.html">« Previous</a>
+            •
+            <a target="_top" href="../TOC.html">Trail</a>
+            •
+            <a target="_top" href="methodreferences.html">Next »</a>
+        </div>
+    </div>
+</body>
+</html>

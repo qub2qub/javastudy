@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>State of the Lambda</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-libraries-final.html">src1</a>
+<a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-final.html">src2</a>
+<div>
+<h2>State of the Lambda: Libraries Edition</h2>
+<h4>September 2013</h4>
+<h4>Java SE 8 Edition</h4>
+
+<p>This is an informal overview of the major library enhancements in Java
+SE 8 to take advantage of new language features, primarily lambda
+expressions and default methods, specified by <a href="http://jcp.org/en/jsr/detail?id=335">JSR 335</a> and
+implemented in the OpenJDK <a href="http://openjdk.java.net/projects/lambda/">Lambda Project</a>.  It refines the
+<a href="http://cr.openjdk.java.net/~briangoetz/lambda/sotc3.html">previous iteration</a> posted in November 2012.  The new
+language features for Java SE 8 are described in <a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-final.html">State of the
+Lambda</a>, which should be read first.</p>
+
+<h2>Background</h2>
+
+<p>Had lambda expressions (closures) been part of the Java language from
+the beginning, our Collections APIs would certainly look different
+than they do today.  As the Java language acquires lambda expressions
+as part of <a href="http://jcp.org/en/jsr/detail?id=335">JSR 335</a>, this has the unfortunate side effect of making
+our Collections interfaces look even more out of date!  While it might
+be tempting to start from scratch and build a replacement Collections
+framework ("Collections II"), replacing the Collections framework
+would be a major task, as the Collections interfaces permeate the entire
+Java ecosystem, and the adoption lag would be many years.  Instead, we
+pursue an evolutionary strategy of adding extension methods to
+existing interfaces (such as <code>Collection</code>, <code>List</code>, or <code>Iterable</code>), and
+adding a <em>stream</em> abstraction (e.g., <code>java.util.stream.Stream</code>) for
+performing aggregate operations on datasets, and
+retrofitting existing classes to provide stream views, enabling many
+of the desired idioms without making people trade in their trusty
+<code>ArrayList</code>s and <code>HashMap</code>s.  (This is not to say that Collections
+will never be replaced; clearly there are limitations beyond simply
+not being designed for lambdas.  A more modern collections framework
+may be considered for a future version of the JDK.)</p>
+
+<p>A key driver for this work is making parallelism more accessible to
+developers.  While the Java platform provides strong support for
+concurrency and parallelism already, developers face unnecessary
+impediments in migrating their code from sequential to parallel as
+needed.  Therefore, it is important to encourage idioms that are
+<em>both</em> sequential- and parallel-friendly.  This is facilitated by
+shifting the focus towards describing <em>what</em> computation should be
+performed, rather than <em>how</em> it should be performed.  It is also
+important to strike the balance between making parallelism <em>easier</em>
+but not going so far as to make it <em>invisible</em>; our goal is <em>explicit
+but unobstrusive</em> parallelism.  (Making parallelism transparent would
+introduce nondeterminism and the possibility of data races where users
+might not expect it.)</p>
+
+<h2>Internal vs external iteration</h2>
+
+<p>The Collections framework relies on the concept of <em>external
+iteration</em>, where a <code>Collection</code> provides, by implementing <code>Iterable</code>,
+a means to enumerate its elements, and clients use this to step
+sequentially through the elements of a collection.  For example, if we
+wanted to set the color of every shape in a collection of shapes to
+red, we would write:</p>
+
+<pre><code>for (Shape s : shapes) {
+    s.setColor(RED);
+}
+</code></pre>
+
+<p>This example illustrates external iteration; the for-each loop calls
+the <code>iterator()</code> method of <code>shapes</code>, and steps through the collection
+one by one.  External iteration is straightforward enough, but it has
+several problems:</p>
+
+<ul>
+<li>Java's for-loop is inherently sequential, and must
+process the elements in the order specified by the collection.</li>
+<li>It deprives the library method of the opportunity to manage the
+control flow, which might be able to provide better peformance by
+exploiting reordering of the data, parallelism, short-circuiting,
+or laziness.</li>
+</ul>
+
+<p>Sometimes the strong guarantees of the for-each loop (sequential,
+in-order) are desirable, but often are just an impediment to
+performance.</p>
+
+<p>The alternative to external iteration is <em>internal iteration</em>, where
+instead of controlling the iteration, the client delegates that to the
+library and passes in snippets of code to execute at various points in
+the computation.</p>
+
+<p>The internal-iteration equivalent of the previous example is:</p>
+
+<pre><code>shapes.forEach(s -&gt; s.setColor(RED));
+</code></pre>
+
+<p>This may appear to be a small syntactic change, but the difference is
+significant.  The control of the operation has been handed off from
+the client code to the library code, allowing the libraries not only
+to abstract over common control flow operations, but also enabling
+them to potentially use laziness, parallelism, and out-of-order
+execution to improve performance.  (Whether an implementation of
+<code>forEach</code> actually does any of these things is for the
+implementation to determine, but with internal iteration they
+are at least possible, whereas with external iteration, they are not.)</p>
+
+<p>Whereas external iteration mixes the <em>what</em> (color the shapes red) and
+the <em>how</em> (get an <code>Iterator</code> and iterate it sequentially), internal
+iteration lets the client dictate the what but lets the library
+control the how.  This offers several potential benefits: client code
+can be clearer, since it need only focus on stating the problem, not
+the details of how to go about solving it, and we can move complex 
+optimization code into libraries where it can benefit all users.  </p>
+
+<h2>Streams</h2>
+
+<p>The key new library abstraction introduced in Java SE 8 is a <em>stream</em>,
+defined in package <a href="http://download.java.net/jdk8/docs/api/java/util/stream/package-summary.html"><code>java.util.stream</code></a>.  (There are
+several stream types; <a href="http://download.java.net/jdk8/docs/api/java/util/stream/Stream.html"><code>Stream&lt;T&gt;</code></a> represents a
+stream of object references, and there are specializations such as
+<a href="http://download.java.net/jdk8/docs/api/java/util/stream/IntStream.html"><code>IntStream</code></a> to describe streams of primitives.)
+A stream represents a sequence of values, and exposes a set of
+aggregate operations that allow us to express common manipulations on
+those values easily and clearly.  The libraries provide convenient
+ways to obtain stream views of collections, arrays, and other data 
+sources.</p>
+
+<p>Stream operations are chained together into <em>pipelines</em>.  For example,
+if we wanted to color only the blue shapes red, we could say:</p>
+
+<pre><code>shapes.stream() 
+      .filter(s -&gt; s.getColor() == BLUE)
+      .forEach(s -&gt; s.setColor(RED));
+</code></pre>
+
+<p>The <code>stream()</code> method on <code>Collection</code> produces a stream view of the
+elements of that collection; the <code>filter()</code> operation then produces a
+stream containing the shapes that are blue, and these elements are
+then made red by <code>forEach()</code>.</p>
+
+<p>If we wanted to collect the blue shapes into a new <code>List</code>, we could 
+say:</p>
+
+<pre><code>List&lt;Shape&gt; blue = shapes.stream()
+                         .filter(s -&gt; s.getColor() == BLUE)
+                         .collect(Collectors.toList());
+</code></pre>
+
+<p>The <code>collect()</code> operation collects the input elements into an
+aggregate (such as a <code>List</code>) or a summary description; the argument to
+<code>collect()</code> is a recipe for how to do this aggregation.  In this case,
+we use <code>toList()</code>, which is a simple recipe that accumulates the
+elements into a <code>List</code>.  (More detail on <code>collect()</code> can be found in
+the "Collectors" section.)</p>
+
+<p>If each shape were contained in a <code>Box</code>, and we wanted to know which
+boxes contained at least one blue shape, we could say:</p>
+
+<pre><code>Set&lt;Box&gt; hasBlueShape = shapes.stream()
+                              .filter(s -&gt; s.getColor() == BLUE)
+                              .map(s -&gt; s.getContainingBox())
+                              .collect(Collectors.toSet());
+</code></pre>
+
+<p>The <code>map()</code> operation produces a stream whose values are the result of
+applying a mapping function (here, one that takes a shape and returns
+its containing box) to each element in its input stream.  </p>
+
+<p>If we wanted to add up the total weight of the blue shapes, we could
+express that as:</p>
+
+<pre><code>int sum = shapes.stream()
+                .filter(s -&gt; s.getColor() == BLUE)
+                .mapToInt(s -&gt; s.getWeight())
+                .sum();
+</code></pre>
+
+<p>So far, we haven't provided much detail about the specific signatures
+of the Stream operations shown; these examples simply illustrate the
+types of problems that the Streams framework is designed to address.</p>
+
+<h4>Streams vs Collections</h4>
+
+<p>Collections and streams, while bearing some superficial similarities,
+have different goals.  Collections are primarily concerned with the
+efficient management of, and access to, their elements.  By contrast,
+streams do not provide a means to directly access or manipulate their
+elements, and are instead concerned with declaratively describing the
+computational operations which will be performed in aggregate on that
+source.  Accordingly, streams differ from Collections in several ways:</p>
+
+<ul>
+<li>No storage.  Streams don't have storage for values; they carry
+values from a source (which could be a data structure, a generating
+function, an I/O channel, etc) through a pipeline of computational
+steps.</li>
+<li>Functional in nature.  Operations on a stream produce a result,
+but do not modify its underlying data source.  </li>
+<li>Laziness-seeking.  Many stream operations, such as filtering,
+mapping, sorting, or duplicate removal) can be implemented lazily.
+This facilitates efficient single-pass execution of entire
+pipelines, as well as facilitating efficient implementation of
+short-circuiting operations.  </li>
+<li>Bounds optional.  There are many problems that are sensible to
+express as infinite streams, letting clients consume values until
+they are satisfied.  (If we were enumerating perfect numbers, it is
+easy to express this as a filtering operation on the stream of all
+integers.)  While a Collection is constrained to be finite, a 
+stream is not.  (To terminate in finite time, a stream pipeline
+with an infinite source can use short-circuiting operations; 
+alternately, you can request an <code>Iterator</code> from a <code>Stream</code> and
+traverse it manually.)  </li>
+</ul>
+
+<p>As an API, Streams is completely independent from Collections.  While
+it is easy to use a collection as the source for a stream
+(<code>Collection</code> has <code>stream()</code> and <code>parallelStream()</code> methods) or to
+dump the elements of a stream into a collection (using the <code>collect()</code>
+operation as shown earlier), aggregates other than <code>Collection</code> can be
+used as sources for streams as well.  Many JDK classes, such as
+<code>BufferedReader</code>, <code>Random</code>, and <code>BitSet</code>, have been retrofitted to act
+as sources for streams, and <code>Arrays.stream()</code> provides stream view of
+arrays.  In fact, anything that can be described with an <code>Iterator</code>
+can be used as a stream source, though if more information is
+available (such as size or metadata about stream contents like
+sortedness), the library can provide an optimized execution.</p>
+
+<h4>Laziness</h4>
+
+<p>Operations like filtering or mapping, can be performed <em>eagerly</em>
+(where the filtering is performed on all elements before the <code>filter</code>
+method returns), or <em>lazily</em> (where the <code>Stream</code> representing the
+filtered result only applies the filter to elements from its source as
+needed.)  Performing computations lazily, where practical, can be
+beneficial.  For example, if we perform filtering lazily, we can fuse
+the filtering with other operations later in the pipeline, so as not
+to require multiple passes on the data.  Similarly, if we are
+searching a large collection for the first element that matches a
+given criteria, we can stop once we find one, rather than processing
+the entire collection.  (This is especially important for infinite
+sources; whereas laziness is merely an optimization for finite
+sources, it makes operations on infinite sources possible, whereas an
+eager approach would never terminate.)</p>
+
+<p>Operations such as filtering and mapping can be thought of as naturally
+lazy, whether or not they are implemented as such.  On the other hand,
+value-producing operations such as <code>sum()</code>, or side-effect-producing
+operations such as <code>forEach()</code>, are "naturally eager", because they 
+must produce a concrete result.  </p>
+
+<p>In a pipeline such as:</p>
+
+<pre><code>int sum = shapes.stream()
+                .filter(s -&gt; s.getColor() == BLUE)
+                .mapToInt(s -&gt; s.getWeight())
+                .sum();
+</code></pre>
+
+<p>the filtering and mapping operations are lazy.  This means that we
+don't start drawing elements from the source until we start the <code>sum</code>
+operation, and when we do perform the <code>sum</code> operation, we fuse
+filtering, mapping, and addition into a single pass on the data.  This
+minimizes the bookkeeping costs required to manage intermediate
+elements.</p>
+
+<p>Many loops can be restated as aggregate operations drawing from a data
+source (array, collection, generator function, I/O channel), doing a
+series of lazy operations (filtering, mapping, etc), and then doing a
+single eager operation (<code>forEach</code>, <code>toArray</code>, <code>collect</code>, etc) -- such
+as filter-map-accumulate, filter-map-sort-foreach, etc.  The naturally
+lazy operations tend to be used to compute temporary intermediate
+results, and we exploit this property in our API design.  Rather than
+have the <code>filter</code> and <code>map</code> return a collection, we instead have them
+return a new stream.  In the Streams API, operations that return a
+stream are lazy, and operations that return a non-stream result (or
+return no result, such as <code>forEach()</code>) are eager.  In most cases where
+potentially-lazy operations are being applied to aggregates, this
+turns out to be exactly what we want -- each stage takes a stream of
+input values, performs some transformation on it, and passes the
+values to the next stage in the pipeline.  </p>
+
+<p>Conveniently, when used in a source-lazy-lazy-eager pipeline, the
+laziness is mostly invisible, as the computation is "sandwiched" with
+a source at one end (often a collection), and an operation that
+produces the desired result (or side-effect) at the other end.  This
+turns out to yield good usability and performance in an API with a
+relatively small surface area.</p>
+
+<p>Methods like <code>anyMatch(Predicate)</code> or <code>findFirst()</code>, while eager, can
+use <em>short-circuiting</em> to stop processing once they can determine the
+final result.  Given a pipeline like:</p>
+
+<pre><code>Optional&lt;Shape&gt; firstBlue = shapes.stream()
+                                  .filter(s -&gt; s.getColor() == BLUE)
+                                  .findFirst();
+</code></pre>
+
+<p>Because the filter step is lazy, the <code>findFirst</code> implementation will
+only draw from upstream until it gets an element, which means we need
+only apply the predicate to input elements until we find one for which
+the predicate is true, rather than all of them.  The <code>findFirst()</code>
+method returns an <code>Optional</code>, since there might not be any elements
+matching the desired criteria.  <code>Optional</code> provides a
+means to describe a value that might or might not be present.</p>
+
+<p>Note that the user didn't have to ask for laziness, or even think
+about it very much; the right thing happened, with the library
+arranging for as little computation as it could.</p>
+
+<h4>Parallelism</h4>
+
+<p>Stream pipelines can execute either in serial or parallel; this choice
+is a property of the stream.  Unless you explicitly ask for a parallel
+stream, the JDK implementations always return sequential streams (a
+sequential stream may be converted into a parallel one with the
+<code>parallel()</code> method.)</p>
+
+<p>While parallelism is always explicit, it need not be intrusive.  Our
+sum-of-weights example can be executed in parallel simply by invoking
+the <code>parallelStream()</code> method on the source collection instead of
+<code>stream()</code>:</p>
+
+<pre><code>int sum = shapes.parallelStream()
+                .filter(s -&gt; s.getColor() == BLUE)
+                .mapToInt(s -&gt; s.getWeight())
+                .sum();
+</code></pre>
+
+<p>The result is that the serial and parallel expressions of the same
+computation look similar, but parallel executions are still clearly
+identified as parallel (without the parallel machinery overwhelming
+the code).</p>
+
+<p>Because the stream source might be a mutable collection, there is the
+possibility for interference if the source is modified while it is
+being traversed.  The stream operations are intended to be used while
+the underlying source is held constant for the duration of the
+operation.  This condition is generally easy to maintain; if the
+collection is confined to the current thread, simply ensure that the
+lambda expressions passed to stream operations do not mutate the
+stream source.  (This condition is not substantially different from
+the restrictions on iterating Collections today; if a Collection is
+modified while being iterated, most implementations throw
+<code>ConcurrentModificationException</code>.)  We refer to this requirement as
+<em>non-interference</em>.</p>
+
+<p>It is best to avoid any side-effects in the lambdas passed to stream
+methods.  While some side-effects, such as debugging statements that
+print out values are usually safe, accessing mutable state from these
+lambdas can cause data races or surprising behavior since lambdas may
+be executed from many threads simultaneously, and may not see elements
+in their natural encounter order.  Non-interference includes not only
+not interfering with the source, but not interfering with other
+lambdas; this sort of interference can arise when one lambda modifies
+mutable state and another lambda reads it.  </p>
+
+<p>As long as the non-interference requirement is satisfied, we can
+execute parallel operations safely and with predictable results even
+on non-thread-safe sources such as <code>ArrayList</code>.</p>
+
+<h2>Examples</h2>
+
+<p>Below is an fragment from the JDK class <code>Class</code> (the
+<code>getEnclosingMethod</code> method), which loops over all declared methods,
+matching method name, return type, and number and type of parameters.
+Here is the original code:</p>
+
+<pre><code> for (Method m : enclosingInfo.getEnclosingClass().getDeclaredMethods()) {
+     if (m.getName().equals(enclosingInfo.getName()) ) {
+         Class&lt;?&gt;[] candidateParamClasses = m.getParameterTypes();
+         if (candidateParamClasses.length == parameterClasses.length) {
+             boolean matches = true;
+             for(int i = 0; i &lt; candidateParamClasses.length; i++) {
+                 if (!candidateParamClasses[i].equals(parameterClasses[i])) {
+                     matches = false;
+                     break;
+                 }
+             }
+
+             if (matches) { // finally, check return type
+                 if (m.getReturnType().equals(returnType) )
+                     return m;
+             }
+         }
+     }
+ }
+
+ throw new InternalError("Enclosing method not found");
+</code></pre>
+
+<p>Using streams, we can eliminate all the temporary variables and move
+the control logic into the library.  We fetch the list of methods via
+reflection, turn it into a <code>Stream</code> with <code>Arrays.stream</code>, and then use
+a series of filters to reject the ones that don't match name,
+parameter types, or return type.  The result of <code>findFirst</code> is an
+<code>Optional&lt;Method&gt;</code>, and we then either fetch and return the resulting
+method or throw an exception.</p>
+
+<pre><code>return Arrays.stream(enclosingInfo.getEnclosingClass().getDeclaredMethods())
+             .filter(m -&gt; Objects.equals(m.getName(), enclosingInfo.getName())
+             .filter(m -&gt;  Arrays.equals(m.getParameterTypes(), parameterClasses))
+             .filter(m -&gt; Objects.equals(m.getReturnType(), returnType))
+             .findFirst()
+             .orElseThrow(() -&gt; new InternalError("Enclosing method not found");
+</code></pre>
+
+<p>This version of the code is more compact, more readable, and less
+error-prone.</p>
+
+<p>Stream operations are very effective for ad-hoc queries over
+collections.  Consider a hypothetical "music library" application,
+where a library has a list of albums, an album has a title and a list
+of tracks, and a track has a name, artist, and rating.</p>
+
+<p>Consider the query "find the names of albums that have at least one
+track rated four or higher, sorted by name."  To construct this set,
+we might write:</p>
+
+<pre><code>List&lt;Album&gt; favs = new ArrayList&lt;&gt;();
+for (Album a : albums) {
+    boolean hasFavorite = false;
+    for (Track t : a.tracks) {
+        if (t.rating &gt;= 4) {
+            hasFavorite = true;
+            break;
+        }
+    }
+    if (hasFavorite)
+        favs.add(a);
+}
+Collections.sort(favs, new Comparator&lt;Album&gt;() {
+                           public int compare(Album a1, Album a2) {
+                               return a1.name.compareTo(a2.name);
+                           }});
+</code></pre>
+
+<p>We can use the stream operations to simplify each of the three major
+steps -- identification of whether any track in an album has a rating
+of at least for (<code>anyMatch</code>), the sorting, and the collection of
+albums matching our criteria into a <code>List</code>:</p>
+
+<pre><code>List&lt;Album&gt; sortedFavs =
+  albums.stream()
+        .filter(a -&gt; a.tracks.anyMatch(t -&gt; (t.rating &gt;= 4)))
+        .sorted(Comparator.comparing(a -&gt; a.name))
+        .collect(Collectors.toList());
+</code></pre>
+
+<p>The <code>Comparator.comparing()</code> method takes a function that extracts a
+<code>Comparable</code> sort key, and returns a <code>Comparator</code> that compares on
+that key (see section "Comparator factories", below.)</p>
+
+<h4>Collectors</h4>
+
+<p>In the examples so far, we've used the <code>collect()</code> method to gather
+the elements of a stream into a <code>List</code> or <code>Set</code>.  The argument to
+<code>collect()</code> is a <code>Collector</code>, which embodies a recipe for folding
+elements into a data structure or summary.  The <code>Collectors</code> class
+contains factories for many common collectors; <code>toList()</code> and
+<code>toSet()</code> are among the most commonly used, but there are many more
+that can be used to perform sophisticated transforms on the data.</p>
+
+<p>A <code>Collector</code> is parameterized by its input and output types.  The
+<code>toList()</code> collector has an input type of some <code>T</code> and an output type
+of <code>List&lt;T&gt;</code>.  A slightly more complicated <code>Collector</code> is <code>toMap</code>, of
+which there are several versions.  The simplest version takes a pair
+of functions, one which maps input elements to map keys, and the other
+to map values.  It takes a <code>T</code> as input and produces a <code>Map&lt;K,V&gt;</code>,
+where <code>K</code> and <code>V</code> are the result types of the key and value mapping
+functions.  (More complex versions allow you to customize the type of
+the resulting map, or to resolve duplicates when multiple elements map
+to the same key.)  For example, to create a reverse index on a known
+unique key such as catalog number:</p>
+
+<pre><code>Map&lt;Integer, Album&gt; albumsByCatalogNumber =
+    albums.stream()
+          .collect(Collectors.toMap(a -&gt; a.getCatalogNumber(), a -&gt; a));
+</code></pre>
+
+<p>Related to <code>toMap</code> is <code>groupingBy</code>.  Let's say we wanted to tabulate
+our favorite tracks by artist.  We want a <code>Collector</code> that takes as
+input <code>Track</code> and produces a <code>Map&lt;Artist,List&lt;Track&gt;&gt;</code>.  This exactly
+matches the behavior of the simplest form of the <code>groupingBy</code>
+collector, which takes a classification function and produces a map
+keyed by that function, whose corresponding values are a list of input
+elements who correspond to that key.</p>
+
+<pre><code>Map&lt;Artist, List&lt;Track&gt;&gt; favsByArtist =
+    tracks.stream()
+          .filter(t -&gt; t.rating &gt;= 4)
+          .collect(Collectors.groupingBy(t -&gt; t.artist));
+</code></pre>
+
+<p>Collectors can be composed and reused to produce more complex
+collectors.  The simple form of the <code>groupingBy</code> collector organized
+elements into buckets according to the classification function (here,
+the track's artist), and put all elements that map to the same bucket
+into a <code>List</code>.  There is a more general version that lets you use
+<em>another</em> collector to organize the elements within a bucket; this
+version takes a classifying function and a downstream collector as
+arguments, and all elements mapped into the same bucket by the
+classifying function are passed to the downstream collector.  (The
+one-argument version of <code>groupingBy</code> implicitly uses <code>toList()</code> as its
+downstream collector.)  For example, if we want to collect the tracks
+associated with each artist into a <code>Set</code> instead of a <code>List</code>, we could
+combine this with the <code>toSet()</code> collector:</p>
+
+<pre><code>Map&lt;Artist, Set&lt;Track&gt;&gt; favsByArtist =
+    tracks.stream()
+          .filter(t -&gt; t.rating &gt;= 4)
+          .collect(Collectors.groupingBy(t -&gt; t.artist, 
+                                         Collectors.toSet()));
+</code></pre>
+
+<p>If we wanted to categorize tracks by artist and rating to create a
+multi-level map, we could do:</p>
+
+<pre><code>Map&lt;Artist, Map&lt;Integer, List&lt;Track&gt;&gt;&gt; byArtistAndRating =
+    tracks.stream()
+          .collect(groupingBy(t -&gt; t.artist, 
+                              groupingBy(t -&gt; t.rating)));
+</code></pre>
+
+<p>As a final example, let's say we wanted to create a frequency
+distribution of words that appear in track titles.  We first use
+<code>Stream.flatMap()</code> and <code>Pattern.splitAsStream</code> to take a stream of
+tracks and explode each track into the words in that track's name,
+producing a stream of words in all the names of all the tracks.  We
+can then use <code>groupingBy</code> using <code>String.toUpperCase</code> as the classifier
+function (so all words that are the same word, ignoring case, are
+considered the same and therefore appear in the same bucket) and use
+the <code>counting()</code> collector as the downstream collector to count the
+appearances of each word (without having to create an intermediate
+collection):</p>
+
+<pre><code>Pattern pattern = Pattern.compile(\\s+");
+Map&lt;String, Integer&gt; wordFreq = 
+    tracks.stream()
+          .flatMap(t -&gt; pattern.splitAsStream(t.name)) // Stream&lt;String&gt;
+          .collect(groupingBy(s -&gt; s.toUpperCase(),
+                              counting()));
+</code></pre>
+
+<p>The <code>flatMap</code> method takes as its argument a function that maps an
+input element (here, a track) to a stream of something (here, words in
+the track name).  It applies this mapping function to every element of
+the stream, replacing each element with the contents of the resulting
+stream.  (Think of this as two operations, first mapping every element
+to a stream of zero or more other elements, and then flattening out
+the contents of the resulting streams into a single stream.)  So here,
+the result of the <code>flatMap</code> operation is a stream containing all the
+words in all the track names.  We then group the words together into
+buckets containing occurrences of words which are identical modulo
+case, and use the <code>counting()</code> collector to count the number of words
+in each bucket.</p>
+
+<p>The <code>Collectors</code> class has lots of methods for constructing collectors
+that can be used for all sorts of common queries, roll-ups, and
+tabulations, and you can implement your own <code>Collector</code> as well.</p>
+
+<h2>Parallelism under the hood</h2>
+
+<p>With the Fork/Join framework added in Java SE 7, the JDK has an API
+for efficiently implementing parallel computations.  However, parallel
+code with Fork/Join looks very different from (and much bigger than)
+the equivalent serial code, which acts as a barrier to
+parallelization.  By supporting the exact same set of operations on
+sequential and parallel streams, users can switch between serial and
+parallel execution without rewriting their code, removing this barrier
+and making parallelism more accessible and less error-prone.  </p>
+
+<p>The steps involved in implementing a parallel computation via
+recursive decomposition are: dividing a problem into subproblems,
+solving a subproblem sequentially to produce a partial result, and
+combining the partial results of two subproblems.  The Fork/Join
+machinery is designed to automate this process.</p>
+
+<p>In order to support the full set of operations on any stream source,
+we model the stream source with an abstraction called <code>Spliterator</code>,
+which is a generalization of a traditional iterator.  In addition to
+supporting sequential access to the data elements, a spliterator also
+supports decomposition: just as an <code>Iterator</code> lets you carve off a
+single element and leave the rest described by the <code>Iterator</code>, a
+<code>Spliterator</code> lets you carve off a larger chunk (ideally, half) of the
+input elements into a new <code>Spliterator</code>, and leave the rest of the
+data to be described by the original <code>Spliterator</code>.  (Both
+spliterators can then be decomposed further.)  Additionally, a
+spliterator can provide source metadata such as the number of elements
+(if known) and a set of boolean characteristics (such as "the elements
+are sorted") that can be used by the Streams framework to optimize
+execution.</p>
+
+<p>This approach separates the structural properties of recursive
+decomposition from the algorithms that can be executed in parallel on
+decomposible data structures.  The author of a data structure need
+only provide the decomposition logic, and then immediately gets the
+benefit of parallel execution of stream operations.  </p>
+
+<p>Most users won't ever have to implement a <code>Spliterator</code>; they'll just
+use the <code>stream()</code> methods on existing collections.  But, if you ever
+are implementing a collection or other stream source, you might want
+to consider providing a custom <code>Spliterator</code>.  The API for
+<code>Spliterator</code> is shown below:</p>
+
+<pre><code>public interface Spliterator&lt;T&gt; {
+    // Element access
+    boolean tryAdvance(Consumer&lt;? super T&gt; action);
+    void forEachRemaining(Consumer&lt;? super T&gt; action); 
+
+    // Decomposition
+    Spliterator&lt;T&gt; trySplit();
+
+    // Optional metadata
+    long estimateSize();
+    int characteristics();
+    Comparator&lt;? super T&gt; getComparator();
+}
+</code></pre>
+
+<p>Base interfaces such as <code>Iterable</code> and <code>Collection</code> provide correct
+but low-performance <code>spliterator()</code> implementations, but
+sub-interfaces (like <code>Set</code>) and concrete implementations (like
+<code>ArrayList</code>) override these with higher-quality spliterators that take
+advantage of information not available to the base type.  The quality
+of a spliterator implementation will affect performance of stream
+execution; returning well-balanced splits from the <code>split()</code> method
+will improve CPU utilization, and providing the correct
+characteristics and size metadata will enable many other
+optimizations.</p>
+
+<h4>Encounter order</h4>
+
+<p>Many data sources, such as lists, arrays, and I/O channels, have a
+natural <em>encounter order</em>, which means the order in which the elements
+appear has significance.  Others, such as <code>HashSet</code>, have no defined
+encounter order (and therefore an <code>Iterator</code> for a <code>HashSet</code> is
+permitted to serve up the elements in any order it likes.)  </p>
+
+<p>One of the characteristics tracked by <code>Spliterator</code>, and used by
+stream implementations, is whether the stream has a defined encounter
+order.  With a few exceptions (such as <code>Stream.forEach()</code> or
+<code>Stream.findAny()</code>), parallel operations are constrained by encounter
+order.  This means that in a stream pipeline like</p>
+
+<pre><code>List&lt;String&gt; names = people.parallelStream()
+                           .map(Person::getName)
+                           .collect(toList());
+</code></pre>
+
+<p>the names must appear in the same order as the corresponding people
+did in the stream source.  Usually, this is what we want, and for many
+stream operations, this is not prohibitively expensive to preserve.
+On the other hand, if the source were a <code>HashSet</code>, then the names
+could appear in any order, and might appear in a different order
+across multiple executions.  </p>
+
+<h2>Streams and lambdas in the JDK</h2>
+
+<p>Having exposed <code>Stream</code> as a top-level abstraction, we want to ensure
+that the features of <code>Stream</code> are available as widely throughout the
+JDK as possible.  <code>Collection</code> has been augmented with <code>stream()</code> and
+<code>parallelStream()</code> methods for converting collections into streams;
+arrays can be converted into streams with <code>Arrays.stream()</code>.  </p>
+
+<p>Additionally, there are static factory methods in <code>Stream</code> (and the
+associated primitive specializations) for creating streams, such as
+<code>Stream.of</code>, <code>Stream.generate</code>, and <code>IntStream.range</code>.  Many other
+classes have acquired new stream-bearing methods, such as
+<code>String.chars</code>, <code>BufferedReader.lines</code>, <code>Pattern.splitAsStream</code>,
+<code>Random.ints</code>, and <code>BitSet.stream</code>.</p>
+
+<p>Finally, we provide a set of APIs for constructing streams, to be used
+by library writers who wish to expose stream functionality on
+non-standard aggregates.  The minimal information needed to create a
+<code>Stream</code> is an <code>Iterator</code>, but if the creator has additional metadata
+(such as knowing the size), the library can provide a more efficient
+implementation by implementing a <code>Spliterator</code> (as all of the JDK
+collections have).</p>
+
+<h4>Comparator factories</h4>
+
+<p>The <code>Comparator</code> class has acquired a number of new methods that are
+useful for building comparators.  </p>
+
+<p>The static method <code>Comparator.comparing()</code> takes a function that
+extracts a <code>Comparable</code> sort key and produces a <code>Comparator</code>.  Its
+implementation is very simple: </p>
+
+<pre><code>public static &lt;T, U extends Comparable&lt;? super U&gt;&gt; Comparator&lt;T&gt; comparing(
+        Function&lt;? super T, ? extends U&gt; keyExtractor) {
+    return (c1, c2) 
+        -&gt; keyExtractor.apply(c1).compareTo(keyExtractor.apply(c2));
+}
+</code></pre>
+
+<p>Methods like this are an example of <em>higher order functions</em> --
+functions who take as arguments functions or return new functions.
+Methods like this simplify user code by reducing duplication:</p>
+
+<pre><code>List&lt;Person&gt; people = ...
+people.sort(comparing(p -&gt; p.getLastName()));
+</code></pre>
+
+<p>This is much cleaner than the "old way", which usually involved an
+anonymous class instance that implemented <code>Comparator</code>.  But the real
+power of this approach is its improved composability.  For example,
+<code>Comparator</code> has a default method for reversing its direction.  So, 
+to sort the people by last name in reverse order, we can simply 
+create the comparator as before, and then ask it to reverse itself: </p>
+
+<pre><code>people.sort(comparing(p -&gt; p.getLastName()).reversed());
+</code></pre>
+
+<p>Similarly, the default method <code>thenComparing</code> allows you to take a
+<code>Comparator</code> and refine its behavior when the initial comparator 
+views two elements as equal.  To sort the people by last name then 
+first name, we would do: </p>
+
+<pre><code>Comparator&lt;Person&gt; c = Comparator.comparing(p -&gt; p.getLastName())
+                                 .thenComparing(p -&gt; p.getFirstName());
+people.sort(c);
+</code></pre>
+
+<h4>Mutative collection operations</h4>
+
+<p>Stream operations on collections produce a new value, collection, or
+side-effect.  However, sometimes we do want to mutate the collection
+in-place, and some new methods have been added to <code>Collection</code>,
+<code>List</code>, and <code>Map</code> to take advantage of lambdas, such as
+<code>Iterable.forEach(Consumer)</code>, <code>Collection.removeAll(Predicate)</code>,
+<code>List.replaceAll(UnaryOperator)</code>, <code>List.sort(Comparator)</code>, and
+<code>Map.computeIfAbsent()</code>.  Additionally, non-atomic versions of the
+methods from <code>ConcurrentMap</code>, such as <code>replace</code> and <code>putIfAbsent</code> have
+been pulled up into <code>Map</code>.  </p>
+
+<h2>Summary</h2>
+
+<p>While adding lambda expressions to the language is a huge step
+forward, developers get their work done every day by using the core
+libraries, so the language evolution effort was paired with a library
+evolution effort so that users could start using the new features on
+day one.  The centerpiece of the new library features is the <code>Stream</code>
+abstraction, which provides powerful facilities for aggregate
+operations on data sets, and has been deeply integrated with the
+existing collection classes as well as other JDK classes.  </p>
+
+<!-- This document is in Markdown format:
+[title]: State of the Lambda: Libraries Edition
+ -->
+
+</div>
+<br><hr>
+<div class="cye-lm-tag">
+<h1 class="cye-lm-tag">State of the Lambda</h1>
+
+<!-- This document is in Markdown format:
+     http://daringfireball.net/projects/markdown/
+ -->
+
+<h4>September 2013</h4>
+
+<h4>Java SE 8 Edition</h4>
+
+<p class="cye-lm-tag">This is an informal overview of the enhancements to the Java
+programming language specified by <a href="http://jcp.org/en/jsr/detail?id=335">JSR 335</a> and implemented in the
+OpenJDK <a href="http://openjdk.java.net/projects/lambda/">Lambda Project</a>.  It refines the <a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-4.html">previous
+iteration</a> posted in December 2011.  A formal description of
+some of the language changes may be found in the 
+<a href="http://jcp.org/aboutJava/communityprocess/edr/jsr335/index.html">Early Draft Specification</a> for the JSR; an OpenJDK <a href="http://jdk8.java.net/lambda/">Developer Preview</a> 
+is also
+available.  Additional historical design documents can be found at the
+<a href="http://openjdk.java.net/projects/lambda/">OpenJDK project page</a>.  There is also a companion
+document, <a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-libraries-final.html">State of the Lambda, Libraries Edition</a>, describing 
+the library enhancements added as part of JSR 335.  </p>
+
+<p class="cye-lm-tag">The high-level goal of Project Lambda is to enable programming patterns
+that require modeling code as data to be convenient and idiomatic in
+Java.  The principal new language features include:</p>
+
+<ul>
+<li>Lambda expressions (informally, "closures" or "anonymous methods")</li>
+<li>Method and constructor references</li>
+<li>Expanded target typing and type inference</li>
+<li>Default and static methods in interfaces</li>
+</ul>
+
+<p class="cye-lm-tag">These are described and illustrated below.</p>
+
+<h2>1.  Background</h2>
+
+<p class="cye-lm-tag">Java is, primarily, an object-oriented programming language.  In both
+object-oriented and functional languages, basic values can dynamically
+encapsulate program behavior: object-oriented languages have objects
+with methods, and functional languages have functions.  This
+similarity may not be obvious, however, because Java objects tend to
+be relatively heavyweight: instantiations of separately-declared
+classes wrapping a handful of fields and many methods.</p>
+
+<p class="cye-lm-tag">Yet it is common for some objects to essentially encode nothing more
+than a function.  In a typical use case, a Java API defines an
+interface, sometimes described as a "callback interface," expecting
+the user to provide an instance of the interface when invoking the
+API.  For example:</p>
+
+<pre><code>public interface ActionListener { 
+    void actionPerformed(ActionEvent e);
+}
+</code></pre>
+
+<p class="cye-lm-tag">Rather than declaring a class that implements <code>ActionListener</code> for the
+sole purpose of allocating it once at an invocation site, a user
+typically instantiates the implementing class inline, anonymously:</p>
+
+<pre><code>button.addActionListener(new ActionListener() { 
+  public void actionPerformed(ActionEvent e) { 
+    ui.dazzle(e.getModifiers());
+  }
+});
+</code></pre>
+
+<p class="cye-lm-tag">Many useful libraries rely on this pattern.  It is particularly
+important for parallel APIs, in which the code to execute must be
+expressed independently of the thread in which it will run.  The
+parallel-programming domain is of special interest, because as Moore's
+Law continues to give us more cores but not faster cores, serial APIs
+are limited to a shrinking fraction of available processing power.</p>
+
+<p class="cye-lm-tag">Given the increasing relevance of callbacks and other functional-style
+idioms, it is important that modeling code as data in Java be as
+lightweight as possible.  In this respect, anonymous inner classes are
+imperfect for a <a href="http://blogs.oracle.com/jrose/entry/better_closures">number of reasons</a>, primarily:</p>
+
+<ol>
+<li>Bulky syntax</li>
+<li>Confusion surrounding the meaning of names and <code>this</code></li>
+<li>Inflexible class-loading and instance-creation semantics</li>
+<li>Inability to capture non-final local variables</li>
+<li>Inability to abstract over control flow</li>
+</ol>
+
+<p class="cye-lm-tag">This project addresses many of these issues. It eliminates (1) and (2) by
+introducing new, much more concise expression forms with local scoping
+rules, sidesteps (3) by defining the semantics of the new expressions in
+a more flexible, optimization-friendly manner, and ameliorates (4) by
+allowing the compiler to infer finality (allowing capture of
+<em>effectively final</em> local variables).</p>
+
+<p class="cye-lm-tag">However, it is <em>not</em> a goal of this project to address all the
+problems of inner classes.  Neither arbitrary capture of mutable
+variables (4) nor nonlocal control flow (5) are within this project's
+scope (though such features may be revisited in a future iteration of
+the language.)  </p>
+
+<h2>2.  Functional interfaces</h2>
+
+<p class="cye-lm-tag">The anonymous inner class approach, despite its limitations, has the
+nice property of fitting very cleanly into Java's type system: a
+function value with an interface type.  This is convenient for a
+number of reasons: interfaces are already an intrinsic part of the
+type system; they naturally have a runtime representation; and they
+carry with them informal contracts expressed by Javadoc comments, such
+as an assertion that an operation is commutative.</p>
+
+<p class="cye-lm-tag">The interface <code>ActionListener</code>, used above, has just one method. Many
+common callback interfaces have this property, such as <code>Runnable</code> and
+<code>Comparator</code>. We'll give all interfaces that have just one method a
+name: <em>functional interfaces</em>.  (These were previously called
+<em>SAM Types</em>, which stood for "Single Abstract Method".)</p>
+
+<p class="cye-lm-tag">Nothing special needs to be done to declare an interface as
+functional; the compiler identifies it as such based on its structure.
+(This identification process is a little more than just counting
+method declarations; an interface might redundantly declare a method
+that is automatically provided by the class <code>Object</code>, such as
+<code>toString()</code>, or might declare static or default methods, none of
+which count against the one-method limit.)  However, API authors may
+additionally capture the <em>design intent</em> that an interface be
+functional (as opposed to accidentally having only one method) with
+the <code>@FunctionalInterface</code> annotation, in which case the compiler will
+validate that the interface meets the structural requirements to be a
+functional interface.</p>
+
+<p class="cye-lm-tag">An alternative (or complementary) approach to function types,
+suggested by some early proposals, would have been to introduce a new,
+<em>structural</em> function type, sometimes called <em>arrow types</em>.  A type
+like "function from a <code>String</code> and an <code>Object</code> to an <code>int</code>" might be
+expressed as <code>(String,Object)-&gt;int</code>.  This idea was considered and
+rejected, at least for now, due to several disadvantages:</p>
+
+<ul>
+<li>It would add complexity to the type system and further mix structural
+and nominal types (Java is almost entirely nominally typed).</li>
+<li>It would lead to a divergence of library styles -- some
+libraries would continue to use callback interfaces, while others
+would use structural function types.</li>
+<li>The syntax could be unwieldy, especially when checked exceptions were
+included.</li>
+<li>It is unlikely that there would be a runtime representation for
+each distinct function type, meaning developers would be further
+exposed to and limited by erasure. For example, it would not be
+possible (perhaps surprisingly) to overload methods <code>m(T-&gt;U)</code> and
+<code>m(X-&gt;Y)</code>.</li>
+</ul>
+
+<p class="cye-lm-tag">So, we have instead followed the path of "use what you
+know" -- since existing libraries use functional interfaces
+extensively, we codify and leverage this pattern.  This enables
+<em>existing</em> libraries to be used with lambda expressions.  </p>
+
+<p class="cye-lm-tag">To illustrate, here is a sampling of some of the functional interfaces
+already in Java SE 7 that are well-suited for being used with the new
+language features; the examples that follow illustrate the use of a
+few of them.</p>
+
+<ul>
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/lang/Runnable.html"><code>java.lang.Runnable</code></a></li>
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/util/concurrent/Callable.html"><code>java.util.concurrent.Callable</code></a></li>
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/security/PrivilegedAction.html"><code>java.security.PrivilegedAction</code></a></li>
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/util/Comparator.html"><code>java.util.Comparator</code></a></li>
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/io/FileFilter.html"><code>java.io.FileFilter</code></a></li>
+<li><a href="http://www.fxfrog.com/docs_www/api/java/beans/PropertyChangeListener.html"><code>java.beans.PropertyChangeListener</code></a></li>
+</ul>
+
+<p class="cye-lm-tag">In addition, Java SE 8 adds a new package,
+<a href="http://download.java.net/jdk8/docs/api/java/util/function/package-summary.html"><code>java.util.function</code></a>, which contains functional
+interfaces that are expected to be commonly used, such as:</p>
+
+<ul>
+<li><code>Predicate&lt;T&gt;</code> -- a boolean-valued property of an object </li>
+<li><code>Consumer&lt;T&gt;</code> -- an action to be performed on an object</li>
+<li><code>Function&lt;T,R&gt;</code> -- a function transforming a T to a R</li>
+<li><code>Supplier&lt;T&gt;</code> -- provide an instance of a T (such as a factory)</li>
+<li><code>UnaryOperator&lt;T&gt;</code> -- a function from T to T</li>
+<li><code>BinaryOperator&lt;T&gt;</code> -- a function from (T, T) to T</li>
+</ul>
+
+<p class="cye-lm-tag">In addition to these basic "shapes", there are also primitive
+specializations such as <code>IntSupplier</code> or <code>LongBinaryOperator</code>.
+(Rather than provide the full complement of primitive specializations,
+we provide only specializations for <code>int</code>, <code>long</code>, and <code>double</code>;
+the other primitive types can be accomodated through conversions.)
+Similarly, there are some specializations for multiple arities, such
+as <code>BiFunction&lt;T,U,R&gt;</code>, which represents a function from <code>(T,U)</code> to
+<code>R</code>.  </p>
+
+<h2>3.  Lambda expressions</h2>
+
+<p class="cye-lm-tag">The biggest pain point for anonymous classes is bulkiness.  They have
+what we might call a "vertical problem": the <code>ActionListener</code> instance
+from section 1 uses five lines of source code to encapsulate a single
+aspect of behavior.</p>
+
+<p class="cye-lm-tag">Lambda expressions are anonymous methods, aimed at addressing the
+"vertical problem" by replacing the machinery of anonymous inner
+classes with a lighter-weight mechanism.</p>
+
+<p class="cye-lm-tag">Here are some examples of lambda expressions:</p>
+
+<pre><code>(int x, int y) -&gt; x + y
+
+() -&gt; 42
+
+(String s) -&gt; { System.out.println(s); }
+</code></pre>
+
+<p class="cye-lm-tag">The first expression takes two integer arguments, named <code>x</code> and <code>y</code>,
+and returns their sum.  The second takes <em>no</em> arguments and returns
+the integer <code>42</code>.  The third takes a string and prints it to the
+console, returning nothing.</p>
+
+<p class="cye-lm-tag">The general syntax consists of an argument list, the arrow token <code>-&gt;</code>,
+and a body.  The body can either be a single expression, or a statement
+block.  In the expression form, the body is simply evaluated and
+returned.  In the block form, the body is evaluated like a method
+body -- a <code>return</code> statement returns control to the caller of the
+anonymous method; <code>break</code> and <code>continue</code> are illegal at the top level,
+but are of course permitted within loops; and if the body produces a
+result, every control path must return something or throw an exception.</p>
+
+<p class="cye-lm-tag">The syntax is optimized for the common case in which a lambda
+expression is quite small, as illustrated above. For example, the
+expression-body form eliminates the need for a <code>return</code> keyword, which
+could otherwise represent a substantial syntactic overhead relative to
+the size of the expression.</p>
+
+<p class="cye-lm-tag">It is also expected that lambda expressions will frequently appear in
+nested contexts, such as the argument to a method invocation or the
+result of <em>another</em> lambda expression. To minimize noise in these cases,
+unnecessary delimiters are avoided.  However, for situations in which
+it is useful to set the entire expression apart, it can be surrounded
+with parentheses, just like any other expression.</p>
+
+<p class="cye-lm-tag">Here are some examples of lambda expressions appearing in statements:</p>
+
+<pre><code>FileFilter java = (File f) -&gt; f.getName().endsWith(".java");
+
+String user = doPrivileged(() -&gt; System.getProperty("user.name"));
+
+new Thread(() -&gt; {
+  connectToService();
+  sendNotification();
+}).start();
+</code></pre>
+
+<h2>4.  Target typing</h2>
+
+<p class="cye-lm-tag">Note that the name of a functional interface is <em>not</em> part of the lambda
+expression syntax.  So what kind of object does a lambda expression
+represent?  Its type is inferred from the surrounding context.  For
+example, the following lambda expression is an <code>ActionListener</code>:</p>
+
+<pre><code>ActionListener l = (ActionEvent e) -&gt; ui.dazzle(e.getModifiers());
+</code></pre>
+
+<p class="cye-lm-tag">An implication of this approach is that the same lambda expression can
+have different types in different contexts:</p>
+
+<pre><code>Callable&lt;String&gt; c = () -&gt; "done";
+
+PrivilegedAction&lt;String&gt; a = () -&gt; "done";
+</code></pre>
+
+<p class="cye-lm-tag">In the first case, the lambda expression <code>() -&gt; "done"</code> represents an
+instance of <code>Callable</code>.  In the second case, the same expression
+represents an instance of <code>PrivilegedAction</code>.</p>
+
+<p class="cye-lm-tag">The compiler is responsible for inferring the type of each lambda
+expression. It uses the type expected in the context in which the
+expression appears; this type is called the <em>target type</em>.  A lambda
+expression can only appear in a context whose target type is a
+functional interface.</p>
+
+<p class="cye-lm-tag">Of course, no lambda expression will be compatible with <em>every</em>
+possible target type.  The compiler checks that the types used by the
+lambda expression are consistent with the target type's method
+signature. That is, a lambda expression can be assigned to a target
+type <code>T</code> if all of the following conditions hold:</p>
+
+<ul>
+<li><code>T</code> is a functional interface type</li>
+<li>The lambda expression has the same number of parameters as <code>T</code>'s
+method, and those parameters' types are the same</li>
+<li>Each expression returned by the lambda body is compatible with <code>T</code>'s
+method's return type</li>
+<li>Each exception thrown by the lambda body is allowed by <code>T</code>'s method's
+<code>throws</code> clause</li>
+</ul>
+
+<p class="cye-lm-tag">Since a functional interface target type already "knows" what types
+the lambda expression's formal parameters should have, it is often
+unnecessary to repeat them.  The use of target typing enables
+the lambda parameters' types to be inferred:</p>
+
+<pre><code>Comparator&lt;String&gt; c = (s1, s2) -&gt; s1.compareToIgnoreCase(s2);
+</code></pre>
+
+<p class="cye-lm-tag">Here, the compiler infers that the type of <code>s1</code> and <code>s2</code> is <code>String</code>.
+In addition, when there is just one parameter whose type is inferred
+(a very common case), the parentheses surrounding a single parameter
+name are optional:</p>
+
+<pre><code>FileFilter java = f -&gt; f.getName().endsWith(".java");
+
+button.addActionListener(e -&gt; ui.dazzle(e.getModifiers()));
+</code></pre>
+
+<p class="cye-lm-tag">These enhancements further a desirable design goal: "Don't turn a
+vertical problem into a horizontal problem."  We want the reader of the
+code to have to wade through as little syntax as possible before
+arriving at the "meat" of the lambda expression.</p>
+
+<p class="cye-lm-tag">Lambda expressions are not the first Java expressions to have
+context-dependent types: generic method invocations and "diamond"
+constructor invocations, for example, are similarly type-checked based
+on an assignment's target type.</p>
+
+<pre><code>List&lt;String&gt; ls = Collections.emptyList();
+List&lt;Integer&gt; li = Collections.emptyList();
+
+Map&lt;String,Integer&gt; m1 = new HashMap&lt;&gt;();
+Map&lt;Integer,String&gt; m2 = new HashMap&lt;&gt;();
+</code></pre>
+
+<h2>5.  Contexts for target typing</h2>
+
+<p class="cye-lm-tag">We stated earlier that lambda expressions can only appear in contexts
+that have target types.  The following contexts have target types:</p>
+
+<ul>
+<li>Variable declarations</li>
+<li>Assignments</li>
+<li>Return statements</li>
+<li>Array initializers</li>
+<li>Method or constructor arguments</li>
+<li>Lambda expression bodies</li>
+<li>Conditional expressions (<code>?:</code>)</li>
+<li>Cast expressions</li>
+</ul>
+
+<p class="cye-lm-tag">In the first three cases, the target type is simply the type being
+assigned to or returned.</p>
+
+<pre><code>Comparator&lt;String&gt; c;
+c = (String s1, String s2) -&gt; s1.compareToIgnoreCase(s2);
+
+public Runnable toDoLater() {
+  return () -&gt; {
+    System.out.println("later");
+  };
+}
+</code></pre>
+
+<p class="cye-lm-tag">Array initializer contexts are like assignments, except that the
+"variable" is an array component and its type is derived from the
+array's type.</p>
+
+<pre><code>filterFiles(new FileFilter[] { 
+               f -&gt; f.exists(), f -&gt; f.canRead(), f -&gt; f.getName().startsWith("q") 
+            });
+</code></pre>
+
+<p class="cye-lm-tag">In the method argument case, things are more complicated: target type
+determination interacts with two other language features, <em>overload
+resolution</em> and <em>type argument inference</em>.</p>
+
+<p class="cye-lm-tag">Overload resolution involves finding the best method declaration for a
+particular method invocation.  Since different declarations have
+different signatures, this can impact the target type of a lambda
+expression used as an argument.  The compiler will use what it knows
+about the lambda expression to make this choice.  If a lambda
+expression is <em>explicitly typed</em> (specifies the types of its
+parameters), the compiler will know not only the parameter types but
+also the type of all return expressions in its body.  If the lambda is
+<em>implicitly typed</em> (inferred parameter types), overload resolution
+will ignore the lambda body and only use the number of lambda
+parameters.</p>
+
+<p class="cye-lm-tag">If the choice of a best method declaration is ambiguous, casts or
+explicit lambdas can provide additional type information for the
+compiler to disambiguate.  If the return type targeted by a lambda
+expression depends on type argument inference, then the lambda body
+may provide information to the compiler to help infer the type
+arguments.</p>
+
+<pre><code>List&lt;Person&gt; ps = ...
+String&lt;String&gt; names = ps.stream().map(p -&gt; p.getName());
+</code></pre>
+
+<p class="cye-lm-tag">Here, <code>ps</code> is a <code>List&lt;Person&gt;</code>, so <code>ps.stream()</code> is a
+<code>Stream&lt;Person&gt;</code>.  The <code>map()</code> method is generic in <code>R</code>, where the
+parameter of <code>map()</code> is a <code>Function&lt;T,R&gt;</code>, where <code>T</code> is the stream
+element type.  (<code>T</code> is known to be <code>Person</code> at this point.)  Once the
+overload is selected and the lambda's target type is known, we need to
+infer <code>R</code>; we do this by type-checking the lambda body, and
+discovering that its return type is <code>String</code>, and hence <code>R</code> is
+<code>String</code>, and therefore the <code>map()</code> expression has a type of
+<code>Stream&lt;String&gt;</code>.  Most of the time, the compiler just figures this
+all out, but if it gets stuck, we can provide additional type
+information via an explicit lambda (give the argument <code>p</code> an explicit
+type), casting the lambda to an explicit target type such as
+<code>Function&lt;Person,String&gt;</code>, or providing an explicit type witness for
+the generic parameter <code>R</code> (<code>.&lt;String&gt;map(p -&gt; p.getName())</code>).</p>
+
+<p class="cye-lm-tag">Lambda expressions themselves provide target types for their bodies,
+in this case by deriving that type from the outer target type. This
+makes it convenient to write functions that return other functions:</p>
+
+<pre><code>Supplier&lt;Runnable&gt; c = () -&gt; () -&gt; { System.out.println("hi"); };
+</code></pre>
+
+<p class="cye-lm-tag">Similarly, conditional expressions can "pass down" a target type
+from the surrounding context:</p>
+
+<pre><code>Callable&lt;Integer&gt; c = flag ? (() -&gt; 23) : (() -&gt; 42);
+</code></pre>
+
+<p class="cye-lm-tag">Finally, cast expressions provide a mechanism to explicitly provide
+a lambda expression's type if none can be conveniently inferred
+from context:</p>
+
+<pre><code>// Illegal: Object o = () -&gt; { System.out.println("hi"); };
+Object o = (Runnable) () -&gt; { System.out.println("hi"); };
+</code></pre>
+
+<p class="cye-lm-tag">Casts are also useful to help resolve ambiguity when a method
+declaration is overloaded with unrelated functional interface types.</p>
+
+<p class="cye-lm-tag">The expanded role of target typing in the compiler is not limited to
+lambda expressions: generic method invocations and "diamond" constructor
+invocations can also take advantage of target types wherever they are
+available.  The following declarations are illegal in Java SE 7 but
+valid in Java SE 8:</p>
+
+<pre><code>List&lt;String&gt; ls =
+  Collections.checkedList(new ArrayList&lt;&gt;(), String.class);
+
+Set&lt;Integer&gt; si = flag ? Collections.singleton(23)
+                       : Collections.emptySet();
+</code></pre>
+
+<h2>6.  Lexical scoping</h2>
+
+<p class="cye-lm-tag">Determining the meaning of names (and <code>this</code>) in inner classes is
+significantly more difficult and error-prone than when classes are
+limited to the top level.  Inherited members -- including methods of
+class <code>Object</code> -- can accidentally shadow outer declarations, and
+unqualified references to <code>this</code> always refer to the inner class itself.</p>
+
+<p class="cye-lm-tag">Lambda expressions are much simpler: they do not inherit any names from
+a supertype, nor do they introduce a new level of scoping.  Instead,
+they are lexically scoped, meaning names in the body are interpreted
+just as they are in the enclosing environment (with the addition of new
+names for the lambda expression's formal parameters).  As a natural
+extension, the <code>this</code> keyword and references to its members have the
+same meaning as they would immediately outside the lambda expression.</p>
+
+<p class="cye-lm-tag">To illustrate, the following program prints <code>"Hello, world!"</code> twice to
+the console:</p>
+
+<pre><code>public class Hello {
+  Runnable r1 = () -&gt; { System.out.println(this); }
+  Runnable r2 = () -&gt; { System.out.println(toString()); }
+
+  public String toString() { return "Hello, world!"; }
+
+  public static void main(String... args) {
+    new Hello().r1.run();
+    new Hello().r2.run();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">The equivalent using anonymous inner classes would instead, perhaps to
+the programmer's surprise, print something like <code>Hello$1@5b89a773</code> and
+<code>Hello$2@537a7706</code>.</p>
+
+<p class="cye-lm-tag">Consistent with the lexical-scoping approach, and following the pattern
+set by other local parameterized constructs like <code>for</code> loops and <code>catch</code>
+clauses, the parameters of a lambda expression must not shadow any local
+variables in the enclosing context.</p>
+
+<h2>7.  Variable capture</h2>
+
+<p class="cye-lm-tag">The compiler check for references to local variables of enclosing
+contexts in inner classes (<em>captured</em> variables) is quite restrictive in
+Java SE 7: an error occurs if the captured variable is not declared
+<code>final</code>.  We relax this restriction -- for both lambda
+expressions and inner classes -- by also allowing the capture of
+<em>effectively final</em> local variables.</p>
+
+<p class="cye-lm-tag">Informally, a local variable is effectively final if its initial value
+is never changed -- in other words, declaring it <code>final</code> would not cause
+a compilation failure.</p>
+
+<pre><code>Callable&lt;String&gt; helloCallable(String name) {
+  String hello = "Hello";
+  return () -&gt; (hello + ", " + name);
+}
+</code></pre>
+
+<p class="cye-lm-tag">References to <code>this</code> -- including implicit references through
+unqualified field references or method invocations -- are,
+essentially, references to a <code>final</code> local variable.  Lambda bodies that
+contain such references capture the appropriate instance of <code>this</code>.  In
+other cases, no reference to <code>this</code> is retained by the object.</p>
+
+<p class="cye-lm-tag">This has a beneficial implication for memory management: while inner
+class instances always hold a strong reference to their enclosing
+instance, lambdas that do not capture members from the enclosing
+instance do <em>not</em> hold a reference to it.  This characteristic of inner
+class instances can often be a source of memory leaks.</p>
+
+<p class="cye-lm-tag">While we relax the syntactic restrictions on captured values, we still
+prohibit capture of mutable local variables.  The reason is that
+idioms like this:</p>
+
+<pre><code>int sum = 0;
+list.forEach(e -&gt; { sum += e.size(); }); // ERROR
+</code></pre>
+
+<p class="cye-lm-tag">are fundamentally serial; it is quite difficult to write lambda bodies
+like this that do not have race conditions.  Unless
+we are willing to enforce -- preferably at compile time -- that
+such a function cannot escape its capturing thread, this feature may
+well cause more trouble than it solves.  Lambda expressions close over
+<em>values</em>, not <em>variables</em>.  </p>
+
+<p class="cye-lm-tag">Another reason to not support capture of mutable variables is that
+there's a better way to address accumulation problems without
+mutation, and instead treat this problem as a <em>reduction</em>.  The
+<a href="http://download.java.net/jdk8/docs/api/java/util/stream/package-summary.html"><code>java.util.stream</code></a> package provides both general and
+specialized (such as sum, min, and max) reductions on collections and
+other data structures.  For example, instead of using <code>forEach</code> and
+mutation, we could do a reduction which is safe both sequentially or
+in parallel:</p>
+
+<pre><code>int sum = list.stream()
+              .mapToInt(e -&gt; e.size())
+              .sum();
+</code></pre>
+
+<p class="cye-lm-tag">The <code>sum()</code> method is provided for convenience, but is equivalent to the
+more general form of reduction:</p>
+
+<pre><code>int sum = list.stream()
+              .mapToInt(e -&gt; e.size())
+              .reduce(0, (x,y) -&gt; x+y);
+</code></pre>
+
+<p class="cye-lm-tag">Reduction takes a base value (in case the input is empty) and an
+operator (here, addition), and computes the following expression:</p>
+
+<pre><code>0 + list[0] + list[1] + list[2] + ...
+</code></pre>
+
+<p class="cye-lm-tag">Reduction can be done with other operations as well, such as minimum,
+maximum, product, etc, and if the operator is associative, is easily
+and safely parallelized.  So, rather than supporting an idiom that is
+fundamentally sequential and prone to data races (mutable
+accumulators), we instead choose to provide library support to express
+accumulations in a more parallelizable and less error-prone way.  </p>
+
+<h2>8.  Method references</h2>
+
+<p class="cye-lm-tag">Lambda expressions allow us to define an anonymous method and treat
+it as an instance of a functional interface.  It is often desirable to
+do the same with an <em>existing</em> method.</p>
+
+<p class="cye-lm-tag">Method references are expressions which have the same treatment as
+lambda expressions (i.e., they require a target type and encode
+functional interface instances), but instead of providing a method body,
+they refer an existing method by name.</p>
+
+<p class="cye-lm-tag">For example, consider a <code>Person</code> class that can be sorted by name or by
+age.  </p>
+
+<pre><code>class Person { 
+    private final String name;
+    private final int age;
+
+    public int getAge() { return age; }
+    public String getName() { return name; }
+   ...
+}
+
+Person[] people = ...
+Comparator&lt;Person&gt; byName = Comparator.comparing(p -&gt; p.getName());
+Arrays.sort(people, byName);
+</code></pre>
+
+<p class="cye-lm-tag">We can rewrite this to use a method reference to <code>Person.getName()</code>
+instead:</p>
+
+<pre><code>Comparator&lt;Person&gt; byName = Comparator.comparing(Person::getName);
+</code></pre>
+
+<p class="cye-lm-tag">Here, the expression <code>Person::getName</code> can be considered shorthand for
+a lambda expression which simply invokes the named method with its
+arguments, and returns the result.  While the method reference may not
+(in this case) be any more syntactically compact, it is clearer -- the
+method that we want to call has a name, and so we can refer to it
+directly by name.</p>
+
+<p class="cye-lm-tag">Because the functional interface method's parameter types act as
+arguments in an implicit method invocation, the referenced method
+signature is allowed to manipulate the parameters -- via widening,
+boxing, grouping as a variable-arity array, etc. -- just like a
+method invocation.</p>
+
+<pre><code>Consumer&lt;Integer&gt; b1 = System::exit;   // void exit(int status)
+Consumer&lt;String[]&gt; b2 = Arrays::sort;  // void sort(Object[] a)
+Consumer&lt;String&gt; b3 = MyProgram::main; // void main(String... args)
+Runnable r = MyProgram::main;          // void main(String... args)
+</code></pre>
+
+<h2>9.  Kinds of method references</h2>
+
+<p class="cye-lm-tag">There are several different kinds of method references, each
+with slightly different syntax:</p>
+
+<ul>
+<li>A static method (<code>ClassName::methName</code>)</li>
+<li>An instance method of a particular object (<code>instanceRef::methName</code>)</li>
+<li>A <code>super</code> method of a particular object (<code>super::methName</code>)</li>
+<li>An instance method of an arbitrary object of a particular type (<code>ClassName::methName</code>)</li>
+<li>A class constructor reference (<code>ClassName::new</code>)</li>
+<li>An array constructor reference (<code>TypeName[]::new</code>)</li>
+</ul>
+
+<p class="cye-lm-tag">For a static method reference, the class to which the method belongs
+precedes the <code>::</code> delimiter, such as in <code>Integer::sum</code>.</p>
+
+<p class="cye-lm-tag">For a reference to an instance method of a particular object, an
+expression evaluating to an object reference precedes the delimiter:</p>
+
+<pre><code>Set&lt;String&gt; knownNames = ...
+Predicate&lt;String&gt; isKnown = knownNames::contains;
+</code></pre>
+
+<p class="cye-lm-tag">Here, the implicit lambda expression would capture the <code>String</code> object
+referred to by <code>knownNames</code>, and the body would invoke <code>Set.contains</code>
+using that object as the receiver.</p>
+
+<p class="cye-lm-tag">The ability to reference the method of a specific object provides a
+convenient way to convert between different functional interface types:</p>
+
+<pre><code>Callable&lt;Path&gt; c = ...
+PrivilegedAction&lt;Path&gt; a = c::call;
+</code></pre>
+
+<p class="cye-lm-tag">For a reference to an instance method of an arbitrary object, the type
+to which the method belongs precedes the delimiter, and the invocation's
+receiver is the first parameter of the functional interface method:</p>
+
+<pre><code>Function&lt;String, String&gt; upperfier = String::toUpperCase;
+</code></pre>
+
+<p class="cye-lm-tag">Here, the implicit lambda expression has one parameter, the string to
+be converted to upper case, which becomes the receiver of the
+invocation of the <code>toUpperCase()</code> method.</p>
+
+<p class="cye-lm-tag">If the class of the instance method is generic, its type parameters can
+be provided before the <code>::</code> delimiter or, in most cases, inferred from
+the target type.</p>
+
+<p class="cye-lm-tag">Note that the syntax for a static method reference might also be
+interpreted as a reference to an instance method of a class. The
+compiler determines which is intended by attempting to identify an
+applicable method of each kind (noting that the instance method has one
+less argument).</p>
+
+<p class="cye-lm-tag">For all forms of method references, method type arguments are inferred
+as necessary, or they can be explicitly provided following the <code>::</code>
+delimiter.</p>
+
+<p class="cye-lm-tag">Constructors can be referenced in much the same was as static methods by
+using the name <code>new</code>:</p>
+
+<pre><code>SocketImplFactory factory = MySocketImpl::new;
+</code></pre>
+
+<p class="cye-lm-tag">If a class has multiple constructors, the target type's method signature
+is used to select the best match in the same way that a constructor
+invocation is resolved.</p>
+
+<p class="cye-lm-tag">For inner classes, no syntax supports explicitly providing an
+enclosing instance parameter at the site of the constructor reference.</p>
+
+<p class="cye-lm-tag">If the class to instantiate is generic, type arguments can be provided
+after the class name, or they are inferred as for a "diamond"
+constructor invocation.  </p>
+
+<p class="cye-lm-tag">There is a special syntactic form of constructor references for
+arrays, which treats arrays as if they had a constructor that accepts
+an <code>int</code> parameter.  For example:</p>
+
+<pre><code>IntFunction&lt;int[]&gt; arrayMaker = int[]::new;
+int[] array = arrayMaker.apply(10);  // creates an int[10]
+</code></pre>
+
+<h2>10.  Default and static interface methods</h2>
+
+<p class="cye-lm-tag">Lambda expressions and method references add a lot of expressiveness to
+the Java language, but the key to really achieving our goal of making
+code-as-data patterns convenient and idiomatic is to complement these
+new features with libraries tailored to take advantage of them.</p>
+
+<p class="cye-lm-tag">Adding new functionality to existing libraries is somewhat difficult
+in Java SE 7.  In particular, interfaces are essentially set in stone
+once they are published; unless one can update all possible
+implementations of an interface simultaneously, adding a new method to
+an interface can cause existing implementations to break.  The purpose
+of <em>default methods</em> (previously referred to as <em>virtual extension
+methods</em> or <em>defender methods</em>) is to enable interfaces to be evolved
+in a compatible manner after their initial publication.</p>
+
+<p class="cye-lm-tag">To illustrate, the standard collections API obviously ought to provide
+new lambda-friendly operations. For example, the <code>removeAll</code> method
+could be generalized to remove any of a collection's elements for which
+an arbitrary property held, where the property was expressed as an
+instance of a functional interface <code>Predicate</code>.  But where would this
+new method be defined?  We can't add an abstract method to the
+<code>Collection</code> interface -- many existing implementations wouldn't know
+about the change. We could make it a static method in the <code>Collections</code>
+utility class, but that would relegate these new operations to a sort of
+second-class status.</p>
+
+<p class="cye-lm-tag"><em>Default methods</em> provide a more object-oriented way to add concrete
+behavior to an interface.  These are a new kind of method: interface
+method can either be <em>abstract</em> or <em>default</em>.  Default methods have an
+implementation that is inherited by classes that do not override it
+(see the next section for the details).  Default methods in a
+functional interface don't count against its limit of one abstract
+method.  For example, we could have (though did not) add a <code>skip</code>
+method to <code>Iterator</code>, as follows:</p>
+
+<pre><code>interface Iterator&lt;E&gt; {
+    boolean hasNext();
+    E next();
+    void remove();
+
+    default void skip(int i) {
+        for (; i &gt; 0 &amp;&amp; hasNext(); i--) next();
+    }
+}
+</code></pre>
+
+<p class="cye-lm-tag">Given the above definition of <code>Iterator</code>, all classes that implement
+<code>Iterator</code> would inherit a <code>skip</code> method.  From a client's perspective,
+<code>skip</code> is just another virtual method provided by the interface.  Invoking
+<code>skip</code> on an instance of a subclass of <code>Iterator</code> that does not provide a body for
+ <code>skip</code> has the effect of invoking the default implementation:
+calling <code>hasNext</code> and <code>next</code> up to a certain number of times.  If a
+class wants to override <code>skip</code> with a better implementation -- by
+advancing a private cursor directly, for example, or incorporating an
+atomicity guarantee -- it is free to do so.  </p>
+
+<p class="cye-lm-tag">When one interface extends another, it can add a default to an
+inherited abstract method, provide a new default for an inherited
+default method, or reabstract a default method by redeclaring the
+method as abstract.</p>
+
+<p class="cye-lm-tag">In addition to allowing code in interfaces in the form of default
+methods, Java SE 8 also introduces the ability to place <em>static</em>
+methods in interfaces as well.  This allows helper methods that are
+specific to an interface to live with the interface, rather than in a
+side class (which is often named for the plural of the interface).
+For example, <code>Comparator</code> acquired static helper methods for making
+comparators, which takes a function that extracts a <code>Comparable</code> sort
+key and produces a <code>Comparator</code>:</p>
+
+<pre><code>public static &lt;T, U extends Comparable&lt;? super U&gt;&gt; 
+Comparator&lt;T&gt; comparing(Function&lt;T, U&gt; keyExtractor) {
+    return (c1, c2) -&gt; keyExtractor.apply(c1).compareTo(keyExtractor.apply(c2));
+}
+</code></pre>
+
+<h2>11.  Inheritance of default methods</h2>
+
+<p class="cye-lm-tag">Default methods are inherited just like other methods; in most cases,
+the behavior is just as one would expect.  However, when a class's or
+interface's supertypes provide multiple methods with the same
+signature, the inheritance rules attempt to resolve the conflict.  Two
+basic principles drive these rules:</p>
+
+<ul>
+<li><p class="cye-lm-tag">Class method declarations are preferred to interface defaults.  This is true
+whether the class method is concrete or abstract.  (Hence the <code>default</code>
+keyword: default methods are a fallback if the class hierarchy doesn't
+say anything.)</p></li>
+<li><p class="cye-lm-tag">Methods that are already overridden by other candidates are ignored.
+This circumstance can arise when supertypes share a common ancestor.</p></li>
+</ul>
+
+<p class="cye-lm-tag">As an example of how the second rule comes into play, say the
+<code>Collection</code> and <code>List</code> interfaces provided different defaults for
+<code>removeAll</code>, and <code>Queue</code> inherits the default method from
+<code>Collection</code>; in the following <code>implements</code> clause, the <code>List</code>
+declaration would have priority over the <code>Collection</code> declaration
+inherited by <code>Queue</code>:</p>
+
+<pre><code>class LinkedList&lt;E&gt; implements List&lt;E&gt;, Queue&lt;E&gt; { ... }
+</code></pre>
+
+<p class="cye-lm-tag">In the event that two independently-defined defaults conflict, or a
+default method conflicts with an abstract method, it is a compilation
+error.  In this case, the programmer must explicitly override the
+supertype methods.  Often, this amounts to picking the preferred
+default, and declaring a body that invokes the preferred default.  An
+enhanced syntax for <code>super</code> supports the invocation of a particular
+superinterface's default implementation:</p>
+
+<pre><code>interface Robot implements Artist, Gun {
+    default void draw() { Artist.super.draw(); }
+}
+</code></pre>
+
+<p class="cye-lm-tag">The name preceding <code>super</code> must refer to a direct superinterface that
+defines or inherits a default for the invoked method. This form of
+method invocation is not restricted to simple disambiguation -- it can
+be used just like any other invocation, in both classes and
+interfaces.</p>
+
+<p class="cye-lm-tag">In no case does the order in which interfaces are declared in an
+<code>inherits</code> or <code>extends</code> clause, or which interface was implemented
+"first" or "more recently", affect inheritance.</p>
+
+<h2>12.  Putting it together</h2>
+
+<p class="cye-lm-tag">The language and library features for Project Lambda were designed to
+work together.  To illustrate, we'll consider the task of sorting a
+list of people by last name.</p>
+
+<p class="cye-lm-tag">Today we write:</p>
+
+<pre><code>List&lt;Person&gt; people = ...
+Collections.sort(people, new Comparator&lt;Person&gt;() {
+    public int compare(Person x, Person y) {
+        return x.getLastName().compareTo(y.getLastName());
+    }
+});
+</code></pre>
+
+<p class="cye-lm-tag">This is a very verbose way to write "sort people by last name"!  </p>
+
+<p class="cye-lm-tag">With lambda expressions, we can make this expression more concise:</p>
+
+<pre><code>Collections.sort(people, 
+                 (Person x, Person y) -&gt; x.getLastName().compareTo(y.getLastName()));
+</code></pre>
+
+<p class="cye-lm-tag">However, while more concise, it is not any more abstract; it still
+burdens the programmer with the need to do the actual comparison
+(which is even worse when the sort key is a primitive).  Small changes
+to the libraries can help here, such the static <code>comparing</code> method
+added to <code>Comparator</code>:</p>
+
+<pre><code>Collections.sort(people, Comparator.comparing((Person p) -&gt; p.getLastName()));
+</code></pre>
+
+<p class="cye-lm-tag">This can be shortened by allowing the compiler to infer the type
+of the lambda parameter, and importing the <code>comparing</code> method via a
+static import:</p>
+
+<pre><code>Collections.sort(people, comparing(p -&gt; p.getLastName()));
+</code></pre>
+
+<p class="cye-lm-tag">The lambda in the above expression is simply a forwarder for the
+existing method <code>getLastName</code>.  We can use method references to reuse
+the existing method in place of the lambda expression:</p>
+
+<pre><code>Collections.sort(people, comparing(Person::getLastName));
+</code></pre>
+
+<p class="cye-lm-tag">Finally, the use of an ancillary method like <code>Collections.sort</code> is
+undesirable for many reasons: it is more verbose; it can't be specialized
+for each data structure that implements <code>List</code>; and it undermines the
+value of the <code>List</code> interface since users can't easily discover the
+static <code>sort</code> method when inspecting the documentation for <code>List</code>.</p>
+
+<p class="cye-lm-tag">Default methods provide a more object-oriented solution for this
+problem, where we've added a <code>sort()</code> method to <code>List</code>:</p>
+
+<pre><code>people.sort(comparing(Person::getLastName));
+</code></pre>
+
+<p class="cye-lm-tag">Which also reads much more like to the problem statement in the first
+place: sort the <code>people</code> list by last name.</p>
+
+<p class="cye-lm-tag">If we add a default method <code>reversed()</code> to <code>Comparator</code>, which
+produces a <code>Comparator</code> that uses the same sort key but in reverse
+order, we can just as easily express a descending sort:</p>
+
+<pre><code>people.sort(comparing(Person::getLastName).reversed());
+</code></pre>
+
+<h2>13.  Summary</h2>
+
+<p class="cye-lm-tag">Java SE 8 adds a relatively small number of new language features --
+lambda expressions, method references, default and static methods in
+interfaces, and more widespread use of type inference.  Taken
+together, though, they enable programmers to express their intent more
+clearly and concisely with less boilerplate, and enable the
+development of more powerful, parallel-friendly libraries.  </p>
+
+<!-- This document is in Markdown format:
+[title]: State of the Lambda
+ -->
+
+</div>
+<br><hr>
+</body>
+</html>

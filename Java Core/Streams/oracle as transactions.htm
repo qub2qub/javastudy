@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Streams database-like</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://www.oracle.com/technetwork/articles/java/ma14-java-se-8-streams-2177646.html">src1</a>
+<a href="http://www.oracle.com/technetwork/articles/java/architect-streams-pt2-2227132.html">src2</a>
+<p>Java 8 in Action <br>
+Lambdas, streams, and functional-style programming</p>
+
+<a href="https://github.com/java8/Java8InAction">github Java8InAction</a>
+
+<h2>Processing Data with Java SE 8 Streams</h2>
+<div class="orcl6w3">
+<p><em>by Raoul-Gabriel Urma</em></p>
+ <p><strong>Use stream operations to express sophisticated data processing queries.</strong></p>
+ <p>What would you do without collections? Nearly every Java application <em>makes</em> and <em>processes</em> collections. They are fundamental to many programming tasks: they let you group and process data. For example, you might want to create a collection of banking transactions to represent a customer’s statement. Then, you might want to process the whole collection to find out how much money the customer spent. Despite their importance, processing collections is far from perfect in Java.</p>
+ <p>First, typical processing patterns on collections are similar to SQL-like operations such as “finding” (for example, find the transaction with highest value) or “grouping” (for example, group all transactions related to grocery shopping). Most databases let you specify such operations declaratively. For example, the following SQL query lets you find the transaction ID with the highest value: <code>"SELECT id, MAX(value) from transactions"</code>.</p>
+ <p>As you can see, we don’t need to implement <em>how</em> to calculate the maximum value (for example, using loops and a variable to track the highest value). We only express <em>what</em> we expect. This basic idea means that you need to worry less about how to explicitly implement such queries—it is handled for you. Why can’t we do something similar with collections? How many times do you find yourself reimplementing these operations using loops over and over again?</p>
+ <p>Second, how can we process really large collections efficiently? Ideally, to speed up the processing, you want to leverage multicore architectures. However, writing parallel code is hard and error-prone.&nbsp;</p>
+ <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p><em>Here’s a mind-blowing idea:</em> these two operations can produce elements “forever.”</p>
+</div></div> <p><!-- /C44v0 --></p>
+ <p>Java SE 8 to the rescue! The Java API designers are updating the API with a new abstraction called <em>Stream</em> that lets you process data in a declarative way. Furthermore, streams can leverage multi-core architectures without you having to write a single line of multithread code. Sounds good, doesn’t it? That’s what this series of articles will explore.</p>
+ <p>Before we explore in detail what you can do with streams, let’s take a look at an example so you have a sense of the new programming style with Java SE 8 streams. Let’s say we need to find all transactions of type <code>grocery</code> and return a list of transaction IDs sorted in decreasing order of transaction value. In Java SE 7,  we’d do that as shown in <strong>Listing 1</strong>. In Java SE 8, we’d do it as shown in <strong>Listing 2</strong>.</p>
+ <pre>List&lt;Transaction&gt; groceryTransactions = new Arraylist&lt;&gt;();
+for(Transaction t: transactions){
+  if(t.getType() == Transaction.GROCERY){
+    groceryTransactions.add(t);
+  }
+}
+Collections.sort(groceryTransactions, new Comparator(){
+  public int compare(Transaction t1, Transaction t2){
+    return t2.getValue().compareTo(t1.getValue());
+  }
+});
+List&lt;Integer&gt; transactionIds = new ArrayList&lt;&gt;();
+for(Transaction t: groceryTransactions){
+  transactionsIds.add(t.getId());
+}
+</pre> <p><strong>Listing 1</strong></p>
+ <pre>List&lt;Integer&gt; transactionsIds = 
+    transactions.stream()
+                .filter(t -&gt; t.getType() == Transaction.GROCERY)
+                .sorted(comparing(Transaction::getValue).reversed())
+                .map(Transaction::getId)
+                .collect(toList());
+</pre> <p><strong>Listing 2</strong></p>
+ <p><strong>Figure 1</strong> illustrates the Java SE 8 code. First, we obtain a stream from the list of transactions (the data) using the <code>stream()</code> method available on <code>List</code>. Next, several operations (<code>filter</code>, <code>sorted</code>, <code>map</code>, <code>collect</code>) are chained together to form a pipeline, which can be seen as forming a query on the data.<br> <br> <img alt="streams-f1" src="./pics/2179048.jpg"></p>
+ <p><strong>Figure 1</strong><br> <br> So how about parallelizing the code? In Java SE 8 it’s easy: just replace <code>stream()</code> with <code>parallel Stream()</code>, as shown in <strong>Listing 3</strong>, and the Streams API will internally decompose your query to leverage the multiple cores on your computer.</p>
+ <pre>List&lt;Integer&gt; transactionsIds = 
+    transactions.parallelStream()
+                .filter(t -&gt; t.getType() == Transaction.GROCERY)
+                .sorted(comparing(Transaction::getValue).reversed())
+                .map(Transaction::getId)
+                .collect(toList());
+</pre> <p><strong>Listing 3</strong></p>
+ <p>Don’t worry if this code is  slightly overwhelming. We will explore how it works in the next sections. However, notice the use of lambda expressions (for example, <code>t-&gt; t.getCategory() == Transaction.GROCERY</code>) and method references (for example, <code>Transaction::getId</code>), which you should be familiar with by now. (To brush up on lambda expressions, refer to previous <em>Java Magazine</em> articles and other resources listed at the end of this article.)</p>
+ <p>For now, you can see a stream as an abstraction for expressing efficient, SQL-like operations on a collection of data. In addition, these operations can be succinctly parameterized with lambda expressions.</p>
+ <p>At the end of this series of articles about Java SE 8 streams, you will be able to use the Streams API to write code similar to <strong>Listing 3</strong> to express powerful queries.</p>
+ <h3>Getting Started with Streams</h3> <p>Let’s start with a bit of theory. What’s the definition of a stream? A short definition is “a sequence of elements from a source that supports aggregate operations.” Let’s break it down:&nbsp;</p>
+ <ul>     <li><strong>Sequence of elements:</strong> A stream provides an interface to a sequenced set of values of a specific element type. However, streams don’t actually store  elements; they are computed  on demand.</li>     <li><strong>Source:</strong> Streams consume from a data-providing source such as collections, arrays, or I/O resources.</li>     <li><strong>Aggregate operations:</strong> Streams support SQL-like operations and common operations from functional programing languages, such as <code>filter</code>, <code>map</code>, <code>reduce</code>, <code>find</code>, <code>match</code>, <code>sorted</code>, and so on.&nbsp;</li> </ul> <p>Furthermore, stream operations have two fundamental characteristics that make them very different from collection operations:</p>
+ <ul>     <li><strong>Pipelining:</strong> Many stream operations return a stream themselves. This allows operations to be chained to form a larger  pipeline. This enables certain optimizations, such as <em>laziness</em> and <em>short-circuiting</em>, which we explore later.</li>     <li><strong>Internal iteration:</strong> In contrast to collections, which are iterated explicitly (<em>external iteration</em>), stream operations do the iteration behind the scenes for you.&nbsp;</li> </ul> <p>Let’s revisit our earlier code example to explain these ideas. <strong>Figure 2</strong> illustrates <strong>Listing 2</strong> in more detail.<br> <br> <img alt="streams-f2" src="./pics/2179051.jpg"></p>
+ <p><strong>Figure 2</strong><br> <br> We first get a stream from the list of transactions by calling the <code>stream()</code> method. The datasource is the list of transactions and will be providing a sequence of elements to the stream. Next, we apply a series of aggregate operations on the stream: <code>filter</code> (to filter elements given a predicate), <code>sorted</code> (to sort the elements given a comparator), and <code>map</code> (to extract information). All these operations except <code>collect</code> return a <code>Stream</code> so they can be chained to form a pipeline, which can be viewed as a query on the source.</p>
+ <p>No work is actually done until <code>collect</code> is invoked. The <code>collect</code> operation will start processing the pipeline to return a result (something that is not a <code>Stream</code>; here, a <code>List</code>). Don’t worry about <code>collect</code> for now; we will explore it in detail in a future article. At the moment, you can see <code>collect</code> as an operation that takes as an argument various recipes for accumulating the elements of a stream into a summary result. Here, <code>toList()</code> describes a recipe for converting a <code>Stream</code> into a <code>List</code>.</p>
+ <p>Before we explore the different methods available on a stream, it is good to pause and reflect on the conceptual difference between a stream and a collection.</p>
+ <h3>Streams Versus Collections</h3> <p>Both the existing Java notion of collections and the new notion of streams provide interfaces to a sequence of elements. So what’s the difference? In a nutshell, collections are about data and streams are about computations.</p>
+ <p>Consider a movie stored on a DVD. This is a collection (perhaps of bytes or perhaps of frames—we don’t care which here) because it contains the whole data structure. Now consider watching the same video when it is being streamed over the internet. It is now a stream (of bytes or frames). The streaming video player needs to have downloaded only a few frames in advance of where the user is watching, so you can start displaying values from the beginning of the stream before most of the values in the stream have even been computed (consider streaming a live football game).</p>
+ <p>In the coarsest terms, the difference between collections and streams has to do with <em>when</em> things are computed. A collection is an in-memory data structure, which holds all the values that the data structure currently has—every element in the collection has to be computed before it can be added to the collection. In contrast, a stream is a conceptually fixed data structure in which elements are computed on demand.</p>
+ <p>Using the <code>Collection</code> interface requires iteration to be done by the user (for example, using the enhanced <code>for</code> loop called <code>foreach</code>); this is called external iteration.</p>
+ <p>In contrast, the Streams library uses internal iteration—it does  the iteration for you and takes care of storing the resulting stream value somewhere; you merely  provide a function saying what’s to be done. The code in <strong>Listing 4</strong> (external iteration with a collection) and <strong>Listing 5</strong> (internal iteration with a stream) illustrates  this difference.</p>
+ <pre>List&lt;String&gt; transactionIds = new ArrayList&lt;&gt;(); 
+for(Transaction t: transactions){
+    transactionIds.add(t.getId()); 
+}
+</pre> <p><strong>Listing 4</strong></p>
+ <pre>List&lt;Integer&gt; transactionIds = 
+    transactions.stream()
+                .map(Transaction::getId)
+                .collect(toList());
+</pre> <p><strong>Listing 5</strong></p>
+ <p>In <strong>Listing 4</strong>, we explicitly iterate the list of transactions sequentially to extract each transaction ID and add it to an accumulator. In contrast, when using a stream, there’s no explicit iteration. The code in <strong>Listing 5</strong> builds a query, where the <code>map</code> operation is parameterized to extract the transaction IDs and the <code>collect</code> operation converts the resulting <code>Stream</code> into a <code>List</code>.</p>
+ <p>You should now have a good idea of what a stream is and what you can do with it. Let’s now look at the different operations supported by streams so you can express your own data processing queries.</p>
+ <h3>Stream Operations: Exploiting Streams to Process Data</h3> <p>The <code>Stream</code> interface in <code>java.util .stream.Stream</code> defines many operations, which can be grouped in two categories. In the example illustrated in <strong>Figure 1</strong>, you can see the following operations:&nbsp;</p>
+ <ul>     <li><code>filter</code>, <code>sorted</code>, and <code>map</code>, which can be connected together to form a pipeline</li>     <li><code>collect</code>, which closed the pipeline and returned a result&nbsp;</li> </ul> <p>Stream operations that can be connected are called <em>intermediate operations</em>. They can be connected together because their return type is a <code>Stream</code>. Operations that close a stream pipeline are called <em>terminal operations</em>. They produce a result from a pipeline such as a <code>List</code>, an <code>Integer</code>, or even <code>void</code> (any non-<code>Stream</code> type).</p>
+ <p>You might be wondering why the distinction is important. Well, intermediate operations do not perform any processing until a terminal operation is invoked on the stream pipeline; they are “lazy.” This is because intermediate operations can usually be “merged” and processed into a single pass by the terminal operation.</p>
+ <pre>List&lt;Integer&gt; numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8);
+List&lt;Integer&gt; twoEvenSquares = 
+    numbers.stream()
+           .filter(n -&gt; {
+                    System.out.println("filtering " + n); 
+                    return n % 2 == 0;
+                  })
+           .map(n -&gt; {
+                    System.out.println("mapping " + n);
+                    return n * n;
+                  })
+           .limit(2)
+           .collect(toList());
+</pre> <p><strong>Listing 6</strong></p>
+ <p>For example, consider the code in <strong>Listing 6</strong>, which computes two even square numbers from a given list of numbers. You might be surprised that it prints the following:</p>
+ <pre>filtering 1
+filtering 2
+mapping 2
+filtering 3
+filtering 4
+mapping 4
+</pre> <br> <p>This is because <code>limit(2)</code> uses <em>short-circuiting</em>; we need to process only part of the stream, not all of it, to return a result. This is similar to evaluating a large Boolean expression chained with the <code>and</code> operator: as soon as one expression returns <code>false</code>, we can deduce that the whole expression is <code>false</code> without evaluating all of it. Here, the operation <code>limit</code> returns a stream of size <code>2</code>.&nbsp;</p>
+ <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p><em>The Streams API will internally decompose</em> your query to leverage the multiple cores on your computer.</p>
+</div></div> <p><!-- /C44v0 --></p>
+ <p>In addition, the operations <code>filter</code> and <code>map</code> have been merged in the same pass.</p>
+ <p>To summarize what we’ve learned so far, working with streams, in general, involves three things:&nbsp;</p>
+ <ul>     <li>A datasource (such as a collection) on which to perform a query</li>     <li>A chain of intermediate operations, which form a stream pipeline</li>     <li>One terminal operation, which executes the stream pipeline and produces a result&nbsp;</li> </ul> <p>Let’s now take a tour of some of the operations available on streams. Refer to the <code>java.util .stream.Stream</code> interface for the complete list, as well as to the resources at the end of this article for more examples.</p>
+ <p><strong>Filtering.</strong> There are several operations that can be used to filter elements from a stream:&nbsp;</p>
+ <ul>     <li><code>filter(Predicate)</code>: Takes a predicate (<code>java.util.function.Predicate</code>) as an argument and returns a stream including all elements that match the given predicate</li>     <li><code>distinct</code>: Returns a stream with unique elements (according to the implementation of <code>equals</code> for a stream element)</li>     <li><code>limit(n)</code>: Returns a stream that is no longer than the given size <code>n</code></li>     <li><code>skip(n)</code>: Returns a stream with the first n number of elements discarded&nbsp;</li> </ul> <p><strong>Finding and matching.</strong> A common data processing pattern is determining whether some elements match a given property. You can use the <code>anyMatch</code>, <code>allMatch</code>, and <code>noneMatch</code> operations to help you do this. They all take a predicate as an argument and return a <code>boolean</code> as the result (they are, therefore, terminal operations). For example, you can use <code>allMatch</code> to check that all elements in a stream of transactions have a value higher than 100, as shown in <strong>Listing 7</strong>.</p>
+ <pre>boolean expensive =
+    transactions.stream()
+                .allMatch(t -&gt; t.getValue() &gt; 100);
+</pre> <p><strong>Listing 7</strong></p>
+ <p>In addition, the <code>Stream</code> interface provides the operations <code>findFirst</code> and <code>findAny</code> for retrieving arbitrary elements from a stream. They can be used in conjunction with other stream operations such as <code>filter</code>. Both <code>findFirst</code> and <code>findAny</code> return an <code>Optional</code> object, as shown in <strong>Listing 8</strong>.</p>
+ <pre>Optional&lt;Transaction&gt; = 
+    transactions.stream()
+                .filter(t -&gt; t.getType() == Transaction.GROCERY)
+                .findAny();
+</pre> <p><strong>Listing 8</strong></p>
+ <p>The <code>Optional&lt;T&gt;</code> class (<code>java.util .Optional</code>) is a container class to  represent the existence or absence of a value. In <strong>Listing 8</strong>, it is possible that <code>findAny</code> doesn’t find any transaction of type <code>grocery</code>. The <code>Optional</code> class contains several methods to test the existence of an element. For example, if a transaction is present, we can choose to apply an operation on the optional object by using the <code>ifPresent</code> method, as shown in <strong>Listing 9</strong> (where we just print the transaction).</p>
+ <pre>  transactions.stream()
+              .filter(t -&gt; t.getType() == Transaction.GROCERY)
+              .findAny()
+              .ifPresent(System.out::println);
+</pre> <p><strong>Listing 9</strong></p>
+ <p><strong>Mapping.</strong> Streams support the method <code>map</code>, which takes a function (<code>java.util.function.Function</code>) as an argument to project the elements of a stream into another form. The function is applied to each element, “mapping” it into a new element.</p>
+ <p>For example, you might want to use it to extract information from each element of a stream. In the example in <strong>Listing 10</strong>, we return a list of the length of each word from a list. <strong>Reducing.</strong> So far, the terminal operations we’ve seen return a <code>boolean</code> (<code>allMatch</code> and so on), <code>void</code> (<code>forEach</code>), or an <code>Optional</code> object (<code>findAny</code> and so on). We have also been using <code>collect</code> to combine all elements in a <code>Stream</code> into a <code>List</code>.</p>
+ <pre>List&lt;String&gt; words = Arrays.asList("Oracle", "Java", "Magazine");
+ List&lt;Integer&gt; wordLengths = 
+    words.stream()
+         .map(String::length)
+         .collect(toList());
+</pre> <p><strong>Listing 10</strong></p>
+ <p>However, you can also combine all elements in a stream to formulate more-complicated process queries, such as “what is the transaction with the highest ID?” or “calculate the sum of all transactions’ values.” This is possible using the <code>reduce</code> operation on streams, which repeatedly applies an operation (for example, adding two numbers) on each element until a result is produced. It’s often called a <em>fold operation</em> in functional programming because you can view this operation as “folding” repeatedly a long piece of paper (your stream) until it forms one little square, which is the result of the fold operation.</p>
+ <p>It helps to first look at how we could calculate the sum of a list using a <code>for</code> loop:</p>
+ <pre>int sum = 0;
+for (int x : numbers) {
+    sum += x; 
+}
+</pre> <br> <p>Each element of the list of numbers is combined iteratively using the addition operator to produce a result. We essentially “reduced” the list of numbers into one number. There are two parameters in this code: the initial value of the <code>sum</code> variable, in this case <code>0</code>, and the operation for combining all the elements of the list, in this case <code>+</code>.</p>
+ <p>Using the <code>reduce</code> method on streams, we can sum all the elements of a stream as shown in <strong>Listing 11</strong>. The <code>reduce</code> method takes two arguments:</p>
+ <pre>int sum = numbers.stream().reduce(0, (a, b) -&gt; a + b);
+</pre> <p><strong>Listing 11</strong>&nbsp;</p>
+ <ul>     <li>An initial value, here <code>0</code></li>     <li>A <code>BinaryOperator&lt;T&gt;</code> to combine two elements and produce a  new value&nbsp;</li> </ul> <p>The <code>reduce</code> method essentially abstracts the pattern of repeated application. Other queries such as “calculate the product” or “calculate the maximum” (see <strong>Listing 12</strong>) become special use cases of the <code>reduce</code> method.</p>
+ <pre>int product = numbers.stream().reduce(1, (a, b) -&gt; a * b);
+int product = numbers.stream().reduce(1, Integer::max);
+</pre> <p><strong>Listing 12</strong></p>
+ <h3>Numeric Streams</h3> <p>You have just seen that you can use the <code>reduce</code> method to calculate the sum of a stream of integers. However, there’s a cost: we perform many boxing operations to repeatedly add <code>Integer</code> objects together. Wouldn’t it be nicer if we could call a <code>sum</code> method, as shown in <strong>Listing 13</strong>, to be more explicit about the intent of our code?</p>
+ <pre>int statement = 
+    transactions.stream()
+                .map(Transaction::getValue)
+                .sum(); // error since Stream has no sum method
+</pre> <p><strong>Listing 13</strong></p>
+ <p>Java SE 8 introduces three primitive specialized stream interfaces to tackle this issue—<code>IntStream</code>, <code>DoubleStream</code>, and <code>LongStream</code>—that respectively specialize the elements of a stream to be <code>int</code>, <code>double</code>, and <code>long</code>.</p>
+ <p>The most-common methods you  will use to convert a stream to a specialized version are <code>mapToInt</code>, <code>mapToDouble</code>, and <code>mapToLong</code>. These methods work exactly like the method <code>map</code> that we saw earlier, but they return a specialized stream instead of a <code>Stream&lt;T&gt;</code>. For example, we could improve the code in <strong>Listing 13</strong> as shown in <strong>Listing 14</strong>. You can also convert from a primitive stream to a stream of objects using the <code>boxed</code> operation.</p>
+ <pre>int statementSum = 
+    transactions.stream()
+                .mapToInt(Transaction::getValue)
+                .sum(); // works!
+</pre> <p><strong>Listing 14</strong></p>
+ <p>Finally, another useful form of numeric streams is numeric ranges. For example, you might want to generate all numbers between 1 and 100. Java SE 8 introduces two static methods available on <code>IntStream</code>, <code>DoubleStream</code>, and <code>LongStream</code> to help generate such ranges: <code>range</code> and <code>rangeClosed</code>.</p>
+ <p>Both methods take the starting value of the range as the first parameter and the end value of the range as the second parameter. However, <code>range</code> is exclusive, whereas <code>rangeClosed</code> is inclusive. <strong>Listing 15</strong> is an example that uses <code>rangeClosed</code> to return a stream of all odd numbers between 10 and 30.</p>
+ <pre>IntStream oddNumbers = 
+    IntStream.rangeClosed(10, 30)
+             .filter(n -&gt; n % 2 == 1);
+</pre> <p><strong>Listing 15</strong></p>
+ <h3>Building Streams</h3> <p>There are several ways to build streams. You’ve seen how you can get a stream from a collection. Moreover, we played with streams of numbers. You can also create streams from values, an array, or a file. In addition, you can even generate a stream from a function to produce infinite streams!&nbsp;</p>
+ <!-- C44v0 --> <div class="c44 c44v0"><div class="c44w1"><p>In contrast to collections, which are iterated explicitly (<i>external iteration</i>), <em>stream operations do the iteration behind the scenes for you.</em></p>
+</div></div> <p><!-- /C44v0 --></p>
+ <p>Creating a stream from values or from an array is straightforward: just use the static methods <code>Stream .of</code> for values and <code>Arrays.stream</code> for an array, as shown in <strong>Listing 16</strong>.</p>
+ <pre>Stream&lt;Integer&gt; numbersFromValues = Stream.of(1, 2, 3, 4);
+int[] numbers = {1, 2, 3, 4};
+IntStream numbersFromArray = Arrays.stream(numbers);
+</pre> <p><strong>Listing 16</strong></p>
+ <p>You can also convert a file in a stream of lines using the <code>Files.lines</code> static method. For example, in <strong>Listing 17</strong> we count the number of lines in a file.</p>
+ <pre>long numberOfLines = 
+    Files.lines(Paths.get(“yourFile.txt”), Charset.defaultCharset())
+         .count();
+</pre> <p><strong>Listing 17</strong></p>
+ <p></p>
+ <strong>Infinite streams.</strong> Finally, here’s a mind-blowing idea before we conclude this first article about streams. By now you should understand that elements of a stream  are produced on demand. There  are two static methods—<code>Stream.iterate</code> and <code>Stream .generate</code>—that let you create a stream from a function. However, because elements are calculated on demand, these two operations can produce elements “forever.” This is what we call an <em>infinite stream</em>: a stream that doesn’t have a fixed size, as a stream does when we create it from a fixed collection.<p></p>
+ <p><strong>Listing 18</strong> is an example that uses <code>iterate</code> to create a stream of all numbers that are multiples of 10. The <code>iterate</code> method takes an initial value (here, <code>0</code>) and a lambda (of type <code>UnaryOperator&lt;T&gt;</code>) to apply successively on each new value produced.</p>
+ <pre>Stream&lt;Integer&gt; numbers = Stream.iterate(0, n -&gt; n + 10);
+</pre> <p><strong>Listing 18</strong></p>
+ <p>We can turn an infinite stream into a fixed-size stream using the <code>limit</code> operation. For example, we can limit the size of the stream to 5, as shown in <strong>Listing 19</strong>.</p>
+ <pre>numbers.limit(5).forEach(System.out::println); // 0, 10, 20, 30, 40
+</pre> <p><strong>Listing 19</strong></p>
+ <h3>Conclusion</h3> <p>Java SE 8 introduces the Streams API, which lets you express sophisticated data processing queries. In this article, you’ve seen that a stream supports many operations such as <code>filter</code>, <code>map</code>, <code>reduce</code>, and  <code>iterate</code> that can be combined to write concise and expressive data processing queries. This new way of writing code is very different from how you would process collections before Java SE 8. However, it has many benefits. First, the Streams API makes use of several techniques such as laziness and short-circuiting to optimize your data processing queries. Second, streams can be parallelized automatically to leverage multicore architectures. In the next article in this series, we will explore more-advanced operations, such as <code>flatMap</code> and <code>collect</code>. Stay tuned.</p>
+ <hr>  
+						
+  </div>
+<br><hr>
+
+<div class="orcl6w3 cye-lm-tag">
+			
+							 <h2 class="cye-lm-tag">Part 2: Processing Data with  Java SE 8 Streams</h2> <p class="cye-lm-tag"><em>by Raoul-Gabriel Urma</em></p>
+ <p class="cye-lm-tag"><span style="font-size: smaller;" class="cye-lm-tag">Published May 2014</span></p>
+ <p class="cye-lm-tag"><strong>Combine advanced operations of the Stream API to express rich data processing queries.</strong></p>
+ <p class="cye-lm-tag">In the <a href="http://www.oracle.com/technetwork/articles/java/ma14-java-se-8-streams-2177646.html" target="">first part of this series</a>, you saw that streams let you process collections with database-like operations. As a refresher, the example in <strong>Listing 1</strong> shows how to sum the values of only expensive transactions using the Stream API. We set up a pipeline of operations consisting of intermediate operations (<code>filter</code>, <code>map</code>) and a terminal operation (<code>reduce</code>), as illustrated in <strong>Figure 1</strong>.</p>
+ <pre>int sumExpensive = 
+       transactions.stream()
+                                                .filter(t -&gt; t.getValue() &gt; 1000)
+                                                .map(Transaction::getValue)
+                                                .reduce(0, Integer::sum);
+</pre> <p class="cye-lm-tag"><strong>Listing 1<br> <br> <img src="./pics/2228345.jpg" alt="streams-f1"><br> </strong></p>
+ <p class="cye-lm-tag"><strong>Figure 1</strong></p>
+ <p class="cye-lm-tag">However, the first part of this series didn’t investigate two operations:</p>
+ <ul>     <li><code>flatMap</code>: An intermediate  operation that lets you combine a “map” and a “flatten” operation</li>     <li><code>collect</code>: A terminal operation that takes as an argument various recipes (called  <em>collectors</em>) for accumulating the elements of a stream into a summary result</li> </ul> <p class="cye-lm-tag">These two operations are useful for expressing more-complex queries. For instance, you can combine <code>flatMap</code> and <code>collect</code> to produce a <code>Map</code> representing the number of occurrences of each character that appears in a stream of words, as shown in <strong>Listing 2</strong>. Don’t worry if this code seems overwhelming at first. The purpose of this article is to explain and explore these two operations in more detail.&nbsp;</p>
+ <pre>import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.*;
+
+Stream&lt;String&gt; words = Stream.of("Java", "Magazine", "is", 
+     "the", "best");
+
+Map&lt;String, Long&gt; letterToCount =
+           words.map(w -&gt; w.split(""))
+                                   .flatMap(Arrays::stream)
+                                   .collect(groupingBy(identity(), counting()));
+</pre> <p class="cye-lm-tag"><strong>Listing 2</strong></p>
+ <p class="cye-lm-tag">The code in <strong>Listing 2</strong> will produce the output shown in <strong>Listing 3</strong>. Awesome, isn’t it? Let’s get started and explore how the <code>flatMap</code> and <code>collect</code> operations work.</p>
+ <pre>[a:4, b:1, e:3, g:1, h:1, i:2, ..]
+</pre> <p class="cye-lm-tag"><strong>Listing 3</strong></p>
+ <h3>flatMap Operation</h3> <p class="cye-lm-tag"></p>
+<table width="170" cellspacing="10" cellpadding="0" border="0" bgcolor="#dadada" align="right">     <tbody>         <tr>             <td><strong>Using the Stream API and collectors,</strong> you can combine collectors together to create powerful queries, such as multilevel groupings.</td>         </tr>     </tbody> </table> Suppose you would like to find all unique words in a file. How would you go about it?<p class="cye-lm-tag"></p>
+ <p class="cye-lm-tag">You might think that it is easy; we can use <code>Files.lines()</code>, which you saw in the previous article, because it can return a stream consisting of the lines of a file. We can then split each line into words using a <code>map()</code> operation and, finally, use the operation <code>distinct()</code> to remove duplicates. A first attempt could be the code shown in <strong>Listing 4</strong>.</p>
+ <pre>Files.lines(Paths.get("stuff.txt"))
+              .map(line -&gt; line.split("\\s+")) // Stream&lt;String[]&gt;
+              .distinct() // Stream&lt;String[]&gt;
+              .forEach(System.out::println);
+</pre> <p class="cye-lm-tag"><strong>Listing 4</strong></p>
+ <p class="cye-lm-tag">Unfortunately, this is not quite right. If you run this code, you will get puzzling output similar to this:</p>
+ <pre>[Ljava.lang.String;@7cca494b
+[Ljava.lang.String;@7ba4f24f
+…
+</pre> <p class="cye-lm-tag">Our first attempt is actually printing the <code>String</code> representation of several streams! What is happening? The problem with this approach is that the lambda passed to the <code>map</code> method returns an array of <code>String (String[])</code> for each line in the file. As a result, the stream returned by the <code>map</code> method is actually of type <code>Stream&lt;String[]&gt;</code>. What we really want is <code>Stream&lt;String&gt;</code> to represent  a stream of words.</p>
+ <p class="cye-lm-tag">Luckily there’s a solution to this problem using the method <code>flatMap</code>. Let’s see step-by-step how to get to the right solution.</p>
+ <p class="cye-lm-tag">First, we need a stream of words instead of a stream of arrays. There’s a method called <code>Arrays .stream()</code> that takes an array and produces a stream. See the example shown in <strong>Listing 5</strong>.</p>
+ <pre>String[] arrayOfWords = {"Java", "Magazine"};
+Stream&lt;String&gt; streamOfwords = Arrays.stream(arrayOfWords);
+</pre> <p class="cye-lm-tag"><strong>Listing 5</strong></p>
+ <p class="cye-lm-tag">Let’s use it in our previous stream pipeline to see what happens (see <strong>Listing 6</strong>). The solution still doesn’t work. This is because we now end up with a list of streams of streams (more precisely a <code>Stream&lt;Stream&lt;String&gt;&gt;</code>). Indeed, we first convert each line into an array of words, and then convert each array into a separate stream using the method <code>Arrays.stream()</code>.</p>
+ <pre>Files.lines(Paths.get("stuff.txt"))
+            .map(line -&gt; line.split("\\s+")) // Stream&lt;String[]&gt;
+            .map(Arrays::stream) // Stream&lt;Stream&lt;String&gt;&gt;
+            .distinct() // Stream&lt;Stream&lt;String&gt;&gt;
+            .forEach(System.out::println);
+</pre> <p class="cye-lm-tag"><strong>Listing 6</strong></p>
+ <p class="cye-lm-tag">We can fix this problem by using a <code>flatMap</code>, as shown in <strong>Listing 7</strong>. Using the <code>flatMap</code> method has the effect of replacing each generated array not by a stream but by the contents of that stream. In other words, all the separate streams that were generated when using <code>map(Arrays::stream)</code> get amalgamated or “flattened” into one single stream. <strong>Figure 2</strong> illustrates the effect of using the <code>flatMap</code> method.</p>
+ <pre>Files.lines(Paths.get("stuff.txt"))
+            .map(line -&gt; line.split("\\s+")) // Stream&lt;String[]&gt;
+            .flatMap(Arrays::stream) // Stream&lt;String&gt;
+            .distinct() // Stream&lt;String&gt;
+            .forEach(System.out::println);
+</pre> <p class="cye-lm-tag"><strong>Listing 7<br> <br> <img src="./pics/2228346.jpg" alt="streams-f2"><br> </strong></p>
+ <p class="cye-lm-tag"><strong>Figure 2</strong></p>
+ <p class="cye-lm-tag">In a nutshell, <code>flatMap</code> lets you replace each value of a stream with another stream, and then it concatenates all the generated streams into one single stream.</p>
+ <p class="cye-lm-tag">Note that <code>flatMap</code> is a common pattern. You will see it again when dealing with <code>Optional</code> or <code>CompletableFuture</code>.</p>
+ <h3>collect Operation</h3> <p class="cye-lm-tag">Let’s now look at the <code>collect</code> method in more detail. The operations you saw in the first part of this series were either returning another stream (that is, they were intermediate operations) or returning a value, such as a <code>boolean</code>, an <code>int</code>, or an <code>Optional</code> object (that is, they were terminal operations).</p>
+ <p class="cye-lm-tag">The <code>collect</code> method is a terminal operation, but it is a bit different because you used it to transform a stream into a list. For example, to get a list of the IDs for all the expensive transactions, you can use the code shown in <strong>Listing 8</strong>.</p>
+ <pre>import static java.util.stream.Collectors.*; 
+List&lt;Integer&gt; expensiveTransactionsIds = 
+       transactions.stream()
+                                                  .filter(t -&gt; t.getValue() &gt; 1000)
+                                                  .map(Transaction::getId)
+                                                  .collect(toList());
+</pre> <p class="cye-lm-tag"><strong>Listing 8</strong></p>
+ <p class="cye-lm-tag">The argument passed to  <code>collect</code> is an object of type <code>java .util.stream.Collector</code>. What does a <code>Collector</code> object do? It essentially describes a recipe for accumulating the elements of a stream into a final result. The factory method <code>Collectors.toList()</code> used earlier returns a <code>Collector</code> describing how to accumulate a stream into a list. However, there are many similar built-in <code>Collectors</code> available.</p>
+ <p class="cye-lm-tag"><strong>Collecting a stream into other collections.</strong> For example, using <code>toSet()</code> you can convert a stream into a <code>Set</code>, which will remove duplicate elements. The code in <strong>Listing 9</strong> shows how to generate the set of only the cities that have expensive transactions. (Note: In all future examples, we assume that the factory methods of the <code>Collectors</code> class are statically imported using <code>import static java.util.stream.Collectors.*</code>.)</p>
+ <pre>Set&lt;String&gt; cities = 
+         transactions.stream()
+                                                    .filter(t -&gt; t.getValue() &gt; 1000)
+                                                    .map(Transaction::getCity)
+                                                    .collect(toSet());
+</pre> <p class="cye-lm-tag"><strong>Listing 9</strong></p>
+ <p class="cye-lm-tag">Note that there are no guarantees about what type of <code>Set</code> is returned. However, using <code>toCollection()</code> you can have more control. For example, you can ask for a <code>HashSet</code> by passing a constructor reference to it (see <strong>Listing 10</strong>).</p>
+ <pre>Set&lt;String&gt; cities = 
+         transactions.stream()
+                                                    .filter(t -&gt; t.getValue() &gt; 1000)
+                                                    .map(Transaction::getCity)
+                                                    .collect(toCollection(HashSet::new));
+</pre> <p class="cye-lm-tag"><strong>Listing 10</strong></p>
+ <p class="cye-lm-tag">However, that’s not all you can do with <code>collect</code> and collectors. It is actually a very tiny part of what you can do. Here are some examples of what you can express:</p>
+ <ul>     <li>Grouping a list of transactions by currency to the sum of the values of all transactions with that currency (returning a <code>Map&lt;Currency, Integer&gt;</code>)</li>     <li>Partitioning a list of transactions into two groups: expensive and not expensive (returning a <code>Map&lt;Boolean, List&lt;Transaction&gt;&gt;</code>)</li>     <li>Creating multilevel groupings, such as grouping transactions by cities and then further categorizing by whether they are expensive or not (returning a <code>Map&lt;String, Map&lt;Boolean, List&lt;Transaction&gt;&gt;&gt;</code>)</li> </ul> <p class="cye-lm-tag">Excited? Great. Let’s see how you can express these queries using the Stream API and collectors. We first start with a simple example that “summarizes” a stream: calculating the average, the maximum, and the minimum of a stream. We then look at how to express simple groupings, and finally we see how to combine collectors together to create powerful queries, such as multilevel groupings.&nbsp;</p>
+ <p class="cye-lm-tag"><strong>Summarizing.</strong> Let’s warm up with some simple examples. You saw in the previous article how to calculate the number of elements, the maximum, the minimum, and the average of a stream using the <code>reduce</code> operation and using primitive streams. There are predefined collectors that let you do just that as well. For example, you can use <code>counting()</code> to count the number of items, as shown in <strong>Listing 11</strong>.</p>
+ <pre>long howManyTransactions = 
+          transactions.stream().collect(counting());
+</pre> <p class="cye-lm-tag"><strong>Listing 11</strong></p>
+ <p class="cye-lm-tag">You can use <code>summing Double()</code>, <code>summingInt()</code>, and <code>summingLong()</code> to sum the values of a <code>Double</code>, an <code>Int</code>, or a <code>Long</code> property  of the elements in a stream. In <strong>Listing 12</strong>, we calculate the total value of all transactions.</p>
+ <pre>int totalValue = transactions.stream().collect(
+     summingInt(Transaction::getValue));
+</pre> <p class="cye-lm-tag"><strong>Listing 12</strong></p>
+ <p class="cye-lm-tag">Similarly, you can use <code>averaging Double()</code>, <code>averagingInt()</code>, and  <code>averagingLong()</code> to calculate the average, as shown in <strong>Listing 13</strong>.&nbsp;</p>
+ <pre>double average = transactions.stream().collect(
+            averagingInt(Transaction::getValue));
+</pre> <p class="cye-lm-tag"><strong>Listing 13</strong></p>
+ <p class="cye-lm-tag">In addition, by using <code>maxBy()</code> and <code>minBy()</code> you can calculate the maximum and minimum element of a stream. However, there’s a catch: you need to define an order for the elements of a stream to be able to compare them. This is why <code>maxBy</code> and <code>minBy</code> take a <code>Comparator</code> object as an argument, as illustrated in <strong>Figure 3</strong>.<br> <br> <img src="./pics/2228347.jpg" alt="streams-f3"></p>
+ <p class="cye-lm-tag"><strong>Figure 3</strong></p>
+ <p class="cye-lm-tag">In the example in <strong>Listing 14</strong>, we use the static method <code>comparing()</code>, which generates a <code>Comparator</code> object from a function passed as an argument. The function is used to extract a comparable key from the element of a stream. In this case, we find the highest transaction by using the value of a transaction as a comparison key.</p>
+ <pre>Optional&lt;Transaction&gt; highestTransaction = 
+        transactions.stream()
+                               .collect(maxBy(comparing(Transaction::getValue)));
+</pre> <p class="cye-lm-tag"><strong>Listing 14</strong></p>
+ <p class="cye-lm-tag">There’s also a <code>reducing()</code> collector that lets you combine all elements in a stream by repetitively applying an operation until a result is produced. It is conceptually similar to the <code>reduce()</code> method you saw previously. For example, <strong>Listing 15</strong> shows an alternative way to calculate the sum of all transactions using <code>reducing()</code>.</p>
+ <pre>int totalValue = transactions.stream().collect(reducing(
+        0, Transaction::getValue, Integer::sum));
+</pre> <p class="cye-lm-tag"><strong>Listing 15</strong></p>
+ <p class="cye-lm-tag"><code>reducing()</code> takes three arguments:</p>
+ <ul>     <li>An initial value (it is returned if the stream is empty); in this case, it is <code>0</code>.</li>     <li>A function to apply to each element of a stream; in this case, we extract the value of each transaction.</li>     <li>An operation to combine two values produced by the extracting function; in this case, we just add up the values.</li> </ul> <p class="cye-lm-tag">You might say, “Wait a minute; I can already do that with other stream methods, such as <code>reduce()</code>, <code>max()</code>, and <code>min()</code>, so why are you showing me this?” You will see later that we can combine collectors to build more-complex queries (for example, grouping plus averaging), so it is handy to know about these built-in collectors as well.&nbsp;</p>
+ <p class="cye-lm-tag"><strong>Grouping.</strong> A common database query is to group data using a property. For example, you might want to group a list of transactions by currency. Expressing such a query using explicit iteration is somewhat painful, as you can see in the code in <strong>Listing 16</strong>.</p>
+ <pre>Map&lt;Currency, List&lt;Transaction&gt;&gt; transactionsByCurrencies = 
+              new HashMap&lt; &gt;();
+for(Transaction transaction : transactions) { 
+        Currency currency = transaction.getCurrency();
+        List&lt;Transaction&gt; transactionsForCurrency = 
+                transactionsByCurrencies.get(currency);
+        if (transactionsForCurrency == null) {
+                transactionsForCurrency = new ArrayList&lt;&gt;();
+                transactionsByCurrencies.put(
+        currency, transactionsForCurrency);
+                }
+        transactionsForCurrency.add(transaction);
+}
+</pre> <p class="cye-lm-tag"><strong>Listing 16</strong></p>
+ <p class="cye-lm-tag">You need to first create a <code>Map</code> where the transactions will be accumulated. Then you need to iterate the list of transactions and extract the currency for each transaction. Before adding the transaction in as a value in the <code>Map</code>, you need to check whether a list has been created, and so on. It is a shame, because fundamentally all we want to do is “group the transactions by currency.” Why does it have to involve so much code? Good news: there’s a collector called <code>groupingBy()</code> that lets us express such use cases in a concise way. We can express the same query as shown in <strong>Listing 17</strong>, and now the code reads closer to the problem statement.</p>
+ <pre>Map&lt;Currency, List&lt;Transaction&gt;&gt; transactionsByCurrencies =
+    transactions.stream().collect(groupingBy(
+     Transaction::getCurrency));
+</pre> <p class="cye-lm-tag"><strong>Listing 17</strong></p>
+ <p class="cye-lm-tag">The <code>groupingBy()</code> factory method takes as an argument a function for extracting the key used to classify the transactions. We call it a <em>classification function</em>. In this case, we pass a method reference, <code>Transaction::getCurrency</code>, to group the transaction by currency. <strong>Figure 4</strong> illustrates the grouping operation.<br> <br> <img src="./pics/2228348.jpg" alt="streams-f4"></p>
+ <p class="cye-lm-tag"><strong>Figure 4</strong></p>
+ <p class="cye-lm-tag"><strong>Partitioning.</strong> There’s another factory method called <code>partitioningBy()</code> that can be viewed as a special case of <code>groupingBy()</code>. It takes a predicate as an argument (that is,  a function that returns a <code>boolean</code>)  and groups the elements of a stream according to whether or not they match that predicate. In other words, partitioning a stream of transactions organizes the transactions into a <code>Map&lt;Boolean, List&lt;Transaction&gt;&gt;</code>. For example, if you want to group the transactions into two lists—cheap and expensive—you could use the <code>partitioningBy</code> collector as shown in <strong>Listing 18</strong>, where the lambda <code>t -&gt; t.getValue() &gt; 1000</code> is a predicate for classifying cheap and expensive transactions.</p>
+ <pre>Map&lt;Boolean, List&lt;Transaction&gt;&gt; partitionedTransactions =
+            transactions.stream().collect(partitioningBy(
+              t -&gt; t.getValue() &gt; 1000));
+</pre> <p class="cye-lm-tag"><strong>Listing 18</strong></p>
+ <p class="cye-lm-tag"><strong>Composing collectors.</strong> If you are familiar with SQL, you might know that you can combine GROUP BY with functions such as COUNT() and SUM() to group transactions by currency and by their sum. So, can we do something similar with the Stream API? Yes. Actually, there’s an overloaded version of <code>groupingBy()</code> that takes another collector object as a second  argument. This additional collector is used to define how to accumulate all the elements that were associated with a key using the <code>groupingBy</code> collector.</p>
+ <p class="cye-lm-tag">OK, this sounds a bit abstract, so let’s look at a simple example. We would like to generate a <code>Map</code> of cities according to the sum of all transactions for each city (see <strong>Listing 19</strong>). Here, we tell <code>groupingBy</code> to use the method <code>getCity()</code> as a classification function. As a result, the keys of the resulting <code>Map</code> will be cities. We would normally expect a <code>List&lt;Transaction&gt;</code> back as the value for each key of the <code>Map</code> using the basic <code>groupingBy</code>.</p>
+ <pre>Map&lt;String, Integer&gt; cityToSum = 
+           transactions.stream().collect(groupingBy(
+             Transaction::getCity, summingInt(Transaction::getValue)));
+</pre> <p class="cye-lm-tag"><strong>Listing 19</strong></p>
+ <p class="cye-lm-tag">However, we are passing an additional collector, <code>summingInt()</code>, which sums all the values of the transactions associated with a city. As a result, we get a <code>Map&lt;String, Integer&gt;</code> that maps each city with the total value of all transactions for that city. Cool, isn’t it? Think about it: the basic version of <code>groupingBy (Transaction::getCity)</code> is actually just shorthand for writing <code>groupingBy (Transaction::getCity, toList())</code>.</p>
+ <p class="cye-lm-tag">Let’s look at another example. How about if you want to generate a <code>Map</code> of the highest-valued transaction for each city? You might have guessed that we can reuse the <code>maxBy</code> collector we defined earlier, as shown in <strong>Listing 20</strong>.</p>
+ <pre>Map&lt;String, Optional&lt;Transaction&gt;&gt; cityToHighestTransaction = 
+           transactions.stream().collect(groupingBy(
+             Transaction::getCity, maxBy(comparing(Transaction::getValue))));
+</pre> <p class="cye-lm-tag"><strong>Listing 20</strong></p>
+ <p class="cye-lm-tag">You can see that the Stream API is really expressive; we are now building some really interesting queries that can be written concisely. Can you imagine going back to processing a collection iteratively?</p>
+ <p class="cye-lm-tag">Let’s look at a more-complicated example to finish. You saw that <code>groupingBy</code> can take another collector object as an argument to accumulate the elements according to a further classification. Because <code>groupingBy</code> is a collector itself, we can create multilevel groupings by passing another <code>groupingBy</code> collector that defines a second criterion by which to classify the stream’s elements.</p>
+ <p class="cye-lm-tag">In the code in <strong>Listing 21</strong>, we group the transactions by city, and then we further group the transactions by the currency of transactions in each city to get the average transaction value for that currency. <strong>Figure 5</strong> illustrates the mechanism.</p>
+ <pre>Map&lt;String, Map&lt;Currency, Double&gt;&gt; cityByCurrencyToAverage = 
+           transactions.stream().collect(groupingBy(Transaction::getCity,
+groupingBy(Transaction::getCurrency,  
+averagingInt(Transaction::getValue))));
+</pre> <p class="cye-lm-tag"><strong>Listing 21<br> <br> <img src="./pics/2228349.jpg" alt="streams-f5"><br> </strong></p>
+ <p class="cye-lm-tag"><strong>Figure 5</strong></p>
+ <p class="cye-lm-tag"><strong>Creating your own collector.</strong> All the collectors we showed so far implement the interface <code>java.util.stream .Collector</code>. This means that you can implement your own collectors to define “customized” reduction operations. However, this subject could easily fit into another article, so we won’t discuss it here.</p>
+  <h3>Conclusion</h3> <p class="cye-lm-tag">In this article, we’ve explored two advanced operations of the Stream API: <code>flatMap</code> and <code>collect</code>. They are tools that you can add to your arsenal for expressing rich data processing queries.</p>
+ <p class="cye-lm-tag">In particular, you’ve seen that the <code>collect</code> method can be used to express summarizing, grouping, and partitioning operations. In addition, these operations can be combined to build even richer queries, such as “produce a two-level <code>Map</code> of the average transaction value for each currency in each city.”</p>
+ <p class="cye-lm-tag">However, this article didn’t  investigate all the built-in collectors that are available. We invite you to take a look at the <code>Collectors</code> class and try out other collectors, such as  <code>mapping()</code>, <code>joining()</code>, and <code>collecting AndThen()</code>, which you might find useful.</p>
+ <hr>  
+						
+		</div>
+<br><hr>
+</body>
+</html>
