@@ -1,4 +1,4 @@
-
+﻿
 https://habrahabr.ru/company/mailru/blog/318508/
 1 
 git config --global alias.please 'push --force-with-lease'
@@ -41,4 +41,28 @@ git config --global alias.merc 'merge --no-ff'
 git config --global alias.grog 'log --graph --abbrev-commit --decorate --all --format=format:"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)"'
 Мой алиас git grog (или graphical log) в последние годы разросся настолько, что я больше не уверен, будто точно знаю, что он делает. Но выглядит красиво:
 
-9_conflictline
+9 ___ P_4_MERGE __
+$> 
+git config --global merge.tool p4merge
+git config --global mergetool.p4merge.path "C:/Program Files/Perforce/p4merge.exe";
+P4Merge can be used for doing diffs and merges. 
+If using P4Merge for diffs then call:
+$> git difftool
+If the file you want to compare is already staged then use the –cached switch after that command.
+
+When Git tells you that there has been conflict, to resolve it type:
+$> git mergetool
+This will open P4Merge and show three different versions of the file; your local version, the version you are trying to merge in (probably the master branch) and the base version. The base version is the common ancestor of the local version and the remote version. Choose which version wins or edit the merge manually and then save and quit P4Merge. Finally commit the merge and then remove any .orig files that may be left over. It should be possible to have git remove the .orig file automatically by setting mergetool.keepBackup to false in git config but I have not succeeded in getting that to work for me yet.
+
+10 ____ core.autocrlf ___
+Если вы пишете код на Windows или пользуетесь другой системой, но работаете с людьми, которые пишут на Windows, то наверняка рано или поздно столкнётесь с проблемой конца строк. Она возникает из-за того, что Windows использует для переноса строк и символ возврата каретки, и символ перехода на новую строку, в то время как в системах Mac и Linux используется только символ перехода на новую строку. Это незначительное, но невероятно раздражающее обстоятельство при кросс-платформенной работе.
+
+Git может справиться с этим, автоматически конвертируя CRLF-концы строк в LF при коммите и в обратную сторону при выгрузке кода из репозитория на файловую систему. Данную функциональность можно включить с помощью настройки core.autocrlf. Если вы используете Windows, установите настройку в true, тогда концы строк из LF будут сконвертированы в CRLF при выгрузке кода:
+
+$ git config --global core.autocrlf true
+Если вы сидите на Linux'е или Mac'е, где используются LF-концы строк, вам не надо, чтобы Git автоматически конвертировал их при выгрузке файлов из репозитория. Однако, если вдруг случайно кто-то добавил файл с CRLF-концами строк, то хотелось бы, чтобы Git исправил это. Можно указать Git'у, чтобы он конвертировал CRLF в LF только при коммитах, установив настройку core.autocrlf в input:
+
+$ git config --global core.autocrlf input
+Такая настройка даст вам CRLF-концы в выгруженном коде на Windows-системах и LF-концы на Mac'ах и Linux'е, и в репозитории.
+
+11 ___
