@@ -1,0 +1,143 @@
+04 Classes and Interfaces 67-109=42
+******************************************************
+*** Item 13: Minimize the accessibility of classes and members ***
+
+The single most important factor that distinguishes a well-designed module from a poorly designed one is the degree to which the module hides its internal data and other implementation details from other modules. 
+   A well-designed module hides all of its implementation details, cleanly separating its API from its implementation.
+      Modules then communicate only through their APIs and are oblivious [забывающий, не помнящий (о чём-л.)] to each others’ inner workings. This concept, known as information HIDING or ENCAPSULATION, is one of the fundamental tenets of software design.
+
+Сокрытие важно по след.причинам:
+1) it decouples the modules that comprise [включать, заключать в себе, составлять; охватывать; состоять из] a system, allowing them to be developed, tested, optimized, used, understood, and modified IN ISOLATION.
+2) This speeds up system development because modules can be developed in parallel. 
+3) It eases the burden of maintenance because modules can be understood more quickly and debugged with little fear of harming other modules.
+4) it enables effective performance tuning: once a system is complete and profiling has determined which modules are causing performance problems (Item 55), those modules can be optimized without affecting the correctness of other modules. 
+5) Information hiding increases software reuse because modules that aren’t tightly coupled often prove useful in other contexts besides the ones for which they were developed.
+6) information hiding decreases the risk in building large systems, because individual modules may prove successful even if the system does not.
+7) при доступе к полям, можно контролировать эту операцию, т.к. она инкапсулирована в метод, и тем самым доступ к переменной всегда идёт через 1 место.
+
+В Java для сокрытия есть ряд способов:
+_1__ The ACCESS CONTROL MECHANISM specifies the accessibility of classes, interfaces, and members. 
+_2__ The accessibility of an entity is determined by the location of its declaration 
+_3__ and by which, if any, of the access modifiers (private, protected, and public) is present on the declaration. 
+
+!! Практический совет: make each class or member as inaccessible as possible.
+(use the lowest possible access level consistent with the proper functioning of the software)
+
+If you make it public, you are obligated to support it forever to maintain compatibility.
+-- the public class is part of the package’s API, 
+-- while the package-private top-level class is already part of its implementation.
+
+If a package-private top-level class (or interface) is used by only one class, consider making the top-level class a PRIVATE NESTED CLASS of the sole class that uses it (Item 22).
+
+For members (fields, methods, nested classes, and nested interfaces), there are four possible access levels:
+•• 1 •• PRIVATE —
+The member is accessible only from the top-level class where it is declared.
+
+•• 2 •• PACKAGE-PRIVATE —
+The member is accessible from any class in the package where it is declared. Technically known as default access, this is the access level you get if no access modifier is specified.
+
+•• 3 •• PROTECTED —
+The member is accessible from subclasses of the class where it is declared (subject to a few restrictions [JLS, 6.6.2]) and from any class in the package where it is declared.
+
+•• 4 •• PUBLIC —
+The member is accessible from anywhere.
+
+That said, both PRIVATE and PACKAGE-PRIVATE members are part of a class’s implementation and do not normally impact its exported API. 
+These fields can, however, “LEAK” into the exported API if the class implements Serializable (Item 74, Item 75).
+
+A PROTECTED member is part of the class’s exported API and must be supported forever.
+Also, a PROTECTED member of an exported class represents a public commitment to an implementation detail (Item 17). The need for protected members should be relatively rare.
+
+!!! If a method overrides a superclass method, it is not permitted to have a lower access level in the subclass than it does in the superclass.
+   This is necessary to ensure that an instance of the subclass is usable anywhere that an instance of the superclass is usable. 
+      if a class implements an interface, all of the class methods that are also present in the interface must be declared public. This is so because all members of an interface are implicitly public.
+
+It is acceptable to make a private member of a public class package-private in order to test it, but it is not acceptable to raise the accessibility any higher than that.
+Или же и это не надо, т.к. tests can be made to run as part of the package being tested, thus gaining access to its package-private elements.
+
+----------
+ FIELDS should NEVER BE PUBLIC (Item 14). 
+  __1__ If an instance field is nonfinal, or is a final reference to a mutable object, then by making the field public, you give up [оставить, отказаться; бросить (что-л.)] the ability to limit the values that can be stored in the field. 
+  __2__ This means you also give up the ability to enforce [осуществлять, приводить в исполнение] invariants involving the field.
+  __3__ Also, you give up the ability to take any action when the field is modified, so classes with public mutable fields are not thread-safe. 
+  __4__ Even if a field is final and refers to an immutable object, by making the field public you give up the flexibility to switch to a new internal data representation in which the field does not exist.
+
+The same advice applies to static fields, with the one exception. 
+You can EXPOSE CONSTANTS via PUBLIC STATIC FINAL FIELDS, assuming the constants form [an integral part of the abstraction] provided by the class. 
+-- It is critical that these fields/CONSTANTS contain either primitive values or references to immutable objects (Item 15). 
+
+Note that a nonzero-length array is always mutable, so it is wrong for a class to have a PUBLIC STATIC FINAL ARRAY FIELD, or an accessor that returns such a field. If a class has such a field or accessor, clients will be able to modify the contents of the array. This is a frequent source of security holes.
+
+To summarize, you should always reduce accessibility as much as possible. After carefully designing a minimal public API, you should prevent any stray classes, interfaces, or members from becoming a part of the API. 
+With the exception of public static final fields, public classes should have no public fields. Ensure that objects referenced by public static final fields are immutable.
+
+******************************************************
+*** Item 14: In public classes, use accessor methods, not public fields ***
+
+Because the data fields of such classes are accessed directly, these classes do not offer the benefits of encapsulation (Item 13). 
+_1_ You can’t change the representation without changing the API, 
+_2_ you can’t enforce invariants, 
+_3_ and you can’t take auxiliary action when a field is accessed. 
+
+If a public class exposes its data fields, all hope of changing its representation is lost, as client code can be distributed far and wide.
+
+However, if a class is package-private or is a private nested class, there is nothing inherently wrong with exposing its data fields—assuming they do an adequate job of describing the abstraction provided by the class.
+
+If a change in representation becomes desirable, you can make the change without touching any code outside the package. 
+
+In summary, public classes should never expose mutable fields. It is less harmful, though still questionable, for public classes to expose immutable fields. It is, however, sometimes desirable for package-private or private nested classes to expose fields, whether mutable or immutable.
+
+******************************************************
+*** Item 15: Minimize mutability ***
+
+An immutable class is simply a class whose instances cannot be modified. All of the information contained in each instance is provided when it is created and is fixed for the lifetime of the object.
+Immutable classes are easier to design, implement, and use than mutable classes. They are less prone to error and are more secure.
+
+To make a class immutable, follow these five rules:
+
+1....Don’t provide any methods that modify the object’s state (known as mutators).
+
+2....Ensure that the class can’t be extended. This prevents careless or malicious subclasses from compromising the immutable behavior of the class by behaving as if the object’s state has changed. Preventing subclassing is generally accomplished by making the class final, but there is an alternative that we’ll discuss later.
+
+3....Make all fields final. This clearly expresses your intent in a manner that is enforced by the system. Also, it is necessary to ensure correct behavior if a reference to a newly created instance is passed from one thread to another without synchronization, as spelled out in the memory model [JLS, 17.5; Goetz06 16].
+
+4....Make all fields private. This prevents clients from obtaining access to mutable objects referred to by fields and modifying these objects directly. While it is technically permissible for immutable classes to have public final fields containing primitive values or references to immutable objects, it is not recommended because it precludes[prı`klu:d] (предотвращать, устранять, мешать, препятствовать) changing the internal representation in a later release (Item 13).
+
+5....Ensure exclusive access to any mutable components. If your class has any fields that refer to mutable objects, ensure that clients of the class cannot obtain references to these objects. Never initialize such a field to a client-provided object reference or return the object reference from an accessor. Make defensive copies (Item 39) in constructors, accessors, and readObject methods (Item 76).
+
+public final class Complex {..}
+arithmetic operations create and return a new Complex instance rather than modifying this instance. This pattern is used in most nontrivial immutable classes. It is known as the functional approach because methods return the result of applying a function to their operand without modifying it.
+
+Приемущества immutability:
+1) An immutable object can be in exactly one state, the state in which it was created. 
+2) If you make sure that all constructors establish class invariants, then it is guaranteed that these invariants will remain true for all time, with no further effort on your part or on the part of the programmer who uses the class.
+
+---Mutable objects, on the other hand, can have arbitrarily complex state spaces. 
+If the documentation does not provide a precise description of the state transitions performed by mutator methods, it can be difficult or impossible to use a mutable class reliably.
+
+3) Immutable objects are inherently thread-safe; they require no synchronization. They cannot be corrupted by multiple threads accessing them concurrently. This is far and away the easiest approach to achieving thread safety. In fact, no thread can ever observe any effect of another thread on an immutable object. Therefore, immutable objects can be shared freely. 
+4) Immutable classes should take advantage of this by encouraging clients to reuse existing instances wherever possible. One easy way to do this is to provide public static final constants for frequently used values. 
+
+5) This approach can be taken one step further. An immutable class can PROVIDE STATIC FACTORIES (Item 1) that cache frequently requested instances to avoid creating new instances when existing ones would do. 
+All the boxed primitive classes and BigInteger do this. Using such static factories causes clients to share instances instead of creating new ones, reducing memory footprint and garbage collection costs. Opting for static factories in place of public constructors when designing a new class gives you the flexibility to add caching later, without modifying clients.
+
+A consequence of the fact that immutable objects can be shared freely is that you never have to make defensive copies (Item 39). In fact, you never have to make any copies at all because the copies would be forever equivalent to the originals. Therefore, you need not and should not provide a clone method or copy constructor (Item 11) on an immutable class. This was not well understood in the early days of the Java platform, so the String class does have a copy constructor, but it should rarely, if ever, be used (Item 5).
+
+Not only can you share immutable objects, but you can share their internals. For example, the BigInteger class uses a sign-magnitude representation internally.
+....This is necessary to ensure that there is exactly one representation for each BigInteger value.
+
+Immutable objects make great building blocks for other objects, whether mutable or immutable. It’s much easier to maintain the invariants of a complex object if you know that its component objects will not change underneath it. A special case of this principle is that immutable objects make great map keys and set elements: you don’t have to worry about their values changing once they’re in the map or set, which would destroy the map or set’s invariants.
+
+The only real disadvantage of immutable classes is that they require a separate object for each distinct value. Creating these objects can be costly, especially if they are large. 
+
+Contrast this to java.util.BitSet. Like BigInteger, BitSet represents an arbitrarily long sequence of bits, but unlike BigInteger, BitSet is mutable. The BitSet class provides a method that allows you to change the state of a single bit of a million-bit instance in constant time.
+
+The performance problem is magnified if you perform a multistep operation that generates a new object at every step, eventually discarding all objects except the final result. There are two approaches to coping with this problem. The first is to guess which multistep operations will be commonly required and provide them as primitives.
+....
+
+The package-private mutable companion class approach works fine if you can accurately predict which complex multistage operations clients will want to perform on your immutable class. If not, then your best bet is to provide a public mutable companion class. The main example of this approach in the Java platform libraries is the String class, whose mutable companion is StringBuilder (and the largely obsolete StringBuffer). Arguably, BitSet plays the role of mutable companion to BigInteger under certain circumstances.
+
+-----------------
+Recall that to guarantee immutability, a class must not permit itself to be subclassed. Typically this is done by making the class final, but there is another, more flexible way to do it. The alternative to making an immutable class final is to make all of its constructors private or package-private, and to add public static factories in place of the public constructors (Item 1).
+While this approach is not commonly used, it is often the best alternative. It is the most flexible because it allows the use of multiple package-private implementation classes. 
+
