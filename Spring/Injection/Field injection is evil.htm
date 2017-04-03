@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Field injection</title>
+    <link rel="stylesheet" href="../../Git Guide/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://olivergierke.de/2013/11/why-field-injection-is-evil/">src</a>
+<h2>Why field injection is evil</h2>
+<div id="post" class="cye-lm-tag">
+  <h1 class="cye-lm-tag">Why field injection is evil</h1>
+  <p class="meta cye-lm-tag">
+    22 November 2013 
+    
+  </p>
+  
+<p class="cye-lm-tag">I’m quite frequently getting pulled into discussions on Twitter about the different flavors of <a href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency Injection</a>. Also, I’ve repeatedly expressed my <a href="https://twitter.com/olivergierke/status/314704198908403713">distaste for field injection</a> but as Twitter is not the right communication channel to give an in-depth rational about my opinion. So here we go.</p>
+
+<p class="cye-lm-tag">Let’s discuss this stuff with a bit of (quite generic) context: we want to code a component that has a collaborator. As we know, Dependency Injection is the means to connect the two the apparently easiest way to achieve this is the following:</p>
+
+<pre><code>class MyComponent {
+ 
+  @Inject MyCollaborator collaborator;
+  
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">So what’s wrong with this code? </p>
+
+<h2 id="its-nullpointerexceptions-begging-to-happen">It’s NullpointerExceptions begging to happen</h2>
+
+<p class="cye-lm-tag">Well, first of all it’s broken by default. What’s the API you get to create instances of this class which you will need in your unit test?</p>
+
+<pre><code>MyComponent component = new MyComponent();
+component.myBusinessMethod(); // -&gt; NullPointerException
+</code></pre>
+
+<p class="cye-lm-tag">The core of the problem here is that code you’ve written allows clients to create instances of the class in an invalid state. The whole purpose of a type is clients being able to rely on the invariants it enforces. It’s one of the reasons you use an <code>EmailAddress</code> type over a plain <code>String</code> to represent email adresses in your code: clients can be sure the instance they get is a valid email address as the value object enforces this constraint during construction. A <code>String</code> can potentially be anything, validated or not - how do you know?</p>
+
+<p class="cye-lm-tag">So you can probably guess what this is heading to: constructor injection. Let’s rewrite the code shown before in a way it actually enforces the traits I just outlined:</p>
+
+<pre><code>class MyComponent {
+ 
+  private final MyCollaborator collaborator;
+  
+  @Inject
+  public MyComponent(MyCollaborator collaborator) {
+    Assert.notNull(collaborator, "MyCollaborator must not be null!");
+    this.collaborator = collaborator;
+  }
+
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">“Ohh boy!”, I can hear you say, “So much boilerplate code!”. Let me get back to this argument in a bit and just recap, what we’ve achieved:</p>
+
+<ol class="cye-lm-tag">
+  <li><em>You can only create instances of <code>MyComponent</code> by providing a <code>MyCollaborator</code></em>. You <em>force</em> clients to provide mandatory dependencies, making sure every object created is in a valid state after construction.</li>
+  <li class="cye-lm-tag"><em>You communicate mandatory dependencies publicly.</em> Remember when we bashed service locators for hiding dependencies in the implementations? Field injections is just lipstick on the pig in that regard. You still don’t know about the dependencies just looking at the public interface of the type (e.g. while skimming the JavaDoc). Especially if you share code amongst projects field injection based types become a “run-and-wait-for-the-NPE-to-happen,-declare-missing-beans-and-repeat” kind of approach.</li>
+  <li><em>Final fields also add to the immutable nature application components get.</em> You can clearly distinguish between mandatory dependencies (<code>final</code>) and optional ones (non-<code>final</code>) usually injected through setter injection.</li>
+</ol>
+
+<p class="cye-lm-tag">An often faced argument I get is: “Constructors just get too verbose if I have 6 or 7 dependencies. With fields only, this is fine”. Awesome, you’ve effectively worked around a clear indicator that the code you write is doing way too much. An increase in the number of dependencies a type has <em>should</em>  hurt, as it makes you think about whether you should split up the component into multiple ones. You want to really cure the pain, not blindly apply pain killers to it, don’t you?</p>
+
+<h1 id="testability">Testability</h1>
+
+<p class="cye-lm-tag">Coming back to the amount of code to be written for the constructor injection based variant. Assuming we sticked to the field injection variant, we would have much less code to write, right? Well, I guess you’re writing tests for your code, right? So how do you actually inject a dependency into your component while testing?</p>
+
+<pre><code>MyCollaborator collaborator = … // mock dependency
+MyComponent component = new MyComponent();
+// Inject dependency by some reflection magic
+component.myBusinessMethod();
+</code></pre>
+
+<p class="cye-lm-tag">Reflection is the answer here, fine. No matter how comfortable you make this by using a helper method or the like, it’s still a messy workaround isn’t it? Especially if the alternative to that is a simple:</p>
+
+<pre><code>MyCollaborator collaborator = … // mock dependency
+MyComponent component = new MyComponent(collaborator);
+component.myBusinessMethod();
+</code></pre>
+
+<p class="cye-lm-tag">You get code completion on the constructor call and when you add a dependency to the type under test, refactoring applies, no unset dependencies etc.</p>
+
+<h1 id="boilerplate-buster-lombok">Boilerplate buster Lombok</h1>
+
+<p class="cye-lm-tag">Admittedly I’ve been turned off by the amount of code to be written for constructor injection in the first place as well. This is clearly a shortcoming of Java as a languages. Unfortunately a lot of good OO practices like value objects, favoring delegation over inheritance and constructor DI are significantly easier to implement in languages like Scala.</p>
+
+<p class="cye-lm-tag">However, <a href="http://projectlombok.org/">Project Lombok</a> is a really awesome helper to reduce the amount of boilerplate you have to write to do “the right things” (™). There’s a ton of helpful features in Lombok but I want to concentrate on the one related to the discussion here. With Lombok the constructor DI based variant of my component up there would look something like this:</p>
+
+<pre><code>@RequiredArgsConstructor(onConstructor = @__(@Inject))
+class MyComponent {
+    
+  private final @NonNull MyCollaborator collaborator;
+
+  public void myBusinessMethod() {
+    collaborator.doSomething();
+  }
+}
+</code></pre>
+
+<p class="cye-lm-tag">The <code>@RequiredArgsAnnotation</code> will cause a constructor being added during the compilation process taking all final fields as parameters. The additional <code>@NonNull</code> annotation will cause the parameter be checked for <code>null</code> as well. The weird looking <code>onConstructor</code> is Lombok’s way of letting you add annotations to the constructor generated. So with an additional annotation you effectively get the API we’re looking for.</p>
+
+<p class="cye-lm-tag">To summarize, here are the results of the comparison that I get to:</p>
+
+<h3 id="field-injection">Field injection:</h3>
+
+<pre><code>++ less code to write
+-- unsafe code
+ - more complicated to test
+</code></pre>
+
+<h3 id="constructor-injection">Constructor injection:</h3>
+
+<pre><code>++ safe code
+ - more code to write (see the hint to Lombok)
+ + easy to test
+</code></pre>
+
+</div>
+
+<br><hr>
+<p>
+jschalanda • 3 years ago <br>
+@RequiredArgsConstructor(onConstructor = @__(@Inject))
+Unfortunately that annotation parameter argument looks like an emoticon now.
+10 </p><p>
+Guest  jschalanda • 3 years ago <br>
+True currently that syntax in Lombok is a bit weird, but could be easily solved by using something like "inject=true" in a future version.
+</p><p>
+Oliver Gierke Mod  Guest • 3 years ago <br>
+I think this is too specific to get integrated with Lombok. What if you wanted to use @Autowired instead?
+
+I've filed a ticket to allow the usage of the Lombok annotations as meta annotations so that you can come up with a shortcut yourself: https://code.google.com/p/p...
+</p><p>
+Juraj Misur • 3 years ago <br>
+I've used field injection my entire java history and never had any problems
+- for safe code I always used spring's @Autowired which are required by default
+- for easy to test I used @InjectMocks (http://docs.mockito.googlec... in unit tests or spring context tests which inject everything or just plain package private setter (what the heck) or groovy which can set private fields (what the heck*2) ;)
+
+There are people and projects which successfully use field injection and there are people and projects which successfully use constructor injection. If you screw up you'll learn and move on. Yes it might be more visible if you have many constructor arguments but I've seen people and projects happily using 10+, and it really didn't force them to refactor properly. I'd rather have proper code review for all code smells you can have then forcing user to use c-i just because this one little smell is easily discovered by c-i.
+
+Anyway my point is - RELAX! :) just use what suits you best. The success of the project does not depend on this one :)
+8 </p><p>
+Oliver Gierke Mod  Juraj Misur • 3 years ago <br>
+Agreed, that the constructor doesn't automatically makes people think. From my experience, people start to think if they feel pain.
+
+Still I don't get why you'd actively decide to write a less error prone class than you could with no obvious downsides attached to the safer way. :) Rest assured, that I am totally relaxed. It's just that a field injected class won't survive one of my code reviews, the same as no untested code will.
+3 </p><p>
+Steve Ash  Oliver Gierke • a year ago <br>
+"no obvious downsides" -- without Lambok the boiler plate is something. Lambok is great and all but it has its own pain points and downsides (IDE support, even less obvious magic, playing well with other bytecode generation)
+
+I've worked on multiple teams and multiple large projects using field injection. New members get NPEs, but even entry level devs learn after the first couple times -- and it's never a problem after that. Literally never. Refactoring code, constructors, collaborators -- happens frequently, daily probably. (Small) cost of something everyday vs tiny cost that happens only when we hire new people... I don't see the economy there. I would put this more in the "tricky trade-offs" bucket vs the "evil" bucket.
+2 </p><p>
+Ashley Hindmarsh  Oliver Gierke • 3 years ago <br>
+I'm using code cases with both cases (constructor injection, and autowired fields tested w/Mockito).
+
+The only real problem I have is that Mockito forces me to test with mocked collaborators (I can't mix mocks with real instances).
+
+Also, I don't like that classes without constructor injection or setters are no longer POJOs - they require a framework in order to be used.
+2 </p><p>
+Ryan Evans  Ashley Hindmarsh • a year ago <br>
+Not true about Mockito - you can easily mix mocks with real instances. For one, you can use spies (@Spy) which creates a real object that can be stubbed or verified, but otherwise behaves as normal. Otherwise there are plenty of utilities that help you inject dependencies (Spring's ReflectionTestUtils or PowerMock's Whitebox).
+</p><p>
+benzonico • 3 years ago <br>
+Moreover, Constructor Injection prevent developer to add too many dependencies in the class, as a constructor with more than a few parameters is shocking whereas 50 fields injected in a class does not always rise eyebrows. (Psychology of development and developers :) )
+4 </p><p>
+An0nym0usC0ward  benzonico • 10 months ago <br>
+True that. But no matter how you do the injection, the moment a class has 50 collaborators, there's something sick about it - a strong hint some refactoring is urgently needed.
+</p><p>
+Attila Sari • 4 months ago <br>
+Hi Oliver, great post. I also like the Lombok way presented, but what if I need to use @Qualifier -s on the constructor parameters? Can I use some magic in those cases as well?
+1 </p><p>
+Tom Butler • a year ago <br>
+Let's be clear, the biggest problem with relying on @inject, @autowired and other annotations is that you're coupling the code to a specific container.. if you move your class to a different project that uses a different container, suddenly your annotations are useless and the @Required annotation that you thought was protecting the class from having an invalid state no longer does! Constructor injection would have though...
+1 </p><p>
+Oliver Gierke Mod  Tom Butler • a year ago <br>
+I don't think there's much risk in a DI framework not supporting @Inject as it's basically *the* injection standard. Also, the core point of the article is that you shouldn't design classes with containers in mind in the first place and just stick to the core language means you have to ensure the code can't be used in invalid states.
+3 </p><p>
+Morten Christensen • 2 years ago <br>
+I also looked at Project Lombok but deemed it too risky to use (f.x. there are issues with the latest JDK). I also found the customisation features lacking, so I just released my own open source tool for generating java value objects (with constructors with all members as you want) that used 100% standard java features, should work with all java tools and is extremely customisable. You can check it out at "http://valjogen.41concepts.com". Let me know what you think?
+1 </p><p>
+Daniel Meyer • 3 years ago <br>
+It is much better solved in OSGi e.g. a service is only available if all its dependencies have been created previously.
+1 </p><p>
+Oliver Gierke Mod  Daniel Meyer • 3 years ago <br>
+That's true for most standard DI containers as well. Plus, I don't think a hammer like OSGi, is not a reasonable solution if all you need is proper class design.
+1 </p><p>
+An0nym0usC0ward  Oliver Gierke • 10 months ago <br>
+True that. But constructor or property injection, when using a DI framework, are IMO not really distinguishable - they both won't let you use an object which wasn't fully initialized. Without a DI framework, boilerplate becomes more if you don't use constructor injection (tons of getters and setters) - that's IMO a much better argument than the NPE argument.
+</p><p>
+Guest • 3 years ago <br>
+Additionally I also think that method injection shouldn't be used. This is normally argued to be used for "Optional" dependencies, which to me is more a bad design than a valid use case. Such an optionality should be rather solved through Noop-Implementations a different build-time variant.
+
+Concerning field injection, the two cases where I currently accept using field injection are:
+
+- In (Integration) Tests to initialize the relevant classes
+- In Android where I don't have the possibility to create some objects through "my" container but they are rather created by the Android system
+1 </p><p>
+Realmond • 18 days ago <br>
+I think the field injection is evil but I really hate that when the code is heavily tied with a specific utility library and getting into a kind of annotation programming that hides the actual code.
+</p><p>
+AlanB • 5 months ago <br>
+I find the basic premise wrong given by the example.
+
+@Inject by JSR 330 standard is mandatory. As such when the container is started at runtime an error will be displayed showing the beans have not been wired correctly.
+
+So you simply will not get a null pointer as per the example. As such your example more is a reason not to make use spring autowired required false and similar in Guice. However in real world example I have seen a project for good reason move away from @Inject to @Autowired as they did feel the non mandatory nature was required. 
+Furthermore the only way to get a null pointer is to not add the @inject annotation. That would happen with if you fail to add the constructor @Inject too. Also given @Inject is mandatory you are never going to get as far as your assertion in the constructor. So it is pointless code! Can you even mix mandatory and non mandatory injections in the constructor if you so wish. The only advantage of constructor injection I see is the ability to make instance variable final. But given I would not have a getter on my injected field variable does that really give me much real world benefits. It is private so cannot be changed (without reflection which is not going to happen by accident).
+</p><p>
+Oliver Gierke Mod  AlanB • 5 months ago <br>
+@Autowired is mandatory, too. The point however is, that you don't want to outsource the responsibility to verify those invariants. Making sure they're met is the responsibility of the class (that's what's called defensive programming). With field injection you're forced to delay that check, which violates the fail fast principle.
+</p><p>
+Jörg Hohwiller • 9 months ago <br>
+IMHO you should not devaluate or dictate injection styles as you are doing here. There are pros and cons for all injection styles.
+* Constructor injection great advantages as you outline but it is also painful in the same way. If you have complex problems with class hierarchies adding a dependency requires to add it to all constructors of the hierarchy. Even worse if you provide a library and external users extend from your code you will case a compatibility issue if you add a new dependency to your code as external users have to update their code to make it work. This does not happen with setter or private field injection.
+* Setter and private field injection are more similar to each other. If you want to write flexible code (e.g. a library) I would recommend (public) setter injection as the setter can be called manually in specific cases. 
+* However, many projects today are using spring and spring-boot with spring-test. If they do test spring beans they do not do the wiring by hand. So if some project wants to go for such an approach why adding setters if they just blow up the codebase?
+* For your examples of "too many dependencies" I learned hard from really complex projects. Business demands can really drive you nuts and sometimes you simple have many dependencies for reason. There sometimes is no perfect design to workaround this and you just have to face the facts. Actually I am working in a mirco-services project and thought that the services themselves are all quite small (at least compared to what I did in former projects) but still I am seeing such issues. There are business domains that are quite trivial and where you can argue like you did but sometimes this just does not match.
+
+To sum it up. Decide for an injection style in your project and do not mix different styles. Each reasonable project should have one (or many) smart technical guy who knows what he is doing and they should have the freedom to make a choice that is suitable to their needs and requirements.
+</p><p>
+Lannister • a year ago <br>
+I really don't like constructor injection. You can always get a lot of circular dependencies with ages long callstack (I know its bad but sometimes you should live with things you hate). What I do is field injection with @PostConstruct assertions.
+</p><p>
+Oliver Gierke Mod  Lannister • a year ago <br>
+Circular references on the component dependency level are a design smell, so don't shoot the messenger. ;)
+3 </p><p>
+Caleb Cushing • a year ago <br>
+Nice writeup, shared with team.
+
+maybe java 10 will get a hint and fix our constructor problems. Personally I want a few things fixed in constructors coming from Perl.
+
+1. Key, Value pairs as parameters
+I think this can be done by only changing the compiler (using Perl syntax, but Javascript or other syntax would be fine) . new Obj( foo => bar, mykey => arg ); should be translatable to Obj( MyKey mykey, Foo foo ) { I think this would make certain patterns (setter/builder) less necessary in many cases, as they are done largely for readability, imho. Useful for immutable entities.
+
+2. Some way to do auto constructors from fields, maybe a keyword or annotation to do this, but if all you're needing a constructor for is to set fields as above seems doable
+</p><p>
+Edward Beckett • 3 years ago <br>
+Great advice ... I think it's good enough for me to stop my field injection habit. I actually only do it because it seems easier to read. Thanks Oliver....
+</p><p>
+Lukas Eder • 3 years ago <br>
+Hmm, I sincerely hope that something be done to Java on the language level, rather than adding more esoteric annotations like
+
+@__
+
+Or we'll end up with Annotatiomania
+</p><p>
+Stefan R • 3 years ago <br>
+Although I agree with some of your points, I still prefer field injection. For me collaborator classes are an implementation detail. If MyComponent evolves over time and uses MyCollaborator1 and MyCollaborator2 that's nothing clients should worry about. However, by adding these dependencies to the component API, they actually have to. From my pov, adding dependend collaborators as C'tor args violates the principle of encapsulation.
+When it comes to testability simply make fields package private to avoid reflection magic.
+</p><p>
+industry7  Stefan R • a year ago <br>
+"For me collaborator classes are an implementation detail."
+
+Absolutely it is. But then, constructors are also an implementation detail. What's your point?
+
+"If MyComponent evolves over time and uses MyCollaborator1 and MyCollaborator2 that's nothing clients should worry about."
+
+If your user has to manually wire the dependencies, then it is in fact something they need to worry about.
+
+"However, by adding these dependencies to the component API, they actually have to."
+
+Whether you're using field vs constructor injection makes NO difference in whether your user will need to care. Either your framework/lib/etc will create the dependencies automatically, in which case your user doesn't need to worry about it. Or your framework/lib/etc will not create them, and the user has to. See? No mention of injection type, because constructor injection does NOT FORCE the user to know or care about anything. However, it does very conveniently give the OPTION to more easily know and care about those implementation details if the user is so inclined.
+1 </p><p>
+Oliver Gierke Mod  Stefan R • 3 years ago <br>
+If you use dependency injection, you naturally separate object construction from object usage anyway. So clients aren't affected by the newly introduced dependency.
+
+*If* you create the object manually, a field injected class will break by definition as clients don't know they need to set another hidden dependency. The constructor actually lets the compiler tell you which code you need to touch.
+1 </p><p>
+Stefan R  Oliver Gierke • 3 years ago <br>
+Well, you actually started your reasoning with non-DI-managed clients (Unit tests). I think that mixture of different consumers is the root cause of this problem. Another way to solve it would be to use a DI manager to inject the components under test into your test cases, too.
+But anyway, great discussion :-)
+</p><p>
+Oliver Gierke Mod  Stefan R • 3 years ago <br>
+My entire argument is that you shouldn't stop thinking about what the type enforces just because all of a sudden there is a DI container in place. Maybe even a container, that will blow up if it can't obtain an instance for a collaborator. Types are a means to express invariants an thus should make sure, these invariants are met.
+7 </p><p>
+Marc N • 3 years ago <br>
+Hi,
+Sorry I'm new to DI, can you tell me why @Inject rises NPE? In srping when you use @Autowired non exception is raised.
+
+The question may sound stupid, but I'm a little lost.
+
+Thanks in advance
+</p><p>
+Oliver Gierke Mod  Marc N • 3 years ago <br>
+There's no such thing as a stupid question :). It's not the annotation per se, but its usage on the field. As described in the post, with field injection, you can easily create instances of the type *without* setting the dependency. Calling business methods on these invalid instances will cause NullPointerExceptions die to the missing dependency. With constructor injection, you can't even run into this situation.
+1 </p><p>
+grantaustin • 3 years ago <br>
+I tend to limit my use of field injection to cases where I can provide a reasonable default. Keeps things easy to test and doesn't result in surprising null exceptions.
+</p><p>
+codesmell • 3 years ago <br>
+How do you feel about IoC in Wicket then, where Contructor injection is 
+probably out of question, and field injection - while still making 
+testing harder - is pretty convenient - to say the least?
+
+PS: i LOVE lombok (if only it wasn't for frequent SaveAction problems with eclipse)
+</p><p>
+Robert  codesmell • 2 years ago <br>
+Non-magic DI, constructor injection and Wicket support:
+https://github.com/vanillas...
+1 </p><p>
+Oliver Gierke Mod  codesmell • 3 years ago <br>
+I consider every technology requiring the presence of a default constructor too invasive and hence try to avoid it. DI is based on the foundation of separating object construction from object usage, so if the technology at hand doesn't provide detailled control over object construction it effectively only does half the job.
+1 </p><p>
+Marcin Kłopotek  codesmell • 7 months ago <br>
+Constructor DI for @SpringBean in Wicket is also possible, see the solution http://stackoverflow.com/a/...
+</p><p>
+Tobb86 • 9 months ago <br>
+I must say I disagree somewhat. In an actual Spring context, a missing bean would cause an exception. So the area where this is a problem is unit tests. IMO, one should never allow for a degradation of production code to suit the needs of unit tests, it's the unit tests that should take into account the quirks of the production code, not the other way around. In practice, "unsafe" is an exaggeration, since one does not use "new" on services in Spring project in production code.
+
+Also, I disagree with the premise that field injected beans are harder to test. This is due to a feature of Mocktio, where you can instantiate and assign mocks using the @InjectMocks and @Mock annotations. Using these, field injection requires less code in the test classes.
+</p><p>
+Bacillus Bulgaricus • 9 months ago <br>
+For me injection through the constructor violates the whole idea of IoC when you deal with subclasses. You make the subclass responsible to supply the dependencies instead the DI container. Also makes it harder to add another dependency in the base class. If you have 100 subclasses you should add that dependency as a parameter to all subclass'es constructors. And also makes quite painful to compose objects.
+</p><p>
+Sandro Agboka • a year ago <br>
+Hi Oliver, I am very confused by this article. It is very difficult to understand. Maybe because I'm a french guy but it is very difficult to visualize the concepts you are exposing. Can't you write the same article in simple english.
+</p><p>
+Oliver Gierke Mod  Sandro Agboka • a year ago <br>
+That's as simple as it can get :). Which parts exactly are the ones you don't understand?
+3 </p><p>
+Adrian Meredith • 3 years ago <br>
+A slightly flawed article though I too use constructor injection you failed to mention that you still need a default constructor inorder to be able to proxy the class. In other words calling new MyComponent() will still result in a NPE. The only advantage to constructor injection is that you can use the same creation process in tests as you do in production. Its not any safer however.
+</p><p>
+Gonzalo Ortiz Jaureguizar  Adrian Meredith • 3 years ago <br>
+In most frameworks the default constructor can be protected, so an external user cannot call this constructor
+3 </p><p>
+Oliver Gierke Mod  Adrian Meredith • 3 years ago <br>
+No you don't. In the traditional approach you simply use an interface and thus JDK proxies to get transactions, security etc. applied. But as of version 4.0 RC1 Spring also supports proxy creation for interface-less components without default constructors.
+</p>
+</body>
+</html>
