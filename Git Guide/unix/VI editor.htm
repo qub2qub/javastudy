@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>VI editor</title>
+    <link rel="stylesheet" href="../grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    	dt {
+    		font-weight: bold;
+    		/*background-color: #999;*/
+    		border-top: 1px solid black
+    	}
+    	dd {
+    		border-bottom: 1px solid black
+		}
+    </style>
+</head>
+<body>
+<a href="http://web.eng.hawaii.edu/Tutor/vi.html">src</a>
+<h2>Mastering the VI editor</h2>
+<p class="cye-lm-tag">
+
+<p class="cye-lm-tag"><a href="http://www.eng.hawaii.edu/Tutor/vi.pdf">
+	Mastering the VI editor (PDF format)</a>
+
+</p><h2><a name="index">Index</a></h2>
+<ul>
+<li><a href="#intro">Introduction</a>
+</li><li><a href="#conv">Conventions</a>
+</li><li><a href="#before">Before You Begin</a>
+</li><li><a href="#start">Starting the VI Editor</a>
+</li><li><a href="#quit">Getting Out of VI</a>
+</li><li><a href="#modes">The Two Modes of VI</a>
+</li><li><a href="#commands">How to Type Commands in Command Mode</a>
+</li><li><a href="#simple">Some Simple VI Commands</a>
+</li><li><a href="#buffers">Text Buffers in VI</a>
+</li><li><a href="#cut">Cutting and Yanking</a>
+</li><li><a href="#paste">Pasting</a>
+</li><li><a href="#indent">Indenting Your Code and Checking</a>
+</li><li><a href="#search">Word and Character Searching</a>
+</li><li><a href="#settings">Settings for VI (and EX)</a>
+</li><li><a href="#map">Abbreviations and Mapping Keys to Other Keys</a>
+</li><li><a href="#setup">The EXINIT Environment Variable and 
+	the <i>.exrc</i> file</a>
+</li><li><a href="#recover">Recovering Your Work When Something 
+	Goes Wrong with Your Terminal</a>
+</li><li><a href="#warning">Warning About Using VI on the Workstations</a>
+</li><li><a href="#summary">Summary of VI commands</a>
+<ul>
+<li><a href="#s-cut">Cutting and Pasting/Deleting text</a>
+</li><li><a href="#s-insert">Inserting New Text</a>
+</li><li><a href="#s-mvcur">Moving the Cursor Within the File</a>
+</li><li><a href="#s-mvscr">Moving the Cursor Around the Screen</a>
+</li><li><a href="#s-repl">Replacing Text</a>
+</li><li><a href="#s-srch">Searching for Text or Characters</a>
+</li><li><a href="#s-fmt">Manipulating Character/Line Formatting</a>
+</li><li><a href="#s-save">Saving and Quitting</a>
+</li><li><a href="#s-misc">Miscellany</a>
+</li><li><a href="#s-excmd">EX Commands</a>
+</li></ul></li></ul>
+<hr>
+<h2><a name="intro">Introduction</a></h2>
+<p class="cye-lm-tag">The VI editor is a screen-based editor used by many Unix users. The VI editor
+has powerful features to aid programmers, but many beginning users avoid using
+VI because the different features overwhelm them. This tutorial is written to
+help beginning users get accustomed to using the VI editor, but also contains
+sections relevant to regular users of VI as well. Examples are provided, and
+the best way to learn is to try these examples, and think of your own examples
+as well... There's no better way than to experience things yourself.
+
+</p><p class="cye-lm-tag"><a href="#s-excmd">EX Commands</a>
+
+</p><h2><a name="conv">Conventions</a></h2>
+
+<p class="cye-lm-tag">In this tutorial, the following convention will be used:
+
+</p><p class="cye-lm-tag"><b>^X</b> denotes a control character. For example, if you see: <b>^d</b> in
+the tutorial, that means you hold down the control key and then type the
+corresponding letter. For this example, you would hold down the <b>control</b>
+key and then type <b>d</b>.
+
+</p><h2><a name="before">Before You Begin</a></h2>
+
+<p class="cye-lm-tag">The VI editor uses the full screen, so it needs to know what kind of terminal
+you have. When you log in, wiliki should ask you what terminal you have. The
+prompt looks like this:
+
+</p><pre>	TERM = (vt100)
+</pre>
+<p class="cye-lm-tag">If you know your terminal is a vt100 (or an emulator that can do vt100), just
+hit return for the terminal type when you log in. If you have an hp terminal,
+type "<tt>hp</tt>" for the terminal type and hit return. If you are not sure
+what kind of terminal you have, ask a lab monitor, or have someone help you set
+the correct terminal type.
+
+</p><p class="cye-lm-tag">If you make an error when you log in and type the wrong terminal type, don't
+panic and log out. You can type the following commands to fix the settings:
+
+</p><ul>
+<p class="cye-lm-tag">First, tell your shell what type of terminal you have. (If you're not sure
+what your shell is, type this command to see what shell you have:
+<tt>echo $SHELL</tt>.) For the examples given, the terminal type is
+"vt100". Substitute it with whatever terminal type you have.
+
+For C shell (/bin/csh), the command is this:<br>
+</p><pre>        set term=vt100
+</pre>
+For Bourne Shell (/bin/sh) or Korn Shell (/bin/ksh), the commands are the
+following:<br>
+<pre>        export TERM
+        TERM=vt100
+</pre>
+
+Next, reset your terminal with this command:<br>
+<pre>        tset
+</pre>
+</ul>
+
+<p class="cye-lm-tag">Now that the terminal type is (hopefully) correctly set, you are ready to
+get started with VI.
+
+</p><h2><a name="start">Starting the VI Editor</a></h2>
+
+<p class="cye-lm-tag">The VI editor lets a user create new files or edit existing files. The
+command to start the VI editor is <tt>vi</tt>, followed by the filename. For
+example to edit a file called <i>temporary</i>, you would type <tt>vi temporary
+</tt>and then return. You can start VI without a filename, but when you want to
+save your work, you will have to tell VI which filename to save it into
+later.
+
+</p><p class="cye-lm-tag">
+When you start VI for the first time, you will see a screen filled with tildes
+(A tilde looks like this:  ~) on the left side of the screen. Any blank lines
+beyond the end of the file are shown this way. At the bottom of your screen,
+the filename should be shown, if you specified an existing file, and the size
+of the file will be shown as well, like this:<br>
+</p><pre>"filename" 21 lines, 385 characters
+</pre>
+If the file you specified does not exist, then it will tell you that it is a
+new file, like this:<br>
+<pre>"newfile" [New file]
+</pre>
+If you started VI without a filename, the bottom line of the screen will just
+be blank when VI starts. If the screen does not show you these expected
+results, your terminal type may be set wrong. Just type <tt>:q</tt> and return
+to get out of VI, and <a href="#before">fix your terminal type</a>. If you
+don't know how, ask a lab monitor.
+<p class="cye-lm-tag"></p>
+
+<h2><a name="quit">Getting Out of VI</a></h2>
+
+<p class="cye-lm-tag">
+Now that you know how to get into VI, it would be a good idea to know how to
+get out of it. The VI editor has <a href="#modes">two modes</a> and in order
+to get out of VI, you have to be in <i>command</i> mode.  Hit the key labeled
+"<b>Escape</b>" or "<b>Esc</b>" (If your terminal does not have such a key,
+then try ^[, or control-[.) to get into <i>command</i> mode. If you were
+already in the command mode when you hit "<b>Escape</b>", don't worry. It
+might beep, but you will still be in the <i>command</i> mode.
+</p>
+
+<p class="cye-lm-tag">
+The command to quit out of VI is <tt>:q</tt>. Once in <i>command</i> mode,
+type colon, and 'q', followed by return. If your file has been modified in any
+way, the editor will warn you of this, and not let you quit. To ignore this
+message, the command to quit out of VI without saving is <tt>:q!</tt>. This
+lets you exit VI without saving any of the changes.
+</p>
+
+<p class="cye-lm-tag">
+Of course, normally in an editor, you would want to save the changes you
+have made. The command to save the contents of the editor is <tt>:w</tt>. You
+can combine the above command with the quit command, or <tt>:wq</tt>. You can
+specify a different file name to save to by specifying the name after the
+<tt>:w</tt>. For example, if you wanted to save the file you were working as
+another filename called <i>filename2</i>, you would type:
+<tt>w filename2</tt> and return.
+</p>
+
+<p class="cye-lm-tag">
+Another way to save your changes and exit out of VI is the <tt>ZZ</tt> command.
+When in <i>command</i> mode, type <tt>ZZ</tt> and it will do the equivalent of
+<tt>:wq</tt>. If any changes were made to the file, it will be saved. This is
+the easiest way to leave the editor, with only two keystrokes.
+</p>
+
+<h2><a name="modes">The Two Modes of VI</a></h2>
+
+<p class="cye-lm-tag">
+The first thing most users learn about the VI editor is that it has two modes:
+<i>command</i> and <i>insert</i>. The <i>command</i> mode allows the entry of
+commands to manipulate text. These commands are usually one or two characters
+long, and can be entered with few keystrokes. The <i>insert</i> mode puts
+anything typed on the keyboard into the current file.
+</p>
+
+<p class="cye-lm-tag">
+VI starts out in <i>command</i> mode. There are several commands that put the
+VI editor into <i>insert</i> mode. The most commonly used commands to get into
+insert mode are <tt>a</tt> and <tt>i</tt>. These two commands are described
+below. Once you are in <i>insert</i> mode, you get out of it by hitting the
+<b>escape</b> key. If your terminal does not have an <b>escape</b> key,
+^[ should work (control-[). You can hit escape two times in a row and VI would
+definitely be in <i>command</i> mode. Hitting <b>escape</b> while you are
+already in <i>command</i> mode doesn't take the editor out of <i>command</i>
+mode. It may beep to tell you that you are already in that mode.
+</p>
+
+<h2><a name="commands">How to Type Commands in Command Mode</a></h2>
+
+<p class="cye-lm-tag">
+The command mode commands are normally in this format: (Optional arguments are
+given in the brackets)<br>
+
+</p><ul>
+    <tt>[<i>count</i>] command [<i>where</i>]</tt>
+</ul>
+
+Most commands are one character long, including those which use control
+characters. The commands described in this section are those which are used
+most commonly the VI editor.
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+The <i>count</i> is entered as a number beginning with any character from 1
+to 9. For example, the <tt>x</tt> command deletes a character under the
+cursor. If you type <tt>23x</tt> while in <i>command</i> mode, it will
+delete 23 characters.
+</p>
+
+<p class="cye-lm-tag">
+Some commands use an optional <i>where</i> parameter, where you can specify
+how many lines or how much of the document the command affects, the
+<i>where</i> parameter can also be any command that moves the cursor.
+</p>
+
+<h2><a name="simple">Some Simple VI Commands</a></h2>
+
+<p class="cye-lm-tag">
+Here is a simple set of commands to get a beginning VI user started. There are
+many other convenient commands, which will be discussed in later sections.
+
+</p><dl compact="">
+<dt>a</dt><dd>enter <i>insert</i> mode, the characters typed in will be inserted
+    after the current cursor position. If you specify a count, all the text
+    that had been inserted will be repeated that many times.
+</dd><dt>h</dt><dd>move the cursor to the left one character position.
+</dd><dt>i</dt><dd>enter <i>insert</i> mode, the characters typed in will be inserted
+    before the current cursor position. If you specify a count, all the text
+    that had been inserted will be repeated that many times.
+</dd><dt>j</dt><dd>move the cursor down one line.
+</dd><dt>k</dt><dd>move the cursor up one line.
+</dd><dt>l</dt><dd>move the cursor to the right one character position.
+</dd><dt>r</dt><dd>replace one character under the cursor. Specify <i>count</i> to
+    replace a number of characters
+</dd><dt>u</dt><dd>undo the last change to the file. Typing <tt>u</tt> again will re-do
+    the change.
+</dd><dt>x</dt><dd>delete character under the cursor. <i>Count</i> specifies how many
+    characters to delete. The characters will be deleted after the cursor.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+<h2><a name="buffers">Text Buffers in VI</a></h2>
+
+<p class="cye-lm-tag">
+The VI editor has 36 buffers for storing pieces of text, and also a general
+purpose buffer. Any time a block of text is deleted or yanked from the file,
+it gets placed into the general purpose buffer. Most users of VI rarely
+use the other buffers, and can get along without the other buffers. 
+The block of text is also stored in another buffer as well, if it is
+specified. The buffer is specified using the <tt>"</tt> command. After
+typing <tt>"</tt>, a letter or digit specifying the buffer must be entered.
+For example, the command:  <tt>"mdd</tt> uses the buffer <b>m</b>, and the
+last two characters stand for delete current line. Similarly, text can be
+pasted in with the <tt>p</tt> or <tt>P</tt> command.
+<tt>"mp</tt> pastes the contents of buffer <b>m</b> after the current cursor
+position. For any of the commands used in the next two sections, these buffers
+can be specified for temporary storage of words or paragraphs.
+</p>
+
+<h2><a name="cut">Cutting and Yanking</a></h2>
+
+<p class="cye-lm-tag">
+The command commonly used command for cutting is <tt>d</tt>. This command
+deletes text from the file. The command is preceded by an optional
+<i>count</i> and followed by a movement specification. If you double the
+command by typing <tt>dd</tt>, it deletes the current line. Here are some
+combinations of these:
+
+</p><dl compact="">
+<dt>d^</dt><dd>deletes from current cursor position to the beginning of the line.
+</dd><dt>d$</dt><dd>deletes from current cursor position to the end of the line.
+</dd><dt>dw</dt><dd>deletes from current cursor position to the end of the word.
+</dd><dt>3dd</dt><dd>deletes three lines from current cursor position downwards.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+There is also the <tt>y</tt> command which operates similarly to the
+<tt>d</tt> command which take text from the file without
+deleting the text.</p>
+
+<h2><a name="paste">Pasting</a></h2>
+
+<p class="cye-lm-tag">
+The commands to paste are <tt>p</tt> and <tt>P</tt>. The only differ in the
+position relative to the cursor where they paste. <tt>p</tt> pastes the
+specified or general buffer after the cursor position, while <tt>P</tt>
+pastes the specified or general buffer before the cursor position. Specifying
+<i>count</i> before the paste command pastes text the specified number of
+times.
+</p>
+
+<h2><a name="indent">Indenting Your Code and Checking</a></h2>
+
+<p class="cye-lm-tag">
+The VI editor has features to help programmers format their code neatly.
+There is a variable that to set up the indentation for each level of nesting
+in code. In order to set it up, see the <a href="#settings">customization
+section</a> of this tutorial.  For example, the command to set the shift
+width to 4 characters is <tt>:set sw=4</tt>.
+</p>
+
+<p class="cye-lm-tag">
+The following commands indent your lines or remove the indentation, and can
+be specified with <i>count</i>:
+
+</p><dl compact="">
+<dt>&lt;&lt;</dt><dd>Shifts the current line to the left by one shift width.
+</dd><dt>&gt;&gt;</dt><dd>Shifts the current line to the right by one shift width.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+The VI editor also has a helpful feature which checks your source code for
+any hanging parentheses or braces. The <tt>%</tt> command will look for the
+left parenthesis or brace corresponding to a particular right parenthesis or
+brace and vice versa. Place the cursor onto a parenthesis or brace and type
+<b>%</b> to move the cursor to the corresponding parenthesis or brace. This is
+useful to check for unclosed parentheses or braces. If a parenthesis or brace
+exists without a matching parenthesis or brace, VI will beep at you to
+indicate that no matching symbol was found.
+</p>
+
+<h2><a name="search">Word and Character Searching</a></h2>
+
+<p class="cye-lm-tag">
+The VI editor has two kinds of searches:  string and character. For a string
+search, the <tt>/</tt> and <tt>?</tt> commands are used. When you start these
+commands, the command just typed will be shown on the bottom line, where you
+type the particular string to look for. These two commands differ only in
+the direction where the search takes place. The <tt>/</tt> command searches
+forwards (downwards) in the file, while the <tt>?</tt> command searches
+backwards (upwards) in the file. The <tt>n</tt> and <tt>N</tt> commands repeat
+the previous search command in the same or opposite direction, respectively.
+Some characters have special meanings to VI, so they must be preceded by a
+backslash (\) to be included as part of the search expression.
+</p>
+
+<p class="cye-lm-tag">
+Special characters:
+</p><dl compact="">
+<dt>^</dt><dd>Beginning of the line. (At the beginning of a search expression.)
+</dd><dt>.</dt><dd>Matches a single character.
+</dd><dt>*</dt><dd>Matches zero or more of the previous character.
+</dd><dt>$</dt><dd>End of the line (At the end of the search expression.)
+</dd><dt>[</dt><dd>Starts a set of matching, or non-matching expressions... For example:
+    /f[iae]t matches either of these: fit fat fet  In this form, it matches
+    anything except these: /a[^bcd] will not match any of these, but anything
+    with an a and another letter: ab ac ad
+</dd><dt>&lt;</dt><dd>Put in an expression escaped with the backslash to find the ending
+    or beginning of a word. For example: /\&lt;the\&gt; should find only word
+    the, but not words like these:  there and other.
+</dd><dt>&gt;</dt><dd>See the '&lt;' character description above.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+The character search searches within one line to find a character entered
+after the command. The <tt>f</tt> and <tt>F</tt> commands search for a
+character on the current line only. <tt>f</tt> searches forwards and
+<tt>F</tt> searches backwards and the cursor moves to the position of the
+found character.
+</p>
+
+<p class="cye-lm-tag">
+The <tt>t</tt> and <tt>T</tt> commands search for a character on the current
+line only, but for <tt>t</tt>, the cursor moves to the position before the
+character, and <tt>T</tt> searches the line backwards to the position after
+the character.
+</p>
+
+<p class="cye-lm-tag">
+These two sets of commands can be repeated using the <tt>;</tt> or <tt>,</tt>
+command, where <tt>;</tt> repeats the last character search command in the
+same direction, while <tt>,</tt> repeats the command in the reverse
+direction.
+</p>
+
+<h2><a name="settings">Settings for VI (and EX)</a></h2>
+
+<p class="cye-lm-tag">
+You can customize the way VI behaves upon start up. There are several edit
+options which are available using the :set command, these are the VI and EX
+editor options available on Wiliki: (You can get this list by typing
+<tt>:set all</tt> and then <b>return</b> in command mode)
+</p>
+
+<p class="cye-lm-tag">
+</p><listing>noautoindent        magic                               noshowmatch
+autoprint           mesg                                noshowmode
+noautowrite         nomodelines                         noslowopen
+nobeautify          nonumber                            tabstop=8
+directory=/tmp      nonovice                            taglength=0
+nodoubleescape      nooptimize                          tags=tags /usr/lib/tags
+noedcompatible      paragraphs=IPLPPPQPP LIpplpipnpbp   term=xterm
+noerrorbells        prompt                              noterse
+noexrc              noreadonly                          timeout
+flash               redraw                              timeoutlen=500
+hardtabs=8          remap                               ttytype=xterm
+noignorecase        report=5                            warn
+keyboardedit        scroll=11                           window=23
+keyboardedit!       sections=NHSHH HUuhsh+c             wrapscan
+nolisp              shell=/bin/csh                      wrapmargin=0
+nolist              shiftwidth=8                        nowriteany
+</listing>
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+Some of these options have values set with the equals sign '=' in it, while
+others are either set or not set. (These on or off type of options are called
+<b>Boolean</b>, and have "no" in front of them to indicate that they are not
+set.) The options shown here are the options that are set without any
+customization. Descriptions of some of these are given below, with an
+abbreviation. For example, the command set autoindent, you can type
+<tt>:set autoindent</tt> or <tt>:set ai</tt>. To unset it, you can type
+<tt>:set noautoindent</tt> or <tt>:set noai</tt>.
+
+</p><dl compact="">
+<dt>autoindent (ai)</dt><dd>This option sets the editor so that lines following an
+    indented line will have the same indentation as the previous line. If you
+    want to back over this indentation, you can type <tt>^D</tt> at the very
+    first character position. This <tt>^D</tt> works in the <i>insert</i>
+    mode, and not in <i>command</i> mode. Also, the width of the indentations
+    can be set with <b>shiftwidth</b>, explained below.
+</dd><dt>exrc</dt><dd>The <i>.exrc</i> file in the current directory is read during
+    startup. This has to be set either in the environment variable
+    <b>EXINIT</b> or in the <i>.exrc</i> file in your home directory.
+</dd><dt>mesg</dt><dd>Turn off messages if this option is unset using
+    <tt>:set nomesg</tt>, so that nobody can bother you while using the
+    editor.
+</dd><dt>number (nu)</dt><dd>Displays lines with line numbers on the left side.
+</dd><dt>shiftwidth (sw)</dt><dd>This option takes a value, and determines the width of
+    a software tabstop. (The software tabstop is used for the
+    <tt>&lt;&lt;</tt> and <tt>&gt;&gt;</tt> commands.) For example, you would
+    set a shift width of 4 with this command: <tt>:set sw=4</tt>.
+</dd><dt>showmode (smd)</dt><dd>This option is used to show the actual mode of the
+    editor that you are in. If you are in <i>insert</i> mode, the
+    bottom line of the screen will say <b>INPUT MODE</b>. 
+</dd><dt>warn</dt><dd>This option warns you if you have modified the file, but haven't
+    saved it yet.
+</dd><dt>window (wi)</dt><dd>This option sets up the number of lines on the window that
+    VI uses. For example, to set the VI editor to use only 12 lines of your
+    screen (because your modem is slow) you would use this:
+    <tt>:set wi=12</tt>.
+</dd><dt>wrapscan (ws)</dt><dd>This option affects the behavior of the word search. If
+    <tt>wrapscan</tt> is set, if the word is not found at the bottom of the
+    file, it will try to search for it at the beginning.
+</dd><dt>wrapmargin (wm)</dt><dd>If this option has a value greater than zero, the editor
+    will automatically "word wrap". That is, if you get to within that many
+    spaces of the left margin, the word will wrap to the next line, without
+    having to type return. For example, to set the wrap margin to two
+    characters, you would type this: <tt>:set wm=2</tt>.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h2><a name="map">Abbreviations and Mapping Keys to Other Keys</a></h2>
+
+<p class="cye-lm-tag">
+One EX editor command that is useful in the VI editor is the <b>abbreviate</b>
+command. This lets you set up abbreviations for specific strings. The command
+looks like this: <tt>:ab string thing to substitute for</tt>. For example, if
+you had to type the name, "<b>Humuhumunukunukuapua`a</b>" but you didn't
+want to type the whole name, you could use an abbreviation for it. For this
+example, the command is entered like this: <br>
+<tt>:ab 9u Humuhumunukunukuapua`a</tt><br>
+Now, whenever you type <tt>9u</tt> as a separate word, VI will type in the
+entire word(s) specified. If you typed in 9university, it will not substitute
+the word.
+</p>
+
+<p class="cye-lm-tag">
+To remove a previously defined abbreviation, the command is unabbreviate.
+To remove the previous example, the command would be ":una 9u"
+To get your listing of abbreviations, simply just type :ab without any
+definitions.
+</p>
+
+<p class="cye-lm-tag">
+Another EX editor command that is useful for customization is the mapping
+command. There are two kinds of mapping commands. One for command mode, and
+the other for insert mode. These two commands are <tt>:map</tt> and
+<tt>:map!</tt> respectively. The mapping works similarly to the abbreviation,
+and you give it a key sequence and give it another key sequence to substitute
+it with. (The substituted key sequences are usually VI commands.)
+</p>
+
+<h2><a name="setup">The EXINIT Environment Variable and the <i>.exrc</i> file</a></h2>
+
+<p class="cye-lm-tag">
+There are two ways to customize the VI editor. If you create a file called
+<i>.exrc</i> in your home directory, all the commands in there will be read
+when VI starts up. The other method is to set an environment variable called 
+<b>EXINIT</b>.  The options will be set in your shell's setup file. If you use
+/bin/csh (C-Shell), the command is as follows, and is put in the <i>.cshrc</i>
+file:<br>
+</p><pre>    setenv EXINIT '...'
+</pre>
+If you use /bin/sh or /bin/ksh, the command is as follows, and is put into the
+<i>.profile</i> file:<br>
+<pre>    export EXINIT
+    EXINIT='...'
+</pre>
+Don't put in ... as the example says. In this space put the commands that
+you want to set up. For example, if you want to have auto indent, line
+numbering, and the wrap margin of three characters, then the setenv command
+(for C shell) looks like this:<br>
+<pre>    setenv EXINIT 'set ai nu wm=3'
+</pre>
+<p class="cye-lm-tag"></p>
+    
+<p class="cye-lm-tag">
+If you want to put more than one command in the <tt>setenv EXINIT</tt> thing,
+separate the commands with a vertical bar (|). For example, to map the 'g'
+command to the 'G' character in command mode, the command is
+<tt>:map g G</tt>, and combined with the above command, you get this:
+</p><pre>setenv EXINIT 'set ai nu wm=3|map g G'
+</pre>
+<p class="cye-lm-tag"></p>
+
+<p class="cye-lm-tag">
+If you want to create the file called <i>.exrc</i>, you can put exactly the
+same things in the file as shown in the quotes after the <b>EXINIT</b>.
+</p>
+
+<h2><a name="recover">Recovering Your Work When Something Goes Wrong with Your Terminal</a></h2>
+
+<p class="cye-lm-tag">
+The VI editor edits a temporary copy of your file, and after the editing
+is complete, or when you tell it to save, it puts the contents of the
+temporary copy into the original file. If something goes wrong while you are
+editing your file, the VI editor will attempt to save whatever work you had in
+progress, and store it for later recovery. (Note:  If VI dies while you were
+working on any file, it sends you an email message on how to recover it.
+The <b>-r</b> option stands for recovery. If you were editing the file
+<i>vitalinfo</i>, and you accidentally got logged out, then the <b>-r</b>
+option of the 'vi' editor should help. The command would look somewhat like
+this:  <tt>vi -r vitalinfo</tt> After using the <b>-r</b> option once,
+though, you MUST save what you have recovered to the actual file... The
+<b>-r</b> option only works once per failed VI session.
+</p>
+
+<h2><a name="warning">Warning About Using VI on the Workstations</a></h2>
+
+<p class="cye-lm-tag">
+There are two things to be aware of when using the workstations:  Editing
+the same file many times at once, and changing the size of the screen.
+</p>
+
+<p class="cye-lm-tag">
+Because VI edits a copy of your original file and saves the contents of
+that copy into the original file, if you are logged on more than once and are
+editing the same file more than once using VI, if you save on one window and
+then you save on the other window, the changes made to the file on the first
+save would be overwritten. Make sure that you only run one copy of VI per
+file.
+</p>
+
+<p class="cye-lm-tag">
+If you use a terminal program from a workstation, you can change the size
+of the screen by dragging the sides of the window. If the size is not working
+properly, the command to type is this:<br>
+</p><pre>    eval `resize`
+</pre>
+If that doesn't work the command would be this:<br>
+<pre>    eval `/usr/bin/X11/resize`
+</pre>
+If the size is wrong, the editor will not operate correctly. If you have any
+problems with the screen size, ask the monitors in the computer lab for help
+setting the sizes correctly.
+<p class="cye-lm-tag"></p>
+
+<h2><a name="summary">Summary of VI commands</a></h2>
+<p class="cye-lm-tag">
+This list is a summary of VI commands, categorized by function. There may
+be other commands available, so check the
+<a href="/cgi-bin/man-gateway?vi">on-line manual on VI</a>. For easy
+reference, you can save this file as text and delete any commands you don't
+think you would use and print out the resulting shorter file.
+</p>
+
+<h3><a name="s-cut">Cutting and Pasting/Deleting text</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>"</dt><dd>Specify a buffer to be used any of the commands using buffers. Follow
+    the " with a letter or a number, which corresponds to a buffer.
+</dd><dt>D</dt><dd>Delete to the end of the line from the current cursor position.
+</dd><dt>P</dt><dd>Paste the specified buffer before the current cursor position or line.
+    If no buffer is specified (with the " command.) then 'P' uses the
+    general buffer.
+</dd><dt>X</dt><dd>Delete the character before the cursor.
+</dd><dt>Y</dt><dd>Yank the current line into the specified buffer. If no buffer is
+    specified, then the general buffer is used.
+</dd><dt>d</dt><dd>Delete until <i>where</i>. "dd" deletes the current line. A count
+    deletes that many lines. Whatever is deleted is placed into the buffer
+    specified with the " command. If no buffer is specified, then the
+    general buffer is used.
+</dd><dt>p</dt><dd>Paste the specified buffer after the current cursor position or line.
+    If no buffer is specified (with the " command.) then 'p' uses the general
+    buffer.
+</dd><dt>x</dt><dd>Delete character under the cursor. A count tells how many
+    characters to delete. The characters will be deleted after the cursor.
+</dd><dt>y</dt><dd>Yank until <where>, putting the result into a buffer. "yy" yanks the
+    current line. a count yanks that many lines. The buffer
+    can be specified with the " command. If no buffer is specified, then
+    the general buffer is used.
+</where></dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-insert">Inserting New Text</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>A</dt><dd>Append at the end of the current line.
+</dd><dt>I</dt><dd>Insert from the beginning of a line.
+</dd><dt>O</dt><dd>(letter oh) Enter <i>insert</i> mode in a new line above the current
+    cursor position.
+</dd><dt>a</dt><dd>Enter <i>insert</i> mode, the characters typed in will be inserted
+    after the current cursor position. A count inserts all the text that
+    had been inserted that many times.
+</dd><dt>i</dt><dd>Enter <i>insert</i> mode, the characters typed in will be inserted
+    before the current cursor position. A count inserts all the text that had
+    been inserted that many times.
+</dd><dt>o</dt><dd>Enter <i>insert</i> mode in a new line below the current cursor
+    position.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-mvcur">Moving the Cursor Within the File</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>^B</dt><dd>Scroll backwards one page. A count scrolls that many pages.
+</dd><dt>^D</dt><dd>Scroll forwards half a window. A count scrolls that many lines.
+</dd><dt>^F</dt><dd>Scroll forwards one page. A count scrolls that many pages.
+</dd><dt>^H</dt><dd>Move the cursor one space to the left. A count moves that many spaces.
+</dd><dt>^J</dt><dd>Move the cursor down one line in the same column. A count moves that
+    many lines down.
+</dd><dt>^M</dt><dd>Move to the first character on the next line.
+</dd><dt>^N</dt><dd>Move the cursor down one line in the same column. A count moves that
+    many lines down.
+</dd><dt>^P</dt><dd>Move the cursor up one line in the same column. A count moves that
+    many lines up.
+</dd><dt>^U</dt><dd>Scroll backwards half a window. A count scrolls that many lines.
+</dd><dt>$</dt><dd>Move the cursor to the end of the current line. A count moves to the
+    end of the following lines.
+</dd><dt>%</dt><dd>Move the cursor to the matching parenthesis or brace.
+</dd><dt>^</dt><dd>Move the cursor to the first non-whitespace character.
+</dd><dt>(</dt><dd>Move the cursor to the beginning of a sentence.
+</dd><dt>)</dt><dd>Move the cursor to the beginning of the next sentence.
+</dd><dt>{</dt><dd>Move the cursor to the preceding paragraph.
+</dd><dt>}</dt><dd>Move the cursor to the next paragraph.
+</dd><dt>|</dt><dd>Move the cursor to the column specified by the count.
+</dd><dt>+</dt><dd>Move the cursor to the first non-whitespace character in the next line.
+</dd><dt>-</dt><dd>Move the cursor to the first non-whitespace character in the previous
+    line.
+</dd><dt>_</dt><dd>Move the cursor to the first non-whitespace character in the current
+    line.
+</dd><dt>0</dt><dd>(Zero) Move the cursor to the first column of the current line.
+</dd><dt>B</dt><dd>Move the cursor back one word, skipping over punctuation.
+</dd><dt>E</dt><dd>Move forward to the end of a word, skipping over punctuation.
+</dd><dt>G</dt><dd>Go to the line number specified as the count. If no count is given,
+    then go to the end of the file.
+</dd><dt>H</dt><dd>Move the cursor to the first non-whitespace character on the top of
+    the screen.
+</dd><dt>L</dt><dd>Move the cursor to the first non-whitespace character on the bottom of
+    the screen.
+</dd><dt>M</dt><dd>Move the cursor to the first non-whitespace character on the middle of
+    the screen.
+</dd><dt>W</dt><dd>Move forward to the beginning of a word, skipping over punctuation.
+</dd><dt>b</dt><dd>Move the cursor back one word. If the cursor is in the middle of a
+    word, move the cursor to the first character of that word.
+</dd><dt>e</dt><dd>Move the cursor forward one word. If the cursor is in the middle of
+    a word, move the cursor to the last character of that word.
+</dd><dt>h</dt><dd>Move the cursor to the left one character position.
+</dd><dt>j</dt><dd>Move the cursor down one line.
+</dd><dt>k</dt><dd>Move the cursor up one line.
+</dd><dt>l</dt><dd>Move the cursor to the right one character position.
+</dd><dt>w</dt><dd>Move the cursor forward one word. If the cursor is in the middle of a
+    word, move the cursor to the first character of the next word.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-mvscr">Moving the Cursor Around the Screen</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>^E</dt><dd>Scroll forwards one line. A count scrolls that many lines.
+</dd><dt>^Y</dt><dd>Scroll backwards one line. A count scrolls that many lines.
+</dd><dt>z</dt><dd>Redraw the screen with the following options. 
+"z&lt;return&gt;" puts the current line on the top of the screen; "z." puts
+the current line on the center of the screen; and "z-" puts the current
+line on the bottom of the screen. If you specify a count before the
+'z' command, it changes the current line to the line specified. For
+example, "16z." puts line 16 on the center of the screen.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-repl">Replacing Text</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>C</dt><dd>Change to the end of the line from the current cursor position.
+</dd><dt>R</dt><dd>Replace characters on the screen with a set of characters entered,
+ending with the Escape key.
+</dd><dt>S</dt><dd>Change an entire line.
+</dd><dt>c</dt><dd>Change until <where>. "cc" changes the current line. A count changes
+that many lines.
+</where></dd><dt>r</dt><dd>Replace one character under the cursor. Specify a count to replace a
+number of characters.
+</dd><dt>s</dt><dd>Substitute one character under the cursor, and go into insert mode.
+Specify a count to substitute a number of characters. A dollar sign
+($) will be put at the last character to be substituted.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-srch">Searching for Text or Characters</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>,</dt><dd>Repeat the last f, F, t or T command in the reverse direction.
+</dd><dt>/</dt><dd>Search the file downwards for the string specified after the /.
+</dd><dt>;</dt><dd>Repeat the last f, F, t or T command.
+</dd><dt>?</dt><dd>Search the file upwards for the string specified after the ?.
+</dd><dt>F</dt><dd>Search the current line backwards for the character specified after
+    the 'F' command. If found, move the cursor to the position.
+</dd><dt>N</dt><dd>Repeat the last search given by '/' or '?', except in the reverse
+    direction.
+</dd><dt>T</dt><dd>Search the current line backwards for the character specified after
+    the 'T' command, and move to the column after the if it's found.
+</dd><dt>f</dt><dd>Search the current line for the character specified after the 'f'
+    command. If found, move the cursor to the position.
+</dd><dt>n</dt><dd>Repeat last search given by '/' or '?'.
+</dd><dt>t</dt><dd>Search the current line for the character specified after the 't'
+    command, and move to the column before the character if it's found.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-fmt">Manipulating Character/Line Formatting</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>~ </dt><dd>Switch the case of the character under the cursor.
+</dd><dt>&lt;</dt><dd>Shift the lines up to <i>where</i> to the left by one shiftwidth.
+    "&lt;&lt;" shifts the current line to the left, and can be specified with a
+    count.
+</dd><dt>&gt;</dt><dd>Shift the lines up to <i>where</i> to the right by one
+    shiftwidth. "&gt;&gt;" shifts the current line to the right, and can be
+    specified with a count.
+</dd><dt>J</dt><dd>Join the current line with the next one. A count joins that many lines.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-save">Saving and Quitting</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>^\</dt><dd>Quit out of "VI" mode and go into "EX" mode. The EX editor is the
+    line editor VI is build upon. The EX command to get back into VI is
+    ":vi".
+</dd><dt>Q</dt><dd>Quit out of "VI" mode and go into "EX" mode. The ex editor is a
+    line-by-line editor. The EX command to get back into VI is ":vi".
+</dd><dt>ZZ</dt><dd>Exit the editor, saving if any changes were made.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-misc">Miscellany</a></h3>
+
+<p class="cye-lm-tag">
+</p><dl compact="">
+<dt>^G</dt><dd>Show the current filename and the status.
+</dd><dt>^L</dt><dd>Clear and redraw the screen.
+</dd><dt>^R</dt><dd>Redraw the screen removing false lines.
+</dd><dt>^[</dt><dd>Escape key. Cancels partially formed command.
+</dd><dt>^^</dt><dd>Go back to the last file edited.
+</dd><dt>!</dt><dd>Execute a shell. If a <where> is specified, the program which is
+    executed using ! uses the specified line(s) as standard input, and will
+    replace those lines with the standard output of the program executed.
+    "!!" executes a program using the current line as input.
+    For example, "!4jsort" will take five lines from the current cursor
+    position and execute sort. After typing the command, there will be a
+    single exclamation point where you can type the command in.
+</where></dd><dt>&amp; </dt><dd>Repeat the previous ":s" command.
+</dd><dt>.</dt><dd>Repeat the last command that modified the file.
+</dd><dt>:</dt><dd>Begin typing an EX editor command. The command is executed once the
+    user types return. (See section below.)
+</dd><dt>@</dt><dd>Type the command stored in the specified buffer.
+</dd><dt>U</dt><dd>Restore the current line to the state it was in before the cursor
+    entered the line.
+</dd><dt>m</dt><dd>Mark the current position with the character specified after the 'm'
+    command.
+</dd><dt>u</dt><dd>Undo the last change to the file. Typing 'u' again will re-do the
+change.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+<h3><a name="s-excmd">EX Commands</a></h3>
+
+<p class="cye-lm-tag">
+The VI editor is built upon another editor, called EX. The EX editor only 
+edits by line. From the VI editor you use the : command to start entering an
+EX command. This list given here is not complete, but the commands given are
+the more commonly used. If more than one line is to be modified by certain
+commands (such as ":s" and ":w" ) the range must be specified before the
+command. For example, to substitute lines 3 through 15, the command is
+":3,15s/from/this/g".
+
+</p><dl compact="">
+<dt>:ab string strings</dt><dd>Abbreviation. If a word is typed in VI corresponding
+to string1, the editor automatically inserts the
+corresponding words. For example, the abbreviation
+":ab usa United States of America" would insert the
+words, "United States of America" whenever the word
+"usa" is typed in.
+</dd><dt>:map keys new_seq</dt><dd>Mapping. This lets you map a key or a sequence of
+keys to another key or a sequence of keys.
+</dd><dt>:q</dt><dd>Quit VI. If there have been changes made, the editor
+will issue a warning message.
+</dd><dt>:q!</dt><dd>Quit VI without saving changes.
+</dd><dt>:s/<i>pattern</i>/<i>to_pattern</i>/<i>options</i></dt><dd>
+Substitute. This substitutes the specified pattern with
+the string in the to_pattern. Without options, it only
+substitutes the first occurence of the pattern. If a 'g'
+is specified, then all occurences are substituted. For
+example, the command ":1,$s/Dwayne/Dwight/g" substitutes
+all occurences of "Dwayne" to "Dwight".
+</dd><dt>:set [all]</dt><dd>Sets some customizing options to VI and EX. The ":set
+all" command gives all the possible options. (See the
+section on customizing VI for some options.)
+</dd><dt>:una string</dt><dd>Removes the abbreviation previously defined by ":ab".
+</dd><dt>:unm keys</dt><dd>Removes the remove mapping defined by ":map".
+</dd><dt>:vi filename</dt><dd>Starts editing a new file. If changes have not been
+saved, the editor will give you a warning.
+</dd><dt>:w</dt><dd>Write out the current file.
+</dd><dt>:w filename</dt><dd>Write the buffer to the filename specified.
+</dd><dt>:w &gt;&gt; filename</dt><dd>Append the contents of the buffer to the filename.
+</dd><dt>:wq</dt><dd>Write the buffer and quit.
+</dd></dl>
+<p class="cye-lm-tag"></p>
+
+</p>
+<br><hr>
+</body>
+</html>
