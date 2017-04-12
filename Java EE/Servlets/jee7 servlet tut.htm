@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jee7 servlet tut</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="https://docs.oracle.com/javaee/7/tutorial/servlets.htm">src</a>
+<div id="JEETT00078" class="chapter"><a id="BNAFD" name="BNAFD" class="anchor"></a>
+<h1 class="chapter"><span class="secnum">17</span> <a id="sthref1127" name="sthref1127" class="anchor"></a>Java Servlet Technology</h1>
+<p>Java Servlet technology provides dynamic, user-oriented content in web applications using a request-response programming model.</p>
+<p>The following topics are addressed here:</p>
+<ul>
+<li>
+<p><a href="servlets001.htm#BNAFE">What Is a Servlet?</a></p>
+</li>
+<li>
+<p><a href="servlets002.htm#BNAFI">Servlet Lifecycle</a></p>
+</li>
+<li>
+<p><a href="servlets003.htm#BNAFO">Sharing Information</a></p>
+</li>
+<li>
+<p><a href="servlets004.htm#BNAFU">Creating and Initializing a Servlet</a></p>
+</li>
+<li>
+<p><a href="servlets005.htm#BNAFV">Writing Service Methods</a></p>
+</li>
+<li>
+<p><a href="servlets006.htm#BNAGB">Filtering Requests and Responses</a></p>
+</li>
+<li>
+<p><a href="servlets007.htm#BNAGI">Invoking Other Web Resources</a></p>
+</li>
+<li>
+<p><a href="servlets008.htm#BNAGL">Accessing the Web Context</a></p>
+</li>
+<li>
+<p><a href="servlets009.htm#BNAGM">Maintaining Client State</a></p>
+</li>
+<li>
+<p><a href="servlets010.htm#BNAGS">Finalizing a Servlet</a></p>
+</li>
+<li>
+<p><a href="servlets011.htm#BABFGCHB">Uploading Files with Java Servlet Technology</a></p>
+</li>
+<li>
+<p><a href="servlets012.htm#BEIGCFDF">Asynchronous Processing</a></p>
+</li>
+<li>
+<p><a href="servlets013.htm#BEIHICDH">Nonblocking I/O</a></p>
+</li>
+<li>
+<p><a href="servlets014.htm#BEIJHCDJ">Protocol Upgrade Processing</a></p>
+</li>
+<li>
+<p><a href="servlets015.htm#GKCPG">The mood Example Application</a></p>
+</li>
+<li>
+<p><a href="servlets016.htm#BABDGFJJ">The fileupload Example Application</a></p>
+</li>
+<li>
+<p><a href="servlets017.htm#BEIFAIFF">The dukeetf Example Application</a></p>
+</li>
+<li>
+<p><a href="servlets018.htm#BNAGW">Further Information about Java Servlet Technology</a></p>
+</li>
+</ul>
+
+
+</div>
+<div id="JEETT00403" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.1</span> <a id="sthref1128" name="sthref1128" class="anchor"></a>What Is a Servlet?</h1>
+<p class="cye-lm-tag">A servlet is a Java programming language class used to extend the capabilities of servers that host applications accessed by means of a request-response programming model. Although servlets can respond to any type of request, they are commonly used to extend the applications hosted by web servers. For such applications, Java Servlet technology defines HTTP-specific servlet classes.</p>
+<p class="cye-lm-tag"><a id="sthref1129" name="sthref1129" class="anchor"></a><a id="sthref1130" name="sthref1130" class="anchor"></a><a id="sthref1131" name="sthref1131" class="anchor"></a><a id="sthref1132" name="sthref1132" class="anchor"></a><a id="sthref1133" name="sthref1133" class="anchor"></a>The <code dir="ltr">javax.servlet</code> and <code dir="ltr">javax.servlet.http</code> packages provide interfaces and classes for writing servlets. All servlets must implement the <code dir="ltr">Servlet</code> interface, which defines lifecycle methods. When implementing a generic service, you can use or extend the <code dir="ltr">GenericServlet</code> class provided with the Java Servlet API. The <code dir="ltr">HttpServlet</code> class provides methods, such as <code dir="ltr">doGet</code> and <code dir="ltr">doPost</code>, for handling HTTP-specific services.</p>
+</div>
+<div id="JEETT00404" class="sect1">
+<h1 class="sect1"><span class="secnum">17.2</span> <a id="sthref1134" name="sthref1134" class="anchor"></a>Servlet Lifecycle</h1>
+<p>The lifecycle of a servlet is controlled by the container in which the servlet has been deployed. When a request is mapped to a servlet, the container performs the following steps.</p>
+<ol>
+<li>
+<p><a id="sthref1135" name="sthref1135" class="anchor"></a>If an instance of the servlet does not exist, the web container:</p>
+<ol>
+<li>
+<p>Loads the servlet class</p>
+</li>
+<li>
+<p>Creates an instance of the servlet class</p>
+</li>
+<li>
+<p>Initializes the servlet instance by calling the <code dir="ltr">init</code> method (initialization is covered in <a href="servlets004.htm#BNAFU">Creating and Initializing a Servlet</a>)</p>
+</li>
+</ol>
+</li>
+<li>
+<p>The container invokes the <code dir="ltr">service</code> method, passing request and response objects. Service methods are discussed in <a href="servlets005.htm#BNAFV">Writing Service Methods</a>.</p>
+</li>
+</ol>
+<p>If it needs to remove the servlet, the container finalizes the servlet by calling the servlet's <code dir="ltr">destroy</code> method. For more information, see <a href="servlets010.htm#BNAGS">Finalizing a Servlet</a>.</p>
+<a id="BNAFJ" name="BNAFJ" class="anchor"></a>
+<div id="JEETT01018" class="sect2">
+<h2 class="sect2"><span class="secnum">17.2.1</span> Handling Servlet Lifecycle Events</h2>
+<p><a id="sthref1136" name="sthref1136" class="anchor"></a><a id="sthref1137" name="sthref1137" class="anchor"></a>You can monitor and react to events in a servlet's lifecycle by defining listener objects whose methods get invoked when lifecycle events occur. To use these listener objects, you must define and specify the listener class.</p>
+<a id="BNAFK" name="BNAFK" class="anchor"></a>
+<div id="JEETT00633" class="sect3">
+<h3 class="sect3"><span class="secnum">17.2.1.1</span> Defining the Listener Class</h3>
+<p><a id="sthref1138" name="sthref1138" class="anchor"></a><a id="sthref1139" name="sthref1139" class="anchor"></a>You define a listener class as an implementation of a listener interface. <a href="#BNAFL">Table 17-1</a> lists the events that can be monitored and the corresponding interface that must be implemented. When a listener method is invoked, it is passed an event that contains information appropriate to the event. For example, the methods in the <code dir="ltr">HttpSessionListener</code> interface are passed an <code dir="ltr">HttpSessionEvent</code>, which contains an <code dir="ltr">HttpSession</code>.</p>
+<div class="tblhruleformal"><a id="sthref1140" name="sthref1140" class="anchor"></a><a id="BNAFL" name="BNAFL" class="anchor"></a>
+<p class="titleintable">Table 17-1 Servlet Lifecycle Events</p>
+<table class="HRuleFormal" title="Servlet Lifecycle Events" summary="This table lists the servlet lifecycle events associated with web context, session, and request objects, and the associated listener interface and event class for each event." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="18%">
+<col width="22%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t2">Object</th>
+<th align="left" valign="bottom" id="r1c2-t2">Event</th>
+<th align="left" valign="bottom" id="r1c3-t2">Listener Interface and Event Class</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t2" headers="r1c1-t2">
+<p>Web context</p>
+</td>
+<td align="left" headers="r2c1-t2 r1c2-t2">
+<p>Initialization and destruction</p>
+</td>
+<td align="left" headers="r2c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.ServletContextListener</code> and <code dir="ltr">ServletContextEvent</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t2" headers="r1c1-t2">
+<p>Web context</p>
+</td>
+<td align="left" headers="r3c1-t2 r1c2-t2">
+<p>Attribute added, removed, or replaced</p>
+</td>
+<td align="left" headers="r3c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.ServletContextAttributeListener</code> and <code dir="ltr">ServletContextAttributeEvent</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t2" headers="r1c1-t2">
+<p>Session</p>
+</td>
+<td align="left" headers="r4c1-t2 r1c2-t2">
+<p>Creation, invalidation, activation, passivation, and timeout</p>
+</td>
+<td align="left" headers="r4c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.http.HttpSessionListener</code>, <code dir="ltr">javax.servlet.http.HttpSessionActivationListener</code>, and <code dir="ltr">HttpSessionEvent</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t2" headers="r1c1-t2">
+<p>Session</p>
+</td>
+<td align="left" headers="r5c1-t2 r1c2-t2">
+<p>Attribute added, removed, or replaced</p>
+</td>
+<td align="left" headers="r5c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.http.HttpSessionAttributeListener</code> and <code dir="ltr">HttpSessionBindingEvent</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t2" headers="r1c1-t2">
+<p>Request</p>
+</td>
+<td align="left" headers="r6c1-t2 r1c2-t2">
+<p>A servlet request has started being processed by web components</p>
+</td>
+<td align="left" headers="r6c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.ServletRequestListener</code> and <code dir="ltr">ServletRequestEvent</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r7c1-t2" headers="r1c1-t2">
+<p>Request</p>
+</td>
+<td align="left" headers="r7c1-t2 r1c2-t2">
+<p>Attribute added, removed, or replaced</p>
+</td>
+<td align="left" headers="r7c1-t2 r1c3-t2">
+<p><code dir="ltr">javax.servlet.ServletRequestAttributeListener</code> and <code dir="ltr">ServletRequestAttributeEvent</code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<p><a id="sthref1141" name="sthref1141" class="anchor"></a>Use the <code dir="ltr">@WebListener</code> annotation to define a listener to get events for various operations on the particular web application context. Classes annotated with <code dir="ltr">@WebListener</code> must implement one of the following interfaces:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">javax.servlet.ServletContextListener
+javax.servlet.ServletContextAttributeListener
+javax.servlet.ServletRequestListener
+javax.servlet.ServletRequestAttributeListener
+javax.servlet..http.HttpSessionListener
+javax.servlet..http.HttpSessionAttributeListener
+</pre>
+<p>For example, the following code snippet defines a listener that implements two of these interfaces:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">import javax.servlet.ServletContextAttributeListener;
+import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
+
+@WebListener()
+public class SimpleServletListener implements ServletContextListener,
+        ServletContextAttributeListener {
+    ...
+</pre></div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNAFN" name="BNAFN" class="anchor"></a>
+<div id="JEETT01019" class="sect2">
+<h2 class="sect2"><span class="secnum">17.2.2</span> Handling Servlet Errors</h2>
+<p>Any number of exceptions can occur when a servlet executes. When an exception occurs, the web container generates a default page containing the following message:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">A Servlet Exception Has Occurred
+</pre>
+<p>But you can also specify that the container should return a specific error page for a given exception.</p>
+</div>
+<!-- class="sect2" --></div>
+
+
+<br><hr>
+
+<div id="JEETT00405" class="sect1">
+<h1 class="sect1"><span class="secnum">17.3</span> Sharing Information</h1>
+<p><a id="sthref1142" name="sthref1142" class="anchor"></a>Web components, like most objects, usually work with other objects to accomplish their tasks. Web components can do so by doing the following.</p>
+<ul>
+<li>
+<p>Using private helper objects (for example, JavaBeans components).</p>
+</li>
+<li>
+<p>Sharing objects that are attributes of a public scope.</p>
+</li>
+<li>
+<p>Using a database.</p>
+</li>
+<li>
+<p>Invoking other web resources. The Java Servlet technology mechanisms that allow a web component to invoke other web resources are described in <a href="servlets007.htm#BNAGI">Invoking Other Web Resources</a>.</p>
+</li>
+</ul>
+<a id="BNAFP" name="BNAFP" class="anchor"></a>
+<div id="JEETT01020" class="sect2">
+<h2 class="sect2"><span class="secnum">17.3.1</span> <a id="sthref1143" name="sthref1143" class="anchor"></a><a id="sthref1144" name="sthref1144" class="anchor"></a><a id="sthref1145" name="sthref1145" class="anchor"></a>Using Scope Objects</h2>
+<p>Collaborating web components share information by means of objects that are maintained as attributes of four scope objects. You access these attributes by using the <code dir="ltr">getAttribute</code> and <code dir="ltr">setAttribute</code> methods of the class representing the scope. <a href="#BNAFQ">Table 17-2</a> lists the scope objects.</p>
+<div class="tblhruleformal"><a id="sthref1146" name="sthref1146" class="anchor"></a><a id="BNAFQ" name="BNAFQ" class="anchor"></a>
+<p class="titleintable">Table 17-2 Scope Objects</p>
+<table class="HRuleFormal" title="Scope Objects" summary="This table lists the scope objects for servlets and their associated classes and explains where each is accessible from." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="16%">
+<col width="38%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t3">Scope Object</th>
+<th align="left" valign="bottom" id="r1c2-t3">Class</th>
+<th align="left" valign="bottom" id="r1c3-t3">Accessible From</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t3" headers="r1c1-t3">
+<p>Web context</p>
+</td>
+<td align="left" headers="r2c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.servlet.ServletContext</code></p>
+</td>
+<td align="left" headers="r2c1-t3 r1c3-t3">
+<p>Web components within a web context. See <a href="servlets008.htm#BNAGL">Accessing the Web Context</a>.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t3" headers="r1c1-t3">
+<p>Session</p>
+</td>
+<td align="left" headers="r3c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.servlet.http.HttpSession</code></p>
+</td>
+<td align="left" headers="r3c1-t3 r1c3-t3">
+<p>Web components handling a request that belongs to the session. See <a href="servlets009.htm#BNAGM">Maintaining Client State</a>.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t3" headers="r1c1-t3">
+<p>Request</p>
+</td>
+<td align="left" headers="r4c1-t3 r1c2-t3">
+<p>Subtype of <code dir="ltr">javax.servlet.ServletRequest</code></p>
+</td>
+<td align="left" headers="r4c1-t3 r1c3-t3">
+<p>Web components handling the request.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t3" headers="r1c1-t3">
+<p>Page</p>
+</td>
+<td align="left" headers="r5c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.servlet.jsp.JspContext</code></p>
+</td>
+<td align="left" headers="r5c1-t3 r1c3-t3">
+<p>The JSP page that creates the object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" --></div>
+<!-- class="sect2" -->
+<a id="BNAFS" name="BNAFS" class="anchor"></a>
+<div id="JEETT01021" class="sect2">
+<h2 class="sect2"><span class="secnum">17.3.2</span> Controlling Concurrent Access to Shared Resources</h2>
+<p><a id="sthref1147" name="sthref1147" class="anchor"></a>In a multithreaded server, shared resources can be accessed concurrently. In addition to scope object attributes, shared resources include in-memory data, such as instance or class variables, and external objects, such as files, database connections, and network connections.</p>
+<p>Concurrent access can arise in several situations.</p>
+<ul>
+<li>
+<p>Multiple web components accessing objects stored in the web context.</p>
+</li>
+<li>
+<p>Multiple web components accessing objects stored in a session.</p>
+</li>
+<li>
+<p><a id="sthref1148" name="sthref1148" class="anchor"></a>Multiple threads within a web component accessing instance variables. A web container will typically create a thread to handle each request. To ensure that a servlet instance handles only one request at a time, a servlet can implement the <code dir="ltr">SingleThreadModel</code> interface. If a servlet implements this interface, no two threads will execute concurrently in the servlet's service method. A web container can implement this guarantee by synchronizing access to a single instance of the servlet or by maintaining a pool of web component instances and dispatching each new request to a free instance. This interface does not prevent synchronization problems that result from web components' accessing shared resources, such as static class variables or external objects.</p>
+</li>
+</ul>
+<p>When resources can be accessed concurrently, they can be used in an inconsistent fashion. You prevent this by controlling the access using the synchronization techniques described in the Threads lesson at <code dir="ltr"><a target="_blank" href="http://docs.oracle.com/javase/tutorial/essential/concurrency/">http://docs.oracle.com/javase/tutorial/essential/concurrency/</a></code>.</p>
+</div>
+<!-- class="sect2" --></div>
+
+<br><hr>
+<div id="JEETT00406" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.4</span> <a id="sthref1149" name="sthref1149" class="anchor"></a><a id="sthref1150" name="sthref1150" class="anchor"></a>Creating and Initializing a Servlet</h1>
+<p class="cye-lm-tag">Use the <code dir="ltr">@WebServlet</code> annotation to define a servlet component in a web application. This annotation is specified on a class and contains metadata about the servlet being declared. The annotated servlet must specify at least one URL pattern. This is done by using the <code dir="ltr">urlPatterns</code> or <code dir="ltr">value</code> attribute on the annotation. All other attributes are optional, with default settings. Use the <code dir="ltr">value</code> attribute when the only attribute on the annotation is the URL pattern; otherwise, use the <code dir="ltr">urlPatterns</code> attribute when other attributes are also used.</p>
+<p class="cye-lm-tag">Classes annotated with <code dir="ltr">@WebServlet</code> must extend the <code dir="ltr">javax.servlet.http.HttpServlet</code> class. For example, the following code snippet defines a servlet with the URL pattern <code dir="ltr">/report</code>:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+
+@WebServlet("/report")
+public class MoodServlet extends HttpServlet {
+    ...
+</pre>
+<p class="cye-lm-tag"><a id="sthref1151" name="sthref1151" class="anchor"></a><a id="sthref1152" name="sthref1152" class="anchor"></a><a id="sthref1153" name="sthref1153" class="anchor"></a><a id="sthref1154" name="sthref1154" class="anchor"></a><a id="sthref1155" name="sthref1155" class="anchor"></a><a id="sthref1156" name="sthref1156" class="anchor"></a><a id="sthref1157" name="sthref1157" class="anchor"></a>The web container initializes a servlet after loading and instantiating the servlet class and before delivering requests from clients. To customize this process to allow the servlet to read persistent configuration data, initialize resources, and perform any other one-time activities, you can either override the <code dir="ltr">init</code> method of the <code dir="ltr">Servlet</code> interface or specify the <code dir="ltr">initParams</code> attribute of the <code dir="ltr">@WebServlet</code> annotation. The <code dir="ltr">initParams</code> attribute contains a <code dir="ltr">@WebInitParam</code> annotation. If it cannot complete its initialization process, a servlet throws an <code dir="ltr">UnavailableException</code>.</p>
+<p class="cye-lm-tag">Use an initialization parameter to provide data needed by a particular servlet. By contrast, a context parameter provides data that is available to all components of a web application.</p>
+</div>
+
+<br><hr>
+<div id="JEETT00407" class="sect1">
+<h1 class="sect1"><span class="secnum">17.5</span> Writing Service Methods</h1>
+<p><a id="sthref1158" name="sthref1158" class="anchor"></a><a id="sthref1159" name="sthref1159" class="anchor"></a><a id="sthref1160" name="sthref1160" class="anchor"></a><a id="sthref1161" name="sthref1161" class="anchor"></a>The service provided by a servlet is implemented in the <code dir="ltr">service</code> method of a <code dir="ltr">GenericServlet</code>, in the <code dir="ltr">do</code><span class="variable">Method</span> methods (where <span class="variable">Method</span> can take the value <code dir="ltr">Get</code>, <code dir="ltr">Delete</code>, <code dir="ltr">Options</code>, <code dir="ltr">Post</code>, <code dir="ltr">Put</code>, or <code dir="ltr">Trace</code>) of an <code dir="ltr">HttpServlet</code> object, or in any other protocol-specific methods defined by a class that implements the <code dir="ltr">Servlet</code> interface. The term <span class="glossaryterm">service method</span> is used for any method in a servlet class that provides a service to a client.</p>
+<p><a id="sthref1162" name="sthref1162" class="anchor"></a>The general pattern for a service method is to extract information from the request, access external resources, and then populate the response, based on that information. For HTTP servlets, the correct procedure for populating the response is to do the following:</p>
+<ol>
+<li>
+<p>Retrieve an output stream from the response.</p>
+</li>
+<li>
+<p>Fill in the response headers.</p>
+</li>
+<li>
+<p>Write any body content to the output stream.</p>
+</li>
+</ol>
+<p>Response headers must always be set before the response has been committed. The web container will ignore any attempt to set or add headers after the response has been committed. The next two sections describe how to get information from requests and generate responses.</p>
+<a id="BNAFW" name="BNAFW" class="anchor"></a>
+<div id="JEETT01022" class="sect2">
+<h2 class="sect2"><span class="secnum">17.5.1</span> Getting Information from Requests</h2>
+<p><a id="sthref1163" name="sthref1163" class="anchor"></a><a id="sthref1164" name="sthref1164" class="anchor"></a><a id="sthref1165" name="sthref1165" class="anchor"></a>A request contains data passed between a client and the servlet. All requests implement the <code dir="ltr">ServletRequest</code> interface. This interface defines methods for accessing the following information:</p>
+<ul>
+<li>
+<p>Parameters, which are typically used to convey information between clients and servlets</p>
+</li>
+<li>
+<p>Object-valued attributes, which are typically used to pass information between the web container and a servlet or between collaborating servlets</p>
+</li>
+<li>
+<p>Information about the protocol used to communicate the request and about the client and server involved in the request</p>
+</li>
+<li>
+<p>Information relevant to localization</p>
+</li>
+</ul>
+<p><a id="sthref1166" name="sthref1166" class="anchor"></a><a id="sthref1167" name="sthref1167" class="anchor"></a><a id="sthref1168" name="sthref1168" class="anchor"></a><a id="sthref1169" name="sthref1169" class="anchor"></a>You can also retrieve an input stream from the request and manually parse the data. To read character data, use the <code dir="ltr">BufferedReader</code> object returned by the request's <code dir="ltr">getReader</code> method. To read binary data, use the <code dir="ltr">ServletInputStream</code> returned by <code dir="ltr">getInputStream</code>.</p>
+<p><a id="sthref1170" name="sthref1170" class="anchor"></a><a id="sthref1171" name="sthref1171" class="anchor"></a><a id="sthref1172" name="sthref1172" class="anchor"></a>HTTP servlets are passed an HTTP request object, <code dir="ltr">HttpServletRequest</code>, which contains the request URL, HTTP headers, query string, and so on. An HTTP request URL contains the following parts:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://[<span class="variable">host</span>]:[<span class="variable">port</span>][<span class="variable">request-path</span>]?[<span class="variable">query-string</span>]
+</pre>
+<p><a id="sthref1173" name="sthref1173" class="anchor"></a>The request path is further composed of the following elements.</p>
+<ul>
+<li>
+<p><span class="glossaryterm">Context path</span>: A concatenation of a forward slash (<code dir="ltr">/</code>) with the context root of the servlet's web application.</p>
+</li>
+<li>
+<p><span class="glossaryterm">Servlet path</span>: The path section that corresponds to the component alias that activated this request. This path starts with a forward slash (<code dir="ltr">/</code>).</p>
+</li>
+<li>
+<p><span class="glossaryterm">Path info</span>: The part of the request path that is not part of the context path or the servlet path.</p>
+</li>
+</ul>
+<p>You can use the <code dir="ltr">getContextPath</code>, <code dir="ltr">getServletPath</code>, and <code dir="ltr">getPathInfo</code> methods of the <code dir="ltr">HttpServletRequest</code> interface to access this information. Except for URL encoding differences between the request URI and the path parts, the request URI is always comprised of the context path plus the servlet path plus the path info.</p>
+<p><a id="sthref1174" name="sthref1174" class="anchor"></a>Query strings are composed of a set of parameters and values. Individual parameters are retrieved from a request by using the <code dir="ltr">getParameter</code> method. There are two ways to generate query strings.</p>
+<ul>
+<li>
+<p>A query string can explicitly appear in a web page.</p>
+</li>
+<li>
+<p>A query string is appended to a URL when a form with a <code dir="ltr">GET</code> HTTP method is submitted.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<a id="BNAFZ" name="BNAFZ" class="anchor"></a>
+<div id="JEETT01023" class="sect2">
+<h2 class="sect2"><span class="secnum">17.5.2</span> Constructing Responses</h2>
+<p><a id="sthref1175" name="sthref1175" class="anchor"></a><a id="sthref1176" name="sthref1176" class="anchor"></a>A response contains data passed between a server and the client. All responses implement the <code dir="ltr">ServletResponse</code> interface. This interface defines methods that allow you to do the following.</p>
+<ul>
+<li>
+<p><a id="sthref1177" name="sthref1177" class="anchor"></a><a id="sthref1178" name="sthref1178" class="anchor"></a><a id="sthref1179" name="sthref1179" class="anchor"></a><a id="sthref1180" name="sthref1180" class="anchor"></a>Retrieve an output stream to use to send data to the client. To send character data, use the <code dir="ltr">PrintWriter</code> returned by the response's <code dir="ltr">getWriter</code> method. To send binary data in a Multipurpose Internet Mail Extensions (MIME) body response, use the <code dir="ltr">ServletOutputStream</code> returned by <code dir="ltr">getOutputStream</code>. To mix binary and text data, as in a multipart response, use a <code dir="ltr">ServletOutputStream</code> and manage the character sections manually.</p>
+</li>
+<li>
+<p>Indicate the content type (for example, <code dir="ltr">text/html</code>) being returned by the response with the <code dir="ltr">setContentType(String)</code> method. This method must be called before the response is committed. A registry of content type names is kept by the Internet Assigned Numbers Authority (IANA) at <code dir="ltr"><a target="_blank" href="http://www.iana.org/assignments/media-types/">http://www.iana.org/assignments/media-types/</a></code>.</p>
+</li>
+<li>
+<p><a id="sthref1181" name="sthref1181" class="anchor"></a>Indicate whether to buffer output with the <code dir="ltr">setBufferSize(int)</code> method. By default, any content written to the output stream is immediately sent to the client. Buffering allows content to be written before anything is sent back to the client, thus providing the servlet with more time to set appropriate status codes and headers or forward to another web resource. The method must be called before any content is written or before the response is committed.</p>
+</li>
+<li>
+<p>Set localization information, such as locale and character encoding. See <a href="webi18n.htm#BNAXU">Chapter 20, "Internationalizing and Localizing Web Applications"</a> for details.</p>
+</li>
+</ul>
+<p><a id="sthref1182" name="sthref1182" class="anchor"></a><a id="sthref1183" name="sthref1183" class="anchor"></a>HTTP response objects, <code dir="ltr">javax.servlet.http.HttpServletResponse</code>, have fields representing HTTP headers, such as the following.</p>
+<ul>
+<li>
+<p>Status codes, which are used to indicate the reason a request is not satisfied or that a request has been redirected.</p>
+</li>
+<li>
+<p>Cookies, which are used to store application-specific information at the client. Sometimes, cookies are used to maintain an identifier for tracking a user's session (see <a href="servlets009.htm#BNAGR">Session Tracking</a>).</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00408" class="sect1">
+<h1 class="sect1"><span class="secnum">17.6</span> Filtering Requests and Responses</h1>
+<p><a id="sthref1184" name="sthref1184" class="anchor"></a>A <span class="glossaryterm">filter</span> is an object that can transform the header and content (or both) of a request or response. Filters differ from web components in that filters usually do not themselves create a response. Instead, a filter provides functionality that can be "attached" to any kind of web resource. Consequently, a filter should not have any dependencies on a web resource for which it is acting as a filter; this way, it can be composed with more than one type of web resource.</p>
+<p>The main tasks that a filter can perform are as follows.</p>
+<ul>
+<li>
+<p>Query the request and act accordingly.</p>
+</li>
+<li>
+<p>Block the request-and-response pair from passing any further.</p>
+</li>
+<li>
+<p>Modify the request headers and data. You do this by providing a customized version of the request.</p>
+</li>
+<li>
+<p>Modify the response headers and data. You do this by providing a customized version of the response.</p>
+</li>
+<li>
+<p>Interact with external resources.</p>
+</li>
+</ul>
+<p>Applications of filters include authentication, logging, image conversion, data compression, encryption, tokenizing streams, XML transformations, and so on.</p>
+<p>You can configure a web resource to be filtered by a chain of zero, one, or more filters in a specific order. This chain is specified when the web application containing the component is deployed and is instantiated when a web container loads the component.</p>
+<a id="BNAGC" name="BNAGC" class="anchor"></a>
+<div id="JEETT01024" class="sect2">
+<h2 class="sect2"><span class="secnum">17.6.1</span> Programming Filters</h2>
+<p><a id="sthref1185" name="sthref1185" class="anchor"></a><a id="sthref1186" name="sthref1186" class="anchor"></a><a id="sthref1187" name="sthref1187" class="anchor"></a><a id="sthref1188" name="sthref1188" class="anchor"></a>The filtering API is defined by the <code dir="ltr">Filter</code>, <code dir="ltr">FilterChain</code>, and <code dir="ltr">FilterConfig</code> interfaces in the <code dir="ltr">javax.servlet</code> package. You define a filter by implementing the <code dir="ltr">Filter</code> interface.</p>
+<p><a id="sthref1189" name="sthref1189" class="anchor"></a>Use the <code dir="ltr">@WebFilter</code> annotation to define a filter in a web application. This annotation is specified on a class and contains metadata about the filter being declared. The annotated filter must specify at least one URL pattern. This is done by using the <code dir="ltr">urlPatterns</code> or <code dir="ltr">value</code> attribute on the annotation. All other attributes are optional, with default settings. Use the <code dir="ltr">value</code> attribute when the only attribute on the annotation is the URL pattern; use the <code dir="ltr">urlPatterns</code> attribute when other attributes are also used.</p>
+<p>Classes annotated with the <code dir="ltr">@WebFilter</code> annotation must implement the <code dir="ltr">javax.servlet.Filter</code> interface.</p>
+<p><a id="sthref1190" name="sthref1190" class="anchor"></a>To add configuration data to the filter, specify the <code dir="ltr">initParams</code> attribute of the <code dir="ltr">@WebFilter</code> annotation. The <code dir="ltr">initParams</code> attribute contains a <code dir="ltr">@WebInitParam</code> annotation. The following code snippet defines a filter, specifying an initialization parameter:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">import javax.servlet.Filter;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebInitParam;
+
+@WebFilter(filterName = "TimeOfDayFilter",
+urlPatterns = {"/*"},
+initParams = {
+    @WebInitParam(name = "mood", value = "awake")})
+public class TimeOfDayFilter implements Filter {
+    ...
+</pre>
+<p>The most important method in the <code dir="ltr">Filter</code> interface is <code dir="ltr">doFilter</code>, which is passed request, response, and filter chain objects. This method can perform the following actions.</p>
+<ul>
+<li>
+<p>Examine the request headers.</p>
+</li>
+<li>
+<p>Customize the request object if the filter wishes to modify request headers or data.</p>
+</li>
+<li>
+<p>Customize the response object if the filter wishes to modify response headers or data.</p>
+</li>
+<li>
+<p>Invoke the next entity in the filter chain. If the current filter is the last filter in the chain that ends with the target web component or static resource, the next entity is the resource at the end of the chain; otherwise, it is the next filter that was configured in the WAR. The filter invokes the next entity by calling the <code dir="ltr">doFilter</code> method on the chain object, passing in the request and response it was called with or the wrapped versions it may have created. Alternatively, the filter can choose to block the request by not making the call to invoke the next entity. In the latter case, the filter is responsible for filling out the response.</p>
+</li>
+<li>
+<p>Examine response headers after invoking the next filter in the chain.</p>
+</li>
+<li>
+<p>Throw an exception to indicate an error in processing.</p>
+</li>
+</ul>
+<p><a id="sthref1191" name="sthref1191" class="anchor"></a>In addition to <code dir="ltr">doFilter</code>, you must implement the <code dir="ltr">init</code> and <code dir="ltr">destroy</code> methods. The <code dir="ltr">init</code> method is called by the container when the filter is instantiated. If you wish to pass initialization parameters to the filter, you retrieve them from the <code dir="ltr">FilterConfig</code> object passed to <code dir="ltr">init</code>.</p>
+</div>
+<!-- class="sect2" -->
+<a id="BNAGD" name="BNAGD" class="anchor"></a>
+<div id="JEETT01025" class="sect2">
+<h2 class="sect2"><span class="secnum">17.6.2</span> Programming Customized Requests and Responses</h2>
+<p><a id="sthref1192" name="sthref1192" class="anchor"></a><a id="sthref1193" name="sthref1193" class="anchor"></a>There are many ways for a filter to modify a request or a response. For example, a filter can add an attribute to the request or can insert data in the response.</p>
+<p>A filter that modifies a response must usually capture the response before it is returned to the client. To do this, you pass a stand-in stream to the servlet that generates the response. The stand-in stream prevents the servlet from closing the original response stream when it completes and allows the filter to modify the servlet's response.</p>
+<p><a id="sthref1194" name="sthref1194" class="anchor"></a>To pass this stand-in stream to the servlet, the filter creates a response wrapper that overrides the <code dir="ltr">getWriter</code> or <code dir="ltr">getOutputStream</code> method to return this stand-in stream. The wrapper is passed to the <code dir="ltr">doFilter</code> method of the filter chain. Wrapper methods default to calling through to the wrapped request or response object.</p>
+<p><a id="sthref1195" name="sthref1195" class="anchor"></a><a id="sthref1196" name="sthref1196" class="anchor"></a>To override request methods, you wrap the request in an object that extends either <code dir="ltr">ServletRequestWrapper</code> or <code dir="ltr">HttpServletRequestWrapper</code>. To override response methods, you wrap the response in an object that extends either <code dir="ltr">ServletResponseWrapper</code> or <code dir="ltr">HttpServletResponseWrapper</code>.</p>
+</div>
+<!-- class="sect2" -->
+<a id="BNAGF" name="BNAGF" class="anchor"></a>
+<div id="JEETT01026" class="sect2">
+<h2 class="sect2"><span class="secnum">17.6.3</span> Specifying Filter Mappings</h2>
+<p><a id="sthref1197" name="sthref1197" class="anchor"></a><a id="sthref1198" name="sthref1198" class="anchor"></a><a id="sthref1199" name="sthref1199" class="anchor"></a><a id="sthref1200" name="sthref1200" class="anchor"></a>A web container uses filter mappings to decide how to apply filters to web resources. A filter mapping matches a filter to a web component by name or to web resources by URL pattern. The filters are invoked in the order in which filter mappings appear in the filter mapping list of a WAR. You specify a filter mapping list for a WAR in its deployment descriptor by either using NetBeans IDE or coding the list by hand with XML.</p>
+<p>If you want to log every request to a web application, you map the hit counter filter to the URL pattern <code dir="ltr">/*</code>.</p>
+<p>You can map a filter to one or more web resources, and you can map more than one filter to a web resource. This is illustrated in <a href="#BNAGH">Figure 17-1</a>, in which filter F1 is mapped to servlets S1, S2, and S3; filter F2 is mapped to servlet S2; and filter F3 is mapped to servlets S1 and S2.</p>
+<div id="JEETT00020" class="figure"><a id="BNAGH" name="BNAGH" class="anchor"></a>
+<p class="titleinfigure">Figure 17-1 Filter-to-Servlet Mapping</p>
+<img width="263" height="186" src="figures/web-filterMapping.gif" alt="Description of Figure 17-1 follows" longdesc="img_text/jeett_dt_018.htm"><br>
+<a id="sthref1201" name="sthref1201" href="img_text/jeett_dt_018.htm">Description of "Figure 17-1 Filter-to-Servlet Mapping"</a><br>
+<br></div>
+<!-- class="figure" -->
+<p><a id="sthref1202" name="sthref1202" class="anchor"></a><a id="sthref1203" name="sthref1203" class="anchor"></a>Recall that a filter chain is one of the objects passed to the <code dir="ltr">doFilter</code> method of a filter. This chain is formed indirectly by means of filter mappings. The order of the filters in the chain is the same as the order in which filter mappings appear in the web application deployment descriptor.</p>
+<p>When a filter is mapped to servlet S1, the web container invokes the <code dir="ltr">doFilter</code> method of F1. The <code dir="ltr">doFilter</code> method of each filter in S1's filter chain is invoked by the preceding filter in the chain by means of the <code dir="ltr">chain.doFilter</code> method. Because S1's filter chain contains filters F1 and F3, F1's call to <code dir="ltr">chain.doFilter</code> invokes the <code dir="ltr">doFilter</code> method of filter F3. When F3's <code dir="ltr">doFilter</code> method completes, control returns to F1's <code dir="ltr">doFilter</code> method.</p>
+<a id="GJSLC" name="GJSLC" class="anchor"></a>
+<div id="JEETT00176" class="sect3">
+<h3 class="sect3"><span class="secnum">17.6.3.1</span> To Specify Filter Mappings Using NetBeans IDE</h3>
+<ol>
+<li>
+<p>Expand the application's project node in the <span class="gui-object-action">Project</span> tab.</p>
+</li>
+<li>
+<p>Expand the <span class="gui-object-action">Web Pages</span> and <span class="gui-object-action">WEB-INF</span> nodes under the project node.</p>
+</li>
+<li>
+<p>Double-click <code dir="ltr">web.xml</code>.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Filters</span> at the top of the editor window.</p>
+</li>
+<li>
+<p>Expand the <span class="gui-object-action">Servlet Filters</span> node in the editor window.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Add Filter Element</span> to map the filter to a web resource by name or by URL pattern.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Add Servlet Filter</span> dialog box, enter the name of the filter in the <span class="gui-object-action">Filter Name</span> field.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Browse</span> to locate the servlet class to which the filter applies.</p>
+<p>You can include wildcard characters so that you can apply the filter to more than one servlet.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">OK</span>.</p>
+</li>
+<li>
+<p>To constrain how the filter is applied to requests, follow these steps.</p>
+<ol>
+<li>
+<p>Expand the <span class="gui-object-action">Filter Mappings</span> node.</p>
+</li>
+<li>
+<p>Select the filter from the list of filters.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Add</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Add Filter Mapping</span> dialog box, select one of the following dispatcher types:</p>
+<ul>
+<li>
+<p><span class="gui-object-action">REQUEST</span>: Only when the request comes directly from the client</p>
+</li>
+<li>
+<p><span class="gui-object-action">ASYNC</span>: Only when the asynchronous request comes from the client</p>
+</li>
+<li>
+<p><span class="gui-object-action">FORWARD</span>: Only when the request has been forwarded to a component (see <a href="servlets007.htm#BNAGK">Transferring Control to Another Web Component</a>)</p>
+</li>
+<li>
+<p><span class="gui-object-action">INCLUDE</span>: Only when the request is being processed by a component that has been included (see <a href="servlets007.htm#BNAGJ">Including Other Resources in the Response</a>)</p>
+</li>
+<li>
+<p><span class="gui-object-action">ERROR</span>: Only when the request is being processed with the error page mechanism (see <a href="servlets002.htm#BNAFN">Handling Servlet Errors</a>)</p>
+</li>
+</ul>
+<p>You can direct the filter to be applied to any combination of the preceding situations by selecting multiple dispatcher types. If no types are specified, the default option is <span class="gui-object-action">REQUEST</span>.</p>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00409" class="sect1">
+<h1 class="sect1"><span class="secnum">17.7</span> Invoking Other Web Resources</h1>
+<p><a id="sthref1204" name="sthref1204" class="anchor"></a>Web components can invoke other web resources both indirectly and directly. A web component indirectly invokes another web resource by embedding a URL that points to another web component in content returned to a client. While it is executing, a web component directly invokes another resource by either including the content of another resource or forwarding a request to another resource.</p>
+<p><a id="sthref1205" name="sthref1205" class="anchor"></a><a id="sthref1206" name="sthref1206" class="anchor"></a>To invoke a resource available on the server that is running a web component, you must first obtain a <code dir="ltr">RequestDispatcher</code> object by using the <code dir="ltr">getRequestDispatcher("URL")</code> method. You can get a <code dir="ltr">RequestDispatcher</code> object from either a request or the web context; however, the two methods have slightly different behavior. The method takes the path to the requested resource as an argument. A request can take a relative path (that is, one that does not begin with a <code dir="ltr">/</code>), but the web context requires an absolute path. If the resource is not available or if the server has not implemented a <code dir="ltr">RequestDispatcher</code> object for that type of resource, <code dir="ltr">getRequestDispatcher</code> will return null. Your servlet should be prepared to deal with this condition.</p>
+<a id="BNAGJ" name="BNAGJ" class="anchor"></a>
+<div id="JEETT01027" class="sect2">
+<h2 class="sect2"><span class="secnum">17.7.1</span> Including Other Resources in the Response</h2>
+<p><a id="sthref1207" name="sthref1207" class="anchor"></a><a id="sthref1208" name="sthref1208" class="anchor"></a>It is often useful to include another web resource, such as banner content or copyright information, in the response returned from a web component. To include another resource, invoke the <code dir="ltr">include</code> method of a <code dir="ltr">RequestDispatcher</code> object:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">include(request, response);
+</pre>
+<p>If the resource is static, the <code dir="ltr">include</code> method enables programmatic server-side includes. If the resource is a web component, the effect of the method is to send the request to the included web component, execute the web component, and then include the result of the execution in the response from the containing servlet. An included web component has access to the request object but is limited in what it can do with the response object.</p>
+<ul>
+<li>
+<p>It can write to the body of the response and commit a response.</p>
+</li>
+<li>
+<p>It cannot set headers or call any method, such as <code dir="ltr">setCookie</code>, that affects the headers of the response.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<a id="BNAGK" name="BNAGK" class="anchor"></a>
+<div id="JEETT01028" class="sect2">
+<h2 class="sect2"><span class="secnum">17.7.2</span> Transferring Control to Another Web Component</h2>
+<p>In some applications, you might want to have one web component do preliminary processing of a request and have another component generate the response. For example, you might want to partially process a request and then transfer to another component, depending on the nature of the request.</p>
+<p><a id="sthref1209" name="sthref1209" class="anchor"></a><a id="sthref1210" name="sthref1210" class="anchor"></a>To transfer control to another web component, you invoke the <code dir="ltr">forward</code> method of a <code dir="ltr">RequestDispatcher</code>. When a request is forwarded, the request URL is set to the path of the forwarded page. The original URI and its constituent parts are saved as the following request attributes:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">javax.servlet.forward.request_uri
+javax.servlet.forward.context_path
+javax.servlet.forward.servlet_path
+javax.servlet.forward.path_info
+javax.servlet.forward.query_string
+</pre>
+<p>The <code dir="ltr">forward</code> method should be used to give another resource responsibility for replying to the user. If you have already accessed a <code dir="ltr">ServletOutputStream</code> or <code dir="ltr">PrintWriter</code> object within the servlet, you cannot use this method; doing so throws an <code dir="ltr">IllegalStateException</code>.</p>
+</div>
+<!-- class="sect2" --></div>
+
+<div id="JEETT00410" class="sect1">
+<h1 class="sect1"><span class="secnum">17.8</span> Accessing the Web Context</h1>
+<p><a id="sthref1211" name="sthref1211" class="anchor"></a><a id="sthref1212" name="sthref1212" class="anchor"></a><a id="sthref1213" name="sthref1213" class="anchor"></a>The context in which web components execute is an object that implements the <code dir="ltr">ServletContext</code> interface. You retrieve the web context by using the <code dir="ltr">getServletContext</code> method. The web context provides methods for accessing</p>
+<ul>
+<li>
+<p>Initialization parameters</p>
+</li>
+<li>
+<p>Resources associated with the web context</p>
+</li>
+<li>
+<p>Object-valued attributes</p>
+</li>
+<li>
+<p>Logging capabilities</p>
+</li>
+</ul>
+<p>The counter's access methods are synchronized to prevent incompatible operations by servlets that are running concurrently. A filter retrieves the counter object by using the context's <code dir="ltr">getAttribute</code> method. The incremented value of the counter is recorded in the log.</p>
+</div>
+
+<br><hr>
+<div id="JEETT00411" class="sect1">
+<h1 class="sect1"><span class="secnum">17.9</span> <a id="sthref1214" name="sthref1214" class="anchor"></a><a id="sthref1215" name="sthref1215" class="anchor"></a>Maintaining Client State</h1>
+<p>Many applications require that a series of requests from a client be associated with one another. For example, a web application can save the state of a user's shopping cart across requests. Web-based applications are responsible for maintaining such state, called a <span class="glossaryterm">session</span>, because HTTP is stateless. To support applications that need to maintain state, Java Servlet technology provides an API for managing sessions and allows several mechanisms for implementing sessions.</p>
+<a id="BNAGN" name="BNAGN" class="anchor"></a>
+<div id="JEETT01029" class="sect2">
+<h2 class="sect2"><span class="secnum">17.9.1</span> <a id="sthref1216" name="sthref1216" class="anchor"></a><a id="sthref1217" name="sthref1217" class="anchor"></a>Accessing a Session</h2>
+<p>Sessions are represented by an <code dir="ltr">HttpSession</code> object. You access a session by calling the <code dir="ltr">getSession</code> method of a request object. This method returns the current session associated with this request; or, if the request does not have a session, this method creates one.</p>
+</div>
+<!-- class="sect2" -->
+<a id="BNAGO" name="BNAGO" class="anchor"></a>
+<div id="JEETT01030" class="sect2">
+<h2 class="sect2"><span class="secnum">17.9.2</span> <a id="sthref1218" name="sthref1218" class="anchor"></a>Associating Objects with a Session</h2>
+<p>You can associate object-valued attributes with a session by name. Such attributes are accessible by any web component that belongs to the same web context <span class="italic">and</span> is handling a request that is part of the same session.</p>
+<p><a id="sthref1219" name="sthref1219" class="anchor"></a>Recall that your application can notify web context and session listener objects of servlet lifecycle events (<a href="servlets002.htm#BNAFJ">Handling Servlet Lifecycle Events</a>). You can also notify objects of certain events related to their association with a session, such as the following.</p>
+<ul>
+<li>
+<p>When the object is added to or removed from a session. To receive this notification, your object must implement the <code dir="ltr">javax.servlet.http.HttpSessionBindingListener</code> interface.</p>
+</li>
+<li>
+<p>When the session to which the object is attached will be passivated or activated. A session will be passivated or activated when it is moved between virtual machines or saved to and restored from persistent storage. To receive this notification, your object must implement the <code dir="ltr">javax.servlet.http.HttpSessionActivationListener</code> interface.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<a id="BNAGQ" name="BNAGQ" class="anchor"></a>
+<div id="JEETT01031" class="sect2">
+<h2 class="sect2"><span class="secnum">17.9.3</span> Session Management</h2>
+<p>Because an HTTP client has no way to signal that it no longer needs a session, each session has an associated timeout so that its resources can be reclaimed. The timeout period can be accessed by using a session's <code dir="ltr">getMaxInactiveInterval</code> and <code dir="ltr">setMaxInactiveInterval</code> methods.</p>
+<ul>
+<li>
+<p>To ensure that an active session is not timed out, you should periodically access the session by using service methods because this resets the session's time-to-live counter.</p>
+</li>
+<li>
+<p><a id="sthref1220" name="sthref1220" class="anchor"></a><a id="sthref1221" name="sthref1221" class="anchor"></a>When a particular client interaction is finished, you use the session's <code dir="ltr">invalidate</code> method to invalidate a session on the server side and remove any session data.</p>
+</li>
+</ul>
+<div class="sect3"><a id="sthref1222" name="sthref1222" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">17.9.3.1</span> To Set the Timeout Period Using NetBeans IDE</h3>
+<p>To set the timeout period in the deployment descriptor using NetBeans IDE, follow these steps.</p>
+<ol>
+<li>
+<p>Open the project if you haven't already.</p>
+</li>
+<li>
+<p>Expand the node of your project in the <span class="gui-object-action">Projects</span> tab.</p>
+</li>
+<li>
+<p>Expand the <span class="gui-object-action">Web Pages</span> and <span class="gui-object-action">WEB-INF</span> nodes that are under the project node.</p>
+</li>
+<li>
+<p>Double-click <code dir="ltr">web.xml</code>.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">General</span> at the top of the editor.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Session Timeout</span> field, enter an integer value.</p>
+<p>The integer value represents the number of minutes of inactivity that must pass before the session times out.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNAGR" name="BNAGR" class="anchor"></a>
+<div id="JEETT01032" class="sect2">
+<h2 class="sect2"><span class="secnum">17.9.4</span> Session Tracking</h2>
+<p><a id="sthref1223" name="sthref1223" class="anchor"></a>To associate a session with a user, a web container can use several methods, all of which involve passing an identifier between the client and the server. The identifier can be maintained on the client as a cookie, or the web component can include the identifier in every URL that is returned to the client.</p>
+<p>If your application uses session objects, you must ensure that session tracking is enabled by having the application rewrite URLs whenever the client turns off cookies. You do this by calling the response's <code dir="ltr">encodeURL(URL)</code> method on all URLs returned by a servlet. This method includes the session ID in the URL only if cookies are disabled; otherwise, the method returns the URL unchanged.</p>
+</div>
+<!-- class="sect2" --></div>
+
+<br><hr>
+<div id="JEETT00412" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.10</span> Finalizing a Servlet</h1>
+<p class="cye-lm-tag"><a id="sthref1224" name="sthref1224" class="anchor"></a><a id="sthref1225" name="sthref1225" class="anchor"></a>The web container may determine that a servlet should be removed from service (for example, when a container wants to reclaim memory resources or when it is being shut down). In such a case, the container calls the <code dir="ltr">destroy</code> method of the <code dir="ltr">Servlet</code> interface. In this method, you release any resources the servlet is using and save any persistent state. The <code dir="ltr">destroy</code> method releases the database object created in the <code dir="ltr">init</code> method.</p>
+<p class="cye-lm-tag">A servlet's service methods should all be complete when a servlet is removed. The server tries to ensure this by calling the <code dir="ltr">destroy</code> method only after all service requests have returned or after a server-specific grace period, whichever comes first. If your servlet has operations that may run longer than the server's grace period, the operations could still be running when <code dir="ltr">destroy</code> is called. You must make sure that any threads still handling client requests complete.</p>
+<p class="cye-lm-tag">The remainder of this section explains how to do the following.</p>
+<ul>
+<li>
+<p class="cye-lm-tag">Keep track of how many threads are currently running the <code dir="ltr">service</code> method.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Provide a clean shutdown by having the <code dir="ltr">destroy</code> method notify long-running threads of the shutdown and wait for them to complete.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Have the long-running methods poll periodically to check for shutdown and, if necessary, stop working, clean up, and return.</p>
+</li>
+</ul>
+<a id="BNAGT" name="BNAGT" class="anchor"></a>
+<div id="JEETT01033" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.10.1</span> Tracking Service Requests</h2>
+<p class="cye-lm-tag"><a id="sthref1226" name="sthref1226" class="anchor"></a>To track service requests, include in your servlet class a field that counts the number of service methods that are running. The field should have synchronized access methods to increment, decrement, and return its value:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public class ShutdownExample extends HttpServlet {
+    private int serviceCounter = 0;
+    ...
+    // Access methods for serviceCounter
+    protected synchronized void enteringServiceMethod() {
+        serviceCounter++;
+    }
+    protected synchronized void leavingServiceMethod() {
+        serviceCounter--;
+    }
+    protected synchronized int numServices() {
+        return serviceCounter;
+    }
+}
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">service</code> method should increment the service counter each time the method is entered and should decrement the counter each time the method returns. This is one of the few times that your <code dir="ltr">HttpServlet</code> subclass should override the <code dir="ltr">service</code> method. The new method should call <code dir="ltr">super.service</code> to preserve the functionality of the original <code dir="ltr">service</code> method:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">protected void service(HttpServletRequest req,
+                       HttpServletResponse resp)
+                       throws ServletException,IOException {
+    enteringServiceMethod();
+    try {
+        super.service(req, resp);
+    } finally {
+        leavingServiceMethod();
+    }
+}
+</pre></div>
+<!-- class="sect2" -->
+<a id="BNAGU" name="BNAGU" class="anchor"></a>
+<div id="JEETT01034" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.10.2</span> Notifying Methods to Shut Down</h2>
+<p class="cye-lm-tag"><a id="sthref1227" name="sthref1227" class="anchor"></a>To ensure a clean shutdown, your <code dir="ltr">destroy</code> method should not release any shared resources until all the service requests have completed. One part of doing this is to check the service counter. Another part is to notify long-running methods that it is time to shut down. For this notification, another field is required. The field should have the usual access methods:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public class ShutdownExample extends HttpServlet {
+    private boolean shuttingDown;
+    ...
+    //Access methods for shuttingDown
+    protected synchronized void setShuttingDown(boolean flag) {
+        shuttingDown = flag;
+    }
+    protected synchronized boolean isShuttingDown() {
+        return shuttingDown;
+    }
+}
+</pre>
+<p class="cye-lm-tag">Here is an example of the <code dir="ltr">destroy</code> method using these fields to provide a clean shutdown:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public void destroy() {
+    /* Check to see whether there are still service methods /*
+    /* running, and if there are, tell them to stop. */
+    if (numServices()&gt; 0) {
+        setShuttingDown(true);
+    }
+
+    /* Wait for the service methods to stop. */
+    while (numServices()&gt; 0) {
+        try {
+            Thread.sleep(interval);
+        } catch (InterruptedException e) {
+        }
+    }
+}
+</pre></div>
+<!-- class="sect2" -->
+<a id="BNAGV" name="BNAGV" class="anchor"></a>
+<div id="JEETT01035" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.10.3</span> Creating Polite Long-Running Methods</h2>
+<p class="cye-lm-tag"><a id="sthref1228" name="sthref1228" class="anchor"></a>The final step in providing a clean shutdown is to make any long-running methods behave politely. Methods that might run for a long time should check the value of the field that notifies them of shutdowns and should interrupt their work, if necessary:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public void doPost(...) {
+    ...
+    for(i = 0; ((i &lt; lotsOfStuffToDo) &amp;&amp;
+         !isShuttingDown()); i++) {
+        try {
+            partOfLongRunningOperation(i);
+        } catch (InterruptedException e) {
+            ...
+        }
+    }
+}
+</pre></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.11</span> Uploading Files with Java Servlet Technology<a id="sthref1229" name="sthref1229" class="anchor"></a></h1>
+<p class="cye-lm-tag">Supporting file uploads is a very basic and common requirement for many web applications. In prior versions of the Servlet specification, implementing file upload required the use of external libraries or complex input processing. The Java Servlet specification now helps to provide a viable solution to the problem in a generic and portable way. Java Servlet technology now supports file upload out of the box, so any web container that implements the specification can parse multipart requests and make mime attachments available through the <code dir="ltr">HttpServletRequest</code> object.</p>
+<p class="cye-lm-tag">A new annotation, <code dir="ltr">javax.servlet.annotation.MultipartConfig</code>, is used to indicate that the servlet on which it is declared expects requests to be made using the <code dir="ltr">multipart/form-data</code> MIME type. Servlets that are annotated with <code dir="ltr">@MultipartConfig</code> can retrieve the <code dir="ltr">Part</code> components of a given <code dir="ltr">multipart/form-data</code> request by calling the <code dir="ltr">request.getPart(String name)</code> or <code dir="ltr">request.getParts()</code> method.</p>
+<div class="sect2"><a id="sthref1230" name="sthref1230" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.11.1</span> The @MultipartConfig Annotation<a id="sthref1231" name="sthref1231" class="anchor"></a></h2>
+<p class="cye-lm-tag">The <code dir="ltr">@MultipartConfig</code> annotation supports the following optional attributes.</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">location</code>: An absolute path to a directory on the file system. The <code dir="ltr">location</code> attribute does not support a path relative to the application context. This location is used to store files temporarily while the parts are processed or when the size of the file exceeds the specified <code dir="ltr">fileSizeThreshold</code> setting. The default location is <code dir="ltr">""</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">fileSizeThreshold</code>: The file size in bytes after which the file will be temporarily stored on disk. The default size is 0 bytes.</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">MaxFileSize</code>: The maximum size allowed for uploaded files, in bytes. If the size of any uploaded file is greater than this size, the web container will throw an exception (<code dir="ltr">IllegalStateException</code>). The default size is unlimited.</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">maxRequestSize</code>: The maximum size allowed for a <code dir="ltr">multipart/form-data</code> request, in bytes. The web container will throw an exception if the overall size of all uploaded files exceeds this threshold. The default size is unlimited.</p>
+</li>
+</ul>
+<p class="cye-lm-tag">For, example, the <code dir="ltr">@MultipartConfig</code> annotation could be constructed as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@MultipartConfig(location="/tmp", fileSizeThreshold=1024*1024,
+    maxFileSize=1024*1024*5, maxRequestSize=1024*1024*5*5)
+</pre>
+<p class="cye-lm-tag">Instead of using the <code dir="ltr">@MultipartConfig</code> annotation to hard-code these attributes in your file upload servlet, you could add the following as a child element of the servlet configuration element in the <code dir="ltr">web.xml</code> file:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">&lt;multipart-config&gt;
+    &lt;location&gt;/tmp&lt;/location&gt;
+    &lt;max-file-size&gt;20848820&lt;/max-file-size&gt;
+    &lt;max-request-size&gt;418018841&lt;/max-request-size&gt;
+    &lt;file-size-threshold&gt;1048576&lt;/file-size-threshold&gt;
+&lt;/multipart-config&gt;
+</pre></div>
+<!-- class="sect2" -->
+<div class="sect2"><a id="sthref1232" name="sthref1232" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.11.2</span> The getParts and getPart Methods<a id="sthref1233" name="sthref1233" class="anchor"></a><a id="sthref1234" name="sthref1234" class="anchor"></a></h2>
+<p class="cye-lm-tag">The Servlet specification supports two additional <code dir="ltr">HttpServletRequest</code> methods:</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">Collection&lt;Part&gt; getParts()</code></p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">Part getPart(String name)</code></p>
+</li>
+</ul>
+<p class="cye-lm-tag">The <code dir="ltr">request.getParts()</code> method returns collections of all <code dir="ltr">Part</code> objects. If you have more than one input of type file, multiple <code dir="ltr">Part</code> objects are returned. Because <code dir="ltr">Part</code> objects are named, the <code dir="ltr">getPart(String name)</code> method can be used to access a particular <code dir="ltr">Part</code>. Alternatively, the <code dir="ltr">getParts()</code> method, which returns an <code dir="ltr">Iterable&lt;Part&gt;</code>, can be used to get an <code dir="ltr">Iterator</code> over all the <code dir="ltr">Part</code> objects.</p>
+<p class="cye-lm-tag">The <code dir="ltr">javax.servlet.http.Part</code> interface is a simple one, providing methods that allow introspection of each <code dir="ltr">Part</code>. The methods do the following:</p>
+<ul>
+<li>
+<p class="cye-lm-tag">Retrieve the name, size, and content-type of the <code dir="ltr">Part</code></p>
+</li>
+<li>
+<p class="cye-lm-tag">Query the headers submitted with a <code dir="ltr">Part</code></p>
+</li>
+<li>
+<p class="cye-lm-tag">Delete a <code dir="ltr">Part</code></p>
+</li>
+<li>
+<p class="cye-lm-tag">Write a <code dir="ltr">Part</code> out to disk</p>
+</li>
+</ul>
+<p class="cye-lm-tag">For example, the <code dir="ltr">Part</code> interface provides the <code dir="ltr">write(String filename)</code> method to write the file with the specified name. The file can then be saved in the directory that is specified with the <code dir="ltr">location</code> attribute of the <code dir="ltr">@MultipartConfig</code> annotation or, in the case of the <code dir="ltr">fileupload</code> example, in the location specified by the Destination field in the form.</p>
+</div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.12</span> Asynchronous Processing<a id="sthref1235" name="sthref1235" class="anchor"></a></h1>
+<p class="cye-lm-tag">Web containers in application servers normally use a server thread per client request. Under heavy load conditions, containers need a large amount of threads to serve all the client requests. Scalability limitations include running out of memory or exhausting the pool of container threads. To create scalable web applications, you must ensure that no threads associated with a request are sitting idle, so the container can use them to process new requests.</p>
+<p class="cye-lm-tag">There are two common scenarios in which a thread associated with a request can be sitting idle.</p>
+<ul>
+<li>
+<p class="cye-lm-tag">The thread needs to wait for a resource to become available or process data before building the response. For example, an application may need to query a database or access data from a remote web service before generating the response.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The thread needs to wait for an event before generating the response. For example, an application may have to wait for a JMS message, new information from another client, or new data available in a queue before generating the response.</p>
+</li>
+</ul>
+<p class="cye-lm-tag">These scenarios represent blocking operations that limit the scalability of web applications. Asynchronous processing refers to assigning these blocking operations to a new thread and retuning the thread associated with the request immediately to the container.</p>
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1236" name="sthref1236" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.12.1</span> Asynchronous Processing in Servlets</h2>
+<p class="cye-lm-tag">Java EE provides asynchronous processing support for servlets and filters. If a servlet or a filter reaches a potentially blocking operation when processing a request, it can assign the operation to an asynchronous execution context and return the thread associated with the request immediately to the container without generating a response. The blocking operation completes in the asynchronous execution context in a different thread, which can generate a response or dispatch the request to another servlet.</p>
+<p class="cye-lm-tag">To enable asynchronous processing on a servlet, set the parameter <code dir="ltr">asyncSupported</code> to <code dir="ltr">true</code> on the <code dir="ltr">@WebServlet</code> annotation as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/asyncservlet"}, asyncSupported=true)
+public class AsyncServlet extends HttpServlet { ... }
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">javax.servlet.AsyncContext</code> class provides the functionality that you need to perform asynchronous processing inside service methods. To obtain an instance of <code dir="ltr">AsyncContext</code>, call the <code dir="ltr">startAsync()</code> method on the request object of your service method; for example:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public void doGet(HttpServletRequest req, HttpServletResponse resp) {
+   ...
+   AsyncContext acontext = req.startAsync();
+   ...
+}
+</pre>
+<p class="cye-lm-tag">This call puts the request into asynchronous mode and ensures that the response is not committed after exiting the service method. You have to generate the response in the asynchronous context after the blocking operation completes or dispatch the request to another servlet.</p>
+<p class="cye-lm-tag"><a href="#BEICFIEC">Table 17-3</a> describes the basic functionality provided by the <code dir="ltr">AsyncContext</code> class.</p>
+<div class="tblhruleformal"><a id="sthref1237" name="sthref1237" class="anchor"></a><a id="BEICFIEC" name="BEICFIEC" class="anchor"></a>
+<p class="titleintable cye-lm-tag">Table 17-3 Functionality Provided by the AsyncContext Class</p>
+<table class="HRuleFormal" title="Functionality Provided by the AsyncContext Class" summary="The left column contains the signatures of the most commonly used methods of the AsyncContext class. The right column contains a description of each method's functionality." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="38%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t4">Method Signature</th>
+<th align="left" valign="bottom" id="r1c2-t4">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t4" headers="r1c1-t4">
+<p class="cye-lm-tag"><code dir="ltr">void start(Runnable run)</code></p>
+</td>
+<td align="left" headers="r2c1-t4 r1c2-t4">
+<p class="cye-lm-tag">The container provides a different thread in which the blocking operation can be processed.</p>
+<p class="cye-lm-tag">You provide code for the blocking operation as a class that implements the <code dir="ltr">Runnable</code> interface. You can provide this class as an inner class when calling the <code dir="ltr">start</code> method or use another mechanism to pass the <code dir="ltr">AsyncContext</code> instance to your class.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t4" headers="r1c1-t4">
+<p class="cye-lm-tag"><code dir="ltr">ServletRequest getRequest()</code></p>
+</td>
+<td align="left" headers="r3c1-t4 r1c2-t4">
+<p class="cye-lm-tag">Returns the request used to initialize this asynchronous context. In the example above, the request is the same as in the service method.</p>
+<p class="cye-lm-tag">You can use this method inside the asynchronous context to obtain parameters from the request.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t4" headers="r1c1-t4">
+<p class="cye-lm-tag"><code dir="ltr">ServletResponse getResponse()</code></p>
+</td>
+<td align="left" headers="r4c1-t4 r1c2-t4">
+<p class="cye-lm-tag">Returns the response used to initialize this asynchronous context. In the example above, the response is the same as in the service method.</p>
+<p class="cye-lm-tag">You can use this method inside the asynchronous context to write to the response with the results of the blocking operation.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t4" headers="r1c1-t4">
+<p class="cye-lm-tag"><code dir="ltr">void complete()</code></p>
+</td>
+<td align="left" headers="r5c1-t4 r1c2-t4">
+<p class="cye-lm-tag">Completes the asynchronous operation and closes the response associated with this asynchronous context.</p>
+<p class="cye-lm-tag">You call this method after writing to the response object inside the asynchronous context.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t4" headers="r1c1-t4">
+<p class="cye-lm-tag"><code dir="ltr">void dispatch(String path)</code></p>
+</td>
+<td align="left" headers="r6c1-t4 r1c2-t4">
+<p class="cye-lm-tag">Dispatches the request and response objects to the given path.</p>
+<p class="cye-lm-tag">You use this method to have another servlet write to the response after the blocking operation completes.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" --></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1238" name="sthref1238" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.12.2</span> Waiting for a Resource</h2>
+<p class="cye-lm-tag">This section demonstrates how to use the functionality provided by the <code dir="ltr">AsyncContext</code> class for the following use case:</p>
+<ol>
+<li>
+<p class="cye-lm-tag">A servlet receives a parameter from a GET request.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The servlet uses a resource, such as a database or a web service, to retrieve information based on the value of the parameter. The resource can be slow at times, so this may be a blocking operation.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The servlet generates a response using the result from the resource.</p>
+</li>
+</ol>
+<p class="cye-lm-tag">The following code shows a basic servlet that does not use asynchronous processing:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/syncservlet"})
+public class SyncServlet extends HttpServlet {
+   private MyRemoteResource resource;
+   @Override
+   public void init(ServletConfig config) {
+      resource = MyRemoteResource.create("config1=x,config2=y");
+   }
+
+   @Override
+   public void doGet(HttpServletRequest request, 
+                     HttpServletResponse response) {
+      response.setContentType("text/html;charset=UTF-8");
+      String param = request.getParameter("param");
+      String result = resource.process(param);
+      /* ... print to the response ... */
+   }
+}
+</pre>
+<p class="cye-lm-tag">The following code shows the same servlet using asynchronous processing:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/asyncservlet"}, asyncSupported=true)
+public class AsyncServlet extends HttpServlet {
+   /* ... Same variables and init method as in SyncServlet ... */
+
+   @Override
+   public void doGet(HttpServletRequest request, 
+                     HttpServletResponse response) {
+      response.setContentType("text/html;charset=UTF-8");
+      final AsyncContext acontext = request.startAsync();
+      acontext.start(new Runnable() {
+         public void run() {
+            String param = acontext.getRequest().getParameter("param");
+            String result = resource.process(param);
+            HttpServletResponse response = acontext.getResponse();
+            /* ... print to the response ... */
+            acontext.complete();
+   }
+}
+</pre>
+<p class="cye-lm-tag"><code dir="ltr">AsyncServlet</code> adds <code dir="ltr">asyncSupported=true</code> to the <code dir="ltr">@WebServlet</code> annotation. The rest of the differences are inside the service method.</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">request.startAsync()</code> causes the request to be processed asynchronously; the response is not sent to the client at the end of the service method.</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">acontext.start(new Runnable() {...})</code> gets a new thread from the container.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The code inside the <code dir="ltr">run()</code> method of the inner class executes in the new thread. The inner class has access to the asynchronous context to read parameters from the request and write to the response. Calling the <code dir="ltr">complete()</code> method of the asynchronous context commits the response and sends it to the client.</p>
+</li>
+</ul>
+<p class="cye-lm-tag">The service method of <code dir="ltr">AsyncServlet</code> returns immediately, and the request is processed in the asynchronous context.</p>
+</div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.13</span> Nonblocking I/O<a id="sthref1239" name="sthref1239" class="anchor"></a></h1>
+<p class="cye-lm-tag">Web containers in application servers normally use a server thread per client request. To develop scalable web applications, you must ensure that threads associated with client requests are never sitting idle waiting for a blocking operation to complete. <a href="servlets012.htm#BEIGCFDF">Asynchronous Processing</a> provides a mechanism to execute application-specific blocking operations in a new thread, returning the thread associated with the request immediately to the container. Even if you use asynchronous processing for all the application-specific blocking operations inside your service methods, threads associated with client requests can be momentarily sitting idle because of input/output considerations.</p>
+<p class="cye-lm-tag">For example, if a client is submitting a large HTTP POST request over a slow network connection, the server can read the request faster than the client can provide it. Using traditional I/O, the container thread associated with this request would be sometimes sitting idle waiting for the rest of the request.</p>
+<p class="cye-lm-tag">Java EE provides nonblocking I/O support for servlets and filters when processing requests in asynchronous mode. The following steps summarize how to use nonblocking I/O to process requests and write responses inside service methods.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Put the request in asynchronous mode as described in <a href="servlets012.htm#BEIGCFDF">Asynchronous Processing</a>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Obtain an input stream and/or an output stream from the request and response objects in the service method.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Assign a read listener to the input stream and/or a write listener to the output stream.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Process the request and the response inside the listener's callback methods.</p>
+</li>
+</ol>
+<p class="cye-lm-tag"><a href="#BEIFDICJ">Table 17-4</a> and <a href="#BEIFIIIH">Table 17-5</a> describe the methods available in the servlet input and output streams for nonblocking I/O support. <a href="#BEIFGJCG">Table 17-6</a> describes the interfaces for read listeners and write listeners.</p>
+<div class="tblhruleformal"><a id="sthref1240" name="sthref1240" class="anchor"></a><a id="BEIFDICJ" name="BEIFDICJ" class="anchor"></a>
+<p class="titleintable cye-lm-tag">Table 17-4 Nonblocking I/O Support in javax.servlet.ServletInputStream</p>
+<table class="HRuleFormal" title="Nonblocking I/O Support in javax.servlet.ServletInputStream" summary="The table describes the non-blocking support in ServletInputStream." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="50%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t5">Method</th>
+<th align="left" valign="bottom" id="r1c2-t5">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t5" headers="r1c1-t5">
+<p class="cye-lm-tag"><code dir="ltr">void setReadListener(ReadListener rl)</code></p>
+</td>
+<td align="left" headers="r2c1-t5 r1c2-t5">
+<p class="cye-lm-tag">Associates this input stream with a listener object that contains callback methods to read data asynchronously. You provide the listener object as an anonymous class or use another mechanism to pass the input stream to the read listener object.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t5" headers="r1c1-t5">
+<p class="cye-lm-tag"><code dir="ltr">boolean isReady()</code></p>
+</td>
+<td align="left" headers="r3c1-t5 r1c2-t5">
+<p class="cye-lm-tag">Returns true if data can be read without blocking.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t5" headers="r1c1-t5">
+<p class="cye-lm-tag"><code dir="ltr">boolean isFinished()</code></p>
+</td>
+<td align="left" headers="r4c1-t5 r1c2-t5">
+<p class="cye-lm-tag">Returns true when all the data has been read.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<div class="tblhruleformal"><a id="sthref1241" name="sthref1241" class="anchor"></a><a id="BEIFIIIH" name="BEIFIIIH" class="anchor"></a>
+<p class="titleintable cye-lm-tag">Table 17-5 Nonblocking I/O Support in javax.servlet.ServletOutputStream</p>
+<table class="HRuleFormal" title="Nonblocking I/O Support in javax.servlet.ServletOutputStream" summary="The table describes the support for non-blocking I/O in ServletOutputStream." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="*">
+<col width="50%">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t6">Method</th>
+<th align="left" valign="bottom" id="r1c2-t6">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t6" headers="r1c1-t6">
+<p class="cye-lm-tag"><code dir="ltr">void setWriteListener(WriteListener wl)</code></p>
+</td>
+<td align="left" headers="r2c1-t6 r1c2-t6">
+<p class="cye-lm-tag">Associates this output stream with a listener object that contains callback methods to write data asynchronously. You provide the write listener object as an anonymous class or use another mechanism to pass the output stream to the write listener object.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t6" headers="r1c1-t6">
+<p class="cye-lm-tag"><code dir="ltr">boolean isReady()</code></p>
+</td>
+<td align="left" headers="r3c1-t6 r1c2-t6">
+<p class="cye-lm-tag">Returns true if data can be written without blocking.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<div class="tblhruleformal"><a id="sthref1242" name="sthref1242" class="anchor"></a><a id="BEIFGJCG" name="BEIFGJCG" class="anchor"></a>
+<p class="titleintable cye-lm-tag">Table 17-6 Listener Interfaces for Nonblocking I/O Support</p>
+<table class="HRuleFormal" title="Listener Interfaces for Nonblocking I/O Support" summary="The table lists the methods in the listener classes for asynchronous input/output support. The first column lists the interface name, the second column lists the method name, and the third column contains a description of each interface." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="19%">
+<col width="33%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t7">Interface</th>
+<th align="left" valign="bottom" id="r1c2-t7">Methods</th>
+<th align="left" valign="bottom" id="r1c3-t7">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t7" headers="r1c1-t7">
+<p class="cye-lm-tag"><code dir="ltr">ReadListener</code></p>
+</td>
+<td align="left" headers="r2c1-t7 r1c2-t7">
+<p class="cye-lm-tag"><code dir="ltr">void onDataAvailable()</code></p>
+<p class="cye-lm-tag"><code dir="ltr">void onAllDataRead()</code></p>
+<p class="cye-lm-tag"><code dir="ltr">void onError(Throwable t)</code></p>
+</td>
+<td align="left" headers="r2c1-t7 r1c3-t7">
+<p class="cye-lm-tag">A <code dir="ltr">ServletInputStream</code> instance calls these methods on its listener when there is data available to read, when all the data has been read, or when there is an error.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t7" headers="r1c1-t7">
+<p class="cye-lm-tag"><code dir="ltr">WriteListener</code></p>
+</td>
+<td align="left" headers="r3c1-t7 r1c2-t7">
+<p class="cye-lm-tag"><code dir="ltr">void onWritePossible()</code></p>
+<p class="cye-lm-tag"><code dir="ltr">void onError(Throwable t)</code></p>
+</td>
+<td align="left" headers="r3c1-t7 r1c3-t7">
+<p class="cye-lm-tag">A <code dir="ltr">ServletOutputStream</code> instance calls these methods on its listener when it is possible to write data without blocking or when there is an error.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1243" name="sthref1243" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.13.1</span> Reading a Large HTTP POST Request Using Nonblocking I/O</h2>
+<p class="cye-lm-tag">The code in this section shows how to read a large HTTP POST request inside a servlet by putting the request in asynchronous mode (as described in <a href="servlets012.htm#BEIGCFDF">Asynchronous Processing</a>) and using the nonblocking I/O functionality from <a href="#BEIFDICJ">Table 17-4</a> and <a href="#BEIFGJCG">Table 17-6</a>.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/asyncioservlet"}, asyncSupported=true)
+public class AsyncIOServlet extends HttpServlet {
+   @Override
+   public void doPost(HttpServletRequest request, 
+                      HttpServletResponse response)
+                      throws IOException {
+      final AsyncContext acontext = request.startAsync();
+      final ServletInputStream input = request.getInputStream();
+      
+      input.setReadListener(new ReadListener() {
+         byte buffer[] = new byte[4*1024];
+         StringBuilder sbuilder = new StringBuilder();
+         @Override
+         public void onDataAvailable() {
+            try {
+               do {
+                  int length = input.read(buffer);
+                  sbuilder.append(new String(buffer, 0, length));
+               } while(input.isReady());
+            } catch (IOException ex) { ... }
+         }
+         @Override
+         public void onAllDataRead() {
+            try {
+               acontext.getResponse().getWriter()
+                                     .write("...the response...");
+            } catch (IOException ex) { ... }
+            acontext.complete();
+         }
+         @Override
+         public void onError(Throwable t) { ... }
+      });
+   }
+}
+</pre>
+<p class="cye-lm-tag">This example declares the web servlet with asynchronous support using the <code dir="ltr">@WebServlet</code> annotation parameter <code dir="ltr">asyncSupported=true</code>. The service method first puts the request in asynchronous mode by calling the <code dir="ltr">startAsync()</code> method of the request object, which is required in order to use nonblocking I/O. Then, the service method obtains an input stream associated with the request and assigns a read listener defined as an inner class. The listener reads parts of the request as they become available and then writes some response to the client when it finishes reading the request.</p>
+</div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.14</span> Protocol Upgrade Processing</h1>
+<p class="cye-lm-tag">In HTTP/1.1, clients can request to switch to a different protocol on the current connection by using the <code dir="ltr">Upgrade</code> header field. If the server accepts the request to switch to the protocol indicated by the client, it generates an HTTP response with status 101 (switching protocols). After this exchange, the client and the server communicate using the new protocol.</p>
+<p class="cye-lm-tag">For example, a client can make an HTTP request to switch to the XYZP protocol as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">GET /xyzpresource HTTP/1.1
+Host: localhost:8080
+Accept: text/html
+Upgrade: XYZP
+Connection: Upgrade
+OtherHeaderA: Value
+</pre>
+<p class="cye-lm-tag">The client can specify parameters for the new protocol using HTTP headers. The server can accept the request and generate a response as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">HTTP/1.1 101 Switching Protocols
+Upgrade: XYZP
+Connection: Upgrade
+OtherHeaderB: Value
+
+(XYZP data)
+</pre>
+<p class="cye-lm-tag">Java EE supports the HTTP protocol upgrade functionality in servlets, as described in <a href="#BEIBDHAG">Table 17-7</a>.</p>
+<div class="tblhruleformal"><a id="sthref1244" name="sthref1244" class="anchor"></a><a id="BEIBDHAG" name="BEIBDHAG" class="anchor"></a>
+<p class="titleintable cye-lm-tag">Table 17-7 Protocol Upgrade Support</p>
+<table class="HRuleFormal" title="Protocol Upgrade Support" summary="This table lists the classes, interfaces and methods related with the HTTP protocol upgrade support in servlets." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="31%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t8">Class or Interface</th>
+<th align="left" valign="bottom" id="r1c2-t8">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t8" headers="r1c1-t8">
+<p class="cye-lm-tag"><code dir="ltr">HttpServletRequest</code></p>
+</td>
+<td align="left" headers="r2c1-t8 r1c2-t8">
+<p class="cye-lm-tag"><code dir="ltr">HttpUpgradeHandler upgrade(Class handler)</code></p>
+<p class="cye-lm-tag">The upgrade method starts the protocol upgrade processing. This method instantiates a class that implements the <code dir="ltr">HttpUpgradeHandler</code> interface and delegates the connection to it.</p>
+<p class="cye-lm-tag">You call the <code dir="ltr">upgrade</code> method inside a service method when accepting a request from a client to switch protocols.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t8" headers="r1c1-t8">
+<p class="cye-lm-tag"><code dir="ltr">HttpUpgradeHandler</code></p>
+</td>
+<td align="left" headers="r3c1-t8 r1c2-t8">
+<p class="cye-lm-tag"><code dir="ltr">void init(WebConnection wc)</code></p>
+<p class="cye-lm-tag">The <code dir="ltr">init</code> method is called when the servlet accepts the request to switch protocols. You implement this method and obtain input and output streams from the <code dir="ltr">WebConnection</code> object to implement the new protocol.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t8" headers="r1c1-t8">
+<p class="cye-lm-tag"><code dir="ltr">HttpUpgradeHandler</code></p>
+</td>
+<td align="left" headers="r4c1-t8 r1c2-t8">
+<p class="cye-lm-tag"><code dir="ltr">void destroy()</code></p>
+<p class="cye-lm-tag">The <code dir="ltr">destroy</code> method is called when the client disconnects. You implement this method and free any resources associated with processing the new protocol.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t8" headers="r1c1-t8">
+<p class="cye-lm-tag"><code dir="ltr">WebConnection</code></p>
+</td>
+<td align="left" headers="r5c1-t8 r1c2-t8">
+<p class="cye-lm-tag"><code dir="ltr">ServletInputStream getInputStream()</code></p>
+<p class="cye-lm-tag">The <code dir="ltr">getInputStream</code> method provides access to the input stream of the connection. You can use <a href="servlets013.htm#BEIHICDH">Nonblocking I/O</a> with the returned stream to implement the new protocol.</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t8" headers="r1c1-t8">
+<p class="cye-lm-tag"><code dir="ltr">WebConnection</code></p>
+</td>
+<td align="left" headers="r6c1-t8 r1c2-t8">
+<p class="cye-lm-tag"><code dir="ltr">ServletOutputStream getOutputStream()</code></p>
+<p class="cye-lm-tag">The <code dir="ltr">getOutputStream</code> method provides access to the output stream of the connection. You can use <a href="servlets013.htm#BEIHICDH">Nonblocking I/O</a> with the returned stream to implement the new protocol.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<p class="cye-lm-tag">The following code demonstrates how to accept an HTTP protocol upgrade request from a client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/xyzpresource"})
+public class XYZPUpgradeServlet extends HttpServlet {
+   @Override
+   public void doGet(HttpServletRequest request, 
+                     HttpServletResponse response) {
+      if ("XYZP".equals(request.getHeader("Upgrade"))) {
+         /* Accept upgrade request */
+         response.setStatus(101);
+         response.setHeader("Upgrade", "XYZP");
+         response.setHeader("Connection", "Upgrade");
+         response.setHeader("OtherHeaderB", "Value");
+         /* Delegate the connection to the upgrade handler */
+         XYZPUpgradeHandler = request.upgrade(XYZPUpgradeHandler.class);
+         /* (the service method returns immedately) */
+      } else {
+         /* ... write error response ... */
+      }
+   }
+}
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">XYZPUpgradeHandler</code> class handles the connection:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public class XYZPUpgradeHandler implements HttpUpgradeHandler {
+   @Override
+   public void init(WebConnection wc) {
+      ServletInputStream input = wc.getInputStream();
+      ServletOutputStream output = wc.getOutputStream();
+      /* ... implement XYZP using these streams (protocol-specific) ... */
+   }
+   @Override
+   public void destroy() { ... }
+}
+</pre>
+<p class="cye-lm-tag">The class that implements <code dir="ltr">HttpUpgradeHandler</code> uses the streams from the current connection to communicate with the client using the new protocol. See the Servlet 3.1 specification at <code dir="ltr"><a target="_blank" href="http://jcp.org/en/jsr/detail?id=340">http://jcp.org/en/jsr/detail?id=340</a></code> for details on HTTP protocol upgrade support.</p>
+</div>
+<br><hr>
+<div id="JEETT00413" class="sect1">
+<h1 class="sect1"><span class="secnum">17.15</span> <a id="sthref1245" name="sthref1245" class="anchor"></a><a id="sthref1246" name="sthref1246" class="anchor"></a>The mood Example Application</h1>
+<p>The <code dir="ltr">mood</code> example application, located in the <span class="variable">tut-install</span><code dir="ltr">/examples/web/servlet/mood/</code> directory, is a simple example that displays Duke's moods at different times during the day. The example shows how to develop a simple application by using the <code dir="ltr">@WebServlet</code>, <code dir="ltr">@WebFilter</code>, and <code dir="ltr">@WebListener</code> annotations to create a servlet, a listener, and a filter.</p>
+<div class="sect2"><a id="sthref1247" name="sthref1247" class="anchor"></a>
+<h2 class="sect2"><span class="secnum">17.15.1</span> Components of the mood Example Application</h2>
+<p>The <code dir="ltr">mood</code> example application is comprised of three components: <code dir="ltr">mood.web.MoodServlet</code>, <code dir="ltr">mood.web.TimeOfDayFilter</code>, and <code dir="ltr">mood.web.SimpleServletListener</code>.</p>
+<p><code dir="ltr">MoodServlet</code>, the presentation layer of the application, displays Duke's mood in a graphic, based on the time of day. The <code dir="ltr">@WebServlet</code> annotation specifies the URL pattern:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet("/report")
+public class MoodServlet extends HttpServlet {
+    ...
+</pre>
+<p><code dir="ltr">TimeOfDayFilter</code> sets an initialization parameter indicating that Duke is awake:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebFilter(filterName = "TimeOfDayFilter",
+urlPatterns = {"/*"},
+initParams = {
+    @WebInitParam(name = "mood", value = "awake")})
+public class TimeOfDayFilter implements Filter {
+    ...
+</pre>
+<p>The filter calls the <code dir="ltr">doFilter</code> method, which contains a <code dir="ltr">switch</code> statement that sets Duke's mood based on the current time.</p>
+<p><code dir="ltr">SimpleServletListener</code> logs changes in the servlet's lifecycle. The log entries appear in the server log.</p>
+</div>
+<!-- class="sect2" -->
+<a id="GKCOJ" name="GKCOJ" class="anchor"></a>
+<div id="JEETT01036" class="sect2">
+<h2 class="sect2"><span class="secnum">17.15.2</span> Running the mood Example</h2>
+<p>You can use either NetBeans IDE or Maven to build, package, deploy, and run the <code dir="ltr">mood</code> example.</p>
+<a id="GKCOB" name="GKCOB" class="anchor"></a>
+<div id="JEETT00177" class="sect3">
+<h3 class="sect3"><span class="secnum">17.15.2.1</span> To Run the mood Example Using NetBeans IDE</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p>From the <span class="gui-object-action">File</span> menu, choose <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/web/servlet
+</pre></li>
+<li>
+<p>Select the <code dir="ltr">mood</code> folder.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Projects</span> tab, right-click the <code dir="ltr">mood</code> project and select <span class="gui-object-action">Build</span>.</p>
+</li>
+<li>
+<p>In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/mood/report
+</pre>
+<p>The URL specifies the context root, followed by the URL pattern.</p>
+<p>A web page appears with the title "Servlet MoodServlet at /mood", a text string describing Duke's mood, and an illustrative graphic.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<a id="GKCPJ" name="GKCPJ" class="anchor"></a>
+<div id="JEETT00178" class="sect3">
+<h3 class="sect3"><span class="secnum">17.15.2.2</span> To Run the mood Example Using Maven</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p>In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/web/servlet/mood/
+</pre></li>
+<li>
+<p>Enter the following command to deploy the application:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p>In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/mood/report
+</pre>
+<p>The URL specifies the context root, followed by the URL pattern.</p>
+<p>A web page appears with the title "Servlet MoodServlet at /mood", a text string describing Duke's mood, and an illustrative graphic.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1">
+<h1 class="sect1"><span class="secnum">17.16</span> The fileupload Example Application<a id="sthref1248" name="sthref1248" class="anchor"></a></h1>
+<p>The <code dir="ltr">fileupload</code> example, located in the <span class="variable">tut-install</span><code dir="ltr">/examples/web/servlet/fileupload/</code> directory, illustrates how to implement and use the file upload feature.</p>
+<p>The Duke's Forest case study provides a more complex example that uploads an image file and stores its content in a database.</p>
+<div class="sect2"><a id="sthref1249" name="sthref1249" class="anchor"></a>
+<h2 class="sect2"><span class="secnum">17.16.1</span> Architecture of the fileupload Example Application</h2>
+<p>The <code dir="ltr">fileupload</code> example application consists of a single servlet and an HTML form that makes a file upload request to the servlet.</p>
+<p>This example includes a very simple HTML form with two fields, File and Destination. The input type, <code dir="ltr">file</code>, enables a user to browse the local file system to select the file. When the file is selected, it is sent to the server as a part of a POST request. During this process, two mandatory restrictions are applied to the form with input type <code dir="ltr">file</code>.</p>
+<ul>
+<li>
+<p>The <code dir="ltr">enctype</code> attribute must be set to a value of <code dir="ltr">multipart/form-data</code>.</p>
+</li>
+<li>
+<p>Its method must be POST.</p>
+</li>
+</ul>
+<p>When the form is specified in this manner, the entire request is sent to the server in encoded form. The servlet then uses its own means to handle the request to process the incoming file data and extract a file from the stream. The destination is the path to the location where the file will be saved on your computer. Pressing the <span class="gui-object-action">Upload</span> button at the bottom of the form posts the data to the servlet, which saves the file in the specified destination.</p>
+<p>The HTML form in <code dir="ltr">index.html</code> is as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;File Upload&lt;/title&gt;
+        &lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;form method="POST" action="upload" enctype="multipart/form-data" &gt;
+            File:
+            &lt;input type="file" name="file" id="file" /&gt; &lt;br/&gt;
+            Destination:
+            &lt;input type="text" value="/tmp" name="destination"/&gt;
+            &lt;/br&gt;
+            &lt;input type="submit" value="Upload" name="upload" id="upload" /&gt;
+        &lt;/form&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+<p>A POST request method is used when the client needs to send data to the server as part of the request, such as when uploading a file or submitting a completed form. In contrast, a GET request method sends a URL and headers only to the server, whereas POST requests also include a message body. This allows arbitrary length data of any type to be sent to the server. A header field in the POST request usually indicates the message body's Internet media type.</p>
+<p>When submitting a form, the browser streams the content in, combining all parts, with each part representing a field of a form. Parts are named after the <code dir="ltr">input</code> elements and are separated from each other with string delimiters named <code dir="ltr">boundary</code>.</p>
+<p>This is what submitted data from the <code dir="ltr">fileupload</code> form looks like, after selecting <code dir="ltr">sample.txt</code> as the file that will be uploaded to the <code dir="ltr">tmp</code> directory on the local file system:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">POST /fileupload/upload HTTP/1.1
+Host: localhost:8080
+Content-Type: multipart/form-data;
+boundary=---------------------------263081694432439
+Content-Length: 441
+-----------------------------263081694432439
+Content-Disposition: form-data; name="file"; filename="sample.txt"
+Content-Type: text/plain
+
+Data from sample file
+-----------------------------263081694432439
+Content-Disposition: form-data; name="destination"
+
+/tmp
+-----------------------------263081694432439
+Content-Disposition: form-data; name="upload"
+
+Upload
+-----------------------------263081694432439--
+</pre>
+<p>The servlet <code dir="ltr">FileUploadServlet.java</code> begins as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(name = "FileUploadServlet", urlPatterns = {"/upload"})
+@MultipartConfig
+public class FileUploadServlet extends HttpServlet {
+    private final static Logger LOGGER =
+            Logger.getLogger(FileUploadServlet.class.getCanonicalName());
+</pre>
+<p>The <code dir="ltr">@WebServlet</code> annotation uses the <code dir="ltr">urlPatterns</code> property to define servlet mappings.</p>
+<p>The <code dir="ltr">@MultipartConfig</code> annotation indicates that the servlet expects requests to be made using the <code dir="ltr">multipart/form-data</code> MIME type.</p>
+<p>The <code dir="ltr">processRequest</code> method retrieves the destination and file part from the request, then calls the <code dir="ltr">getFileName</code> method to retrieve the file name from the file part. The method then creates a <code dir="ltr">FileOutputStream</code> and copies the file to the specified destination. The error-handling section of the method catches and handles some of the most common reasons why a file would not be found. The <code dir="ltr">processRequest</code> and <code dir="ltr">getFileName</code> methods look like this:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">protected void processRequest(HttpServletRequest request,
+        HttpServletResponse response)
+        throws ServletException, IOException {
+    response.setContentType("text/html;charset=UTF-8");
+
+    // Create path components to save the file
+    final String path = request.getParameter("destination");
+    final Part filePart = request.getPart("file");
+    final String fileName = getFileName(filePart);
+
+    OutputStream out = null;
+    InputStream filecontent = null;
+    final PrintWriter writer = response.getWriter();
+
+    try {
+        out = new FileOutputStream(new File(path + File.separator
+                + fileName));
+        filecontent = filePart.getInputStream();
+
+        int read = 0;
+        final byte[] bytes = new byte[1024];
+
+        while ((read = filecontent.read(bytes)) != -1) {
+            out.write(bytes, 0, read);
+        }
+        writer.println("New file " + fileName + " created at " + path);
+        LOGGER.log(Level.INFO, "File{0}being uploaded to {1}",
+                new Object[]{fileName, path});
+    } catch (FileNotFoundException fne) {
+        writer.println("You either did not specify a file to upload or are "
+                + "trying to upload a file to a protected or nonexistent "
+                + "location.");
+        writer.println("&lt;br/&gt; ERROR: " + fne.getMessage());
+
+        LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}",
+                new Object[]{fne.getMessage()});
+    } finally {
+        if (out != null) {
+            out.close();
+        }
+        if (filecontent != null) {
+            filecontent.close();
+        }
+        if (writer != null) {
+            writer.close();
+        }
+    }
+}
+
+private String getFileName(final Part part) {
+    final String partHeader = part.getHeader("content-disposition");
+    LOGGER.log(Level.INFO, "Part Header = {0}", partHeader);
+    for (String content : part.getHeader("content-disposition").split(";")) {
+        if (content.trim().startsWith("filename")) {
+            return content.substring(
+                    content.indexOf('=') + 1).trim().replace("\"", "");
+        }
+    }
+    return null;
+}
+</pre></div>
+<!-- class="sect2" -->
+<div class="sect2"><a id="sthref1250" name="sthref1250" class="anchor"></a>
+<h2 class="sect2"><span class="secnum">17.16.2</span> Running the fileupload Example</h2>
+<p>You can use either NetBeans IDE or Maven to build, package, deploy, and run the <code dir="ltr">fileupload</code> example.</p>
+<div class="sect3"><a id="sthref1251" name="sthref1251" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">17.16.2.1</span> To Build, Package, and Deploy the fileupload Example Using NetBeans IDE</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p>From the <span class="gui-object-action">File</span> menu, choose <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="italic">tut-install</span>/examples/web/servlet
+</pre></li>
+<li>
+<p>Select the <code dir="ltr">fileupload</code> folder.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Projects</span> tab, right-click the <code dir="ltr">fileupload</code> project and select <span class="gui-object-action">Build</span>.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref1252" name="sthref1252" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">17.16.2.2</span> To Build, Package, and Deploy the fileupload Example Using Maven</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p>In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="italic">tut-install</span>/examples/web/servlet/fileupload/
+</pre></li>
+<li>
+<p>Enter the following command to deploy the application:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref1253" name="sthref1253" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">17.16.2.3</span> To Run the fileupload Example</h3>
+<ol>
+<li>
+<p>In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/fileupload/
+</pre></li>
+<li>
+<p>On the <span class="gui-object-title">File Upload</span> page, click <span class="gui-object-action">Choose File</span> to display a file browser window.</p>
+</li>
+<li>
+<p>Select a file to upload and click <span class="gui-object-action">Open</span>.</p>
+<p>The name of the file you selected is displayed in the <span class="gui-object-action">File</span> field. If you do not select a file, an exception will be thrown.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Destination</span> field, type a directory name.</p>
+<p>The directory must have already been created and must also be writable. If you do not enter a directory name or if you enter the name of a nonexistent or protected directory, an exception will be thrown.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Upload</span> to upload the file that you selected to the directory that you specified in the <span class="gui-object-action">Destination</span> field.</p>
+<p>A message reports that the file was created in the directory that you specified.</p>
+</li>
+<li>
+<p>Go to the directory that you specified in the <span class="gui-object-action">Destination</span> field and verify that the uploaded file is present.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.17</span> The dukeetf Example Application</h1>
+<p class="cye-lm-tag">The <code dir="ltr">dukeetf</code> example application, located in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/web/dukeetf/</code> directory, demonstrates how to use asynchronous processing in a servlet to provide data updates to web clients. The example resembles a service that provides periodic updates on the price and trading volume of an electronically traded fund (ETF).</p>
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1254" name="sthref1254" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.17.1</span> Architecture of the dukeetf Example Application</h2>
+<p class="cye-lm-tag">The <code dir="ltr">dukeetf</code> example application consists of a servlet, an enterprise bean, and an HTML page.</p>
+<ul>
+<li>
+<p class="cye-lm-tag">The servlet puts requests in asynchronous mode, stores them in a queue, and writes the responses when new data for price and trading volume becomes available.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The enterprise bean updates the price and volume information once every second.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The HTML page uses JavaScript code to make requests to the servlet for new data, parse the response from the servlet, and update the price and volume information without reloading the page.</p>
+</li>
+</ul>
+<p class="cye-lm-tag">The <code dir="ltr">dukeetf</code> example application uses a programming model known as <span class="bold cye-lm-tag">long polling</span>. In the traditional HTTP request and response model, the user must make an explicit request (such as clicking a link or submitting a form) to get any new information from the server, and the page has to be reloaded. Long polling provides a mechanism for web applications to push updates to clients using HTTP without the user making an explicit request. The server handles connections asynchronously, and the client uses JavaScript to make new connections. In this model, clients make a new request immediately after receiving new data, and the server keeps the connection open until new data becomes available.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1255" name="sthref1255" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">17.17.1.1</span> The Servlet</h3>
+<p class="cye-lm-tag">The <code dir="ltr">DukeETFServlet</code> class uses asynchronous processing:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServlet(urlPatterns={"/dukeetf"}, asyncSupported=true)
+public class DukeETFServlet extends HttpServlet {
+...
+}
+</pre>
+<p class="cye-lm-tag">In the following code, the <code dir="ltr">init</code> method initializes a queue to hold client requests and registers the servlet with the enterprise bean that provides the price and volume updates. The <code dir="ltr">send</code> method gets called once per second by the <code dir="ltr">PriceVolumeBean</code> to send updates and close the connection:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Override
+public void init(ServletConfig config) {
+   /* Queue for requests */
+   requestQueue = new ConcurrentLinkedQueue&lt;&gt;();
+   /* Register with the enterprise bean that provides price/volume updates */
+   pvbean.registerServlet(this);
+}
+
+/* PriceVolumeBean calls this method every second to send updates */
+public void send(double price, int volume) {
+   /* Send update to all connected clients */
+   for (AsyncContext acontext : requestQueue) {
+      try {
+         String msg = String.format("%.2f / %d", price, volume);
+         PrintWriter writer = acontext.getResponse().getWriter();
+         writer.write(msg);
+         logger.log(Level.INFO, "Sent: {0}", msg);
+         /* Close the connection
+          * The client (JavaScript) makes a new one instantly */
+         acontext.complete();
+      } catch (IOException ex) {
+         logger.log(Level.INFO, ex.toString());
+      }
+   }
+}
+</pre>
+<p class="cye-lm-tag">The service method puts client requests in asynchronous mode and adds a listener to each request. The listener is implemented as an anonymous class that removes the request from the queue when the servlet finishes writing a response or when there is an error. Finally, the service method adds the request to the request queue created in the <code dir="ltr">init</code> method. The service method is the following:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Override
+public void doGet(HttpServletRequest request, 
+                  HttpServletResponse response) {
+   response.setContentType("text/html");
+   /* Put request in async mode */
+   final AsyncContext acontext = request.startAsync();
+   /* Remove from the queue when done */
+   acontext.addListener(new AsyncListener() {
+      public void onComplete(AsyncEvent ae) throws IOException {
+         requestQueue.remove(acontext);
+      }
+      public void onTimeout(AsyncEvent ae) throws IOException {
+         requestQueue.remove(acontext);
+      }
+      public void onError(AsyncEvent ae) throws IOException {
+         requestQueue.remove(acontext);
+      }
+      public void onStartAsync(AsyncEvent ae) throws IOException {}
+   });
+   /* Add to the queue */
+   requestQueue.add(acontext);
+}
+</pre></div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1256" name="sthref1256" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">17.17.1.2</span> The Enterprise Bean</h3>
+<p class="cye-lm-tag">The <code dir="ltr">PriceVolumeBean</code> class is an enterprise bean that uses the timer service from the container to update the price and volume information and call the servlet's <code dir="ltr">send</code> method once every second:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Startup
+@Singleton
+public class PriceVolumeBean {
+    /* Use the container's timer service */
+    @Resource TimerService tservice;
+    private DukeETFServlet servlet;
+    ...
+    
+    @PostConstruct
+    public void init() {
+        /* Initialize the EJB and create a timer */
+        random = new Random();
+        servlet = null;
+        tservice.createIntervalTimer(1000, 1000, new TimerConfig());
+    }
+    
+    public void registerServlet(DukeETFServlet servlet) {
+        /* Associate a servlet to send updates to */
+        this.servlet = servlet;
+    }
+    
+    @Timeout
+    public void timeout() {
+        /* Adjust price and volume and send updates */
+        price += 1.0*(random.nextInt(100)-50)/100.0;
+        volume += random.nextInt(5000) - 2500;
+        if (servlet != null)
+            servlet.send(price, volume);
+    }
+}
+</pre>
+<p class="cye-lm-tag">See <a href="ejb-basicexamples004.htm#BNBOY">Using the Timer Service</a> in <a href="ejb-basicexamples.htm#GIJRB">Chapter 34, "Running the Enterprise Bean Examples"</a> for more information on the timer service.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1257" name="sthref1257" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">17.17.1.3</span> The HTML Page</h3>
+<p class="cye-lm-tag">The HTML page consists of a table and some JavaScript code. The table contains two fields referenced from JavaScript code:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;head&gt;...&lt;/head&gt;
+&lt;body onload="makeAjaxRequest();"&gt;
+  ...
+  &lt;table&gt;
+    ...
+    &lt;td id="price"&gt;--.--&lt;/td&gt;
+    ...
+    &lt;td id="volume"&gt;--&lt;/td&gt;
+    ...
+  &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+<p class="cye-lm-tag">The JavaScript code uses the <code dir="ltr">XMLHttpRequest</code> API, which provides functionality for transferring data between a client and a server. The script makes an asynchronous request to the servlet and designates a callback method. When the server provides a response, the callback method updates the fields in the table and makes a new request. The JavaScript code is the following:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">var ajaxRequest;
+function updatePage() {
+   if (ajaxRequest.readyState === 4) {
+      var arraypv = ajaxRequest.responseText.split("/");
+      document.getElementById("price").innerHTML = arraypv[0];
+      document.getElementById("volume").innerHTML = arraypv[1];
+      makeAjaxRequest();
+   }
+}
+function makeAjaxRequest() {
+   ajaxRequest = new XMLHttpRequest();
+   ajaxRequest.onreadystatechange = updatePage;
+   ajaxRequest.open("GET", "http://localhost:8080/dukeetf/dukeetf", 
+                    true);
+   ajaxRequest.send(null);
+}
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">XMLHttpRequest</code> API is supported by most modern browsers, and it is widely used in Ajax web client development (Asynchronous JavaScript and XML).</p>
+<p class="cye-lm-tag">See <a href="websocket011.htm#BABGCEHE">The dukeetf2 Example Application</a> in <a href="websocket.htm#GKJIQ5">Chapter 18, "Java API for WebSocket"</a> for an equivalent version of this example implemented using a WebSocket endpoint.</p>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1258" name="sthref1258" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">17.17.2</span> Running the dukeetf Example Application</h2>
+<p class="cye-lm-tag">This section describes how to run the <code dir="ltr">dukeetf</code> example application using NetBeans IDE and from the command line.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1259" name="sthref1259" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">17.17.2.1</span> To Run the dukeetf Example Application Using NetBeans IDE</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">From the <span class="bold cye-lm-tag">File</span> menu, choose <span class="bold cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the Open Project dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="italic cye-lm-tag">tut-install</span>/examples/web/servlet
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">dukeetf</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="bold cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="bold cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">dukeetf</code> project and select <span class="bold cye-lm-tag">Run</span>.</p>
+<p class="cye-lm-tag">This command builds and packages the application into a WAR file (<code dir="ltr">dukeetf.war</code>) located in the <code dir="ltr">target</code> directory, deploys it to the server, and launches a web browser window with the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/dukeetf/
+</pre>
+<p class="cye-lm-tag">Open the same URL in a different web browser to see how both pages get price and volume updates simultaneously.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1260" name="sthref1260" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">17.17.2.2</span> To Run the dukeetf Example Application Using Maven</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="italic cye-lm-tag">tut-install</span>/examples/web/servlet/dukeetf/
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter the following command to deploy the application:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p class="cye-lm-tag">Open a web browser window and type the following address:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/dukeetf/
+</pre>
+<p class="cye-lm-tag">Open the same URL in a different web browser to see how both pages get price and volume updates simultaneously.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00414" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">17.18</span> Further Information about Java Servlet Technology</h1>
+<p class="cye-lm-tag">For more information on Java Servlet technology, see the Java Servlet 3.1 specification at <code dir="ltr"><a target="_blank" href="http://jcp.org/en/jsr/detail?id=340">http://jcp.org/en/jsr/detail?id=340</a></code>.</p>
+</div>
+</body>
+</html>

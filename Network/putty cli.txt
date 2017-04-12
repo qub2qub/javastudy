@@ -1,0 +1,56 @@
+https://the.earth.li/~sgtatham/putty/0.67/htmldoc/Chapter3.html#using-port-forwarding
+****************************************************
+3.8.3.5 -L, -R and -D: set up port forwardings
+
+As well as setting up port forwardings in the PuTTY configuration (see section 4.25), you can also set up forwardings on the command line. The command-line options work just like the ones in Unix ssh programs.
+
+To forward a local port (say 5110) to a remote destination (say popserver.example.com port 110), you can write something like one of these:
+
+$> putty -L 5110:popserver.example.com:110 -load mysession
+$> plink mysession -L 5110:popserver.example.com:110
+
+To forward a remote port to a local destination, just use the -R option instead of -L:
+$> putty -R 5023:mytelnetserver.myhouse.org:23 -load mysession
+$> plink mysession -R 5023:mytelnetserver.myhouse.org:23
+
+To specify an IP address for the listening end of the tunnel, prepend it to the argument:
+$> plink -L 127.0.0.5:23:localhost:23 myhost
+
+To set up SOCKS-based dynamic port forwarding on a local port, use the -D option. For this one you only have to pass the port number:
+$> putty -D 4096 -load mysession
+
+For general information on port forwarding, see section 3.5.
+
+
+****************************
+
+3.5 Using port forwarding in SSH
+
+The SSH protocol has the ability to forward arbitrary network (TCP) connections over your encrypted SSH connection, to avoid the network traffic being sent in clear. For example, you could use this to connect from your home computer to a POP-3 server on a remote machine without your POP-3 password being visible to network sniffers.
+
+In order to use port forwarding to connect from your local machine to a port on a remote server, you need to:
+
+Choose a port number on your local machine where PuTTY should listen for incoming connections. There are likely to be plenty of unused port numbers above 3000. (You can also use a local loopback address here; see below for more details.)
+Now, before you start your SSH connection, go to the Tunnels panel (see section 4.25). Make sure the ‘Local’ radio button is set. Enter the local port number into the ‘Source port’ box. Enter the destination host name and port number into the ‘Destination’ box, separated by a colon (for example, popserver.example.com:110 to connect to a POP-3 server).
+Now click the ‘Add’ button. The details of your port forwarding should appear in the list box.
+Now start your session and log in. (Port forwarding will not be enabled until after you have logged in; otherwise it would be easy to perform completely anonymous network attacks, and gain access to anyone's virtual private network.) To check that PuTTY has set up the port forwarding correctly, you can look at the PuTTY Event Log (see section 3.1.3.1). It should say something like this:
+
+2001-12-05 17:22:10 Local port 3110 forwarding to
+         popserver.example.com:110
+Now if you connect to the source port number on your local PC, you should find that it answers you exactly as if it were the service running on the destination machine. So in this example, you could then configure an e-mail client to use localhost:3110 as a POP-3 server instead of popserver.example.com:110. (Of course, the forwarding will stop happening when your PuTTY session closes down.)
+
+You can also forward ports in the other direction: arrange for a particular port number on the server machine to be forwarded back to your PC as a connection to a service on your PC or near it. To do this, just select the ‘Remote’ radio button instead of the ‘Local’ one. The ‘Source port’ box will now specify a port number on the server (note that most servers will not allow you to use port numbers under 1024 for this purpose).
+
+An alternative way to forward local connections to remote hosts is to use dynamic SOCKS proxying. In this mode, PuTTY acts as a SOCKS server, which SOCKS-aware programs can connect to and open forwarded connections to the destination of their choice, so this can be an alternative to long lists of static forwardings. To use this mode, you will need to select the ‘Dynamic’ radio button instead of ‘Local’, and then you should not enter anything into the ‘Destination’ box (it will be ignored). PuTTY will then listen for SOCKS connections on the port you have specified. Most web browsers can be configured to connect to this SOCKS proxy service; also, you can forward other PuTTY connections through it by setting up the Proxy control panel (see section 4.15 for details).
+
+The source port for a forwarded connection usually does not accept connections from any machine except the SSH client or server machine itself (for local and remote forwardings respectively). There are controls in the Tunnels panel to change this:
+
+The ‘Local ports accept connections from other hosts’ option allows you to set up local-to-remote port forwardings (including dynamic port forwardings) in such a way that machines other than your client PC can connect to the forwarded port.
+The ‘Remote ports do the same’ option does the same thing for remote-to-local port forwardings (so that machines other than the SSH server machine can connect to the forwarded port.) Note that this feature is only available in the SSH-2 protocol, and not all SSH-2 servers honour it (in OpenSSH, for example, it's usually disabled by default).
+You can also specify an IP address to listen on. Typically a Windows machine can be asked to listen on any single IP address in the 127.*.*.* range, and all of these are loopback addresses available only to the local machine. So if you forward (for example) 127.0.0.5:79 to a remote machine's finger port, then you should be able to run commands such as finger fred@127.0.0.5. This can be useful if the program connecting to the forwarded port doesn't allow you to change the port number it uses. This feature is available for local-to-remote forwarded ports; SSH-1 is unable to support it for remote-to-local ports, while SSH-2 can support it in theory but servers will not necessarily cooperate.
+
+(Note that if you're using Windows XP Service Pack 2, you may need to obtain a fix from Microsoft in order to use addresses like 127.0.0.5 - see question A.7.20.)
+
+For more options relating to port forwarding, see section 4.25.
+
+If the connection you are forwarding over SSH is itself a second SSH connection made by another copy of PuTTY, you might find the ‘logical host name’ configuration option useful to warn PuTTY of which host key it should be expecting. See section 4.13.5 for details of this.

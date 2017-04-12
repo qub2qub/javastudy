@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ssh putty</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://www.akadia.com/services/ssh_putty.html">src</a>
+        
+        <p class="big cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Overview</span></p>
+        <blockquote>
+          <p class="cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Often you do not have direct access to a desired 
+          server, because a firewall blocks the port or you are on another 
+          network than the server. But eventually you may have access to a proxy 
+          server, from which you can access the desired server. For example you 
+          would like to access an Oracle database on <font color="#FF0000">
+          192.168.151.2</font> on port <font color="#FF0000">1521</font> with 
+          you local SQL tools and you don't want to do it from the proxy 
+          server. With SSH port forwarding you can establish a
+          <font color="#FF00FF">logical connection</font> through the proxy an 
+          you will then be able to access the Oracle database through it.</span></p>
+          <p class="cye-lm-tag"><span lang="en-us" class="cye-lm-tag">
+          <img border="0" src="./putty tunels/ssh_logical_port.gif" width="514" height="347"></span></p>
+          <p class="cye-lm-tag"><span lang="en-us" class="cye-lm-tag">You can use the very common SSH client PUTTY to 
+          establish this logical connection</span></p>
+        </blockquote>
+        <p class="big cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Port Forwarding using SSH</span></p>
+        <blockquote>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">In order to use port forwarding to 
+        connect from your local machine to a port on a remote server, you need 
+        to:</span></p>
+          <ul>
+            <li>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Choose a port number on your local 
+        machine (e.g. 5500) where PuTTY should listen for incoming connections.<br>
+&nbsp;</span></p>
+            </li>
+            <li>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Now, before you start your SSH 
+        connection, go to the PuTTY Tunnels panel. Make sure the «Local» radio 
+        button is set. Enter the local port (e.g. 5500) number into the «Source 
+        port» box. Enter the destination host name and port number into the 
+        «Destination» box, separated by a colon (e.g. 192.168.151.2:1521).<br>
+&nbsp;</span></p>
+            </li>
+            <li>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Now click the [Add] button. The 
+        details of your port forwarding should appear in the list box.</span></p>
+            </li>
+          </ul>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Now start your session and log in 
+        to the proxy host. To check that PuTTY has set up the port forwarding 
+        correctly, you can look at the PuTTY Event Log.</span></p>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">Now if you connect to the source 
+        port number on your local PC, you should find that it answers you 
+        exactly as if it were the service running on the destination machine.</span></p>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">You can also forward ports in the 
+        other direction: arrange for a particular port number on the server 
+        machine to be forwarded back to your PC as a connection to a service on 
+        your PC or near it. To do this, just select the «Remote» radio button 
+        instead of the «Local» one. The «Source port» box will now specify a 
+        port number on the server.</span></p>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">
+        <img border="0" src="./putty tunels/ssh_putty_1.gif" width="456" height="435"><br>
+        Enter Source and  </span>Destination<span lang="en-us" class="cye-lm-tag">, then click Add Button</span></p>
+        <p class="normal cye-lm-tag"><span lang="en-us" class="cye-lm-tag">
+        <img border="0" src="./putty tunels/ssh_putty_2.gif" width="456" height="435"><br>
+        After clicking the Add Button</span></p>
+        </blockquote>
+        <p class="big cye-lm-tag">X11<span lang="en-us" class="cye-lm-tag"> Forwarding</span></p>
+        <blockquote class="cye-lm-tag">
+        <p class="normal cye-lm-tag">If you need to start a graphical application from the 
+        database server (on <span lang="en-us" class="cye-lm-tag">192.168.151.2</span>) and the 
+        output should be displayed on your local PC, then you must activate X11 
+        forwarding in PUTTY.</p>
+        <p class="normal cye-lm-tag"><img border="0" src="./putty tunels/ssh_putty_3.gif" width="456" height="435"></p>
+        <p class="normal cye-lm-tag">Now log in to the SSH proxy server as normal. To check 
+        that X forwarding has been successfully negotiated during connection 
+        startup, you can check the PuTTY Event Log.</p>
+        <p class="normal cye-lm-tag">From the proxy server you must now enable X11 
+        forwarding to the DB server, this can be established with the -X option 
+        of ssh.</p>
+        <p class="courier cye-lm-tag">proxy&gt; <b>ssh -X oracle@<span lang="en-us" class="cye-lm-tag">192.168.151.2</span></b></p>
+        <p class="normal cye-lm-tag">Now you can start for example Oracle's
+        <font face="Courier New">runInstaller</font> and the output is displayed 
+        on your local PC - do not forget to start the cygwin X11 server on the 
+        PC.</p>
+        </blockquote>
+<h2>Example Tunneling Rules</h2>
+<table width="100%" class="table cye-lm-tag">
+                                <tbody class="cye-lm-tag"><tr>
+                                  <th>Service</th>
+                                  <th>Listening Port</th>
+                                  <th>Destination Host</th>
+                                  <th>Destination Port </th>
+                                  <th width="120">Allow Localhost Connections Only</th>
+                                  <th>How to run client</th>
+                                </tr>
+                                <tr>
+                                  <td valign="top">VNC<br>
+                                  </td>
+                                  <td valign="top" nowrap="">5900 + display no</td>
+                                  <td valign="top">host running your VNC server<br>
+                                  </td>
+                                  <td valign="top" nowrap="">5900 + display no</td>
+                                  <td width="120" align="center" valign="top">yes<br>
+                                  </td>
+                                  <td valign="top">VNC client connects to localhost:&lt;display no&gt;<br>
+                                  </td>
+                                </tr>
+                                <tr class="cye-lm-tag">
+                                  <td valign="top">IMAP<br>
+                                  </td>
+                                  <td valign="top" class="cye-lm-tag">143<br>
+                                  </td>
+                                  <td valign="top" class="cye-lm-tag">study.cs.hku.hk for student<br>
+                                    staff.cs.hku.hk for teaching staff<br>
+                                  </td>
+                                  <td valign="top">143<br>
+                                  </td>
+                                  <td width="120" align="center" valign="top">yes<br>
+                                  </td>
+                                  <td valign="top">enter localhost as IMAP server<br>
+                                    for your mail client software<br>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td valign="top">NNTP<br>
+                                  </td>
+                                  <td valign="top">119<br>
+                                  </td>
+                                  <td valign="top">news.cs.hku.hk<br>
+                                  </td>
+                                  <td valign="top">119<br>
+                                  </td>
+                                  <td width="120" align="center" valign="top">yes<br>
+                                  </td>
+                                  <td valign="top">enter localhost as NNTP server<br>
+                                    for your news client software</td>
+                                </tr>
+                                <tr>
+                                  <td valign="top">CVS<br>
+                                  </td>
+                                  <td valign="top">2401<br>
+                                  </td>
+                                  <td valign="top">host running the CVS server<br>
+                                  </td>
+                                  <td valign="top">2401<br>
+                                  </td>
+                                  <td width="120" align="center" valign="top">yes<br>
+                                  </td>
+                                  <td valign="top">use localhost as server name<br>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td valign="top">RDC<br>
+                                  </td>
+                                  <td valign="top">9001<br>
+                                  </td>
+                                  <td valign="top">host running RDC service<br>
+                                  </td>
+                                  <td valign="top">3389 </td>
+                                  <td align="center" valign="top">yes<br>
+                                  </td>
+                                  <td valign="top">Run RDC connecting host 127.0.0.1:9001 (Windows XP with SP2)</td>
+                                </tr>
+                                <tr>
+                                  <td valign="top">RDC<br>
+                                  </td>
+                                  <td valign="top">9001<br>
+                                  </td>
+                                  <td valign="top">host running RDC service<br>
+                                  </td>
+                                  <td valign="top">3389 </td>
+                                  <td width="120" align="center" valign="top">no<br>
+                                  </td>
+                                  <td valign="top">Run RDC connecting host 127.0.0.2:9001 <span class="warn cye-lm-tag"><strong>(Windows 2000 or Windows XP without SP2)</strong></span></td>
+                                </tr>
+                            </tbody></table>
+You may also use the command line option of PuTTY, e.g.:
+
+<pre>
+putty -L 9001:ipaddress:3389 tmchan@gatekeeper.cs.hku.hk
+
+mstsc /v:localhost:9001
+
+putty -L 5903:ipaddress:5903 tmchan@gatekeeper.cs.hku.hk
+
+"C:\Program Files\RealVNC\VNC4\vncviewer" localhost:3
+</pre>
+</body>
+</html>

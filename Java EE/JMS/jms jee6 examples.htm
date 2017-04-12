@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jms examples</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://docs.oracle.com/javaee/6/tutorial/doc/bncgv.html">src</a>
+<div class="maincontent">      	 
+             <a name="bncgv"></a><h3>Chapter&nbsp;48<br>Java Message Service Examples</h3><a name="indexterm-2498"></a><p>This chapter provides examples that show how to use the JMS API
+in various kinds of Java EE applications. It covers the following topics:</p>
+
+
+<ul><li><p><a href="bncfa.html">Writing Simple JMS Applications</a></p>
+
+</li>
+<li><p><a href="giwfh.html">Writing Robust JMS Applications</a></p>
+
+</li>
+<li><p><a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a></p>
+
+</li>
+<li><p><a href="bnchf.html">An Application That Uses the JMS API with an Entity</a></p>
+
+</li>
+<li><p><a href="bnchp.html">An Application Example That Consumes Messages from a Remote Server</a></p>
+
+</li>
+<li><p><a href="bnchx.html">An Application Example That Deploys a Message-Driven Bean on Two Servers</a></p>
+
+</li></ul>
+<p>The examples are in the <tt></tt><i>tut-install</i><tt>/examples/jms/</tt> directory.</p>
+
+<p>The steps to build and run each example are as follows:</p>
+
+
+<ol><li><p>Use NetBeans IDE or Ant to compile and package the example.</p>
+
+</li>
+<li><p>Use NetBeans IDE or Ant to deploy the example and create resources for it.</p>
+
+</li>
+<li><p>Use NetBeans IDE, the <tt>appclient</tt> command, or Ant to run the client.</p>
+
+</li></ol>
+<p>Each example has a <tt>build.xml</tt> file that refers to files in the <tt></tt><i>tut-install</i><tt>/examples/bp-project/</tt>
+directory.</p>
+
+<p>Each example has a <tt>setup/glassfish-resources.xml</tt> file that is used to create resources for
+the example.</p>
+
+<p>See <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a> for a simpler example of a Java EE application that
+uses the JMS API.</p>
+
+
+         </div>
+
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+
+<a name="bncfa"></a><h2 class="cye-lm-tag">Writing Simple JMS Applications</h2>
+<a name="indexterm-2499"></a><a name="indexterm-2500"></a><p class="cye-lm-tag">This section shows how to create, package, and run simple JMS clients that
+are packaged as application clients and deployed to a Java EE server. The
+clients demonstrate the basic tasks a JMS application must perform:</p>
+
+
+<ul><li><p class="cye-lm-tag">Creating a connection and a session</p>
+
+</li>
+<li><p class="cye-lm-tag">Creating message producers and consumers</p>
+
+</li>
+<li><p class="cye-lm-tag">Sending and receiving messages</p>
+
+</li></ul>
+<p class="cye-lm-tag">In a Java EE application, some of these tasks are performed, in
+whole or in part, by the container. If you learn about these tasks,
+you will have a good basis for understanding how a JMS application works
+on the Java EE platform.</p>
+
+<p class="cye-lm-tag">Each example uses two clients: one that sends messages and one that receives
+them. You can run the clients in NetBeans IDE or in two
+terminal windows.</p>
+
+<p class="cye-lm-tag">When you write a JMS client to run in an enterprise bean
+application, you use many of the same methods in much the same sequence
+as for an application client. However, there are some significant differences. <a href="bncgl.html">Using the JMS API in Java EE Applications</a> describes
+these differences, and this chapter provides examples that illustrate them.</p>
+
+<p class="cye-lm-tag">The examples for this section are in the <tt></tt><i>tut-install</i><tt>/examples/jms/simple/</tt> directory, under the
+following four subdirectories:</p>
+
+<pre>producer
+synchconsumer
+asynchconsumer
+messagebrowser</pre>
+
+<a name="bncfb"></a><h3>A Simple Example of Synchronous Message Receives</h3>
+<a name="indexterm-2501"></a><a name="indexterm-2502"></a><a name="indexterm-2503"></a><p class="cye-lm-tag">This section describes the sending and receiving clients in an example that uses
+the <tt>receive</tt> method to consume messages synchronously. This section then explains how to
+compile, package, and run the clients using the GlassFish Server.</p>
+
+<p class="cye-lm-tag">The following subsections describe the steps in creating and running the example.</p>
+
+
+
+<a name="bncfc"></a><h4>Writing the Clients for the Synchronous Receive Example</h4>
+<p class="cye-lm-tag">The sending client, <tt>producer/src/java/Producer.java</tt>, performs the following steps:</p>
+
+
+<ol><li><p class="cye-lm-tag">Injects resources for a connection factory, queue, and topic:</p>
+
+<pre>@Resource(lookup = "jms/ConnectionFactory")
+private static ConnectionFactory connectionFactory;
+@Resource(lookup = "jms/Queue")private static Queue queue;
+@Resource(lookup = "jms/Topic")private static Topic topic;</pre></li>
+<li><p class="cye-lm-tag">Retrieves and verifies command-line arguments that specify the destination type and the number of arguments:</p>
+
+<pre>final int NUM_MSGS;
+String destType = args[0];
+System.out.println("Destination type is " + destType);
+if ( ! ( destType.equals("queue") || destType.equals("topic") ) ) { 
+    System.err.println("Argument must be \”queue\” or " + "\”topic\”");
+    System.exit(1);
+}
+if (args.length == 2){ 
+    NUM_MSGS = (new Integer(args[1])).intValue();
+} 
+else { 
+    NUM_MSGS = 1;
+}</pre></li>
+<li><p class="cye-lm-tag">Assigns either the queue or the topic to a destination object, based on the specified destination type:</p>
+
+<pre>Destination dest = null;
+try { 
+    if (destType.equals("queue")) { 
+        dest = (Destination) queue; 
+    } else { 
+        dest = (Destination) topic; 
+    }
+} 
+catch (Exception e) {
+    System.err.println("Error setting destination: " + e.toString()); 
+    e.printStackTrace(); 
+    System.exit(1);
+}</pre></li>
+<li><p class="cye-lm-tag">Creates a <tt>Connection</tt> and a <tt>Session</tt>:</p>
+
+<pre>Connection connection = connectionFactory.createConnection(); 
+Session session = connection.createSession(
+            false, 
+            Session.AUTO_ACKNOWLEDGE);</pre></li>
+<li><p class="cye-lm-tag">Creates a <tt>MessageProducer</tt> and a <tt>TextMessage</tt>:</p>
+
+<pre>MessageProducer producer = session.createProducer(dest);
+TextMessage message = session.createTextMessage();</pre></li>
+<li><p class="cye-lm-tag">Sends one or more messages to the destination:</p>
+
+<pre>for (int i = 0; i &lt; NUM_MSGS; i++) { 
+    message.setText("This is message " + (i + 1) + " from producer"); 
+    System.out.println("Sending message: " + message.getText()); 
+    producer.send(message);
+}</pre></li>
+<li><p class="cye-lm-tag">Sends an empty control message to indicate the end of the message stream:</p>
+
+<pre>producer.send(session.createMessage());</pre><p class="cye-lm-tag">Sending an empty message of no specified type is a convenient way to indicate to the consumer that the final message has arrived.</p>
+
+</li>
+<li><p class="cye-lm-tag">Closes the connection in a <tt>finally</tt> block, automatically closing the session and <tt>MessageProducer</tt>:</p>
+
+<pre>} finally { 
+    if (connection != null) { 
+        try { connection.close(); } 
+        catch (JMSException e) { } 
+    }
+}</pre></li></ol>
+<p class="cye-lm-tag">The receiving client, <tt>synchconsumer/src/java/SynchConsumer.java</tt>, performs the following steps:</p>
+
+
+<ol><li><p class="cye-lm-tag">Injects resources for a connection factory, queue, and topic.</p>
+
+</li>
+<li><p class="cye-lm-tag">Assigns either the queue or the topic to a destination object, based on the specified destination type.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>Connection</tt> and a <tt>Session</tt>.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>MessageConsumer</tt>:</p>
+
+<pre>consumer = session.createConsumer(dest);</pre></li>
+<li><p class="cye-lm-tag">Starts the connection, causing message delivery to begin:</p>
+
+<pre>connection.start();</pre></li>
+<li><p class="cye-lm-tag">Receives the messages sent to the destination until the end-of-message-stream control message is received:</p>
+
+<pre>while (true) {
+    Message m = consumer.receive(1); 
+    if (m != null) { 
+        if (m instanceof TextMessage) { 
+            message = (TextMessage) m; 
+            System.out.println("Reading message: " + message.getText()); 
+        } else { 
+            break; 
+        } 
+    }
+}</pre><p class="cye-lm-tag">Because the control message is not a <tt>TextMessage</tt>, the receiving client terminates the <tt>while</tt> loop and stops receiving messages after the control message arrives.</p>
+
+</li>
+<li><p class="cye-lm-tag">Closes the connection in a <tt>finally</tt> block, automatically closing the session and <tt>MessageConsumer</tt>.</p>
+
+</li></ol>
+<p class="cye-lm-tag">The <tt>receive</tt> method can be used in several ways to perform a synchronous
+receive. If you specify no arguments or an argument of <tt>0</tt>, the method
+blocks indefinitely until a message arrives:</p>
+
+<pre>Message m = consumer.receive();
+Message m = consumer.receive(0);</pre><p class="cye-lm-tag">For a simple client, this may not matter. But if you do
+not want your application to consume system resources unnecessarily, use a timed synchronous receive.
+Do one of the following:</p>
+
+
+<ul><li><p class="cye-lm-tag">Call the <tt>receive</tt> method with a timeout argument greater than <tt>0</tt>:</p>
+
+<pre>Message m = consumer.receive(1); // 1 millisecond</pre></li>
+<li><p class="cye-lm-tag">Call the <tt>receiveNoWait</tt> method, which receives a message only if one is available:</p>
+
+<pre>Message m = consumer.receiveNoWait();</pre></li></ul>
+<p class="cye-lm-tag">The <tt>SynchConsumer</tt> client uses an indefinite <tt>while</tt> loop to receive messages, calling
+<tt>receive</tt> with a timeout argument. Calling <tt>receiveNoWait</tt> would have the same effect.</p>
+
+
+
+<a name="bncfd"></a><h4>Starting the JMS Provider</h4>
+<p class="cye-lm-tag">When you use the GlassFish Server, your JMS provider is the GlassFish
+Server. Start the server as described in <a href="bnadi.html">Starting and Stopping the GlassFish Server</a>.</p>
+
+
+
+<a name="gktjs"></a><h4>JMS Administered Objects for the Synchronous Receive Example</h4>
+<a name="indexterm-2504"></a><a name="indexterm-2505"></a><p class="cye-lm-tag">This example uses the following JMS administered objects:</p>
+
+
+<ul><li><p class="cye-lm-tag">A connection factory</p>
+
+</li>
+<li><p class="cye-lm-tag">Two destination resources: a topic and a queue</p>
+
+</li></ul>
+<p class="cye-lm-tag">NetBeans IDE and the Ant tasks for the JMS examples create needed JMS
+resources when you deploy the applications, using a file named <tt>setup/glassfish-resources.xml</tt>. This
+file is most easily created using NetBeans IDE, although you can create it
+by hand.</p>
+
+<p class="cye-lm-tag">You can also use the <tt>asadmin create-jms-resource</tt> command to create resources, the <tt>asadmin list-jms-resources</tt> command to
+display their names, and the <tt>asadmin delete-jms-resource</tt> command to remove them.</p>
+
+
+
+<a name="gkthg"></a><h4>To Create JMS Resources Using NetBeans IDE</h4>
+<a name="indexterm-2506"></a><a name="indexterm-2507"></a><a name="indexterm-2508"></a><a name="indexterm-2509"></a><p class="cye-lm-tag">Follow these steps to create a JMS resource in GlassFish Server using
+NetBeans IDE. Repeat these steps for each resource you need.</p>
+
+<p class="cye-lm-tag">The example applications in this chapter already have the resources, so you will
+need to follow these steps only when you create your own applications.</p>
+
+<ol>
+<li><b>Right-click the project for which you want to create resources and choose New,
+then choose Other.</b><p class="cye-lm-tag">The New File wizard opens.</p></li>
+<li><b>Under Categories, select GlassFish.</b></li>
+<li><b>Under File Types, select JMS Resource.</b><p class="cye-lm-tag">The General Attributes - JMS Resource page opens.</p></li>
+<li><b>In the JNDI Name field, type the name of the resource.</b><p class="cye-lm-tag">By convention, JMS resource names begin with <tt>jms/</tt>.</p></li>
+<li><b>Select the radio button for the resource type.</b><p class="cye-lm-tag">Normally, this is either <tt>javax.jms.Queue</tt>, <tt>javax.jms.Topic</tt>, or <tt>javax.jms.ConnectionFactory</tt>.</p></li>
+<li><b>Click Next.</b><p class="cye-lm-tag">The JMS Properties page opens.</p></li>
+<li><b>For a queue or topic, type a name for a physical queue
+in the Value field for the Name property.</b><p class="cye-lm-tag">You can type any value for this required field.</p><p class="cye-lm-tag">Connection factories have no required properties. In a few situations, discussed in later
+sections, you may need to specify a property.</p></li>
+<li><b>Click Finish.</b><p class="cye-lm-tag">A file named <tt>glassfish-resources.xml</tt> is created in your project, in a directory
+named <tt>setup</tt>. In the project pane, you can find it under the Server
+Resources node. If this file exists, resources are created automatically by NetBeans IDE
+when you deploy the project.</p></li></ol>
+
+<a name="gldbb"></a><h4>To Delete JMS Resources Using NetBeans IDE</h4>
+<ol>
+<li><b>In the Services pane, expand the Servers node, then expand the GlassFish
+Server 3+ node.</b></li>
+<li><b>Expand the Resources node, then expand the Connector Resources node.</b></li>
+<li><b>Expand the Admin Object Resources node.</b></li>
+<li><b>Right-click any destination you want to remove and select Unregister.</b></li>
+<li><b>Expand the Connector Connection Pools node.</b></li>
+<li><b>Right-click any connection factory you want to remove and select Unregister.</b><p class="cye-lm-tag">Every connection factory has both a connector connection pool and an associated connector
+resource. When you remove the connector connection pool, the resource is removed automatically.
+You can verify the removal by expanding the Connector Resources node.</p></li></ol>
+
+<a name="bncfg"></a><h4>Running the Clients for the Synchronous Receive Example</h4>
+<p class="cye-lm-tag">To run these examples using the GlassFish Server, package each one in
+an application client JAR file. The application client JAR file requires a manifest file,
+located in the <tt>src/conf</tt> directory for each example, along with the <tt>.class</tt> file.</p>
+
+<p class="cye-lm-tag">The <tt>build.xml</tt> file for each example contains Ant targets that compile, package, and
+deploy the example. The targets place the <tt>.class</tt> file for the example
+in the <tt>build/jar</tt> directory. Then the targets use the <tt>jar</tt> command to package
+the class file and the manifest file in an application client JAR file.</p>
+
+<p class="cye-lm-tag">Because the examples use the common interfaces, you can run them using either
+a queue or a topic.</p>
+
+
+
+<a name="gjsde"></a><h4>To Build and Package the Clients for the Synchronous Receive Example Using NetBeans IDE</h4>
+<a name="indexterm-2510"></a><ol>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/</tt></pre></li>
+<li><b>Select the <tt>producer</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li>
+<li><b>From the File menu, choose Open Project again.</b></li>
+<li><b>Select the <tt>synchconsumer</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li></ol>
+
+<a name="gjsan"></a><h4>To Deploy and Run the Clients for the Synchronous Receive Example Using NetBeans IDE</h4>
+<a name="indexterm-2511"></a><ol>
+<li><b>Deploy and run the <tt>Producer</tt> example:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue 3</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the program looks like this (along with some additional output):</p><pre>Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre><p class="cye-lm-tag">The messages are now in the queue, waiting to be received.</p>
+<hr><p class="cye-lm-tag"><b>Note - </b>When you run an application client, the command often takes a long time
+to complete.</p>
+
+
+<hr>
+</li></ol></li>
+<li><b>Now deploy and run the <tt>SynchConsumer</tt> example:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>synchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the program looks like this (along with some additional output):</p><pre>Destination type is queue
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li></ol></li>
+<li><b>Now try running the programs in the opposite order. Right-click the <tt>synchconsumer</tt> project
+and select Run.</b><p class="cye-lm-tag">The Output pane displays the destination type and then appears to hang, waiting for
+messages.</p></li>
+<li><b>Right-click the <tt>producer</tt> project and select Run.</b><p class="cye-lm-tag">When the messages have been sent, the <tt>SynchConsumer</tt> client receives them and exits.
+The Output pane shows the output of both programs, in two different tabs.</p></li>
+<li><b>Now run the <tt>Producer</tt> example using a topic instead of a queue.</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>topic 3</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output looks like this (along with some additional output):</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li></ol></li>
+<li><b>Now run the <tt>SynchConsumer</tt> example using the topic.</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>synchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>topic</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The result, however, is different. Because you are using a topic, messages that
+were sent before you started the consumer cannot be received. (See <a href="bncdx.html#bnced">Publish/Subscribe Messaging Domain</a> for
+details.) Instead of receiving the messages, the program appears to hang.</p></li></ol></li>
+<li><b>Run the <tt>Producer</tt> example again. Right-click the <tt>producer</tt> project and select Run.</b><p class="cye-lm-tag">Now the <tt>SynchConsumer</tt> example receives the messages:</p><pre>Destination type is topic
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li></ol>
+
+<a name="gjsco"></a><h4>To Build and Package the Clients for the Synchronous Receive Example Using Ant</h4>
+<a name="indexterm-2512"></a><ol>
+<li><b>In a terminal window, go to the <tt>producer</tt> directory:</b><pre><tt><b>cd producer</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>In a terminal window, go to the <tt>synchconsumer</tt> directory:</b><pre><tt><b>cd ../synchconsumer</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">The targets place the application client JAR file in the <tt>dist</tt> directory for
+each example.</p></li></ol>
+
+<a name="bncff"></a><h4>To Deploy and Run the Clients for the Synchronous Receive Example Using Ant and the <tt>appclient</tt> Command</h4>
+<a name="indexterm-2513"></a><p class="cye-lm-tag">You can run the clients using the <tt>appclient</tt> command. The <tt>build.xml</tt> file for
+each project includes a target that creates resources, deploys the client, and then
+retrieves the client stubs that the <tt>appclient</tt> command uses. Each of the clients takes
+one or more command-line arguments: a destination type and, for <tt>Producer</tt>, a
+number of messages.</p>
+
+<p class="cye-lm-tag">To build, deploy, and run the <tt>Producer</tt> and <tt>SynchConsumer</tt> examples using Ant
+and the <tt>appclient</tt> command, follow these steps.</p>
+
+<p class="cye-lm-tag">To run the clients, you need two terminal windows.</p>
+
+<ol>
+<li><b>In a terminal window, go to the <tt>producer</tt> directory:</b><pre><tt><b>cd ../producer</b></tt></pre></li>
+<li><b>Create any needed resources, deploy the client JAR file to the GlassFish
+Server, then retrieve the client stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Run the <tt>Producer</tt> program, sending three messages to the queue:</b><pre><tt><b>appclient -client client-jar/producerClient.jar queue 3</b></tt></pre><p class="cye-lm-tag">The output of the program looks like this (along with some additional output):</p><pre>Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre><p class="cye-lm-tag">The messages are now in the queue, waiting to be received.</p>
+<hr><p class="cye-lm-tag"><b>Note - </b>When you run an application client, the command often takes a long time
+to complete.</p>
+
+
+<hr>
+</li>
+<li><b>In the same window, go to the <tt>synchconsumer</tt> directory:</b><pre><tt><b>cd ../synchconsumer</b></tt></pre></li>
+<li><b>Deploy the client JAR file to the GlassFish Server, then retrieve the client
+stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Run the <tt>SynchConsumer</tt> client, specifying the queue:</b><pre><tt><b>appclient -client client-jar/synchconsumerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is queue
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li>
+<li><b>Now try running the clients in the opposite order. Run the <tt>SynchConsumer</tt>
+client:</b><pre><tt><b>appclient -client client-jar/synchconsumerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The client displays the destination type and then appears to hang, waiting for
+messages.</p></li>
+<li><b>In a different terminal window, run the <tt>Producer</tt> client.</b><pre><tt><b>cd </b></tt><b><i>tut-install</i><tt>/examples/jms/simple/producer</tt></b>
+<tt><b>appclient -client client-jar/producerClient.jar queue 3</b></tt></pre><p class="cye-lm-tag">When the messages have been sent, the <tt>SynchConsumer</tt> client receives them and exits.</p></li>
+<li><b>Now run the <tt>Producer</tt> client using a topic instead of a queue:</b><pre><tt><b>appclient -client client-jar/producerClient.jar topic 3</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li>
+<li><b>Now run the <tt>SynchConsumer</tt> client using the topic:</b><pre><tt><b>appclient -client client-jar/synchconsumerClient.jar topic</b></tt></pre><p class="cye-lm-tag">The result, however, is different. Because you are using a topic, messages that
+were sent before you started the consumer cannot be received. (See <a href="bncdx.html#bnced">Publish/Subscribe Messaging Domain</a>
+for details.) Instead of receiving the messages, the client appears to hang.</p></li>
+<li><b>Run the <tt>Producer</tt> client again.</b><p class="cye-lm-tag">Now the <tt>SynchConsumer</tt> client receives the messages (along with some additional output):</p><pre>Destination type is topic
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li></ol>
+
+<a name="bncfh"></a><h3>A Simple Example of Asynchronous Message Consumption</h3>
+<a name="indexterm-2514"></a><a name="indexterm-2515"></a><a name="indexterm-2516"></a><p class="cye-lm-tag">This section describes the receiving clients in an example that uses a message
+listener to consume messages asynchronously. This section then explains how to compile and
+run the clients using the GlassFish Server.</p>
+
+
+
+<a name="bncfi"></a><h4>Writing the Clients for the Asynchronous Receive Example</h4>
+<p class="cye-lm-tag">The sending client is <tt>producer/src/java/Producer.java</tt>, the same client used in the example in
+<a href="#bncfb">A Simple Example of Synchronous Message Receives</a>.</p>
+
+<p class="cye-lm-tag">An asynchronous consumer normally runs indefinitely. This one runs until the user types
+the character <tt>q</tt> or <tt>Q</tt> to stop the client.</p>
+
+<p class="cye-lm-tag">The receiving client, <tt>asynchconsumer/src/java/AsynchConsumer.java</tt>, performs the following steps:</p>
+
+
+<ol><li><p class="cye-lm-tag">Injects resources for a connection factory, queue, and topic.</p>
+
+</li>
+<li><p class="cye-lm-tag">Assigns either the queue or the topic to a destination object, based on the specified destination type.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>Connection</tt> and a <tt>Session</tt>.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>MessageConsumer</tt>.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates an instance of the <tt>TextListener</tt> class and registers it as the message listener for the <tt>MessageConsumer</tt>:</p>
+
+<pre>listener = new TextListener();consumer.setMessageListener(listener);</pre></li>
+<li><p class="cye-lm-tag">Starts the connection, causing message delivery to begin.</p>
+
+</li>
+<li><p class="cye-lm-tag">Listens for the messages published to the destination, stopping when the user types the character <tt>q</tt> or <tt>Q</tt>:</p>
+
+<pre>System.out.println("To end program, type Q or q, " + "then &lt;return&gt;");
+inputStreamReader = new InputStreamReader(System.in);
+while (!((answer == ’q’) || (answer == ’Q’))) { 
+    try { 
+        answer = (char) inputStreamReader.read(); 
+    } catch (IOException e) { 
+        System.out.println("I/O exception: " + e.toString()); 
+    }
+}</pre></li>
+<li><p class="cye-lm-tag">Closes the connection, which automatically closes the session and <tt>MessageConsumer</tt>.</p>
+
+</li></ol>
+<p class="cye-lm-tag"><a name="indexterm-2517"></a>The message listener, <tt>asynchconsumer/src/java/TextListener.java</tt>, follows these steps:</p>
+
+
+<ol><li><p class="cye-lm-tag">When a message arrives, the <tt>onMessage</tt> method is called automatically.</p>
+
+</li>
+<li><p class="cye-lm-tag">The <tt>onMessage</tt> method converts the incoming message to a <tt>TextMessage</tt> and displays its content. If the message is not a text message, it reports this fact:</p>
+
+<pre>public void onMessage(Message message) { 
+    TextMessage msg = null; 
+    try { 
+        if (message instanceof TextMessage) { 
+            msg = (TextMessage) message; 
+             System.out.println("Reading message: " + msg.getText()); 
+        } else { 
+             System.out.println("Message is not a " + "TextMessage"); 
+        } 
+    } catch (JMSException e) { 
+        System.out.println("JMSException in onMessage(): " + e.toString()); 
+    } catch (Throwable t) { 
+        System.out.println("Exception in onMessage():" + t.getMessage()); 
+    }
+}</pre></li></ol>
+<p class="cye-lm-tag">For this example, you will use the connection factory and destinations you created
+for <a href="#bncfb">A Simple Example of Synchronous Message Receives</a>.</p>
+
+
+
+<a name="gjsch"></a><h4>To Build and Package the <tt>AsynchConsumer</tt> Client  Using NetBeans IDE</h4>
+<a name="indexterm-2518"></a><ol>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/</tt></pre></li>
+<li><b>Select the <tt>asynchconsumer</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li></ol>
+
+<a name="gjscf"></a><h4>To Deploy and Run the Clients for the Asynchronous Receive Example Using NetBeans IDE</h4>
+<a name="indexterm-2519"></a><ol>
+<li><b>Run the <tt>AsynchConsumer</tt> example:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>asynchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>topic</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The client displays the following lines and appears to hang:</p><pre>Destination type is topic
+To end program, type Q or q, then &lt;return&gt;</pre></li></ol></li>
+<li><b>Now run the <tt>Producer</tt> example:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>topic 3</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre><p class="cye-lm-tag">In the other tab, the <tt>AsynchConsumer</tt> client displays the following:</p><pre>Destination type is topic
+To end program, type Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage</pre><p class="cye-lm-tag">The last line appears because the client has received the non-text control message
+sent by the <tt>Producer</tt> client.</p></li></ol></li>
+<li><b>Type <tt>Q</tt> or <tt>q</tt> in the Output window and press Return to stop
+the client.</b></li>
+<li><b>Now run the <tt>Producer</tt> client using a queue.</b><p class="cye-lm-tag">In this case, as with the synchronous example, you can run the
+<tt>Producer</tt> client first, because there is no timing dependency between the sender and
+the receiver.</p><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue 3</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li></ol></li>
+<li><b>Run the <tt>AsynchConsumer</tt> client.</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>asynchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is queue
+To end program, type Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage</pre></li></ol></li>
+<li><b>Type <tt>Q</tt> or <tt>q</tt> in the Output window and press Return to stop
+the client.</b></li></ol>
+
+<a name="bncfj"></a><h4>To Build and Package the <tt>AsynchConsumer</tt> Client Using Ant</h4>
+<a name="indexterm-2520"></a><ol>
+<li><b>In a terminal window, go to the <tt>asynchconsumer</tt> directory:</b><pre><tt><b>cd ../asynchconsumer</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">The targets package both the main class and the message listener class in
+the JAR file and place the file in the <tt>dist</tt> directory for the
+example.</p></li></ol>
+
+<a name="bncfk"></a><h4>To Deploy and Run the Clients for the Asynchronous Receive Example Using Ant and the <tt>appclient</tt> Command</h4>
+<a name="indexterm-2521"></a><ol>
+<li><b>Deploy the client JAR file to the GlassFish Server, then retrieve the client
+stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Run the <tt>AsynchConsumer</tt> client, specifying the <tt>topic</tt> destination type.</b><pre><tt><b>appclient -client client-jar/asynchconsumerClient.jar topic</b></tt></pre><p class="cye-lm-tag">The client displays the following lines (along with some additional output) and appears
+to hang:</p><pre>Destination type is topic
+To end program, type Q or q, then &lt;return&gt;</pre></li>
+<li><b>In the terminal window where you ran the <tt>Producer</tt> client previously, run the
+client again, sending three messages.</b><pre><tt><b>appclient -client client-jar/producerClient.jar topic 3</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre><p class="cye-lm-tag">In the other window, the <tt>AsynchConsumer</tt> client displays the following (along with some
+additional output):</p><pre>Destination type is topic
+To end program, type Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage</pre><p class="cye-lm-tag">The last line appears because the client has received the non-text control message
+sent by the <tt>Producer</tt> client.</p></li>
+<li><b>Type <tt>Q</tt> or <tt>q</tt> and press Return to stop the client.</b></li>
+<li><b>Now run the clients using a queue.</b><p class="cye-lm-tag">In this case, as with the synchronous example, you can run the <tt>Producer</tt>
+client first, because there is no timing dependency between the sender and receiver:</p><pre><tt><b>appclient -client client-jar/producerClient.jar queue 3</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li>
+<li><b>Run the <tt>AsynchConsumer</tt> client:</b><pre><tt><b>appclient -client client-jar/asynchconsumerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is queue
+To end program, type Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage</pre></li>
+<li><b>Type <tt>Q</tt> or <tt>q</tt> to stop the client.</b></li></ol>
+
+<a name="bncfl"></a><h3>A Simple Example of Browsing Messages in a Queue</h3>
+<a name="indexterm-2522"></a><a name="indexterm-2523"></a><a name="indexterm-2524"></a><p class="cye-lm-tag">This section describes an example that creates a <tt>QueueBrowser</tt> object to examine
+messages on a queue, as described in <a href="bnceh.html#bncey">JMS Queue Browsers</a>. This section then explains
+how to compile, package, and run the example using the GlassFish Server.</p>
+
+
+
+<a name="bncfm"></a><h4>Writing the Client for the <tt>QueueBrowser</tt> Example</h4>
+<p class="cye-lm-tag"><a name="indexterm-2525"></a>To create a <tt>QueueBrowser</tt> for a queue, you call the <tt>Session.createBrowser</tt> method with the
+queue as the argument. You obtain the messages in the queue as
+an <tt>Enumeration</tt> object. You can then iterate through the <tt>Enumeration</tt> object and
+display the contents of each message.</p>
+
+<p class="cye-lm-tag">The <tt>messagebrowser/src/java/MessageBrowser.java</tt> client performs the following steps:</p>
+
+
+<ol><li><p class="cye-lm-tag">Injects resources for a connection factory and a queue.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>Connection</tt> and a <tt>Session</tt>.</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a <tt>QueueBrowser</tt>:</p>
+
+<pre>QueueBrowser browser = session.createBrowser(queue);</pre></li>
+<li><p class="cye-lm-tag">Retrieves the <tt>Enumeration</tt> that contains the messages:</p>
+
+<pre>Enumeration msgs = browser.getEnumeration();</pre></li>
+<li><p class="cye-lm-tag">Verifies that the <tt>Enumeration</tt> contains messages, then displays the contents of the messages:</p>
+
+<pre>if ( !msgs.hasMoreElements() ) { 
+    System.out.println("No messages in queue");
+} else { 
+    while (msgs.hasMoreElements()) { 
+        Message tempMsg = (Message)msgs.nextElement(); 
+        System.out.println("Message: " + tempMsg); 
+    }
+}</pre></li>
+<li><p class="cye-lm-tag">Closes the connection, which automatically closes the session and the <tt>QueueBrowser</tt>.</p>
+
+</li></ol>
+<p class="cye-lm-tag">The format in which the message contents appear is implementation-specific. In the GlassFish
+Server, the message format looks something like this:</p>
+
+<pre>Message contents: 
+Text: This is message 3 from producer
+Class: com.sun.messaging.jmq.jmsclient.TextMessageImpl
+getJMSMessageID(): ID:14-128.149.71.199(f9:86:a2:d5:46:9b)-40814-1255980521747
+getJMSTimestamp(): 1129061034355
+getJMSCorrelationID(): null
+JMSReplyTo: null
+JMSDestination: PhysicalQueue
+getJMSDeliveryMode(): PERSISTENT
+getJMSRedelivered(): false
+getJMSType(): null
+getJMSExpiration(): 0
+getJMSPriority(): 4
+Properties: null</pre><p class="cye-lm-tag">For this example, you will use the connection factory and queue you created
+for <a href="#bncfb">A Simple Example of Synchronous Message Receives</a>.</p>
+
+
+
+<a name="bncfo"></a><h4>To Run the <tt>MessageBrowser</tt> Client Using NetBeans IDE</h4>
+<p class="cye-lm-tag">To build, package, deploy, and run the <tt>MessageBrowser</tt> example using NetBeans IDE, follow
+these steps.</p>
+
+<p class="cye-lm-tag">You also need the <tt>Producer</tt> example to send the message to the queue,
+and one of the consumer clients to consume the messages after you inspect
+them. If you did not do so already, package these examples.</p>
+
+<ol>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/</tt></pre></li>
+<li><b>Select the <tt>messagebrowser</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li>
+<li><b>Run the <tt>Producer</tt> client, sending one message to the queue:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is queue
+Sending message: This is message 1 from producer</pre></li></ol></li>
+<li><b>Run the <tt>MessageBrowser</tt> client. Right-click the <tt>messagebrowser</tt> project and select Run.</b><p class="cye-lm-tag">The output of the client looks something like this:</p><pre>Message: 
+Text: This is message 1 from producer
+Class: com.sun.messaging.jmq.jmsclient.TextMessageImpl
+getJMSMessageID(): ID:12-128.149.71.199(8c:34:4a:1a:1b:b8)-40883-1255980521747
+getJMSTimestamp(): 1129062957611
+getJMSCorrelationID(): null
+JMSReplyTo: null
+JMSDestination: PhysicalQueue
+getJMSDeliveryMode(): PERSISTENT
+getJMSRedelivered(): false
+getJMSType(): null
+getJMSExpiration(): 0
+getJMSPriority(): 4
+Properties: null
+Message: 
+Class: com.sun.messaging.jmq.jmsclient.MessageImpl
+getJMSMessageID(): ID:13-128.149.71.199(8c:34:4a:1a:1b:b8)-40883-1255980521747
+getJMSTimestamp(): 1129062957616
+getJMSCorrelationID(): null
+JMSReplyTo: null
+JMSDestination: PhysicalQueue
+getJMSDeliveryMode(): PERSISTENT
+getJMSRedelivered(): false
+getJMSType(): null
+getJMSExpiration(): 0
+getJMSPriority(): 4
+Properties: null</pre><p class="cye-lm-tag">The first message is the <tt>TextMessage</tt>, and the second is the non-text control
+message.</p></li>
+<li><b>Run the <tt>SynchConsumer</tt> client to consume the messages.</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>synchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the client looks like this:</p><pre>Destination type is queue
+Reading message: This is message 1 from producer</pre></li></ol></li></ol>
+
+<a name="bncfn"></a><h4>To Run the <tt>MessageBrowser</tt> Client Using Ant and the <tt>appclient</tt> Command</h4>
+<p class="cye-lm-tag">To build, package, deploy, and run the <tt>MessageBrowser</tt> example using Ant, follow these
+steps.</p>
+
+<p class="cye-lm-tag">You also need the <tt>Producer</tt> example to send the message to the queue,
+and one of the consumer clients to consume the messages after you inspect
+them. If you did not do so already, package these examples.</p>
+
+<p class="cye-lm-tag">To run the clients, you need two terminal windows.</p>
+
+<ol>
+<li><b>In a terminal window, go to the <tt>messagebrowser</tt> directory.</b><pre><tt><b>cd ../messagebrowser</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">The targets place the application client JAR file in the <tt>dist</tt> directory for
+the example.</p></li>
+<li><b>In another terminal window, go to the <tt>producer</tt> directory.</b></li>
+<li><b>Run the <tt>Producer</tt> client, sending one message to the queue:</b><pre><tt><b>appclient -client client-jar/producerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is queue
+Sending message: This is message 1 from producer</pre></li>
+<li><b>Go to the <tt>messagebrowser</tt> directory.</b></li>
+<li><b>Deploy the client JAR file to the GlassFish Server, then retrieve the client
+stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Because this example takes no command-line arguments, you can run the <tt>MessageBrowser</tt> client
+using the following command:</b><pre><tt><b>ant run</b></tt></pre><p class="cye-lm-tag">Alternatively, you can type the following command:</p><pre><tt><b>appclient -client client-jar/messagebrowserClient.jar</b></tt></pre><p class="cye-lm-tag">The output of the client looks something like this (along with some additional
+output):</p><pre>Message: 
+Text: This is message 1 from producer
+Class: com.sun.messaging.jmq.jmsclient.TextMessageImpl
+getJMSMessageID(): ID:12-128.149.71.199(8c:34:4a:1a:1b:b8)-40883-1255980521747
+getJMSTimestamp(): 1255980521747
+getJMSCorrelationID(): null
+JMSReplyTo: null
+JMSDestination: PhysicalQueue
+getJMSDeliveryMode(): PERSISTENT
+getJMSRedelivered(): false
+getJMSType(): null
+getJMSExpiration(): 0
+getJMSPriority(): 4
+Properties: null
+Message: 
+Class: com.sun.messaging.jmq.jmsclient.MessageImpl
+getJMSMessageID(): ID:13-128.149.71.199(8c:34:4a:1a:1b:b8)-40883-1255980521767
+getJMSTimestamp(): 1255980521767
+getJMSCorrelationID(): null
+JMSReplyTo: null
+JMSDestination: PhysicalQueue
+getJMSDeliveryMode(): PERSISTENT
+getJMSRedelivered(): false
+getJMSType(): null
+getJMSExpiration(): 0
+getJMSPriority(): 4
+Properties: null</pre><p class="cye-lm-tag">The first message is the <tt>TextMessage</tt>, and the second is the non-text control
+message.</p></li>
+<li><b>Go to the <tt>synchconsumer</tt> directory.</b></li>
+<li><b>Run the <tt>SynchConsumer</tt> client to consume the messages:</b><pre><tt><b>appclient -client client-jar/synchconsumerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The output of the client looks like this (along with some additional output):</p><pre>Destination type is queue
+Reading message: This is message 1 from producer</pre></li></ol>
+
+<a name="bncfp"></a><h3>Running JMS Clients on Multiple Systems</h3>
+<a name="indexterm-2526"></a><a name="indexterm-2527"></a><a name="indexterm-2528"></a><p class="cye-lm-tag">JMS clients that use the GlassFish Server can exchange messages with each other
+when they are running on different systems in a network. The systems must
+be visible to each other by name (the UNIX host name or
+the Microsoft Windows computer name) and must both be running the GlassFish Server.</p>
+
+
+<hr><p class="cye-lm-tag"><b>Note - </b>Any mechanism for exchanging messages between systems is specific to the Java EE
+server implementation. This tutorial describes how to use the GlassFish Server for this
+purpose.</p>
+
+
+<hr>
+<p class="cye-lm-tag">Suppose you want to run the <tt>Producer</tt> client on one system, <tt>earth</tt>, and
+the <tt>SynchConsumer</tt> client on another system, <tt>jupiter</tt>. Before you can do so, you
+need to perform these tasks:</p>
+
+
+<ol><li><p class="cye-lm-tag">Create two new connection factories</p>
+
+</li>
+<li><p class="cye-lm-tag">Change the name of the default JMS host on one system</p>
+
+</li>
+<li><p class="cye-lm-tag">Edit the source code for the two examples</p>
+
+</li>
+<li><p class="cye-lm-tag">Recompile and repackage the examples</p>
+
+
+<hr><p class="cye-lm-tag"><b>Note - </b>A limitation in the JMS provider in the GlassFish Server may cause a runtime failure to create a connection to systems that use the Dynamic Host Configuration Protocol (DHCP) to obtain an IP address. You can, however, create a connection <b>from</b> a system that uses DHCP <b>to</b> a system that does not use DHCP. In the examples in this tutorial, <tt>earth</tt> can be a system that uses DHCP, and <tt>jupiter</tt> can be a system that does not use DHCP.</p>
+
+
+<hr>
+</li></ol>
+<p class="cye-lm-tag">When you run the clients, they will work as shown in <a href="#bncfr">Figure&nbsp;48-1</a>.
+The client run on <tt>earth</tt> needs the queue on <tt>earth</tt> only so
+the resource injection will succeed. The connection, session, and message producer are all created
+on <tt>jupiter</tt> using the connection factory that points to <tt>jupiter</tt>. The messages sent
+from <tt>earth</tt> will be received on <tt class="cye-lm-tag">jupiter</tt>.</p>
+
+<a name="bncfr"></a><p class="caption cye-lm-tag">Figure&nbsp;48-1 Sending Messages from One System to Another</p><img src="figures/jms-multiServer.gif" alt="Diagram showing a message being sent to a queue by a producer on Earth and being received by a consumer on Jupiter"><p class="cye-lm-tag">For examples showing how to deploy more complex applications on two different systems,
+see <a href="bnchp.html">An Application Example That Consumes Messages from a Remote Server</a> and <a href="bnchx.html">An Application Example That Deploys a Message-Driven Bean on Two Servers</a>.</p>
+
+
+
+<a name="bncfq"></a><h4>To Create Administered Objects for Multiple Systems</h4>
+<a name="indexterm-2529"></a><p class="cye-lm-tag">To run these clients, you must do the following:</p>
+
+
+<ul><li><p class="cye-lm-tag">Create a new connection factory on both <tt>earth</tt> and <tt>jupiter</tt></p>
+
+</li>
+<li><p class="cye-lm-tag">Create a destination resource on both <tt>earth</tt> and <tt>jupiter</tt></p>
+
+</li></ul>
+<p class="cye-lm-tag">You do not have to install the tutorial examples on both systems,
+but you must be able to access the file system where it is
+installed. You may find it more convenient to install the tutorial examples on
+both systems if the two use different operating systems (for example, Windows and
+UNIX). Otherwise you will have to edit the <tt></tt><i>tut-install</i><tt>/examples/bp-project/build.properties</tt> file and change the
+location of the <tt>javaee.home</tt> property each time you build or run a client
+on a different system.</p>
+
+<ol>
+<li><b>Start the GlassFish Server on <tt>earth</tt>.</b></li>
+<li><b>Start the GlassFish Server on <tt>jupiter</tt>.</b></li>
+<li><b>To create a new connection factory on <tt>jupiter</tt>, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From a command shell on <tt>jupiter</tt>, go to the <tt></tt><i>tut-install</i><tt>/examples/jms/simple/producer/</tt> directory.</b></li>
+<li><b>Type the following command:</b><pre><tt><b>ant create-local-factory</b></tt></pre><p class="cye-lm-tag">The <tt>create-local-factory</tt> target, defined in the <tt>build.xml</tt> file for the <tt>Producer</tt> example,
+creates a connection factory named <tt>jms/JupiterConnectionFactory</tt>.</p></li></ol></li>
+<li><b>To create a new connection factory on <tt>earth</tt> that points to the connection
+factory on <tt>jupiter</tt>, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From a command shell on <tt>earth</tt>, go to the <tt></tt><i>tut-install</i><tt>/examples/jms/simple/producer/</tt> directory.</b></li>
+<li><b>Type the following command:</b><pre><tt><b>ant create-remote-factory -Dsys=</b></tt><b><i>remote-system-name</i><tt></tt></b></pre><p class="cye-lm-tag">Replace <i>remote-system-name</i> with the actual name of the remote system.</p><p class="cye-lm-tag">The <tt>create-remote-factory</tt> target, defined in the <tt>build.xml</tt> file for the <tt>Producer</tt> example,
+also creates a connection factory named <tt>jms/JupiterConnectionFactory</tt>. In addition, it sets the <tt>AddressList</tt> property
+for this factory to the name of the remote system.</p></li></ol><p class="cye-lm-tag">Additional resources will be created when you deploy the application, if they have
+not been created before.</p><p class="cye-lm-tag">The reason the <tt>glassfish-resources.xml</tt> file does not specify <tt>jms/JupiterConnectionFactory</tt> is that on <tt>earth</tt>
+the connection factory requires the <tt>AddressList</tt> property setting, whereas on <tt>jupiter</tt> it does
+not. You can examine the targets in the <tt>build.xml</tt> file for details.</p></li></ol>
+
+<a name="gjsdi"></a><h4>Changing the Default Host Name</h4>
+<p class="cye-lm-tag">By default, the default host name for the JMS service on the
+GlassFish Server is <tt>localhost</tt>. To access the JMS service from another system,
+however, you must change the host name. You can change it either to
+the actual host name or to <tt>0.0.0.0</tt>.</p>
+
+<p class="cye-lm-tag">You can change the default host name using either the Administration Console
+or the <tt>asadmin</tt> command.</p>
+
+
+
+<a name="gjkpv"></a><h4>To Change the Default Host Name Using the Administration Console</h4>
+<ol>
+<li><b>On <tt>jupiter</tt>, start the Administration Console by opening a browser at <tt>http://localhost:4848/</tt>.</b></li>
+<li><b>In the navigation tree, expand the Configurations node, then expand the server-config node.</b></li>
+<li><b>Under the server-config node, expand the Java Message Service node.</b></li>
+<li><b>Under the Java Message Service node, expand the JMS Hosts node.</b></li>
+<li><b>Under the JMS Hosts node, select <tt>default_JMS_host</tt>.</b><p class="cye-lm-tag">The Edit JMS Host page opens.</p></li>
+<li><b>In the Host field, type the name of the system, or type
+<tt>0.0.0.0</tt>.</b></li>
+<li><b>Click Save.</b></li>
+<li><b>Restart the GlassFish Server.</b></li></ol>
+
+<a name="gjsbq"></a><h4>To Change the Default Host Name Using the <tt>asadmin</tt> Command</h4>
+<ol>
+<li><b>Specify a command like one of the following:</b><pre><tt><b>asadmin set server-config.jms-service.jms-host.default_JMS_host.host="0.0.0.0"</b></tt></pre><pre><tt><b>asadmin set server-config.jms-service.jms-host.default_JMS_host.host="</b></tt><b><i>hostname</i><tt>"</tt></b></pre></li>
+<li><b>Restart the GlassFish Server.</b></li></ol>
+
+<a name="gjsag"></a><h4>To Run the Clients Using NetBeans IDE</h4>
+<p class="cye-lm-tag">These steps assume you have the tutorial installed on both of the
+systems you are using and that you are able to access the file
+system of <tt>jupiter</tt> from <tt>earth</tt> or vice versa. You will edit the source
+files to specify the new connection factory. Then you will rebuild and run
+the clients.</p>
+
+<ol>
+<li><b>To edit the source files, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>On <tt>earth</tt>, open the following file in NetBeans IDE:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/producer/src/java/Producer.java</tt></pre></li>
+<li><a name="gjsft"></a><b>Find the following line:</b><pre>@Resource(lookup = "jms/ConnectionFactory")</pre></li>
+<li><a name="gjsev"></a><b>Change the line to the following:</b><pre>@Resource(lookup = "jms/JupiterConnectionFactory")</pre></li>
+<li><b>Save the file.</b></li>
+<li><b>On <tt>jupiter</tt>, open the following file in NetBeans IDE:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/synchconsumer/src/java/SynchConsumer.java</tt></pre></li>
+<li><b>Repeat <a href="#gjsft">Step&nbsp;b</a> and <a href="#gjsev">Step&nbsp;c</a>, then save the file.</b></li></ol></li>
+<li><b>To recompile and repackage the <tt>Producer</tt> example on <tt>earth</tt>, right-click the <tt>producer</tt> project and
+select Clean and Build.</b></li>
+<li><b>To recompile and repackage the <tt>SynchConsumer</tt> example on <tt>jupiter</tt>, right-click the <tt>synchconsumer</tt> project and
+select Clean and Build.</b></li>
+<li><b>On <tt>earth</tt>, deploy and run <tt>Producer</tt>. Follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>producer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue 3</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output looks like this (along with some additional output):</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li></ol></li>
+<li><b>On <tt>jupiter</tt>, run <tt>SynchConsumer</tt>. Follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>synchconsumer</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type the following:</b><pre><tt><b>queue</b></tt></pre></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">The output of the program looks like this (along with some additional output):</p><pre>Destination type is queue
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li></ol></li></ol>
+
+<a name="bncfs"></a><h4>To Run the Clients Using Ant and the <tt>appclient</tt> Command</h4>
+<p class="cye-lm-tag">These steps assume you have the tutorial installed on both of the
+systems you are using and that you are able to access the file
+system of <tt>jupiter</tt> from <tt>earth</tt> or vice versa. You will edit the source
+files to specify the new connection factory. Then you will rebuild and run
+the clients.</p>
+
+<ol>
+<li><b>To edit the source files, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>On <tt>earth</tt>, open the following file in a text editor:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/producer/src/java/Producer.java</tt></pre></li>
+<li><a name="gjsfe"></a><b>Find the following line:</b><pre>@Resource(lookup = "jms/ConnectionFactory")</pre></li>
+<li><a name="gjsgi"></a><b>Change the line to the following:</b><pre>@Resource(lookup = "jms/JupiterConnectionFactory")</pre></li>
+<li><b>Save and close the file.</b></li>
+<li><b>On <tt>jupiter</tt>, open the following file in a text editor:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/simple/synchconsumer/src/java/SynchConsumer.java</tt></pre></li>
+<li><b>Repeat <a href="#gjsfe">Step&nbsp;b</a> and <a href="#gjsgi">Step&nbsp;c</a>, then save and close the file.</b></li></ol></li>
+<li><b>To recompile and repackage the <tt>Producer</tt> example on <tt>earth</tt>, type the following:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>To recompile and repackage the <tt>SynchConsumer</tt> example on <tt>jupiter</tt>, go to the <tt>synchconsumer</tt>
+directory and type the following:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>On <tt>earth</tt>, deploy and run <tt>Producer</tt>. Follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>On <tt>earth</tt>, from  the <tt>producer</tt> directory, create any needed resources, deploy the
+client JAR file to the GlassFish Server, then retrieve the client stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>To run the client, type the following:</b><pre><tt><b>appclient -client client-jar/producerClient.jar queue 3</b></tt></pre><p class="cye-lm-tag">The output looks like this (along with some additional output):</p><pre>Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer</pre></li></ol></li>
+<li><b>On <tt>jupiter</tt>, run <tt>SynchConsumer</tt>. Follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the <tt>synchconsumer</tt> directory, create any needed resources, deploy the client JAR file
+to the GlassFish Server, then retrieve the client stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>To run the client, type the following:</b><pre><tt><b>appclient -client client-jar/synchconsumerClient.jar queue</b></tt></pre><p class="cye-lm-tag">The output of the program looks like this (along with some additional output):</p><pre>Destination type is queue
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer</pre></li></ol></li></ol>
+
+<a name="bncft"></a><h3>Undeploying and Cleaning the Simple JMS Examples</h3>
+<p class="cye-lm-tag">After you finish running the examples, you can undeploy them and remove the
+build artifacts. </p>
+
+<p class="cye-lm-tag">You can also use the <tt>asadmin delete-jms-resource</tt> command to delete the destinations and connection
+factories you created. However, it is recommended that you keep them, because they
+will be used in most of the examples later in this chapter. After
+you have created them, they will be available whenever you restart the GlassFish
+Server.</p>
+
+
+         </div>
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+
+<a name="giwfh"></a><h2 class="cye-lm-tag">Writing Robust JMS Applications</h2>
+<p class="cye-lm-tag">The following examples show how to use some of the more advanced
+features of the JMS API.</p>
+
+
+
+<a name="bncfx"></a><h3>A Message Acknowledgment Example</h3>
+<a name="indexterm-2530"></a><p class="cye-lm-tag">The <tt>AckEquivExample.java</tt> client shows how both of the following scenarios ensure that a
+message will not be acknowledged until processing of it is complete:</p>
+
+
+<ul><li><p class="cye-lm-tag">Using an asynchronous message consumer (a message listener) in an <tt>AUTO_ACKNOWLEDGE</tt> session</p>
+
+</li>
+<li><p class="cye-lm-tag">Using a synchronous receiver in a <tt>CLIENT_ACKNOWLEDGE</tt> session</p>
+
+</li></ul>
+
+<hr><p class="cye-lm-tag"><b>Note - </b>In the Java EE platform, message listeners and <tt>CLIENT_ACKNOWLEDGE</tt> sessions can be
+used only in application clients, as in this example.</p>
+
+
+<hr>
+<p class="cye-lm-tag">With a message listener, the automatic acknowledgment happens when the <tt>onMessage</tt> method
+returns (that is, after message processing has finished). With a synchronous receiver, the
+client acknowledges the message after processing is complete. If you use <tt>AUTO_ACKNOWLEDGE</tt> with a
+synchronous receive, the acknowledgment happens immediately after the <tt>receive</tt> call; if any
+subsequent processing steps fail, the message cannot be redelivered.</p>
+
+<p class="cye-lm-tag">The example is in the following directory:</p>
+
+<pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/ackequivexample/src/java/</tt></pre><p class="cye-lm-tag">The example contains an <tt>AsynchSubscriber</tt> class with a <tt>TextListener</tt> class, a <tt>MultiplePublisher</tt> class, a
+<tt>SynchReceiver</tt> class, a <tt>SynchSender</tt> class, a <tt>main</tt> method, and a method that runs
+the other classes’ threads.</p>
+
+<p class="cye-lm-tag">The example uses the following objects:</p>
+
+
+<ul><li><p class="cye-lm-tag"><tt>jms/ConnectionFactory</tt>, <tt>jms/Queue</tt>, and <tt>jms/Topic</tt>: resources that you created for <a href="bncfa.html#bncfb">A Simple Example of Synchronous Message Receives</a>.</p>
+
+</li>
+<li><p class="cye-lm-tag"><tt>jms/ControlQueue</tt>: an additional queue</p>
+
+</li>
+<li><p class="cye-lm-tag"><tt>jms/DurableConnectionFactory</tt>: a connection factory with a client ID (see <a href="bncfu.html#bncgd">Creating Durable Subscriptions</a> for more information)</p>
+
+</li></ul>
+<p class="cye-lm-tag">The new queue and connection factory are created at deployment time.</p>
+
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run <tt>ackequivexample</tt>.</p>
+
+
+
+<a name="gjsab"></a><h4>To Run <tt>ackequivexample</tt> Using NetBeans IDE</h4>
+<ol>
+<li><b>To build and package the client, follow these steps.</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/</tt></pre></li>
+<li><b>Select the <tt>ackequivexample</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li></ol></li>
+<li><b>To run the client, right-click the <tt>ackequivexample</tt> project and select Run.</b><p class="cye-lm-tag">The client output looks something like this (along with some additional output):</p><pre>Queue name is jms/ControlQueue
+Queue name is jms/Queue
+Topic name is jms/Topic
+Connection factory name is jms/DurableConnectionFactory
+  SENDER: Created client-acknowledge session
+  SENDER: Sending message: Here is a client-acknowledge message
+  RECEIVER: Created client-acknowledge session
+  RECEIVER: Processing message: Here is a client-acknowledge message
+  RECEIVER: Now I’ll acknowledge the message
+SUBSCRIBER: Created auto-acknowledge session
+SUBSCRIBER: Sending synchronize message to control queue
+PUBLISHER: Created auto-acknowledge session
+PUBLISHER: Receiving synchronize messages from control queue; count = 1
+PUBLISHER: Received synchronize message;  expect 0 more
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 1
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 2
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 1
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 3
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 2
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 3</pre></li>
+<li><b>After you run the client, you can delete the destination resource <tt>jms/ControlQueue</tt>
+by using the following command:</b><pre><tt><b>asadmin delete-jms-resource jms/ControlQueue</b></tt></pre><p class="cye-lm-tag">You will need the other resources for other examples.</p></li></ol>
+
+<a name="gjscg"></a><h4>To Run <tt>ackequivexample</tt> Using Ant</h4>
+<ol>
+<li><b>In a terminal window, go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/ackequivexample/</tt></pre></li>
+<li><b>To compile and package the client, type the following command:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>To create needed resources, deploy the client JAR file to the GlassFish
+Server, then retrieve the client stubs, type the following command:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Because this example takes no command-line arguments, you can run the client using
+the following command:</b><pre><tt><b>ant run</b></tt></pre><p class="cye-lm-tag">Alternatively, you can type the following command:</p><pre><tt><b>appclient -client client-jar/ackequivexampleClient.jar</b></tt></pre><p class="cye-lm-tag">The client output looks something like this (along with some additional output):</p><pre>Queue name is jms/ControlQueue
+Queue name is jms/Queue
+Topic name is jms/Topic
+Connection factory name is jms/DurableConnectionFactory
+  SENDER: Created client-acknowledge session
+  SENDER: Sending message: Here is a client-acknowledge message
+  RECEIVER: Created client-acknowledge session
+  RECEIVER: Processing message: Here is a client-acknowledge message
+  RECEIVER: Now I’ll acknowledge the message
+SUBSCRIBER: Created auto-acknowledge session
+SUBSCRIBER: Sending synchronize message to control queue
+PUBLISHER: Created auto-acknowledge session
+PUBLISHER: Receiving synchronize messages from control queue; count = 1
+PUBLISHER: Received synchronize message;  expect 0 more
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 1
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 2
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 1
+PUBLISHER: Publishing message: Here is an auto-acknowledge message 3
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 2
+SUBSCRIBER: Processing message: Here is an auto-acknowledge message 3</pre></li>
+<li><b>After you run the client, you can delete the destination resource <tt>jms/ControlQueue</tt>
+by using the following command:</b><pre><tt><b>asadmin delete-jms-resource jms/ControlQueue</b></tt></pre><p class="cye-lm-tag">You will need the other resources for other examples.</p></li></ol>
+
+<a name="bncgg"></a><h3>A Durable Subscription Example</h3>
+<a name="indexterm-2531"></a><a name="indexterm-2532"></a><p class="cye-lm-tag"><tt>DurableSubscriberExample.java</tt> shows how durable subscriptions work. It demonstrates that a durable subscription is
+active even when the subscriber is not active. The example contains a <tt>DurableSubscriber</tt>
+class, a <tt>MultiplePublisher</tt> class, a <tt>main</tt> method, and a method that instantiates
+the classes and calls their methods in sequence.</p>
+
+<p class="cye-lm-tag">The example is in the <tt></tt><i>tut-install</i><tt>/examples/jms/advanced/durablesubscriberexample/src/java/</tt> directory.</p>
+
+<p class="cye-lm-tag">The example begins in the same way as any publish/subscribe client: The subscriber
+starts, the publisher publishes some messages, and the subscriber receives them. At this
+point, the subscriber closes itself. The publisher then publishes some messages while the
+subscriber is not active. The subscriber then restarts and receives those messages.</p>
+
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run <tt>durablesubscriberexample</tt>.</p>
+
+
+
+<a name="gjsar"></a><h4>To Run <tt>durablesubscriberexample</tt> Using NetBeans IDE</h4>
+<ol>
+<li><b>To compile and package the client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/</tt></pre></li>
+<li><b>Select the <tt>durablesubscriberexample</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li></ol></li>
+<li><b>To run the client, right-click the <tt>durablesubscriberexample</tt> project and select Run.</b><p class="cye-lm-tag">The output looks something like this (along with some additional output):</p><pre>Connection factory without client ID is jms/ConnectionFactory
+Connection factory with client ID is jms/DurableConnectionFactory
+Topic name is jms/Topic
+Starting subscriber
+PUBLISHER: Publishing message: Here is a message 1
+SUBSCRIBER: Reading message: Here is a message 1
+PUBLISHER: Publishing message: Here is a message 2
+SUBSCRIBER: Reading message: Here is a message 2
+PUBLISHER: Publishing message: Here is a message 3
+SUBSCRIBER: Reading message: Here is a message 3
+Closing subscriber
+PUBLISHER: Publishing message: Here is a message 4
+PUBLISHER: Publishing message: Here is a message 5
+PUBLISHER: Publishing message: Here is a message 6
+Starting subscriber
+SUBSCRIBER: Reading message: Here is a message 4
+SUBSCRIBER: Reading message: Here is a message 5
+SUBSCRIBER: Reading message: Here is a message 6
+Closing subscriber
+Unsubscribing from durable subscription</pre></li>
+<li><b>After you run the client, you can delete the connection factory <tt>jms/DurableConnectionFactory</tt>
+by using the following command:</b><pre><tt><b>asadmin delete-jms-resource jms/DurableConnectionFactory</b></tt></pre></li></ol>
+
+<a name="gjsci"></a><h4>To Run <tt>durablesubscriberexample</tt> Using Ant</h4>
+<ol>
+<li><b>In a terminal window, go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/durablesubscriberexample/</tt></pre></li>
+<li><b>To compile and package the client, type the following command:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>To create any needed resources, deploy the client JAR file to the GlassFish
+Server, then retrieve the client stubs, type the following command:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Because this example takes no command-line arguments, you can run the client using
+the following command:</b><pre><tt><b>ant run</b></tt></pre><p class="cye-lm-tag">Alternatively, you can type the following command:</p><pre><tt><b>appclient -client client-jar/durablesubscriberexampleClient.jar</b></tt></pre></li>
+<li><b>After you run the client, you can delete the connection factory <tt>jms/DurableConnectionFactory</tt>
+by using the following command:</b><pre><tt><b>asadmin delete-jms-resource jms/DurableConnectionFactory</b></tt></pre></li></ol>
+
+<a name="bncgj"></a><h3>A Local Transaction Example</h3>
+<a name="indexterm-2533"></a><a name="indexterm-2534"></a><p class="cye-lm-tag"><tt>TransactedExample.java</tt> demonstrates the use of transactions in a JMS client application. The example
+is in the <tt></tt><i>tut-install</i><tt>/examples/jms/advanced/transactedexample/src/java/</tt> directory.</p>
+
+<p class="cye-lm-tag">This example shows how to use a queue and a topic in
+a single transaction as well as how to pass a session to a
+message listener’s constructor function. The example represents a highly simplified e-commerce application in which
+the following actions occur.</p>
+
+
+<ol><li><p class="cye-lm-tag">A retailer sends a <tt>MapMessage</tt> to the vendor order queue, ordering a quantity of computers, and waits for the vendor’s reply:</p>
+
+<pre>producer = session.createProducer(vendorOrderQueue);
+outMessage = session.createMapMessage();
+outMessage.setString("Item", "Computer(s)");
+outMessage.setInt("Quantity", quantity);
+outMessage.setJMSReplyTo(retailerConfirmQueue);
+producer.send(outMessage);
+System.out.println("Retailer: ordered " + quantity + " computer(s)");
+orderConfirmReceiver = session.createConsumer(retailerConfirmQueue);
+connection.start();</pre></li>
+<li><p class="cye-lm-tag">The vendor receives the retailer’s order message and sends an order message to the supplier order topic in one transaction. This JMS transaction uses a single session, so you can combine a receive from a queue with a send to a topic. Here is the code that uses the same session to create a consumer for a queue and a producer for a topic:</p>
+
+<pre>vendorOrderReceiver = session.createConsumer(vendorOrderQueue);
+supplierOrderProducer = session.createProducer(supplierOrderTopic);</pre><p class="cye-lm-tag">The following code receives the incoming message, sends an outgoing message, and commits the session. The message processing has been removed to keep the sequence simple:</p>
+
+<pre>inMessage = vendorOrderReceiver.receive();
+// Process the incoming message and format the outgoing 
+// message
+...
+supplierOrderProducer.send(orderMessage);
+...
+session.commit();</pre><p class="cye-lm-tag">For simplicity, there are only two suppliers, one for CPUs and one for hard drives.</p>
+
+</li>
+<li><p class="cye-lm-tag">Each supplier receives the order from the order topic, checks its inventory, and then sends the items ordered to the queue named in the order message’s <tt>JMSReplyTo</tt> field. If it does not have enough of the item in stock, the supplier sends what it has. The synchronous receive from the topic and the send to the queue take place in one JMS transaction.</p>
+
+<pre>receiver = session.createConsumer(orderTopic);
+...
+inMessage = receiver.receive();
+if (inMessage instanceof MapMessage) {
+    orderMessage = (MapMessage) inMessage;
+}
+// Process message
+MessageProducer producer = 
+    session.createProducer((Queue) orderMessage.getJMSReplyTo());
+outMessage = session.createMapMessage();
+// Add content to message
+producer.send(outMessage);
+// Display message contentssession.commit();</pre></li>
+<li><p class="cye-lm-tag">The vendor receives the suppliers' replies from its confirmation queue and updates the state of the order. Messages are processed by an asynchronous message listener; this step shows the use of JMS transactions with a message listener.</p>
+
+<pre>MapMessage component = (MapMessage) message;
+...
+orderNumber = component.getInt("VendorOrderNumber");
+Order order = Order.getOrder(orderNumber).processSubOrder(component);
+session.commit();</pre></li>
+<li><p class="cye-lm-tag">When all outstanding replies are processed for a given order, the vendor message listener sends a message notifying the retailer whether it can fulfill the order.</p>
+
+<pre>Queue replyQueue = (Queue) order.order.getJMSReplyTo();
+MessageProducer producer = session.createProducer(replyQueue);
+MapMessage retailerConfirmMessage = session.createMapMessage();
+// Format the message
+producer.send(retailerConfirmMessage);
+session.commit();</pre></li>
+<li><p class="cye-lm-tag">The retailer receives the message from the vendor:</p>
+
+<pre>inMessage = (MapMessage) orderConfirmReceiver.receive();</pre></li></ol>
+<p class="cye-lm-tag"><a href="#bncgk">Figure&nbsp;48-2</a> illustrates these steps.</p>
+
+<a name="bncgk"></a><p class="caption cye-lm-tag">Figure&nbsp;48-2 Transactions: JMS Client Example</p><img src="figures/jms-transactedExample.gif" alt="Diagram of steps in transaction example"><p class="cye-lm-tag">The example contains five classes: <tt>GenericSupplier</tt>, <tt>Order</tt>, <tt>Retailer</tt>, <tt>Vendor</tt>, and <tt>VendorMessageListener</tt>. The example
+also contains a <tt>main</tt> method and a method that runs the threads of the
+<tt>Retailer</tt>, <tt>Vendor</tt>, and two supplier classes.</p>
+
+<p class="cye-lm-tag">All the messages use the <tt>MapMessage</tt> message type. Synchronous receives are used for
+all message reception except when the vendor processes the replies of the suppliers.
+These replies are processed asynchronously and demonstrate how to use transactions within a
+message listener.</p>
+
+<p class="cye-lm-tag">At random intervals, the <tt>Vendor</tt> class throws an exception to simulate a database
+problem and cause a rollback.</p>
+
+<p class="cye-lm-tag">All classes except <tt>Retailer</tt> use transacted sessions.</p>
+
+<p class="cye-lm-tag">The example uses three queues named <tt>jms/AQueue</tt>, <tt>jms/BQueue</tt>, and <tt>jms/CQueue</tt>, and one
+topic named <tt>jms/OTopic</tt>.</p>
+
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run <tt>transactedexample</tt>.</p>
+
+
+
+<a name="gjsem"></a><h4>To Run <tt>transactedexample</tt> Using NetBeans IDE</h4>
+<ol>
+<li><b>In a terminal window, go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/transactedexample/</tt></pre></li>
+<li><b>To compile and package the client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/</tt></pre></li>
+<li><b>Select the <tt>transactedexample</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the project and select Build.</b></li></ol></li>
+<li><b>To deploy and run the client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>transactedexample</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>In the Arguments field, type a number that specifies the number of computers
+to order:</b><p class="cye-lm-tag"><tt>3</tt></p></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the project and select Run.</b></li></ol><p class="cye-lm-tag">The output looks something like this (along with some additional output):</p><pre>Quantity to be ordered is 3
+Retailer: ordered 3 computer(s)
+Vendor: Retailer ordered 3 Computer(s)
+Vendor: ordered 3 CPU(s) and hard drive(s)
+CPU Supplier: Vendor ordered 3 CPU(s)
+CPU Supplier: sent 3 CPU(s)
+  CPU Supplier: committed transaction
+  Vendor: committed transaction 1
+Hard Drive Supplier: Vendor ordered 3 Hard Drive(s)
+Hard Drive Supplier: sent 1 Hard Drive(s)
+Vendor: Completed processing for order 1
+  Hard Drive Supplier: committed transaction
+Vendor: unable to send 3 computer(s)
+  Vendor: committed transaction 2
+Retailer: Order not filled
+Retailer: placing another order
+Retailer: ordered 6 computer(s)
+Vendor: JMSException occurred: javax.jms.JMSException: 
+Simulated database concurrent access exception
+javax.jms.JMSException: Simulated database concurrent access exception
+        at TransactedExample$Vendor.run(Unknown Source)
+  Vendor: rolled back transaction 1
+Vendor: Retailer ordered 6 Computer(s)
+Vendor: ordered 6 CPU(s) and hard drive(s)
+CPU Supplier: Vendor ordered 6 CPU(s)
+Hard Drive Supplier: Vendor ordered 6 Hard Drive(s)
+CPU Supplier: sent 6 CPU(s)
+  CPU Supplier: committed transaction
+Hard Drive Supplier: sent 6 Hard Drive(s)
+  Hard Drive Supplier: committed transaction
+  Vendor: committed transaction 1
+Vendor: Completed processing for order 2
+Vendor: sent 6 computer(s)
+Retailer: Order filled
+  Vendor: committed transaction 2</pre></li>
+<li><b>After you run the client, you can delete the destination resources in NetBeans
+IDE or by using the following commands:</b><pre><tt><b>asadmin delete-jms-resource jms/AQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/BQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/CQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/OTopic</b></tt></pre></li></ol>
+
+<a name="gjsha"></a><h4>To Run <tt>transactedexample</tt> Using Ant and the <tt>appclient</tt> Command</h4>
+<ol>
+<li><b>In a terminal window, go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/advanced/transactedexample/</tt></pre></li>
+<li><b>To build and package the client, type the following command:</b><pre><tt><b>ant</b></tt></pre></li>
+<li><b>Create needed resources, deploy the client JAR file to the GlassFish Server, then
+retrieve the client stubs:</b><pre><tt><b>ant getclient</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Use a command like the following to run the client.</b><p class="cye-lm-tag">The argument specifies the number of computers to order.</p><pre><tt><b>appclient -client client-jar/transactedexampleClient.jar 3</b></tt></pre><p class="cye-lm-tag">The output looks something like this (along with some additional output):</p><pre>Quantity to be ordered is 3
+Retailer: ordered 3 computer(s)
+Vendor: Retailer ordered 3 Computer(s)
+Vendor: ordered 3 CPU(s) and hard drive(s)
+CPU Supplier: Vendor ordered 3 CPU(s)
+CPU Supplier: sent 3 CPU(s)
+  CPU Supplier: committed transaction
+  Vendor: committed transaction 1
+Hard Drive Supplier: Vendor ordered 3 Hard Drive(s)
+Hard Drive Supplier: sent 1 Hard Drive(s)
+Vendor: Completed processing for order 1
+  Hard Drive Supplier: committed transaction
+Vendor: unable to send 3 computer(s)
+  Vendor: committed transaction 2
+Retailer: Order not filled
+Retailer: placing another order
+Retailer: ordered 6 computer(s)
+Vendor: JMSException occurred: javax.jms.JMSException: 
+Simulated database concurrent access exception
+javax.jms.JMSException: Simulated database concurrent access exception
+        at TransactedExample$Vendor.run(Unknown Source)
+  Vendor: rolled back transaction 1
+Vendor: Retailer ordered 6 Computer(s)
+Vendor: ordered 6 CPU(s) and hard drive(s)
+CPU Supplier: Vendor ordered 6 CPU(s)
+Hard Drive Supplier: Vendor ordered 6 Hard Drive(s)
+CPU Supplier: sent 6 CPU(s)
+  CPU Supplier: committed transaction
+Hard Drive Supplier: sent 6 Hard Drive(s)
+  Hard Drive Supplier: committed transaction
+  Vendor: committed transaction 1
+Vendor: Completed processing for order 2
+Vendor: sent 6 computer(s)
+Retailer: Order filled
+  Vendor: committed transaction 2</pre></li>
+<li><b>After you run the client, you can delete the destination resources by using
+the following commands:</b><pre><tt><b>asadmin delete-jms-resource jms/AQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/BQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/CQueue</b></tt>
+<tt><b>asadmin delete-jms-resource jms/OTopic</b></tt></pre></li></ol>
+         </div>
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+
+<a name="bncgw"></a><h2 class="cye-lm-tag">An Application That Uses the JMS API with a Session Bean</h2>
+<a name="indexterm-2535"></a><a name="indexterm-2536"></a><a name="indexterm-2537"></a><a name="indexterm-2538"></a><p class="cye-lm-tag">This section explains how to write, compile, package, deploy, and run an application
+that uses the JMS API in conjunction with a session bean. The application
+contains the following components:</p>
+
+
+<ul><li><p class="cye-lm-tag">An application client that invokes a session bean</p>
+
+</li>
+<li><p class="cye-lm-tag">A session bean that publishes several messages to a topic</p>
+
+</li>
+<li><p class="cye-lm-tag">A message-driven bean that receives and processes the messages using a durable topic subscriber and a message selector</p>
+
+</li></ul>
+<p class="cye-lm-tag">You will find the source files for this section in the <tt></tt><i>tut-install</i><tt>/examples/jms/clientsessionmdb/</tt>
+directory. Path names in this section are relative to this directory.</p>
+
+
+
+<a name="bncgx"></a><h3>Writing the Application Components for the <tt>clientsessionmdb</tt> Example</h3>
+<p class="cye-lm-tag">This application demonstrates how to send messages from an enterprise bean (in this
+case, a session bean) rather than from an application client, as in the
+example in <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a>. <a href="#bncgy">Figure&nbsp;48-3</a> illustrates the structure of this application.</p>
+
+<a name="bncgy"></a><p class="caption cye-lm-tag">Figure&nbsp;48-3 An Enterprise Bean Application: Client to Session Bean to Message-Driven Bean</p><img src="figures/jmsj2ee-clientSessionMdbApp.gif" alt="Diagram of application showing an application client calling a session bean, which publishes a message that is consumed by a message-driven bean"><p class="cye-lm-tag">The Publisher enterprise bean in this example is the enterprise-application equivalent of a
+wire-service news feed that categorizes news events into six news categories. The message-driven
+bean could represent a newsroom, where the sports desk, for example, would set
+up a subscription for all news events pertaining to sports.</p>
+
+<p class="cye-lm-tag">The application client in the example injects the Publisher enterprise bean’s remote home
+interface and then calls the bean’s business method. The enterprise bean creates 18
+text messages. For each message, it sets a <tt>String</tt> property randomly to one
+of six values representing the news categories and then publishes the message to
+a topic. The message-driven bean uses a message selector for the property to
+limit which of the published messages it receives.</p>
+
+
+
+<a name="bncgz"></a><h4>Coding the Application Client: <tt>MyAppClient.java</tt></h4>
+<p class="cye-lm-tag">The application client, <tt>clientsessionmdb-app-client/src/java/MyAppClient.java</tt>, performs no JMS API operations and so is
+simpler than the client in <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a>. The client uses dependency injection to obtain the
+Publisher enterprise bean’s business interface:</p>
+
+<pre>@EJB(name="PublisherRemote")
+static private PublisherRemote publisher;</pre><p class="cye-lm-tag">The client then calls the bean’s business method twice.</p>
+
+
+
+<a name="bncha"></a><h4>Coding the Publisher Session Bean</h4>
+<p class="cye-lm-tag">The Publisher bean is a stateless session bean that has one business method.
+The Publisher bean uses a remote interface rather than a local interface because
+it is accessed from the application client.</p>
+
+<p class="cye-lm-tag">The remote interface, <tt>clientsessionmdb-ejb/src/java/sb/PublisherRemote.java</tt>, declares a single business method, <tt>publishNews</tt>.</p>
+
+<p class="cye-lm-tag">The bean class, <tt>clientsessionmdb-ejb/src/java/sb/PublisherBean.java</tt>, implements the <tt>publishNews</tt> method and its helper method <tt>chooseType</tt>.
+The bean class also injects <tt>SessionContext</tt>, <tt>ConnectionFactory</tt>, and <tt>Topic</tt> resources and implements <tt>@PostConstruct</tt>
+and <tt>@PreDestroy</tt> callback methods. The bean class begins as follows:</p>
+
+<pre>@Stateless
+@Remote({PublisherRemote.class})
+public class PublisherBean implements PublisherRemote {
+
+    @Resource
+    private SessionContext sc;
+
+    @Resource(lookup = "jms/ConnectionFactory")
+    private ConnectionFactory connectionFactory;
+
+    @Resource(lookup = "jms/Topic")
+    private Topic topic;
+    ...</pre><p class="cye-lm-tag"><a name="indexterm-2539"></a>The <tt>@PostConstruct</tt> callback method of the bean class, <tt>makeConnection</tt>, creates the <tt>Connection</tt> used
+by the bean. The business method <tt>publishNews</tt> creates a <tt>Session</tt> and a <tt>MessageProducer</tt>
+and publishes the messages.</p>
+
+<p class="cye-lm-tag"><a name="indexterm-2540"></a>The <tt>@PreDestroy</tt> callback method, <tt>endConnection</tt>, deallocates the resources that were allocated by the
+<tt>@PostConstruct</tt> callback method. In this case, the method closes the <tt>Connection</tt>.</p>
+
+
+
+<a name="bnchb"></a><h4>Coding the Message-Driven Bean: <tt>MessageBean.java</tt></h4>
+<a name="indexterm-2541"></a><a name="indexterm-2542"></a><p class="cye-lm-tag">The message-driven bean class, <tt>clientsessionmdb-ejb/src/java/mdb/MessageBean.java</tt>, is almost identical to the one in
+<a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a>. However, the <tt>@MessageDriven</tt> annotation is different, because instead of a queue, the
+bean is using a topic with a durable subscription, and it is also
+using a message selector. Therefore, the annotation sets the activation config properties <tt>messageSelector</tt>,
+<tt>subscriptionDurability</tt>, <tt>clientId</tt>, and <tt>subscriptionName</tt>, as follows:</p>
+
+<pre>@MessageDriven(mappedName = "jms/Topic", activationConfig =  {
+    @ActivationConfigProperty(propertyName = "messageSelector",
+            propertyValue = "NewsType = 'Sports' OR NewsType = 'Opinion'")
+    , @ActivationConfigProperty(propertyName = "subscriptionDurability",
+            propertyValue = "Durable")
+    , @ActivationConfigProperty(propertyName = "clientId",
+            propertyValue = "MyID")
+    , @ActivationConfigProperty(propertyName = "subscriptionName",
+            propertyValue = "MySub")
+    })</pre>
+<hr><p class="cye-lm-tag"><b>Note - </b>For a message-driven bean, the destination is specified with the <tt>mappedName</tt> element
+instead of the <tt>lookup</tt> element.</p>
+
+
+<hr>
+<p class="cye-lm-tag">The JMS resource adapter uses these properties to create a connection factory for
+the message-driven bean that allows the bean to use a durable subscriber.</p>
+
+
+
+<a name="bnchc"></a><h3>Creating Resources for the <tt>clientsessionmdb</tt> Example</h3>
+<p class="cye-lm-tag">This example uses the topic named <tt>jms/Topic</tt> and the connection factory <tt>jms/ConnectionFactory</tt>, which
+are also used in previous examples. If you deleted the connection factory or
+topic, they will be recreated when you deploy the example.</p>
+
+
+
+<a name="gmrez"></a><h3>Running the <tt>clientsessionmdb</tt> Example</h3>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run the <tt>clientsessionmdb</tt> example.</p>
+
+
+
+<a name="bnchd"></a><h4>To Run the <tt>clientsessionmdb</tt> Example Using NetBeans IDE</h4>
+<ol>
+<li><b>To compile and package the project, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/</tt></pre></li>
+<li><b>Select the <tt>clientsessionmdb</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box and the Open Required Projects
+check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the <tt>clientsessionmdb</tt> project and select Build.</b><p class="cye-lm-tag">This task creates the following:</p>
+
+
+<ul><li><p class="cye-lm-tag">An application client JAR file that contains the client class file and the session bean’s remote interface, along with a manifest file that specifies the main class and places the EJB JAR file in its classpath</p>
+
+</li>
+<li><p class="cye-lm-tag">An EJB JAR file that contains both the session bean and the message-driven bean</p>
+
+</li>
+<li><p class="cye-lm-tag">An application EAR file that contains the two JAR files</p>
+
+</li></ul>
+</li></ol></li>
+<li><b>Right-click the project and select Run.</b><p class="cye-lm-tag">This command creates any needed resources, deploys the project, returns a JAR file
+named <tt>clientsessionmdbClient.jar</tt>, and then executes it.</p><p class="cye-lm-tag">The output of the application client in the Output pane looks like
+this (preceded by application client container output):</p><pre>To view the bean output,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.</pre><p class="cye-lm-tag">The output from the enterprise beans appears in the server log (<tt></tt><i>domain-dir</i><tt>/logs/server.log</tt>),
+wrapped in logging information. The Publisher session bean sends two sets of 18
+messages numbered 0 through 17. Because of the message selector, the message-driven bean
+receives only the messages whose <tt>NewsType</tt> property is <tt>Sports</tt> or <tt>Opinion</tt>.</p></li></ol>
+
+<a name="bnche"></a><h4>To Run the <tt>clientsessionmdb</tt> Example Using Ant</h4>
+<ol>
+<li><b>Go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/clientsessionmdb/</tt></pre></li>
+<li><b>To compile the source files and package the application, use the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">The <tt>ant</tt> command creates the following:</p>
+
+
+<ul><li><p class="cye-lm-tag">An application client JAR file that contains the client class file and the session bean’s remote interface, along with a manifest file that specifies the main class and places the EJB JAR file in its classpath</p>
+
+</li>
+<li><p class="cye-lm-tag">An EJB JAR file that contains both the session bean and the message-driven bean</p>
+
+</li>
+<li><p class="cye-lm-tag">An application EAR file that contains the two JAR files</p>
+
+</li></ul>
+<p class="cye-lm-tag">The <tt>clientsessionmdb.ear</tt> file is created in the <tt>dist</tt> directory.</p></li>
+<li><b>To create any needed resources, deploy the application, and run the client, use
+the following command:</b><pre><tt><b>ant run</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p><p class="cye-lm-tag">The client displays these lines (preceded by application client container output):</p><pre>To view the bean output,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.</pre><p class="cye-lm-tag">The output from the enterprise beans appears in the server log file, wrapped
+in logging information. The Publisher session bean sends two sets of 18 messages
+numbered 0 through 17. Because of the message selector, the message-driven bean receives
+only the messages whose <tt>NewsType</tt> property is <tt>Sports</tt> or <tt>Opinion</tt>.</p></li></ol>
+         </div>
+<br><hr>
+<div class="maincontent">      	 
+             
+
+<a name="bnchf"></a><h2>An Application That Uses the JMS API with an Entity</h2>
+<a name="indexterm-2543"></a><a name="indexterm-2544"></a><a name="indexterm-2545"></a><p>This section explains how to write, compile, package, deploy, and run an application
+that uses the JMS API with an entity. The application uses the following
+components:</p>
+
+
+<ul><li><p>An application client that both sends and receives messages</p>
+
+</li>
+<li><p>Two message-driven beans</p>
+
+</li>
+<li><p>An entity class</p>
+
+</li></ul>
+<p>You will find the source files for this section in the <tt></tt><i>tut-install</i><tt>/examples/jms/clientmdbentity/</tt>
+directory. Path names in this section are relative to this directory.</p>
+
+
+
+<a name="bnchg"></a><h3>Overview of the <tt>clientmdbentity</tt> Example Application</h3>
+<p>This application simulates, in a simplified way, the work flow of a company’s
+human resources (HR) department when it processes a new hire. This application also
+demonstrates how to use the Java EE platform to accomplish a task that
+many JMS applications need to perform.</p>
+
+<p>A JMS client must often wait for several messages from various sources. It
+then uses the information in all these messages to assemble a message
+that it then sends to another destination. The common term for this process
+is <b>joining messages</b>. Such a task must be transactional, with all the receives and
+the send as a single transaction. If not all the messages are received
+successfully, the transaction can be rolled back. For an application client example that
+illustrates this task, see <a href="giwfh.html#bncgj">A Local Transaction Example</a>.</p>
+
+<p>A message-driven bean can process only one message at a time in
+a transaction. To provide the ability to join messages, an application can have
+the message-driven bean store the interim information in an entity. The entity can
+then determine whether all the information has been received; when it has, the
+entity can report this back to one of the message-driven beans, which then
+creates and sends the message to the other destination. After it has completed
+its task, the entity can be removed.</p>
+
+<p>The basic steps of the application are as follows.</p>
+
+
+<ol><li><p>The HR department’s application client generates an employee ID for each new hire and then publishes a message (M1) containing the new hire’s name, employee ID, and position. The client then creates a temporary queue, <tt>ReplyQueue</tt>, with a message listener that waits for a reply to the message. (See <a href="bncfu.html#bncgb">Creating Temporary Destinations</a> for more information.)</p>
+
+</li>
+<li><p>Two message-driven beans process each message: One bean, <tt>OfficeMDB</tt>, assigns the new hire’s office number, and the other bean, <tt>EquipmentMDB</tt>, assigns the new hire’s equipment. The first bean to process the message creates and persists an entity named <tt>SetupOffice</tt>, then calls a business method of the entity to store the information it has generated. The second bean locates the existing entity and calls another business method to add its information.</p>
+
+</li>
+<li><p>When both the office and the equipment have been assigned, the entity business method returns a value of <tt>true</tt> to the message-driven bean that called the method. The message-driven bean then sends to the reply queue a message (M2) describing the assignments. Then it removes the entity. The application client’s message listener retrieves the information.</p>
+
+</li></ol>
+<p><a href="#bnchh">Figure&nbsp;48-4</a> illustrates the structure of this application. Of course, an actual HR application
+would have more components; other beans could set up payroll and benefits records, schedule
+orientation, and so on.</p>
+
+<p><a href="#bnchh">Figure&nbsp;48-4</a> assumes that <tt>OfficeMDB</tt> is the first message-driven bean to consume the
+message from the client. <tt>OfficeMDB</tt> then creates and persists the <tt>SetupOffice</tt> entity and stores
+the office information. <tt>EquipmentMDB</tt> then finds the entity, stores the equipment information, and
+learns that the entity has completed its work. <tt>EquipmentMDB</tt> then sends the message
+to the reply queue and removes the entity.</p>
+
+<a name="bnchh"></a><p class="caption">Figure&nbsp;48-4 An Enterprise Bean Application: Client to Message-Driven Beans to Entity</p><img src="figures/jmsj2ee-clientMdbEntityApp.gif" alt="Diagram of application showing an application client, two message-driven beans, and an entity">
+
+<a name="bnchi"></a><h3>Writing the Application Components for the <tt>clientmdbentity</tt> Example</h3>
+<p>Writing the components of the application involves coding the application client, the message-driven
+beans, and the entity class.</p>
+
+
+
+<a name="bnchj"></a><h4>Coding the Application Client: <tt>HumanResourceClient.java</tt></h4>
+<a name="indexterm-2546"></a><a name="indexterm-2547"></a><a name="indexterm-2548"></a><a name="indexterm-2549"></a><p>The application client, <tt>clientmdbentity-app-client/src/java/HumanResourceClient.java</tt>, performs the following steps:</p>
+
+
+<ol><li><p>Injects <tt>ConnectionFactory</tt> and <tt>Topic</tt> resources</p>
+
+</li>
+<li><p>Creates a <tt>TemporaryQueue</tt> to receive notification of processing that occurs, based on new-hire events it has published</p>
+
+</li>
+<li><p>Creates a <tt>MessageConsumer</tt> for the <tt>TemporaryQueue</tt>, sets the <tt>MessageConsumer</tt>’s message listener, and starts the connection</p>
+
+</li>
+<li><p>Creates a <tt>MessageProducer</tt> and a <tt>MapMessage</tt></p>
+
+</li>
+<li><p>Creates five new employees with randomly generated names, positions, and ID numbers (in sequence) and publishes five messages containing this information</p>
+
+</li></ol>
+<p>The message listener, <tt>HRListener</tt>, waits for messages that contain the assigned office and
+equipment for each employee. When a message arrives, the message listener displays the
+information received and determines whether all five messages have arrived. When they have,
+the message listener notifies the <tt>main</tt> method, which then exits.</p>
+
+
+
+<a name="bnchk"></a><h4>Coding the Message-Driven Beans for the <tt>clientmdbentity</tt> Example</h4>
+<a name="indexterm-2550"></a><p>This example uses two message-driven beans:</p>
+
+
+<ul><li><p><tt>clientmdbentity-ejb/src/java/eb/EquipmentMDB.java</tt></p>
+
+</li>
+<li><p><tt>clientmdbentity-ejb/src/java/eb/OfficeMDB.java</tt></p>
+
+</li></ul>
+<p>The beans take the following steps:</p>
+
+
+<ol><li><p>They inject <tt>MessageDrivenContext</tt> and <tt>ConnectionFactory</tt> resources.</p>
+
+</li>
+<li><p>The <tt>onMessage</tt> method retrieves the information in the message. The <tt>EquipmentMDB</tt>’s <tt>onMessage</tt> method chooses equipment, based on the new hire’s position; the <tt>OfficeMDB</tt>’s <tt>onMessage</tt> method randomly generates an office number.</p>
+
+</li>
+<li><p>After a slight delay to simulate real world processing hitches, the <tt>onMessage</tt> method calls a helper method, <tt>compose</tt>.</p>
+
+</li>
+<li><p>The <tt>compose</tt> method takes the following steps:</p>
+
+
+<ol style="list-style-type: lower-alpha"><li><p>It either creates and persists the <tt>SetupOffice</tt> entity or finds it by primary key.</p>
+
+</li>
+<li><p>It uses the entity to store the equipment or the office information in the database, calling either the <tt>doEquipmentList</tt> or the <tt>doOfficeNumber</tt> business method.</p>
+
+</li>
+<li><p>If the business method returns <tt>true</tt>, meaning that all of the information has been stored, it creates a connection and a session, retrieves the reply destination information from the message, creates a <tt>MessageProducer</tt>, and sends a reply message that contains the information stored in the entity.</p>
+
+</li>
+<li><p>It removes the entity.</p>
+
+</li></ol>
+</li></ol>
+
+
+<a name="bnchl"></a><h4>Coding the Entity Class for the <tt>clientmdbentity</tt> Example</h4>
+<p>The <tt>SetupOffice</tt> class, <tt>clientmdbentity-ejb/src/java/eb/SetupOffice.java</tt>, is an entity class. The entity and the
+message-driven beans are packaged together in an EJB JAR file. The entity class
+is declared as follows:</p>
+
+<pre>@Entity
+public class SetupOffice implements Serializable {</pre><p>The class contains a no-argument constructor and a constructor that takes two arguments,
+the employee ID and name. It also contains getter and setter methods for
+the employee ID, name, office number, and equipment list. The getter method for
+the employee ID has the <tt>@Id</tt> annotation to indicate that this field is
+the primary key:</p>
+
+<pre>@Id
+public String getEmployeeId() {
+    return id;
+}</pre><p>The class also implements the two business methods, <tt>doEquipmentList</tt> and <tt>doOfficeNumber</tt>, and
+their helper method, <tt>checkIfSetupComplete</tt>.</p>
+
+<p>The message-driven beans call the business methods and the getter methods.</p>
+
+<p>The <tt>persistence.xml</tt> file for the entity specifies the most basic settings:</p>
+
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;persistence version="2.0" 
+             xmlns="http://java.sun.com/xml/ns/persistence" 
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence 
+               http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"&gt;
+  &lt;persistence-unit name="clientmdbentity-ejbPU" transaction-type="JTA"&gt;
+    &lt;provider&gt;org.eclipse.persistence.jpa.PersistenceProvider&lt;/provider&gt;
+    &lt;jta-data-source&gt;jdbc/__default&lt;/jta-data-source&gt;
+    &lt;class&gt;eb.SetupOffice&lt;/class&gt;
+    &lt;properties&gt;
+      &lt;property name="eclipselink.ddl-generation" 
+                value="drop-and-create-tables"/&gt;
+    &lt;/properties&gt;
+  &lt;/persistence-unit&gt;
+&lt;/persistence&gt;</pre>
+
+<a name="bnchm"></a><h3>Creating Resources for the <tt>clientmdbentity</tt> Example</h3>
+<p>This example uses the connection factory <tt>jms/ConnectionFactory</tt> and the topic <tt>jms/Topic</tt>, both of
+which you used in <a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a>. It also uses the JDBC resource named <tt>jdbc/__default</tt>,
+which is enabled by default when you start the GlassFish Server.</p>
+
+<p>If you deleted the connection factory or topic, they will be created when
+you deploy the example.</p>
+
+
+
+<a name="gmreu"></a><h3>Running the <tt>clientmdbentity</tt> Example</h3>
+<p>You can use either NetBeans IDE or Ant to build, package, deploy, and
+run the <tt>clientmdbentity</tt> example.</p>
+
+
+
+<a name="bnchn"></a><h4>To Run the <tt>clientmdbentity</tt> Example Using NetBeans IDE</h4>
+<ol>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/</tt></pre></li>
+<li><b>Select the <tt>clientmdbentity</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box and the Open Required Projects
+check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the <tt>clientmdbentity</tt> project and select Build.</b><p>This task creates the following:</p>
+
+
+<ul><li><p>An application client JAR file that contains the client class and listener class files, along with a manifest file that specifies the main class</p>
+
+</li>
+<li><p>An EJB JAR file that contains the message-driven beans and the entity class, along with the <tt>persistence.xml</tt> file</p>
+
+</li>
+<li><p>An application EAR file that contains the two JAR files along with an <tt>application.xml</tt> file</p>
+
+</li></ul>
+</li>
+<li><b>If the Java DB database is not already running, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Click the Services tab.</b></li>
+<li><b>Expand the Databases node.</b></li>
+<li><b>Right-click the Java DB node and select Start Server.</b></li></ol></li>
+<li><b>In the Projects tab, right-click the project and select Run.</b><p>This command creates any needed resources, deploys the project, returns a client JAR
+file named <tt>clientmdbentityClient.jar</tt>, and then executes it.</p><p>The output of the application client in the Output pane looks something like
+this:</p><pre>PUBLISHER: Setting hire ID to 50, name Bill Tudor, position Programmer
+PUBLISHER: Setting hire ID to 51, name Carol Jones, position Senior Programmer
+PUBLISHER: Setting hire ID to 52, name Mark Wilson, position Manager
+PUBLISHER: Setting hire ID to 53, name Polly Wren, position Senior Programmer
+PUBLISHER: Setting hire ID to 54, name Joe Lawrence, position Director
+Waiting for 5 message(s)
+New hire event processed:
+  Employee ID: 52
+  Name: Mark Wilson
+  Equipment: PDA
+  Office number: 294
+Waiting for 4 message(s)
+New hire event processed:
+  Employee ID: 53
+  Name: Polly Wren
+  Equipment: Laptop
+  Office number: 186
+Waiting for 3 message(s)
+New hire event processed:
+  Employee ID: 54
+  Name: Joe Lawrence
+  Equipment: Java Phone
+  Office number: 135
+Waiting for 2 message(s)
+New hire event processed:
+  Employee ID: 50
+  Name: Bill Tudor
+  Equipment: Desktop System
+  Office number: 200
+Waiting for 1 message(s)
+New hire event processed:
+  Employee ID: 51
+  Name: Carol Jones
+  Equipment: Laptop
+  Office number: 262</pre><p>The output from the message-driven beans and the entity class appears in the
+server log, wrapped in logging information.</p><p>For each employee, the application first creates the entity and then finds it.
+You may see runtime errors in the server log, and transaction rollbacks may
+occur. The errors occur if both of the message-driven beans discover at the
+same time that the entity does not yet exist, so they both
+try to create it. The first attempt succeeds, but the second fails because
+the bean already exists. After the rollback, the second message-driven bean tries again
+and succeeds in finding the entity. Container-managed transactions allow the application to run correctly,
+in spite of these errors, with no special programming.</p></li></ol>
+
+<a name="bncho"></a><h4>To Run the <tt>clientmdbentity</tt> Example Using Ant</h4>
+<ol>
+<li><b>Go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/clientmdbentity/</tt></pre></li>
+<li><b>To compile the source files and package the application, use the following command:</b><pre><tt><b>ant</b></tt></pre><p>The <tt>ant</tt> command creates the following:</p>
+
+
+<ul><li><p>An application client JAR file that contains the client class and listener class files, along with a manifest file that specifies the main class</p>
+
+</li>
+<li><p>An EJB JAR file that contains the message-driven beans and the entity class, along with the <tt>persistence.xml</tt> file</p>
+
+</li>
+<li><p>An application EAR file that contains the two JAR files along with an <tt>application.xml</tt> file</p>
+
+</li></ul>
+</li>
+<li><b>To create any needed resources, deploy the application, and run the client, use
+the following command:</b><pre><tt><b>ant run</b></tt></pre><p>This command starts the database server if it is not already running, then
+deploys and runs the application.</p><p>Ignore the message that states that the application is deployed at a URL.</p><p>The output in the terminal window looks something like this (preceded by application
+client container output):</p><pre>running application client container.
+PUBLISHER: Setting hire ID to 50, name Bill Tudor, position Programmer
+PUBLISHER: Setting hire ID to 51, name Carol Jones, position Senior Programmer
+PUBLISHER: Setting hire ID to 52, name Mark Wilson, position Manager
+PUBLISHER: Setting hire ID to 53, name Polly Wren, position Senior Programmer
+PUBLISHER: Setting hire ID to 54, name Joe Lawrence, position Director
+Waiting for 5 message(s)
+New hire event processed:
+  Employee ID: 52
+  Name: Mark Wilson
+  Equipment: PDA
+  Office number: 294
+Waiting for 4 message(s)
+New hire event processed:
+  Employee ID: 53
+  Name: Polly Wren
+  Equipment: Laptop
+  Office number: 186
+Waiting for 3 message(s)
+New hire event processed:
+  Employee ID: 54
+  Name: Joe Lawrence
+  Equipment: Java Phone
+  Office number: 135
+Waiting for 2 message(s)
+New hire event processed:
+  Employee ID: 50
+  Name: Bill Tudor
+  Equipment: Desktop System
+  Office number: 200
+Waiting for 1 message(s)
+New hire event processed:
+  Employee ID: 51
+  Name: Carol Jones
+  Equipment: Laptop
+  Office number: 262</pre><p>The output from the message-driven beans and the entity class appears in the
+server log, wrapped in logging information.</p><p>For each employee, the application first creates the entity and then finds it.
+You may see runtime errors in the server log, and transaction rollbacks may
+occur. The errors occur if both of the message-driven beans discover at the
+same time that the entity does not yet exist, so they both
+try to create it. The first attempt succeeds, but the second fails because
+the bean already exists. After the rollback, the second message-driven bean tries again
+and succeeds in finding the entity. Container-managed transactions allow the application to run correctly,
+in spite of these errors, with no special programming.</p></li></ol>
+         </div>
+
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+
+<a name="bnchp"></a><h2 class="cye-lm-tag">An Application Example That Consumes Messages from a Remote Server</h2>
+<a name="indexterm-2551"></a><a name="indexterm-2552"></a><a name="indexterm-2553"></a><a name="indexterm-2554"></a><p class="cye-lm-tag">This section and the following section explain how to write, compile, package, deploy,
+and run a pair of Java EE modules that run on two
+Java EE servers and that use the JMS API to interchange messages with
+each other. It is a common practice to deploy different components of an
+enterprise application on different systems within a company, and these examples illustrate on
+a small scale how to do this for an application that uses the
+JMS API.</p>
+
+<p class="cye-lm-tag">The two examples work in slightly different ways. In the first example, the
+deployment information for a message-driven bean specifies the remote server from which it
+will <b>consume</b> messages. In the next example, described in <a href="bnchx.html">An Application Example That Deploys a Message-Driven Bean on Two Servers</a>, the same message-driven bean
+is deployed on two different servers, so it is the client module
+that specifies the servers (one local, one remote) to which it is <b>sending</b>
+messages.</p>
+
+<p class="cye-lm-tag">This first example divides the example in <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a> into two modules: one
+containing the application client, and the other containing the message-driven bean.</p>
+
+<p class="cye-lm-tag">You will find the source files for this section in the <tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/</tt>
+directory. Path names in this section are relative to this directory.</p>
+
+
+
+<a name="bnchq"></a><h3>Overview of the <tt>consumeremote</tt> Example Modules</h3>
+<p class="cye-lm-tag">This example is very similar to the one in <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a>, except for
+the fact that it is packaged as two separate modules:</p>
+
+
+<ul><li><p class="cye-lm-tag">One module contains the application client, which runs on the remote system and sends three messages to a queue.</p>
+
+</li>
+<li><p class="cye-lm-tag">The other module contains the message-driven bean, which is deployed on the local server and consumes the messages from the queue on the remote server.</p>
+
+</li></ul>
+<p class="cye-lm-tag">The basic steps of the modules are as follows:</p>
+
+
+<ol><li><p class="cye-lm-tag">The administrator starts two Java EE servers, one on each system.</p>
+
+</li>
+<li><p class="cye-lm-tag">On the local server, the administrator deploys the message-driven bean module, which specifies the remote server where the client is deployed.</p>
+
+</li>
+<li><p class="cye-lm-tag">On the remote server, the administrator places the client JAR file.</p>
+
+</li>
+<li><p class="cye-lm-tag">The client module sends three messages to a queue.</p>
+
+</li>
+<li><p class="cye-lm-tag">The message-driven bean consumes the messages.</p>
+
+</li></ol>
+<p class="cye-lm-tag"><a href="#bnchr">Figure&nbsp;48-5</a> illustrates the structure of this application. You can see that it is
+almost identical to <a href="bnbpl.html#bnbpm">Figure&nbsp;25-1</a> except that there are two Java EE servers. The queue
+used is the one on the remote server; the queue must also exist
+on the local server for resource injection to succeed.</p>
+
+<a name="bnchr"></a><p class="caption cye-lm-tag">Figure&nbsp;48-5 A Java EE Application That Consumes Messages from a Remote Server</p><img src="figures/jmsj2ee-consumeRemote.gif" alt="Diagram of application showing a message-driven bean that consumes messages from an application client on a remote server">
+
+<a name="bnchs"></a><h3>Writing the Module Components for the <tt>consumeremote</tt> Example</h3>
+<p class="cye-lm-tag">Writing the components of the modules involves</p>
+
+
+<ul><li><p class="cye-lm-tag">Coding the application client</p>
+
+</li>
+<li><p class="cye-lm-tag">Coding the message-driven bean</p>
+
+</li></ul>
+<p class="cye-lm-tag">The application client, <tt>jupiterclient/src/java/SimpleClient.java</tt>, is almost identical to the one in <a href="bnbpn.html">The <tt>simplemessage</tt> Application Client</a>.</p>
+
+<p class="cye-lm-tag">Similarly, the message-driven bean, <tt>earthmdb/src/java/MessageBean.java</tt>, is almost identical to the one in
+<a href="bnbpo.html">The Message-Driven Bean Class</a>. The only significant difference is that the activation config properties include one
+property that specifies the name of the remote system. You need to edit
+the source file to specify the name of your system.</p>
+
+
+
+<a name="bncht"></a><h3>Creating Resources for the <tt>consumeremote</tt> Example</h3>
+<p class="cye-lm-tag">The application client can use any connection factory that exists on the remote
+server; in this example, it uses <tt>jms/ConnectionFactory</tt>. Both components use the queue named
+<tt>jms/Queue</tt>, which you created for <a href="bncfa.html#bncfb">A Simple Example of Synchronous Message Receives</a>. The message-driven bean does not need a
+previously created connection factory; the resource adapter creates one for it.</p>
+
+<p class="cye-lm-tag">Any missing resources will be created when you deploy the example.</p>
+
+
+
+<a name="bnchu"></a><h3>Using Two Application Servers for the <tt>consumeremote</tt> Example</h3>
+<p class="cye-lm-tag">As in <a href="bncfa.html#bncfp">Running JMS Clients on Multiple Systems</a>, the two servers are referred to as <tt>earth</tt> and <tt>jupiter</tt>.</p>
+
+<p class="cye-lm-tag">The GlassFish Server must be running on both systems.</p>
+
+<p class="cye-lm-tag">Before you can run the example, you must change the default name
+of the JMS host on <tt>jupiter</tt>, as described in <a href="bncfa.html#gjkpv">To Change the Default Host Name Using the Administration Console</a>. If you have
+already performed this task, you do not have to repeat it.</p>
+
+<p class="cye-lm-tag">Which system you use to package and deploy the modules and which
+system you use to run the client depend on your network configuration (specifically, which
+file system you can access remotely). These instructions assume you can access the
+file system of <tt>jupiter</tt> from <tt>earth</tt> but cannot access the file system of
+<tt>earth</tt> from <tt>jupiter</tt>. (You can use the same systems for <tt>jupiter</tt> and <tt>earth</tt>
+that you used in <a href="bncfa.html#bncfp">Running JMS Clients on Multiple Systems</a>.)</p>
+
+<p class="cye-lm-tag">You can package both modules on <tt>earth</tt> and deploy the message-driven bean there.
+The only action you perform on <tt>jupiter</tt> is running the client module.</p>
+
+
+
+<a name="gmreg"></a><h3>Running the <tt>consumeremote</tt> Example</h3>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run the <tt>consumeremote</tt> example.</p>
+
+
+
+<a name="bnchv"></a><h4>To Run the <tt>consumeremote</tt> Example Using NetBeans IDE</h4>
+<p class="cye-lm-tag">To edit the message-driven bean source file and then package, deploy, and run
+the modules using NetBeans IDE, follow these steps.</p>
+
+<ol>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/</tt></pre></li>
+<li><b>Select the <tt>earthmdb</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>Edit the <tt>MessageBean.java</tt> file as follows:</b><ol style="list-style-type: lower-alpha">
+<li><b>In the Projects tab, expand the <tt>earthmdb</tt>, Source Packages, and <tt>mdb</tt> nodes, then
+double-click <tt>MessageBean.java</tt>.</b></li>
+<li><b>Find the following line within the <tt>@MessageDriven</tt> annotation:</b><pre>        @ActivationConfigProperty(propertyName = "addressList",
+            propertyValue = "remotesystem"),</pre></li>
+<li><b>Replace <tt>remotesystem</tt> with the name of your remote system.</b></li></ol></li>
+<li><b>Right-click the <tt>earthmdb</tt> project and select Build.</b><p class="cye-lm-tag">This command creates a JAR file that contains the bean class file.</p></li>
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>Select the <tt>jupiterclient</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the <tt>jupiterclient</tt> project and select Build.</b><p class="cye-lm-tag">This command creates a JAR file that contains the client class file and
+a manifest file.</p></li>
+<li><b>Right-click the <tt>earthmdb</tt> project and select Deploy.</b></li>
+<li><b>To copy the <tt>jupiterclient</tt> module to the remote system, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Change to the directory <tt>jupiterclient/dist</tt>:</b><pre><tt><b>cd </b></tt><b><i>tut-install</i><tt>/examples/jms/consumeremote/jupiterclient/dist</tt></b></pre></li>
+<li><b>Type a command like the following:</b><pre><tt><b>cp jupiterclient.jar F:/</b></tt></pre><p class="cye-lm-tag">That is, copy the client JAR file to a location on the
+remote file system. You can use the file system graphical user interface on
+your system instead of the command line.</p></li></ol></li>
+<li><b>To run the application client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>If you did not previously create the queue and connection factory on the
+remote system (<tt>jupiter</tt>), go to the <tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/jupiterclient/</tt> directory on the remote system
+and type the following command:</b><pre><tt><b>ant add-resources</b></tt></pre></li>
+<li><b>Go to the directory on the remote system (<tt>jupiter</tt>) where you copied the
+client JAR file.</b></li>
+<li><b>To deploy the client module and retrieve the client stubs, use the following
+command:</b><pre><tt><b>asadmin deploy --retrieve . jupiterclient.jar</b></tt></pre><p class="cye-lm-tag">This command deploys the client JAR file and retrieves the client stubs in
+a file named <tt>jupiterclientClient.jar</tt></p></li>
+<li><b>To run the client, use the following command:</b><pre><tt><b>appclient -client jupiterclientClient.jar</b></tt></pre><p class="cye-lm-tag">On <tt>jupiter</tt>, the output of the <tt>appclient</tt> command looks like this (preceded by
+application client container output):</p><pre>Sending message: This is message 1 from jupiterclient
+Sending message: This is message 2 from jupiterclient
+Sending message: This is message 3 from jupiterclient</pre><p class="cye-lm-tag">On <tt>earth</tt>, the output in the server log looks something like this (preceded
+by logging information):</p><pre>MESSAGE BEAN: Message received: This is message 1 from jupiterclient
+MESSAGE BEAN: Message received: This is message 2 from jupiterclient
+MESSAGE BEAN: Message received: This is message 3 from jupiterclient</pre></li>
+<li><b>To undeploy the client after you finish running it, use the following command:</b><pre><tt><b>asadmin undeploy jupiterclient</b></tt></pre></li></ol></li></ol>
+
+<a name="bnchw"></a><h4>To Run the <tt>consumeremote</tt> Example Using Ant</h4>
+<p class="cye-lm-tag">To edit the message-driven bean source file and then package, deploy, and run
+the modules using Ant, follow these steps.</p>
+
+<ol>
+<li><b>Open the following file in an editor:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/earthmdb/src/java/mdb/MessageBean.java</tt></pre></li>
+<li><b>Find the following line within the <tt>@MessageDriven</tt> annotation:</b><pre>        @ActivationConfigProperty(propertyName = "addressList",
+            propertyValue = "remotesystem"),</pre></li>
+<li><b>Replace <tt>remotesystem</tt> with the name of your remote system, then save and close
+the file.</b></li>
+<li><b>Go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/earthmdb/</tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">This command creates a JAR file that contains the bean class file.</p></li>
+<li><b>Type the following command:</b><pre><tt><b>ant deploy</b></tt></pre></li>
+<li><b>Go to the <tt>jupiterclient</tt> directory:</b><pre><tt><b>cd ../jupiterclient</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">This command creates a JAR file that contains the client class file and
+a manifest file.</p></li>
+<li><b>To copy the <tt>jupiterclient</tt> module to the remote system, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Change to the directory <tt>jupiterclient/dist</tt>:</b><pre><tt><b>cd ../jupiterclient/dist</b></tt></pre></li>
+<li><b>Type a command like the following:</b><pre><tt><b>cp jupiterclient.jar F:/</b></tt></pre><p class="cye-lm-tag">That is, copy the client JAR file to a location on the
+remote file system.</p></li></ol></li>
+<li><b>To run the application client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>If you did not previously create the queue and connection factory on the
+remote system (<tt>jupiter</tt>), go to the <tt></tt><i>tut-install</i><tt>/examples/jms/consumeremote/jupiterclient/</tt> directory on the remote system
+and type the following command:</b><pre><tt><b>ant add-resources</b></tt></pre></li>
+<li><b>Go to the directory on the remote system (<tt>jupiter</tt>) where you copied the
+client JAR file.</b></li>
+<li><b>To deploy the client module and retrieve the client stubs, use the following
+command:</b><pre><tt><b>asadmin deploy --retrieve . jupiterclient.jar</b></tt></pre><p class="cye-lm-tag">This command deploys the client JAR file and retrieves the client stubs in
+a file named <tt>jupiterclientClient.jar</tt></p></li>
+<li><b>To run the client, use the following command:</b><pre><tt><b>appclient -client jupiterclientClient.jar</b></tt></pre><p class="cye-lm-tag">On <tt>jupiter</tt>, the output of the <tt>appclient</tt> command looks like this (preceded by
+application client container output):</p><pre>Sending message: This is message 1 from jupiterclient
+Sending message: This is message 2 from jupiterclient
+Sending message: This is message 3 from jupiterclient</pre><p class="cye-lm-tag">On <tt>earth</tt>, the output in the server log looks something like this (preceded
+by logging information):</p><pre>MESSAGE BEAN: Message received: This is message 1 from jupiterclient
+MESSAGE BEAN: Message received: This is message 2 from jupiterclient
+MESSAGE BEAN: Message received: This is message 3 from jupiterclient</pre></li>
+<li><b>To undeploy the client after you finish running it, use the following command:</b><pre><tt><b>asadmin undeploy jupiterclient</b></tt></pre></li></ol></li></ol>
+         </div>
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+
+<a name="bnchx"></a><h2 class="cye-lm-tag">An Application Example That Deploys a Message-Driven Bean on Two Servers</h2>
+<a name="indexterm-2555"></a><a name="indexterm-2556"></a><a name="indexterm-2557"></a><a name="indexterm-2558"></a><p class="cye-lm-tag">This section, like the preceding one, explains how to write, compile, package, deploy,
+and run a pair of Java EE modules that use the JMS
+API and run on two Java EE servers. These modules are slightly more
+complex than the ones in the first example.</p>
+
+<p class="cye-lm-tag">The modules use the following components:</p>
+
+
+<ul><li><p class="cye-lm-tag">An application client that is deployed on the local server. It uses two connection factories, an ordinary one and one configured to communicate with the remote server, to create two publishers and two subscribers and to publish and consume messages.</p>
+
+</li>
+<li><p class="cye-lm-tag">A message-driven bean that is deployed twice: once on the local server, and once on the remote one. It processes the messages and sends replies.</p>
+
+</li></ul>
+<p class="cye-lm-tag">In this section, the term <b>local server</b> means the server on which both the
+application client and the message-driven bean are deployed (<tt>earth</tt> in the preceding example).
+The term <b>remote server</b> means the server on which only the message-driven bean is
+deployed (<tt>jupiter</tt> in the preceding example).</p>
+
+<p class="cye-lm-tag">You will find the source files for this section in the <tt></tt><i>tut-install</i><tt>/examples/jms/sendremote/</tt>
+directory. Path names in this section are relative to this directory.</p>
+
+
+
+<a name="bnchy"></a><h3>Overview of the <tt>sendremote</tt> Example Modules</h3>
+<p class="cye-lm-tag">This pair of modules is somewhat similar to the modules in <a href="bnchp.html">An Application Example That Consumes Messages from a Remote Server</a>
+in that the only components are a client and a message-driven bean. However,
+the modules here use these components in more complex ways. One module consists
+of the application client. The other module contains only the message-driven bean and
+is deployed twice, once on each server.</p>
+
+<p class="cye-lm-tag">The basic steps of the modules are as follows.</p>
+
+
+<ol><li><p class="cye-lm-tag">You start two Java EE servers, one on each system.</p>
+
+</li>
+<li><p class="cye-lm-tag">On the local server (<tt>earth</tt>), you create two connection factories: one local and one that communicates with the remote server (<tt>jupiter</tt>). On the remote server, you create a connection factory that has the same name as the one that communicates with the remote server.</p>
+
+</li>
+<li><p class="cye-lm-tag">The application client looks up the two connection factories (the local one and the one that communicates with the remote server) to create two connections, sessions, publishers, and subscribers. The subscribers use a message listener.</p>
+
+</li>
+<li><p class="cye-lm-tag">Each publisher publishes five messages.</p>
+
+</li>
+<li><p class="cye-lm-tag">Each of the local and the remote message-driven beans receives five messages and sends replies.</p>
+
+</li>
+<li><p class="cye-lm-tag">The client’s message listener consumes the replies.</p>
+
+</li></ol>
+<p class="cye-lm-tag"><a href="#bncia">Figure&nbsp;48-6</a> illustrates the structure of this application. M1 represents the first message sent
+using the local connection factory, and RM1 represents the first reply message sent by
+the local MDB. M2 represents the first message sent using the remote
+connection factory, and RM2 represents the first reply message sent by the remote
+MDB.</p>
+
+<a name="bncia"></a><p class="caption cye-lm-tag">Figure&nbsp;48-6 A Java EE Application That Sends Messages to Two Servers</p><img src="figures/jmsj2ee-sendRemote.gif" alt="Diagram of application showing an application client sending messages to two servers and receiving the replies">
+
+<a name="bnchz"></a><h3>Writing the Module Components for the <tt>sendremote</tt> Example</h3>
+<p class="cye-lm-tag">Writing the components of the modules involves coding the application client and the
+message-driven bean.</p>
+
+
+
+<a name="bncib"></a><h4>Coding the Application Client: <tt>MultiAppServerClient.java</tt></h4>
+<a name="indexterm-2559"></a><a name="indexterm-2560"></a><a name="indexterm-2561"></a><a name="indexterm-2562"></a><p class="cye-lm-tag">The application client class, <tt>multiclient/src/java/MultiAppServerClient.java</tt>, does the following.</p>
+
+
+<ol><li><p class="cye-lm-tag">It injects resources for two connection factories and a topic.</p>
+
+</li>
+<li><p class="cye-lm-tag">For each connection factory, it creates a connection, a publisher session, a publisher, a subscriber session, a subscriber, and a temporary topic for replies.</p>
+
+</li>
+<li><p class="cye-lm-tag">Each subscriber sets its message listener, <tt>ReplyListener</tt>, and starts the connection.</p>
+
+</li>
+<li><p class="cye-lm-tag">Each publisher publishes five messages and creates a list of the messages the listener should expect.</p>
+
+</li>
+<li><p class="cye-lm-tag">When each reply arrives, the message listener displays its contents and removes it from the list of expected messages.</p>
+
+</li>
+<li><p class="cye-lm-tag">When all the messages have arrived, the client exits.</p>
+
+</li></ol>
+
+
+<a name="bncic"></a><h4>Coding the Message-Driven Bean: <tt>ReplyMsgBean.java</tt></h4>
+<a name="indexterm-2563"></a><p class="cye-lm-tag">The message-driven bean class, <tt>replybean/src/ReplyMsgBean.java</tt>, does the following:</p>
+
+
+<ol><li><p class="cye-lm-tag">Uses the <tt>@MessageDriven</tt> annotation:</p>
+
+<pre>@MessageDriven(mappedName = "jms/Topic")</pre></li>
+<li><p class="cye-lm-tag">Injects resources for the <tt>MessageDrivenContext</tt> and for a connection factory. It does not need a destination resource because it uses the value of the incoming message’s <tt>JMSReplyTo</tt> header as the destination.</p>
+
+</li>
+<li><p class="cye-lm-tag">Uses a <tt>@PostConstruct</tt> callback method to create the connection, and a <tt>@PreDestroy</tt> callback method to close the connection.</p>
+
+</li></ol>
+<p class="cye-lm-tag">The <tt>onMessage</tt> method of the message-driven bean class does the following:</p>
+
+
+<ol><li><p class="cye-lm-tag">Casts the incoming message to a <tt>TextMessage</tt> and displays the text</p>
+
+</li>
+<li><p class="cye-lm-tag">Creates a connection, a session, and a publisher for the reply message</p>
+
+</li>
+<li><p class="cye-lm-tag">Publishes the message to the reply topic</p>
+
+</li>
+<li><p class="cye-lm-tag">Closes the connection</p>
+
+</li></ol>
+<p class="cye-lm-tag">On both servers, the bean will consume messages from the topic <tt>jms/Topic</tt>.</p>
+
+
+
+<a name="bncid"></a><h3>Creating Resources for the <tt>sendremote</tt> Example</h3>
+<p class="cye-lm-tag">This example uses the connection factory named <tt>jms/ConnectionFactory</tt> and the topic named
+<tt>jms/Topic</tt>. These objects must exist on both the local and the remote servers.</p>
+
+<p class="cye-lm-tag">This example uses an additional connection factory, <tt>jms/JupiterConnectionFactory</tt>, which communicates with the
+remote system; you created it in <a href="bncfa.html#bncfq">To Create Administered Objects for Multiple Systems</a>. This connection factory must exist on
+the local server.</p>
+
+<p class="cye-lm-tag">The <tt>build.xml</tt> file for the <tt>multiclient</tt> module contains targets you can use to
+create these resources if you deleted them previously.</p>
+
+<p class="cye-lm-tag">To create the resource needed only on the local system, use the
+following command:</p>
+
+<pre><tt><b>ant create-remote-factory -Dsys=</b></tt><b><i>remote-system-name</i><tt></tt></b></pre><p class="cye-lm-tag">The other resources will be created when you deploy the application.</p>
+
+
+
+<a name="gkpbq"></a><h3>To Enable Deployment on the Remote System</h3><p class="cye-lm-tag">GlassFish Server by default does not allow deployment on a remote system. You
+must create a password for the administrator on the remote system, then enable
+secure administration on that system. After that, you will be able to deploy
+the message-driven bean on the remote system.</p>
+
+<ol>
+<li><b>On <tt>jupiter</tt>, start the Administration Console by opening a browser at <tt>http://localhost:4848/</tt>.</b></li>
+<li><b>In the navigation tree, expand the Configurations node, then expand the server-config node.</b></li>
+<li><b>Expand the Security node.</b></li>
+<li><b>Expand the Realms node.</b></li>
+<li><b>Select the admin-realm node.</b></li>
+<li><b>On the Edit Realm page, click Manage Users.</b></li>
+<li><b>In the File Users table, click admin in the User ID column.</b></li>
+<li><b>On the Edit File Realm Users page, type a password (for example, jmsadmin)
+in the New Password and Confirm New Password fields, then click Save.</b></li>
+<li><b>In the navigation tree, click the Server (Admin Server) node.</b></li>
+<li><b>On the General Information page, click Secure Administration.</b></li>
+<li><b>Click Enable Secure Admin, accepting the default values for the alias and instance.</b></li>
+<li><b>The server on <tt>jupiter</tt> will stop and restart automatically. Log in to the
+Administration Console with the <tt>admin</tt> user ID and the password you created and
+verify that the settings are correct.</b></li></ol>
+
+<a name="bncie"></a><h3>To Use Two Application Servers for the <tt>sendremote</tt> Example</h3><p class="cye-lm-tag">If you are using NetBeans IDE, you need to add the remote
+server in order to deploy the message-driven bean there. To do so, follow
+these steps.</p>
+
+<ol>
+<li><b>In NetBeans IDE, click the Services tab.</b></li>
+<li><b>Right-click the Servers node and select Add Server. In the Add Server Instance
+dialog, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Select GlassFish Server 3+ from the Server list.</b></li>
+<li><b>In the Name field, specify a name slightly different from that of the
+local server, such as <tt>GlassFish Server 3+ (2)</tt>.</b></li>
+<li><b>Click Next.</b></li>
+<li><b>For the Server Location, browse to the location of the GlassFish Server
+on the remote system. This location must be visible from the local system.</b></li>
+<li><b>Click Next.</b></li>
+<li><b>Select the Register Remote Domain radio button.</b></li>
+<li><b>In the Host Name field, type the name of the remote system.</b></li>
+<li><b>Click Finish.</b></li>
+<li><b>In the dialog that appears, enter the user name (admin) and the password
+you created.</b></li></ol></li></ol><p class="cye-lm-tag">Next Steps</p><p class="cye-lm-tag">Before you can run the example, you must change the default name
+of the JMS host on <tt>jupiter</tt>, as described in <a href="bncfa.html#gjkpv">To Change the Default Host Name Using the Administration Console</a>. If you have
+already performed this task, you do not have to repeat it.</p>
+
+
+
+<a name="gmrho"></a><h3>Running the <tt>sendremote</tt> Example</h3>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Ant to build, package, deploy, and
+run the <tt>sendremote</tt> example.</p>
+
+
+
+<a name="bncif"></a><h4>To Run the <tt>sendremote</tt> Example Using NetBeans IDE</h4>
+<ol>
+<li><b>To build the <tt>replybean</tt> module, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>In the Open Project dialog, navigate to:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/sendremote/</tt></pre></li>
+<li><b>Select the <tt>replybean</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the <tt>replybean</tt> project and select Build.</b><p class="cye-lm-tag">This command creates a JAR file that contains the bean class file.</p></li></ol></li>
+<li><b>To build the <tt>multiclient</tt> module, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>From the File menu, choose Open Project.</b></li>
+<li><b>Select the <tt>multiclient</tt> folder.</b></li>
+<li><b>Select the Open as Main Project check box.</b></li>
+<li><b>Click Open Project.</b></li>
+<li><b>In the Projects tab, right-click the <tt>multiclient</tt> project and select Build.</b><p class="cye-lm-tag">This command creates a JAR file that contains the client class file and
+a manifest file.</p></li></ol></li>
+<li><b>To create any needed resources and deploy the <tt>multiclient</tt> module on the local
+server, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>multiclient</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>From the Server list, select GlassFish Server 3+ (the local server).</b></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the <tt>multiclient</tt> project and select Deploy.</b><p class="cye-lm-tag">You can use the Services tab to verify that <tt>multiclient</tt> is deployed
+as an App Client Module on the local server.</p></li></ol></li>
+<li><b>To deploy the <tt>replybean</tt> module on the local and remote servers, follow these
+steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Right-click the <tt>replybean</tt> project and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>From the Server list, select GlassFish Server 3+ (the local server).</b></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the <tt>replybean</tt> project and select Deploy.</b></li>
+<li><b>Right-click the <tt>replybean</tt> project again and select Properties.</b></li>
+<li><b>Select Run from the Categories tree.</b></li>
+<li><b>From the Server list, select GlassFish Server 3+ (2) (the remote server).</b></li>
+<li><b>Click OK.</b></li>
+<li><b>Right-click the <tt>replybean</tt> project and select Deploy.</b><p class="cye-lm-tag">You can use the Services tab to verify that <tt>replybean</tt> is deployed
+as an EJB Module on both servers.</p></li></ol></li>
+<li><b>To run the application client, right-click the <tt>multiclient</tt> project and select Run.</b><p class="cye-lm-tag">This command returns a JAR file named <tt>multiclientClient.jar</tt> and then executes it.</p><p class="cye-lm-tag">On the local system, the output of the <tt>appclient</tt> command looks something like
+this:</p><pre>running application client container.
+...
+Sent message: text: id=1 to local app server
+Sent message: text: id=2 to remote app server
+ReplyListener: Received message: id=1, text=ReplyMsgBean processed message: 
+text: id=1 to local app server
+Sent message: text: id=3 to local app server
+ReplyListener: Received message: id=3, text=ReplyMsgBean processed message: 
+text: id=3 to local app server
+ReplyListener: Received message: id=2, text=ReplyMsgBean processed message: 
+text: id=2 to remote app server
+Sent message: text: id=4 to remote app server
+ReplyListener: Received message: id=4, text=ReplyMsgBean processed message: 
+text: id=4 to remote app server
+Sent message: text: id=5 to local app server
+ReplyListener: Received message: id=5, text=ReplyMsgBean processed message: 
+text: id=5 to local app server
+Sent message: text: id=6 to remote app server
+ReplyListener: Received message: id=6, text=ReplyMsgBean processed message: 
+text: id=6 to remote app server
+Sent message: text: id=7 to local app server
+ReplyListener: Received message: id=7, text=ReplyMsgBean processed message: 
+text: id=7 to local app server
+Sent message: text: id=8 to remote app server
+ReplyListener: Received message: id=8, text=ReplyMsgBean processed message: 
+text: id=8 to remote app server
+Sent message: text: id=9 to local app server
+ReplyListener: Received message: id=9, text=ReplyMsgBean processed message: 
+text: id=9 to local app server
+Sent message: text: id=10 to remote app server
+ReplyListener: Received message: id=10, text=ReplyMsgBean processed message: 
+text: id=10 to remote app server
+Waiting for 0 message(s) from local app server
+Waiting for 0 message(s) from remote app server
+Finished
+Closing connection 1
+Closing connection 2</pre><p class="cye-lm-tag">On the local system, where the message-driven bean receives the odd-numbered messages, the
+output in the server log looks like this (wrapped in logging information):</p><pre>ReplyMsgBean: Received message: text: id=1 to local app server
+ReplyMsgBean: Received message: text: id=3 to local app server
+ReplyMsgBean: Received message: text: id=5 to local app server
+ReplyMsgBean: Received message: text: id=7 to local app server
+ReplyMsgBean: Received message: text: id=9 to local app server</pre><p class="cye-lm-tag">On the remote system, where the bean receives the even-numbered messages, the output
+in the server log looks like this (wrapped in logging information):</p><pre>ReplyMsgBean: Received message: text: id=2 to remote app server
+ReplyMsgBean: Received message: text: id=4 to remote app server
+ReplyMsgBean: Received message: text: id=6 to remote app server
+ReplyMsgBean: Received message: text: id=8 to remote app server
+ReplyMsgBean: Received message: text: id=10 to remote app server</pre></li></ol>
+
+<a name="bncig"></a><h4>To Run the <tt>sendremote</tt> Example Using Ant</h4>
+<ol>
+<li><b>To package the modules, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Go to the following directory:</b><pre><tt></tt><i>tut-install</i><tt>/examples/jms/sendremote/multiclient/</tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">This command creates a JAR file that contains the client class file and
+a manifest file.</p></li>
+<li><b>Change to the directory <tt>replybean</tt>:</b><pre><tt><b>cd ../replybean</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant</b></tt></pre><p class="cye-lm-tag">This command creates a JAR file that contains the bean class file.</p></li></ol></li>
+<li><b>To deploy the <tt>replybean</tt> module on the local and remote servers, follow these
+steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Verify that you are still in the directory <tt>replybean</tt>.</b></li>
+<li><b>Type the following command:</b><pre><tt><b>ant deploy</b></tt></pre><p class="cye-lm-tag">Ignore the message that states that the application is deployed at a URL.</p></li>
+<li><b>Type the following command:</b><pre><tt><b>ant deploy-remote -Dsys=</b></tt><b><i>remote-system-name</i><tt></tt></b></pre><p class="cye-lm-tag">Replace <i>remote-system-name</i> with the actual name of the remote system.</p></li></ol></li>
+<li><b>To deploy the client, follow these steps:</b><ol style="list-style-type: lower-alpha">
+<li><b>Change to the directory <tt>multiclient</tt>:</b><pre><tt><b>cd ../multiclient</b></tt></pre></li>
+<li><b>Type the following command:</b><pre><tt><b>ant getclient</b></tt></pre></li></ol></li>
+<li><b>To run the client, type the following command:</b><pre><tt><b>ant run</b></tt></pre><p class="cye-lm-tag">On the local system, the output looks something like this:</p><pre>running application client container.
+...
+Sent message: text: id=1 to local app server
+Sent message: text: id=2 to remote app server
+ReplyListener: Received message: id=1, text=ReplyMsgBean processed message: 
+text: id=1 to local app server
+Sent message: text: id=3 to local app server
+ReplyListener: Received message: id=3, text=ReplyMsgBean processed message: 
+text: id=3 to local app server
+ReplyListener: Received message: id=2, text=ReplyMsgBean processed message: 
+text: id=2 to remote app server
+Sent message: text: id=4 to remote app server
+ReplyListener: Received message: id=4, text=ReplyMsgBean processed message: 
+text: id=4 to remote app server
+Sent message: text: id=5 to local app server
+ReplyListener: Received message: id=5, text=ReplyMsgBean processed message: 
+text: id=5 to local app server
+Sent message: text: id=6 to remote app server
+ReplyListener: Received message: id=6, text=ReplyMsgBean processed message: 
+text: id=6 to remote app server
+Sent message: text: id=7 to local app server
+ReplyListener: Received message: id=7, text=ReplyMsgBean processed message: 
+text: id=7 to local app server
+Sent message: text: id=8 to remote app server
+ReplyListener: Received message: id=8, text=ReplyMsgBean processed message: 
+text: id=8 to remote app server
+Sent message: text: id=9 to local app server
+ReplyListener: Received message: id=9, text=ReplyMsgBean processed message: 
+text: id=9 to local app server
+Sent message: text: id=10 to remote app server
+ReplyListener: Received message: id=10, text=ReplyMsgBean processed message: 
+text: id=10 to remote app server
+Waiting for 0 message(s) from local app server
+Waiting for 0 message(s) from remote app server
+Finished
+Closing connection 1
+Closing connection 2</pre><p class="cye-lm-tag">On the local system, where the message-driven bean receives the odd-numbered messages, the
+output in the server log looks like this (wrapped in logging information):</p><pre>ReplyMsgBean: Received message: text: id=1 to local app server
+ReplyMsgBean: Received message: text: id=3 to local app server
+ReplyMsgBean: Received message: text: id=5 to local app server
+ReplyMsgBean: Received message: text: id=7 to local app server
+ReplyMsgBean: Received message: text: id=9 to local app server</pre><p class="cye-lm-tag">On the remote system, where the bean receives the even-numbered messages, the output
+in the server log looks like this (wrapped in logging information):</p><pre>ReplyMsgBean: Received message: text: id=2 to remote app server
+ReplyMsgBean: Received message: text: id=4 to remote app server
+ReplyMsgBean: Received message: text: id=6 to remote app server
+ReplyMsgBean: Received message: text: id=8 to remote app server
+ReplyMsgBean: Received message: text: id=10 to remote app server</pre></li></ol>
+
+<a name="gmpki"></a><h3>To Disable Deployment on the Remote System</h3><p class="cye-lm-tag">After running this example and undeploying the components, you should disable secure administration
+on the remote system (<tt>jupiter</tt>). In addition, you will probably want to return
+the GlassFish Server on <tt>jupiter</tt> to its previous state of not requiring
+a user name and password for administration, to make it easier to run
+subsequent examples there.</p>
+
+<ol>
+<li><b>On the remote system (<tt>jupiter</tt>), start the Administration Console by opening a browser
+at <tt>http://localhost:4848/</tt>, if it is not already running.</b><p class="cye-lm-tag">You will need to log in.</p></li>
+<li><b>In the navigation tree, click the Server (Admin Server) node.</b></li>
+<li><b>On the General Information page, click Secure Administration.</b></li>
+<li><b>Click Disable Secure Admin.</b></li>
+<li><b>The server will stop and restart automatically. Log in to the Administration
+Console again.</b></li>
+<li><b>In the navigation tree, expand the Configurations node, then expand the server-config node.</b></li>
+<li><b>Expand the Security node.</b></li>
+<li><b>Expand the Realms node.</b></li>
+<li><b>Select the admin-realm node.</b></li>
+<li><b>On the Edit Realm page, click Manage Users.</b></li>
+<li><b>In the File Users table, click admin in the User ID column.</b></li>
+<li><b>On the Edit File Realm Users page, click Save.</b></li>
+<li><b>In the dialog that asks you to confirm that you are setting
+an empty password for the specified user, click OK.</b><p class="cye-lm-tag">The next time you start the Administration Console or issue an <tt>asadmin</tt> command, you
+will not need to provide login credentials.</p></li></ol><p class="cye-lm-tag">Next Steps</p><p class="cye-lm-tag">On <tt>earth</tt>, if you used NetBeans IDE to add the remote server, you
+may also want to remove the server.</p>
+
+
+         </div>
+<br><hr>
+
+</body>
+</html>

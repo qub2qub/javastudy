@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jms jee7 examples</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples.htm">src</a>
+<div id="JEETT00111" class="chapter cye-lm-tag"><a id="BNCGV" name="BNCGV" class="anchor"></a>
+<h1 class="chapter"><span class="secnum cye-lm-tag">46</span> <a id="sthref2376" name="sthref2376" class="anchor"></a>Java Message Service Examples</h1>
+<p class="cye-lm-tag">This chapter provides examples that show how to use the JMS API in various kinds of Java EE applications. It covers the following topics:</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples001.htm#BABEFBHJ">Overview of the JMS Examples</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFA">Writing Simple JMS Applications</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples003.htm#GIWFH">Writing More Advanced JMS Applications</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples004.htm#BABGEFHC">Writing High Performance and Scalable JMS Applications</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples005.htm#BABBABFC">Sending and Receiving Messages Using a Simple Web Application</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples006.htm#BNBPK">Receiving Messages Asynchronously Using a Message-Driven Bean</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples007.htm#BNCGW">Sending Messages from a Session Bean to an MDB</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples008.htm#BNCHF">Using an Entity to Join Messages from Two MDBs</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples009.htm#BABDFDJC">Using NetBeans IDE to Create JMS Resources</a></p>
+</li>
+</ul>
+<p class="cye-lm-tag">A final section covers <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples009.htm#BABDFDJC">Using NetBeans IDE to Create JMS Resources</a>.</p>
+<p class="cye-lm-tag">The examples are in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/</code> directory.</p>
+<p class="cye-lm-tag">The steps to build and run each example are as follows.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Use NetBeans IDE or Maven to compile, package, and in some cases deploy the example.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Use NetBeans IDE, Maven, or the <code dir="ltr">appclient</code> command to run the application client, or use the browser to run the web application examples.</p>
+</li>
+</ol>
+<p class="cye-lm-tag">Before you deploy or run the examples, you need to create resources for them. Some examples have a <code dir="ltr">glassfish-resources.xml</code> file that is used to create resources for that example and others. You can use the <code dir="ltr">asadmin</code> command to create the resources.</p>
+<p class="cye-lm-tag">To use the <code dir="ltr">asadmin</code> and <code dir="ltr">appclient</code> commands, you need to put the GlassFish Server <code dir="ltr">bin</code> directories in your command path, as described in <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples001.htm#GEXBC">SDK Installation Tips</a>.</p>
+
+<div class="sect1"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1"><span class="secnum">46.1</span> Overview of the JMS Examples</h1>
+<p>The following tables list the examples used in this chapter, describe what they do, and link to the section that describes them fully. The example directory for each example is relative to the <span class="variable">tut-install</span><code dir="ltr">/examples/jms/</code> directory.</p>
+<div class="tblhruleformal"><a id="sthref2377" name="sthref2377" class="anchor"></a><a id="sthref2378" name="sthref2378" class="anchor"></a>
+<p class="titleintable">Table 46-1 JMS Examples That Show the Use of Java EE Application Clients</p>
+<table class="HRuleFormal" title="JMS Examples That Show the Use of Java EE Application Clients" summary="This table lists and describes the JMS examples that use application clients." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="37%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t2">Example Directory</th>
+<th align="left" valign="bottom" id="r1c2-t2">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">simple/producer</code></p>
+</td>
+<td align="left" headers="r2c1-t2 r1c2-t2">
+<p>Using an application client to send messages; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BABIHCAE">Sending Messages</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">simple/synchconsumer</code></p>
+</td>
+<td align="left" headers="r3c1-t2 r1c2-t2">
+<p>Using an application client to receive messages synchronously; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFB">Receiving Messages Synchronously</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">simple/asynchconsumer</code></p>
+</td>
+<td align="left" headers="r4c1-t2 r1c2-t2">
+<p>Using an application client to receive messages asynchronously; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFH">Using a Message Listener for Asynchronous Message Delivery</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">simple/messagebrowser</code></p>
+</td>
+<td align="left" headers="r5c1-t2 r1c2-t2">
+<p>Using an application client to use a <code dir="ltr">QueueBrowser</code> to browse a queue; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFL">Browsing Messages on a Queue</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">simple/clientackconsumer</code></p>
+</td>
+<td align="left" headers="r6c1-t2 r1c2-t2">
+<p>Using an application client to acknowledge messages received synchronously; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFX">Acknowledging Messages</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r7c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">durablesubscriptionexample</code></p>
+</td>
+<td align="left" headers="r7c1-t2 r1c2-t2">
+<p>Using an application client to create a durable subscription on a topic; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples003.htm#BNCGG">Using Durable Subscriptions</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r8c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">transactedexample</code></p>
+</td>
+<td align="left" headers="r8c1-t2 r1c2-t2">
+<p>Using an application client to send and receive messages in local transactions (also uses request-reply messaging); see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples003.htm#BNCGJ">Using Local Transactions</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r9c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">shared/sharedconsumer</code></p>
+</td>
+<td align="left" headers="r9c1-t2 r1c2-t2">
+<p>Using an application client to create shared nondurable topic subscriptions; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples004.htm#BABIBEAC">Using Shared Nondurable Subscriptions</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r10c1-t2" headers="r1c1-t2">
+<p><code dir="ltr">shared/shareddurableconsumer</code></p>
+</td>
+<td align="left" headers="r10c1-t2 r1c2-t2">
+<p>Using an application client to create shared durable topic subscriptions; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples004.htm#BABEJBHA">Using Shared Durable Subscriptions</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<div class="tblhruleformal"><a id="sthref2379" name="sthref2379" class="anchor"></a><a id="sthref2380" name="sthref2380" class="anchor"></a>
+<p class="titleintable">Table 46-2 JMS Examples That Show the Use of Java EE Web and EJB Components</p>
+<table class="HRuleFormal" title="JMS Examples That Show the Use of Java EE Web and EJB Components" summary="This table lists and describes the JMS examples that use Java EE Web and EJB components." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="27%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t3">Example Directory</th>
+<th align="left" valign="bottom" id="r1c2-t3">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">websimplemessage</code></p>
+</td>
+<td align="left" headers="r2c1-t3 r1c2-t3">
+<p>Using managed beans to send messages and to receive messages synchronously; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples005.htm#BABBABFC">Sending and Receiving Messages Using a Simple Web Application</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">simplemessage</code></p>
+</td>
+<td align="left" headers="r3c1-t3 r1c2-t3">
+<p>Using an application client to send messages, and using a message-driven bean to receive messages asynchronously; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples006.htm#BNBPK">Receiving Messages Asynchronously Using a Message-Driven Bean</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">clientsessionmdb</code></p>
+</td>
+<td align="left" headers="r4c1-t3 r1c2-t3">
+<p>Using a session bean to send messages, and using a message-driven bean to receive messages; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples007.htm#BNCGW">Sending Messages from a Session Bean to an MDB</a></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">clientmdbentity</code></p>
+</td>
+<td align="left" headers="r5c1-t3 r1c2-t3">
+<p>Using an application client, two message-driven beans, and JPA persistence to create a simple HR application; see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples008.htm#BNCHF">Using an Entity to Join Messages from Two MDBs</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" --></div>
+</div>
+
+<br><hr>
+<div id="JEETT00554" class="sect1">
+<h1 class="sect1"><span class="secnum">46.2</span> <a id="sthref2381" name="sthref2381" class="anchor"></a><a id="sthref2382" name="sthref2382" class="anchor"></a>Writing Simple JMS Applications</h1>
+<p>This section shows how to create, package, and run simple JMS clients that are packaged as application clients. The clients demonstrate the basic tasks a JMS application must perform:</p>
+<ul>
+<li>
+<p>Creating a <code dir="ltr">JMSContext</code></p>
+</li>
+<li>
+<p>Creating message producers and consumers</p>
+</li>
+<li>
+<p>Sending and receiving messages</p>
+</li>
+</ul>
+<p>Each example uses two clients: one that sends messages and one that receives them. You can run the clients in two terminal windows.</p>
+<p>When you write a JMS client to run in an enterprise bean application, you use many of the same methods in much the same sequence as for an application client. However, there are some significant differences. <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#BNCGL">Using the JMS API in Java EE Applications</a> describes these differences, and this chapter provides examples that illustrate them.</p>
+<p>The examples for this section are in the <span class="variable">tut-install</span><code dir="ltr">/examples/jms/simple/</code> directory, under the following subdirectories:</p>
+<br>
+<code dir="ltr">producer/</code><br>
+<code dir="ltr">synchconsumer/</code><br>
+<code dir="ltr">asynchconsumer/</code><br>
+<code dir="ltr">messagebrowser/</code><br>
+<code dir="ltr">clientackconsumer/</code><br>
+<p>Before running the examples, you need to start GlassFish Server and create administered objects.</p>
+<a id="BNCFD" name="BNCFD" class="anchor"></a>
+<div id="JEETT00823" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.1</span> Starting the JMS Provider</h2>
+<p>When you use GlassFish Server, your JMS provider is GlassFish Server. Start the server as described in <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>.</p>
+</div>
+<!-- class="sect2" -->
+<a id="GKTJS" name="GKTJS" class="anchor"></a>
+<div id="JEETT00824" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.2</span> <a id="sthref2383" name="sthref2383" class="anchor"></a><a id="sthref2384" name="sthref2384" class="anchor"></a>Creating JMS Administered Objects</h2>
+<p>This example uses the following JMS administered objects:</p>
+<ul>
+<li>
+<p>A connection factory</p>
+</li>
+<li>
+<p>Two destination resources: a topic and a queue</p>
+</li>
+</ul>
+<p>Before you run the applications, you can use the <code dir="ltr">asadmin add-resources</code> command to create needed JMS resources, specifying as the argument a file named <code dir="ltr">glassfish-resources.xml</code>. This file can be created in any project using NetBeans IDE, although you can also create it by hand. A file for the needed resources is present in the <code dir="ltr">jms/simple/producer/src/main/setup/</code> directory.</p>
+<p>The JMS examples use a connection factory with the logical JNDI lookup name <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>, which is preconfigured in GlassFish Server.</p>
+<p>You can also use the <code dir="ltr">asadmin create-jms-resource</code> command to create resources, the <code dir="ltr">asadmin list-jms-resources</code> command to display their names, and the <code dir="ltr">asadmin delete-jms-resource</code> command to remove them.</p>
+<a id="BABHEFCB" name="BABHEFCB" class="anchor"></a>
+<div class="sect3"><!-- infolevel="all" infotype="General" -->
+<h3 class="sect3"><span class="secnum">46.2.2.1</span> To Create Resources for the Simple Examples</h3>
+<p>A <code dir="ltr">glassfish-resources.xml</code> file in one of the Maven projects can create all the resources needed for the simple examples.</p>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p>In a command window, go to the <code dir="ltr">Producer</code> example.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/jms/simple/producer
+</pre></li>
+<li>
+<p>Create the resources using the <code dir="ltr">asadmin add-resources</code> command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin add-resources src/main/setup/glassfish-resources.xml
+</pre></li>
+<li>
+<p>Verify the creation of the resources:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin list-jms-resources
+</pre>
+<p>The command lists the two destinations and connection factory specified in the <code dir="ltr">glassfish-resources.xml</code> file in addition to the platform default connection factory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">jms/MyQueue
+jms/MyTopic
+jms/__defaultConnectionFactory
+Command list-jms-resources executed successfully.
+</pre>
+<p>In GlassFish Server, the Java EE <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code> resource is mapped to a connection factory named <code dir="ltr">jms/__defaultConnectionFactory</code>.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BABEEABE" name="BABEEABE" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum">46.2.3</span> Building All the Simple Examples</h2>
+<p><a id="sthref2385" name="sthref2385" class="anchor"></a>To run the simple examples using GlassFish Server, package each example in an application client JAR file. The application client JAR file requires a manifest file, located in the <code dir="ltr">src/main/java/META-INF/</code> directory for each example, along with the <code dir="ltr">.class</code> file.</p>
+<p>The <code dir="ltr">pom.xml</code> file for each example specifies a plugin that creates an application client JAR file. You can build the examples using either NetBeans IDE or Maven.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2386" name="sthref2386" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.2.3.1</span> To Build All the Simple Examples Using NetBeans IDE</h3>
+<ol>
+<li>
+<p>From the <span class="gui-object-action">File</span> menu, choose <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/jms
+</pre></li>
+<li>
+<p>Expand the <code dir="ltr">jms</code> node and select the <code dir="ltr">simple</code> folder.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Open Project</span> to open all the simple examples.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Projects</span> tab, right-click the <code dir="ltr">simple</code> project and select <span class="gui-object-action">Build</span> to build all the examples.</p>
+<p>This command places the application client JAR files in the <code dir="ltr">target</code> directories for the examples.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2387" name="sthref2387" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.2.3.2</span> To Build All the Simple Examples Using Maven</h3>
+<ol>
+<li>
+<p>In a terminal window, go to the <code dir="ltr">simple</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/jms/simple/
+</pre></li>
+<li>
+<p>Enter the following command to build all the projects:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p>This command places the application client JAR files in the <code dir="ltr">target</code> directories for the examples.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BABIHCAE" name="BABIHCAE" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum">46.2.4</span> <a id="sthref2388" name="sthref2388" class="anchor"></a><a id="sthref2389" name="sthref2389" class="anchor"></a>Sending Messages</h2>
+<p>This section describes how to use a client to send messages. The <code dir="ltr">Producer.java</code> client will send messages in all of these examples.</p>
+<p>The general steps this example performs are as follows.</p>
+<ol>
+<li>
+<p>Inject resources for the administered objects used by the example.</p>
+</li>
+<li>
+<p>Accept and verify command-line arguments. You can use this example to send any number of messages to either a queue or a topic, so you specify the destination type and the number of messages on the command line when you run the program.</p>
+</li>
+<li>
+<p>Create a <code dir="ltr">JMSContext</code>, then send the specified number of text messages in the form of strings, as described in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts003.htm#BNCEW">Message Bodies</a>.</p>
+</li>
+<li>
+<p>Send a final message of type <code dir="ltr">Message</code> to indicate that the consumer should expect no more messages.</p>
+</li>
+<li>
+<p>Catch any exceptions.</p>
+</li>
+</ol>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2390" name="sthref2390" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.2.4.1</span> The Producer.java Client</h3>
+<p>The sending client, <code dir="ltr">Producer.java</code>, performs the following steps.</p>
+<ol>
+<li>
+<p>Injects resources for a connection factory, queue, and topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Resource(lookup = "java:comp/DefaultJMSConnectionFactory")
+private static ConnectionFactory connectionFactory;
+@Resource(lookup = "jms/MyQueue")
+private static Queue queue;
+@Resource(lookup = "jms/MyTopic")
+private static Topic topic;
+</pre></li>
+<li>
+<p>Retrieves and verifies command-line arguments that specify the destination type and the number of arguments:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">final int NUM_MSGS;
+String destType = args[0];
+System.out.println("Destination type is " + destType);
+if ( ! ( destType.equals("queue") || destType.equals("topic") ) ) { 
+    System.err.println("Argument must be \"queue\" or " + "\"topic\"");
+    System.exit(1);
+}
+if (args.length == 2){ 
+    NUM_MSGS = (new Integer(args[1])).intValue();
+} else { 
+    NUM_MSGS = 1;
+}
+</pre></li>
+<li>
+<p>Assigns either the queue or the topic to a destination object, based on the specified destination type:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination dest = null;
+try { 
+    if (destType.equals("queue")) { 
+        dest = (Destination) queue; 
+    } else { 
+        dest = (Destination) topic; 
+    }
+} catch (Exception e) {
+    System.err.println("Error setting destination: " + e.toString()); 
+    System.exit(1);
+}
+</pre></li>
+<li>
+<p>Within a <code dir="ltr">try</code>-with-resources block, creates a <code dir="ltr">JMSContext</code>:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">try (JMSContext context = connectionFactory.createContext();) {
+</pre></li>
+<li>
+<p>Sets the message count to zero, then creates a <code dir="ltr">JMSProducer</code> and sends one or more messages to the destination and increments the count. Messages in the form of strings are of the <code dir="ltr">TextMessage</code> message type:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">int count = 0;
+    for (int i = 0; i &lt; NUM_MSGS; i++) { 
+        String message = "This is message " + (i + 1) 
+                + " from producer";
+        // Comment out the following line to send many messages
+        System.out.println("Sending message: " + message); 
+        context.createProducer().send(dest, message);
+        count += 1;
+    }
+    System.out.println("Text messages sent: " + count);
+</pre></li>
+<li>
+<p>Sends an empty control message to indicate the end of the message stream:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">context.createProducer().send(dest, context.createMessage());
+</pre>
+<p>Sending an empty message of no specified type is a convenient way for an application to indicate to the consumer that the final message has arrived.</p>
+</li>
+<li>
+<p>Catches and handles any exceptions. The end of the <code dir="ltr">try</code>-with-resources block automatically causes the <code dir="ltr">JMSContext</code> to be closed:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">} catch (Exception e) {
+    System.err.println("Exception occurred: " + e.toString());
+    System.exit(1);
+}
+System.exit(0);
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2391" name="sthref2391" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.2.4.2</span> To Run the Producer Client</h3>
+<p>You can run the client using the <code dir="ltr">appclient</code> command. The <code dir="ltr">Producer</code> client takes one or two command-line arguments: a destination type and, optionally, a number of messages. If you do not specify a number of messages, the client sends one message.</p>
+<p>You will use the client to send three messages to a queue.</p>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>) and that you have created resources and built the simple JMS examples (see <a href="#GKTJS">Creating JMS Administered Objects</a> and <a href="#BABEEABE">Building All the Simple Examples</a>).</p>
+</li>
+<li>
+<p>In a terminal window, go to the <code dir="ltr">producer</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd producer
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">Producer</code> program, sending three messages to the queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar queue 3
+</pre>
+<p>The output of the program looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer
+Text messages sent: 3
+</pre>
+<p>The messages are now in the queue, waiting to be received.</p>
+<div class="infoboxnote">
+<p class="notep1">Note:</p>
+When you run an application client, the command may take a long time to complete.</div>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNCFB" name="BNCFB" class="anchor"></a>
+<div id="JEETT01291" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.5</span> <a id="sthref2392" name="sthref2392" class="anchor"></a><a id="sthref2393" name="sthref2393" class="anchor"></a><a id="sthref2394" name="sthref2394" class="anchor"></a>Receiving Messages Synchronously</h2>
+<p>This section describes the receiving client, which uses the <code dir="ltr">receive</code> method to consume messages synchronously. This section then explains how to run the clients using GlassFish Server.</p>
+<a id="BNCFC" name="BNCFC" class="anchor"></a>
+<div id="JEETT00822" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.5.1</span> The SynchConsumer.java Client</h3>
+<p>The receiving client, <code dir="ltr">SynchConsumer.java</code>, performs the following steps.</p>
+<ol>
+<li>
+<p>Injects resources for a connection factory, queue, and topic.</p>
+</li>
+<li>
+<p>Assigns either the queue or the topic to a destination object, based on the specified destination type.</p>
+</li>
+<li>
+<p>Within a <code dir="ltr">try</code>-with-resources block, creates a <code dir="ltr">JMSContext</code>.</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">JMSConsumer</code>, starting message delivery:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">consumer = context.createConsumer(dest);
+</pre></li>
+<li>
+<p>Receives the messages sent to the destination until the end-of-message-stream control message is received:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">int count = 0;
+while (true) {
+    Message m = consumer.receive(1000); 
+    if (m != null) { 
+        if (m instanceof TextMessage) { 
+            System.out.println(
+                    "Reading message: " + m.getBody(String.class));
+            count += 1; 
+        } else { 
+            break; 
+        } 
+    }
+}
+System.out.println("Messages received: " + count);
+</pre>
+<p>Because the control message is not a <code dir="ltr">TextMessage</code>, the receiving client terminates the <code dir="ltr">while</code> loop and stops receiving messages after the control message arrives.</p>
+</li>
+<li>
+<p>Catches and handles any exceptions. The end of the <code dir="ltr">try</code>-with-resources block automatically causes the <code dir="ltr">JMSContext</code> to be closed.</p>
+</li>
+</ol>
+<p>The <code dir="ltr">SynchConsumer</code> client uses an indefinite <code dir="ltr">while</code> loop to receive messages, calling <code dir="ltr">receive</code> with a timeout argument.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCFG" name="BNCFG" class="anchor"></a>
+<div id="JEETT00825" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.5.2</span> To Run the SynchConsumer and Producer Clients</h3>
+<p>You can run the client using the <code dir="ltr">appclient</code> command. The <code dir="ltr">SynchConsumer</code> client takes one command-line argument, the destination type.</p>
+<p>These steps show how to receive and send messages synchronously using both a queue and a topic. The steps assume you already ran the <code dir="ltr">Producer</code> client and have three messages waiting in the queue.</p>
+<ol>
+<li>
+<p>In the same terminal window where you ran <code dir="ltr">Producer</code>, go to the <code dir="ltr">synchconsumer</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd ../synchconsumer
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">SynchConsumer</code> client, specifying the queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar queue
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Messages received: 3
+</pre></li>
+<li>
+<p>Now try running the clients in the opposite order. Run the <code dir="ltr">SynchConsumer</code> client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar queue
+</pre>
+<p>The client displays the destination type and then waits for messages.</p>
+</li>
+<li>
+<p>Open a new terminal window and run the <code dir="ltr">Producer</code> client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/jms/simple/producer
+appclient -client target/producer.jar queue 3
+</pre>
+<p>When the messages have been sent, the <code dir="ltr">SynchConsumer</code> client receives them and exits.</p>
+</li>
+<li>
+<p>Now run the <code dir="ltr">Producer</code> client using a topic instead of a queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 3
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer
+Text messages sent: 3
+</pre></li>
+<li>
+<p>Now, in the other terminal window, run the <code dir="ltr">SynchConsumer</code> client using the topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar topic
+</pre>
+<p>The result, however, is different. Because you are using a subscription on a topic, messages that were sent before you created the subscription on the topic will not be added to the subscription and delivered to the consumer. (See <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts002.htm#BNCED">Publish/Subscribe Messaging Style</a> and <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts003.htm#BABEEJJJ">Consuming Messages from Topics</a> for details.) Instead of receiving the messages, the client waits for messages to arrive.</p>
+</li>
+<li>
+<p>Leave the <code dir="ltr">SynchConsumer</code> client running and run the <code dir="ltr">Producer</code> client again:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 3
+</pre>
+<p>Now the <code dir="ltr">SynchConsumer</code> client receives the messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is topic
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Messages received: 3
+</pre>
+<p>Because these messages were sent after the consumer was started, the client receives them.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNCFH" name="BNCFH" class="anchor"></a>
+<div id="JEETT01292" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.6</span> <a id="sthref2395" name="sthref2395" class="anchor"></a><a id="sthref2396" name="sthref2396" class="anchor"></a><a id="sthref2397" name="sthref2397" class="anchor"></a>Using a Message Listener for Asynchronous Message Delivery</h2>
+<p>This section describes the receiving clients in an example that uses a message listener for asynchronous message delivery. This section then explains how to compile and run the clients using GlassFish Server.</p>
+<div class="infoboxnote">
+<p class="notep1">Note:</p>
+In the Java EE platform, message listeners can be used only in application clients, as in this example. To allow asynchronous message delivery in a web or enterprise bean application, you use a message-driven bean, shown in later examples in this chapter.</div>
+<a id="BNCFI" name="BNCFI" class="anchor"></a>
+<div id="JEETT00826" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.6.1</span> Writing the AsynchConsumer.java and TextListener.java Clients</h3>
+<p>The sending client is <code dir="ltr">Producer.java</code>, the same client used in <a href="#BABIHCAE">Sending Messages</a> and <a href="#BNCFB">Receiving Messages Synchronously</a>.</p>
+<p>An asynchronous consumer normally runs indefinitely. This one runs until the user types the character <code dir="ltr">q</code> or <code dir="ltr">Q</code> to stop the client.</p>
+<p>The client, <code dir="ltr">AsynchConsumer.java</code>, performs the following steps.</p>
+<ol>
+<li>
+<p>Injects resources for a connection factory, queue, and topic.</p>
+</li>
+<li>
+<p>Assigns either the queue or the topic to a destination object, based on the specified destination type.</p>
+</li>
+<li>
+<p>In a <code dir="ltr">try</code>-with-resources block, creates a <code dir="ltr">JMSContext</code>.</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">JMSConsumer</code>.</p>
+</li>
+<li>
+<p>Creates an instance of the <code dir="ltr">TextListener</code> class and registers it as the message listener for the <code dir="ltr">JMSConsumer</code>:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">listener = new TextListener();
+consumer.setMessageListener(listener);
+</pre></li>
+<li>
+<p>Listens for the messages sent to the destination, stopping when the user types the character <code dir="ltr">q</code> or <code dir="ltr">Q</code> (it uses a <code dir="ltr">java.io.InputStreamReader</code> to do this).</p>
+</li>
+<li>
+<p>Catches and handles any exceptions. The end of the <code dir="ltr">try</code>-with-resources block automatically causes the <code dir="ltr">JMSContext</code> to be closed, thus stopping delivery of messages to the message listener.</p>
+</li>
+</ol>
+<p><a id="sthref2398" name="sthref2398" class="anchor"></a>The message listener, <code dir="ltr">TextListener.java</code>, follows these steps:</p>
+<ol>
+<li>
+<p>When a message arrives, the <code dir="ltr">onMessage</code> method is called automatically.</p>
+</li>
+<li>
+<p>If the message is a <code dir="ltr">TextMessage</code>, the <code dir="ltr">onMessage</code> method displays its content as a string value. If the message is not a text message, it reports this fact:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public void onMessage(Message m) { 
+    try { 
+        if (m instanceof TextMessage) { 
+            System.out.println(
+                    "Reading message: " + m.getBody(String.class)); 
+        } else { 
+             System.out.println("Message is not a TextMessage"); 
+        } 
+    } catch (JMSException | JMSRuntimeException e) {
+        System.err.println("JMSException in onMessage(): " + e.toString());
+    }
+}
+</pre></li>
+</ol>
+<p>For this example, you will use the same connection factory and destinations you created in <a href="#BABHEFCB">To Create Resources for the Simple Examples</a>.</p>
+<p>The steps assume that you have already built and packaged all the examples using NetBeans IDE or Maven.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCFK" name="BNCFK" class="anchor"></a>
+<div id="JEETT00268" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.6.2</span> <a id="sthref2399" name="sthref2399" class="anchor"></a>To Run the AsynchConsumer and Producer Clients</h3>
+<p>You will need two terminal windows, as you did in <a href="#BNCFB">Receiving Messages Synchronously</a>.</p>
+<ol>
+<li>
+<p>In the terminal window where you ran the <code dir="ltr">SynchConsumer</code> client, go to the <code dir="ltr">asynchconsumer</code> example directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/jms/simple/asynchconsumer
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">AsynchConsumer</code> client, specifying the <code dir="ltr">topic</code> destination type:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/asynchconsumer.jar topic
+</pre>
+<p>The client displays the following lines (along with some additional output) and then waits for messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is topic
+To end program, enter Q or q, then &lt;return&gt;
+</pre></li>
+<li>
+<p>In the terminal window where you ran the <code dir="ltr">Producer</code> client previously, run the client again, sending three messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 3
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is topic
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer
+Text messages sent: 3
+</pre>
+<p>In the other window, the <code dir="ltr">AsynchConsumer</code> client displays the following (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is topic
+To end program, enter Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage
+</pre>
+<p>The last line appears because the client has received the non-text control message sent by the <code dir="ltr">Producer</code> client.</p>
+</li>
+<li>
+<p>Enter <code dir="ltr">Q</code> or <code dir="ltr">q</code> and press <span class="gui-object-action">Return</span> to stop the <code dir="ltr">AsynchConsumer</code> client.</p>
+</li>
+<li>
+<p>Now run the clients using a queue.</p>
+<p>In this case, as with the synchronous example, you can run the <code dir="ltr">Producer</code> client first, because there is no timing dependency between the sender and receiver:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar queue 3
+</pre>
+<p>The output of the client looks like this:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+Sending message: This is message 1 from producer
+Sending message: This is message 2 from producer
+Sending message: This is message 3 from producer
+Text messages sent: 3
+</pre></li>
+<li>
+<p>In the other window, run the <code dir="ltr">AsynchConsumer</code> client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/asynchconsumer.jar queue
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+To end program, enter Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Reading message: This is message 3 from producer
+Message is not a TextMessage
+</pre></li>
+<li>
+<p>Enter <code dir="ltr">Q</code> or <code dir="ltr">q</code> and press <span class="gui-object-action">Return</span> to stop the client.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNCFL" name="BNCFL" class="anchor"></a>
+<div id="JEETT01293" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.7</span> <a id="sthref2400" name="sthref2400" class="anchor"></a><a id="sthref2401" name="sthref2401" class="anchor"></a><a id="sthref2402" name="sthref2402" class="anchor"></a>Browsing Messages on a Queue</h2>
+<p>This section describes an example that creates a <code dir="ltr">QueueBrowser</code> object to examine messages on a queue, as described in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts003.htm#BNCEY">JMS Queue Browsers</a>. This section then explains how to compile, package, and run the example using GlassFish Server.</p>
+<a id="BNCFM" name="BNCFM" class="anchor"></a>
+<div id="JEETT00827" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.7.1</span> The MessageBrowser.java Client</h3>
+<p><a id="sthref2403" name="sthref2403" class="anchor"></a>To create a <code dir="ltr">QueueBrowser</code> for a queue, you call the <code dir="ltr">JMSContext.createBrowser</code> method with the queue as the argument. You obtain the messages in the queue as an <code dir="ltr">Enumeration</code> object. You can then iterate through the <code dir="ltr">Enumeration</code> object and display the contents of each message.</p>
+<p>The <code dir="ltr">MessageBrowser.java</code> client performs the following steps.</p>
+<ol>
+<li>
+<p>Injects resources for a connection factory and a queue.</p>
+</li>
+<li>
+<p>In a <code dir="ltr">try</code>-with-resources block, creates a <code dir="ltr">JMSContext</code>.</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">QueueBrowser</code>:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">QueueBrowser browser = context.createBrowser(queue);
+</pre></li>
+<li>
+<p>Retrieves the <code dir="ltr">Enumeration</code> that contains the messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Enumeration msgs = browser.getEnumeration();
+</pre></li>
+<li>
+<p>Verifies that the <code dir="ltr">Enumeration</code> contains messages, then displays the contents of the messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">if ( !msgs.hasMoreElements() ) { 
+    System.out.println("No messages in queue");
+} else { 
+    while (msgs.hasMoreElements()) { 
+        Message tempMsg = (Message)msgs.nextElement(); 
+        System.out.println("Message: " + tempMsg); 
+    }
+}
+</pre></li>
+<li>
+<p>Catches and handles any exceptions. The end of the <code dir="ltr">try</code>-with-resources block automatically causes the <code dir="ltr">JMSContext</code> to be closed.</p>
+</li>
+</ol>
+<p>Dumping the message contents to standard output retrieves the message body and properties in a format that depends on the implementation of the <code dir="ltr">toString</code> method. In GlassFish Server, the message format looks something like this:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Text:   This is message 3 from producer
+Class:                  com.sun.messaging.jmq.jmsclient.TextMessageImpl
+getJMSMessageID():      ID:8-10.152.23.26(bf:27:4:e:e7:ec)-55645-1363100335526
+getJMSTimestamp():      1129061034355
+getJMSCorrelationID():  null
+JMSReplyTo:             null
+JMSDestination:         PhysicalQueue
+getJMSDeliveryMode():   PERSISTENT
+getJMSRedelivered():    false
+getJMSType():           null
+getJMSExpiration():     0
+getJMSPriority():       4
+Properties:             {JMSXDeliveryCount=0}
+</pre>
+<p>Instead of displaying the message contents this way, you can call some of the <code dir="ltr">Message</code> interface's getter methods to retrieve the parts of the message you want to see.</p>
+<p>For this example, you will use the connection factory and queue you created for <a href="#BNCFB">Receiving Messages Synchronously</a>. It is assumed that you have already built and packaged all the examples.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCFN" name="BNCFN" class="anchor"></a>
+<div id="JEETT00270" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.7.2</span> To Run the QueueBrowser Client</h3>
+<p>To run the <code dir="ltr">MessageBrowser</code> example using the <code dir="ltr">appclient</code> command, follow these steps.</p>
+<p>You also need the <code dir="ltr">Producer</code> example to send the message to the queue, and one of the consumer clients to consume the messages after you inspect them.</p>
+<p>To run the clients, you need two terminal windows.</p>
+<ol>
+<li>
+<p>In a terminal window, go to the <code dir="ltr">producer</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/examples/jms/simple/producer/
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">Producer</code> client, sending one message to the queue, along with the non-text control message:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar queue
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+Sending message: This is message 1 from producer
+Text messages sent: 1
+</pre></li>
+<li>
+<p>In another terminal window, go to the <code dir="ltr">messagebrowser</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable">tut-install</span>/jms/simple/messagebrowser
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">MessageBrowser</code> client using the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/messagebrowser.jar
+</pre>
+<p>The output of the client looks something like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Message: 
+Text:   This is message 1 from producer
+Class:                  com.sun.messaging.jmq.jmsclient.TextMessageImpl
+getJMSMessageID():      ID:9-10.152.23.26(bf:27:4:e:e7:ec)-55645-1363100335526
+getJMSTimestamp():      1363100335526
+getJMSCorrelationID():  null
+JMSReplyTo:             null
+JMSDestination:         PhysicalQueue
+getJMSDeliveryMode():   PERSISTENT
+getJMSRedelivered():    false
+getJMSType():           null
+getJMSExpiration():     0
+getJMSPriority():       4
+Properties:             {JMSXDeliveryCount=0}
+
+Message: 
+Class:                  com.sun.messaging.jmq.jmsclient.MessageImpl
+getJMSMessageID():      ID:10-10.152.23.26(bf:27:4:e:e7:ec)-55645-1363100335526
+getJMSTimestamp():      1363100335526
+getJMSCorrelationID():  null
+JMSReplyTo:             null
+JMSDestination:         PhysicalQueue
+getJMSDeliveryMode():   PERSISTENT
+getJMSRedelivered():    false
+getJMSType():           null
+getJMSExpiration():     0
+getJMSPriority():       4
+Properties:             {JMSXDeliveryCount=0}
+</pre>
+<p>The first message is the <code dir="ltr">TextMessage</code>, and the second is the non-text control message.</p>
+</li>
+<li>
+<p>Go to the <code dir="ltr">synchconsumer</code> directory.</p>
+</li>
+<li>
+<p>Run the <code dir="ltr">SynchConsumer</code> client to consume the messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar queue
+</pre>
+<p>The output of the client looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Destination type is queue
+Reading message: This is message 1 from producer
+Messages received: 1
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BABDDHHC" name="BABDDHHC" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum">46.2.8</span> Running Multiple Consumers on the Same Destination</h2>
+<p>To illustrate further the way point-to-point and publish/subscribe messaging works, you can use the <code dir="ltr">Producer</code> and <code dir="ltr">SynchConsumer</code> examples to send messages that are then consumed by two clients running simultaneously.</p>
+<ol>
+<li>
+<p>Open three command windows. In one, go to the <code dir="ltr">producer</code> directory. In the other two, go to the <code dir="ltr">synchconsumer</code> directory.</p>
+</li>
+<li>
+<p>In each of the <code dir="ltr">synchconsumer</code> windows, start running the client, receiving messages from a queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar queue
+</pre>
+<p>Wait until you see the "Destination type is queue" message in both windows.</p>
+</li>
+<li>
+<p>In the <code dir="ltr">producer</code> window, run the client, sending 20 or so messages to the queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar queue 20
+</pre></li>
+<li>
+<p>Look at the output in the <code dir="ltr">synchconsumer</code> windows. In point-to-point messaging, each message can have only one consumer. Therefore, each of the clients receives some of the messages. One of the clients receives the non-text control message, reports the number of messages received, and exits.</p>
+</li>
+<li>
+<p>In the window of the client that did not receive the non-text control message, enter Control-C to exit the program.</p>
+</li>
+<li>
+<p>Next, run the <code dir="ltr">synchconsumer</code> clients using a topic. In each window, run the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/synchconsumer.jar topic
+</pre>
+<p>Wait until you see the "Destination type is topic" message in both windows.</p>
+</li>
+<li>
+<p>In the <code dir="ltr">producer</code> window, run the client, sending 20 or so messages to the topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 20
+</pre></li>
+<li>
+<p>Again, look at the output in the <code dir="ltr">synchconsumer</code> windows. In publish/subscribe messaging, a copy of every message is sent to each subscription on the topic. Therefore, each of the clients receives all 20 text messages as well as the non-text control message.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect2" -->
+<a id="BNCFX" name="BNCFX" class="anchor"></a>
+<div id="JEETT01296" class="sect2">
+<h2 class="sect2"><span class="secnum">46.2.9</span> <a id="sthref2404" name="sthref2404" class="anchor"></a><a id="sthref2405" name="sthref2405" class="anchor"></a>Acknowledging Messages</h2>
+<p>JMS provides two alternative ways for a consuming client to ensure that a message is not acknowledged until the application has finished processing the message:</p>
+<ul>
+<li>
+<p>Using a synchronous consumer in a <code dir="ltr">JMSContext</code> that has been configured to use the <code dir="ltr">CLIENT_ACKNOWLEDGE</code> setting</p>
+</li>
+<li>
+<p>Using a message listener for asynchronous message delivery in a <code dir="ltr">JMSContext</code> that has been configured to use the default <code dir="ltr">AUTO_ACKNOWLEDGE</code> setting</p>
+</li>
+</ul>
+<div class="infoboxnote">
+<p class="notep1">Note:</p>
+In the Java EE platform, <code dir="ltr">CLIENT_ACKNOWLEDGE</code> sessions can be used only in application clients, as in this example.</div>
+<p>The <code dir="ltr">clientackconsumer</code> example demonstrates the first alternative, in which a synchronous consumer uses client acknowledgment. The <code dir="ltr">asynchconsumer</code> example described in <a href="#BNCFH">Using a Message Listener for Asynchronous Message Delivery</a> demonstrates the second alternative.</p>
+<p>For information about message acknowledgment, see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts004.htm#BNCFW">Controlling Message Acknowledgment</a>.</p>
+<p>The following table describes four possible interactions between types of consumers and types of acknowledgment.</p>
+<div class="tblhruleformal"><a id="sthref2406" name="sthref2406" class="anchor"></a><a id="sthref2407" name="sthref2407" class="anchor"></a>
+<p class="titleintable">Table 46-3 Message Acknowledgment with Synchronous and Asynchronous Consumers</p>
+<table class="HRuleFormal" title="Message Acknowledgment with Synchronous and Asynchronous Consumers" summary="This table describes the behavior of synchronous and asynchronous consumers with client and auto acknowledgment." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="21%">
+<col width="29%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t7">Consumer Type</th>
+<th align="left" valign="bottom" id="r1c2-t7">Acknowledgment Type</th>
+<th align="left" valign="bottom" id="r1c3-t7">Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t7" headers="r1c1-t7">
+<p>Synchronous</p>
+</td>
+<td align="left" headers="r2c1-t7 r1c2-t7">
+<p>Client</p>
+</td>
+<td align="left" headers="r2c1-t7 r1c3-t7">
+<p>Client acknowledges message after processing is complete</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t7" headers="r1c1-t7">
+<p>Asynchronous</p>
+</td>
+<td align="left" headers="r3c1-t7 r1c2-t7">
+<p>Client</p>
+</td>
+<td align="left" headers="r3c1-t7 r1c3-t7">
+<p>Client acknowledges message after processing is complete</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t7" headers="r1c1-t7">
+<p>Synchronous</p>
+</td>
+<td align="left" headers="r4c1-t7 r1c2-t7">
+<p>Auto</p>
+</td>
+<td align="left" headers="r4c1-t7 r1c3-t7">
+<p>Acknowledgment happens immediately after <code dir="ltr">receive</code> call; message cannot be redelivered if any subsequent processing steps fail</p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t7" headers="r1c1-t7">
+<p>Asynchronous</p>
+</td>
+<td align="left" headers="r5c1-t7 r1c2-t7">
+<p>Auto</p>
+</td>
+<td align="left" headers="r5c1-t7 r1c3-t7">
+<p>Message is automatically acknowledged when <code dir="ltr">onMessage</code> method returns</p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" -->
+<p>The example is under the <span class="variable">tut-install</span><code dir="ltr">/examples/jms/simple/clientackconsumer/</code> directory.</p>
+<p>The example client, <code dir="ltr">ClientAckConsumer.java</code>, creates a <code dir="ltr">JMSContext</code> that specifies client acknowledgment:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">try (JMSContext context =
+      connectionFactory.createContext(JMSContext.CLIENT_ACKNOWLEDGE);) {
+    ...
+</pre>
+<p>The client uses a <code dir="ltr">while</code> loop almost identical to that used by <code dir="ltr">SynchConsumer.java</code>, with the exception that after processing each message, it calls the <code dir="ltr">acknowledge</code> method on the <code dir="ltr">JMSContext</code>:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">context.acknowledge();
+</pre>
+<p>The example uses the following objects:</p>
+<ul>
+<li>
+<p>The <code dir="ltr">jms/MyQueue</code> resource that you created for <a href="#BNCFB">Receiving Messages Synchronously</a>.</p>
+</li>
+<li>
+<p><code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>, the platform default connection factory preconfigured with GlassFish Server</p>
+</li>
+</ul>
+<a id="GJSCG" name="GJSCG" class="anchor"></a>
+<div id="JEETT00277" class="sect3">
+<h3 class="sect3"><span class="secnum">46.2.9.1</span> To Run the ClientAckConsumer Client</h3>
+<ol>
+<li>
+<p>In a terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/jms/simple/producer/
+</pre></li>
+<li>
+<p>Run the <code dir="ltr">Producer</code> client, sending some messages to the queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar queue 3
+</pre></li>
+<li>
+<p>In another terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/jms/simple/clientackconsumer/
+</pre></li>
+<li>
+<p>To run the client, use the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/clientackconsumer.jar
+</pre>
+<p>The client output looks like this (along with some additional output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Created client-acknowledge JMSContext
+Reading message: This is message 1 from producer
+Acknowledging TextMessage
+Reading message: This is message 2 from producer
+Acknowledging TextMessage
+Reading message: This is message 3 from producer
+Acknowledging TextMessage
+Acknowledging non-text control message
+</pre>
+<p>The client acknowledges each message explicitly after processing it, just as a <code dir="ltr">JMSContext</code> configured to use <code dir="ltr">AUTO_ACKNOWLEDGE</code> does automatically after a <code dir="ltr">MessageListener</code> returns successfully from processing a message received asynchronously.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00555" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.3</span> Writing More Advanced JMS Applications</h1>
+<p class="cye-lm-tag">The following examples show how to use some of the more advanced features of the JMS API: durable subscriptions and transactions.</p>
+<a id="BNCGG" name="BNCGG" class="anchor"></a>
+<div id="JEETT01297" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.3.1</span> <a id="sthref2408" name="sthref2408" class="anchor"></a><a id="sthref2409" name="sthref2409" class="anchor"></a>Using Durable Subscriptions</h2>
+<p class="cye-lm-tag">The <code dir="ltr">durablesubscriptionexample</code> example shows how unshared durable subscriptions work. It demonstrates that a durable subscription continues to exist and accumulate messages even when there is no active consumer on it.</p>
+<p class="cye-lm-tag">The example consists of two modules, a <code dir="ltr">durableconsumer</code> application that creates a durable subscription and consumes messages, and an <code dir="ltr">unsubscriber</code> application that enables you to unsubscribe from the durable subscription after you have finished running the <code dir="ltr">durableconsumer</code> application.</p>
+<p class="cye-lm-tag">For information on durable subscriptions, see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts003.htm#BNCGD">Creating Durable Subscriptions</a>.</p>
+<p class="cye-lm-tag">The main client, <code dir="ltr">DurableConsumer.java</code>, is under the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/durablesubscriptionexample/durableconsumer</code>/ directory.</p>
+<p class="cye-lm-tag">The example uses a connection factory, j<code dir="ltr">ms/DurableConnectionFactory</code>, that has a client ID.</p>
+<p class="cye-lm-tag">The <code dir="ltr">DurableConsumer</code> client creates a <code dir="ltr">JMSContext</code> using the connection factory. It then stops the <code dir="ltr">JMSContext</code>, calls <code dir="ltr">createDurableConsumer</code> to create a durable subscription and a consumer on the topic by specifying a subscription name, registers a message listener, and starts the <code dir="ltr">JMSContext</code> again. The subscription is created only if it does not already exist, so the example can be run repeatedly:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">try (JMSContext context = durableConnectionFactory.createContext();) {
+    context.stop();
+    consumer = context.createDurableConsumer(topic, "MakeItLast");
+    listener = new TextListener();
+    consumer.setMessageListener(listener);
+    context.start();
+    ...
+</pre>
+<p class="cye-lm-tag">To send messages to the topic, you run the <code dir="ltr">producer</code> client.</p>
+<p class="cye-lm-tag">The <code dir="ltr">unsubscriber</code> example contains a very simple <code dir="ltr">Unsubscriber</code> client, which creates a <code dir="ltr">JMSContext</code> on the same connection factory and then calls the <code dir="ltr">unsubscribe</code> method, specifying the subscription name:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">try (JMSContext context = durableConnectionFactory.createContext();) {
+    System.out.println("Unsubscribing from durable subscription");
+    context.unsubscribe("MakeItLast");
+} ...
+</pre>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2410" name="sthref2410" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.3.1.1</span> To Create Resources for the Durable Subscription Example</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a command window, go to the <code dir="ltr">durableconsumer</code> example.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/jms/durablesubscriptionexample/durableconsumer
+</pre></li>
+<li>
+<p class="cye-lm-tag">Create the resources using the <code dir="ltr">asadmin add-resources</code> command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin add-resources src/main/setup/glassfish-resources.xml
+</pre>
+<p class="cye-lm-tag">The command output reports the creation of a connector connection pool and a connector resource.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Verify the creation of the resources:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin list-jms-resources
+</pre>
+<p class="cye-lm-tag">In addition to the resources you created for the simple examples, the command lists the new connection factory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">jms/MyQueue
+jms/MyTopic
+jms/__defaultConnectionFactory
+jms/DurableConnectionFactory
+Command list-jms-resources executed successfully.
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<a id="GJSCI" name="GJSCI" class="anchor"></a>
+<div id="JEETT00279" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.3.1.2</span> To Run the Durable Subscription Example</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/durablesubscriptionexample/
+</pre></li>
+<li>
+<p class="cye-lm-tag">Build the <code dir="ltr">durableconsumer</code> and <code dir="ltr">unsubscriber</code> examples:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p class="cye-lm-tag">Go to the <code dir="ltr">durableconsumer</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd durableconsumer
+</pre></li>
+<li>
+<p class="cye-lm-tag">To run the client, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/durableconsumer.jar
+</pre>
+<p class="cye-lm-tag">The client creates the durable consumer and then waits for messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Creating consumer for topic
+Starting consumer
+To end program, enter Q or q, then &lt;return&gt;
+</pre></li>
+<li>
+<p class="cye-lm-tag">In another terminal window, run the <code dir="ltr">Producer</code> client, sending some messages to the topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/simple/producer
+appclient -client target/producer.jar topic 3
+</pre></li>
+<li>
+<p class="cye-lm-tag">After the <code dir="ltr">DurableConsumer</code> client receives the messages, enter <code dir="ltr">q</code> or <code dir="ltr">Q</code> to exit the program. At this point, the client has behaved like any other asynchronous consumer.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Now, while the <code dir="ltr">DurableConsumer</code> client is not running, use the <code dir="ltr">Producer</code> client to send more messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 2
+</pre>
+<p class="cye-lm-tag">If a durable subscription did not exist, these messages would be lost, because no consumer on the topic is currently running. However, the durable subscription is still active, and it retains the messages.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Run the <code dir="ltr">DurableConsumer</code> client again. It immediately receives the messages that were sent while it was inactive:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Creating consumer for topic
+Starting consumer
+To end program, enter Q or q, then &lt;return&gt;
+Reading message: This is message 1 from producer
+Reading message: This is message 2 from producer
+Message is not a TextMessage
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter <code dir="ltr">q</code> or <code dir="ltr">Q</code> to exit the program.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2411" name="sthref2411" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.3.1.3</span> To Run the unsubscriber Example</h3>
+<p class="cye-lm-tag">After you have finished running the <code dir="ltr">DurableConsumer</code> client, run the <code dir="ltr">unsubscriber</code> example to unsubscribe from the durable subscription.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/durablesubscriptionexample/unsubscriber
+</pre></li>
+<li>
+<p class="cye-lm-tag">To run the <code dir="ltr">Unsubscriber</code> client, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/unsubscriber.jar
+</pre>
+<p class="cye-lm-tag">The client reports that it is unsubscribing from the durable subscription.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNCGJ" name="BNCGJ" class="anchor"></a>
+<div id="JEETT01298" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.3.2</span> <a id="sthref2412" name="sthref2412" class="anchor"></a><a id="sthref2413" name="sthref2413" class="anchor"></a>Using Local Transactions</h2>
+<p class="cye-lm-tag">The <code dir="ltr">transactedexample</code> example demonstrates the use of local transactions in a JMS client application. It also demonstrates the use of the request/reply messaging pattern described in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts004.htm#BNCGB">Creating Temporary Destinations</a>, although it uses permanent rather than temporary destinations. The example consists of three modules, <code dir="ltr">genericsupplier</code>, <code dir="ltr">retailer</code>, and <code dir="ltr">vendor</code>, which can be found under the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/transactedexample/</code> directory. The source code can be found in the <code dir="ltr">src/main/java/javaeetutorial</code> trees for each module. The <code dir="ltr">genericsupplier</code> and <code dir="ltr">retailer</code> modules each contain a single class, <code dir="ltr">genericsupplier/GenericSupplier.java</code> and <code dir="ltr">retailer/Retailer.java</code>, respectively. The <code dir="ltr">vendor</code> module is more complex, containing four classes: <code dir="ltr">vendor/Vendor.java</code>, <code dir="ltr">vendor/VendorMessageListener.java</code>, <code dir="ltr">vendor/Order.java</code>, and <code dir="ltr">vendor/SampleUtilities.java</code>.</p>
+<p class="cye-lm-tag">The example shows how to use a queue and a topic in a single transaction as well as how to pass a <code dir="ltr">JMSContext</code> to a message listener's constructor function. The example represents a highly simplified e-commerce application in which the following actions occur.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">A retailer (<code dir="ltr">retailer/src/main/java/javaeetutorial/retailer/Retailer.java</code>) sends a <code dir="ltr">MapMessage</code> to a vendor order queue, ordering a quantity of computers, and waits for the vendor's reply:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">outMessage = context.createMapMessage();
+outMessage.setString("Item", "Computer(s)");
+outMessage.setInt("Quantity", quantity);
+outMessage.setJMSReplyTo(retailerConfirmQueue);
+context.createProducer().send(vendorOrderQueue, outMessage);
+System.out.println("Retailer: ordered " + quantity + " computer(s)");
+orderConfirmReceiver = context.createConsumer(retailerConfirmQueue);
+</pre></li>
+<li>
+<p class="cye-lm-tag">The vendor (<code dir="ltr">vendor/src/main/java/javaeetutorial/retailer/Vendor.java</code>) receives the retailer's order message and sends an order message to the supplier order topic in one transaction. This JMS transaction uses a single session, so you can combine a receive from a queue with a send to a topic. Here is the code that uses the same session to create a consumer for a queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">vendorOrderReceiver = session.createConsumer(vendorOrderQueue);
+</pre>
+<p class="cye-lm-tag">The following code receives the incoming message, sends an outgoing message, and commits the <code dir="ltr">JMSContext</code>. The message processing has been removed to keep the sequence simple:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">inMessage = vendorOrderReceiver.receive();
+// Process the incoming message and format the outgoing 
+// message
+...
+context.createProducer().send(supplierOrderTopic, orderMessage);
+...
+context.commit();
+</pre>
+<p class="cye-lm-tag">For simplicity, there are only two suppliers, one for CPUs and one for hard drives.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Each supplier (<code dir="ltr">genericsupplier/src/main/java/javaeetutorial/retailer/GenericSupplier.java</code>) receives the order from the order topic, checks its inventory, and then sends the items ordered to the queue named in the order message's <code dir="ltr">JMSReplyTo</code> field. If it does not have enough of the item in stock, the supplier sends what it has. The synchronous receive from the topic and the send to the queue take place in one JMS transaction:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">receiver = context.createConsumer(SupplierOrderTopic);
+...
+inMessage = receiver.receive();
+if (inMessage instanceof MapMessage) {
+    orderMessage = (MapMessage) inMessage;
+} ...
+// Process message
+outMessage = context.createMapMessage();
+// Add content to message
+context.createProducer().send(
+         (Queue) orderMessage.getJMSReplyTo(),
+         outMessage);
+// Display message contents
+context.commit();
+</pre></li>
+<li>
+<p class="cye-lm-tag">The vendor receives the suppliers' replies from its confirmation queue and updates the state of the order. Messages are processed by an asynchronous message listener, <code dir="ltr">VendorMessageListener</code>; this step shows the use of JMS transactions with a message listener:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">MapMessage component = (MapMessage) message;
+...
+int orderNumber = component.getInt("VendorOrderNumber");
+Order order = Order.getOrder(orderNumber).processSubOrder(component);
+context.commit();
+</pre></li>
+<li>
+<p class="cye-lm-tag">When all outstanding replies are processed for a given order, the vendor message listener sends a message notifying the retailer whether it can fulfill the order:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Queue replyQueue = (Queue) order.order.getJMSReplyTo();
+MapMessage retailerConfirmMessage = context.createMapMessage();
+// Format the message
+context.createProducer().send(replyQueue, retailerConfirmMessage);
+context.commit();
+</pre></li>
+<li>
+<p class="cye-lm-tag">The retailer receives the message from the vendor:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">inMessage = (MapMessage) orderConfirmReceiver.receive();
+</pre>
+<p class="cye-lm-tag">The retailer then places a second order for twice as many computers as in the first order, so these steps are executed twice.</p>
+</li>
+</ol>
+<p class="cye-lm-tag"><a href="#BNCGK">Figure 46-1</a> illustrates these steps.</p>
+<div id="JEETT00056" class="figure"><a id="BNCGK" name="BNCGK" class="anchor"></a>
+<p class="titleinfigure cye-lm-tag">Figure 46-1 Transactions: JMS Client Example</p>
+<img width="392" height="315" src="img/jeett_dt_034.png" alt="Description of Figure 46-1 follows" longdesc="img_text/jeett_dt_034.htm"><br>
+<a id="sthref2414" name="sthref2414" href="img_text/jeett_dt_034.htm">Description of "Figure 46-1 Transactions: JMS Client Example"</a><br>
+<br></div>
+<!-- class="figure" -->
+<p class="cye-lm-tag">All the messages use the <code dir="ltr">MapMessage</code> message type. Synchronous receives are used for all message reception except when the vendor processes the replies of the suppliers. These replies are processed asynchronously and demonstrate how to use transactions within a message listener.</p>
+<p class="cye-lm-tag">At random intervals, the <code dir="ltr">Vendor</code> client throws an exception to simulate a database problem and cause a rollback.</p>
+<p class="cye-lm-tag">All clients except <code dir="ltr">Retailer</code> use transacted contexts.</p>
+<p class="cye-lm-tag">The example uses three queues named <code dir="ltr">jms/AQueue</code>, <code dir="ltr">jms/BQueue</code>, and <code dir="ltr">jms/CQueue</code>, and one topic named <code dir="ltr">jms/OTopic</code>.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2415" name="sthref2415" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.3.2.1</span> To Create Resources for the transactedexample Example</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a command window, go to the <code dir="ltr">genericsupplier</code> example:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/jms/transactedexample/genericsupplier
+</pre></li>
+<li>
+<p class="cye-lm-tag">Create the resources using the <code dir="ltr">asadmin add-resources</code> command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin add-resources src/main/setup/glassfish-resources.xml
+</pre></li>
+<li>
+<p class="cye-lm-tag">Verify the creation of the resources:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin list-jms-resources
+</pre>
+<p class="cye-lm-tag">In addition to the resources you created for the simple examples and the durable subscription example, the command lists the four new destinations:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">jms/MyQueue
+jms/MyTopic
+jms/AQueue
+jms/BQueue
+jms/CQueue
+jms/OTopic
+jms/__defaultConnectionFactory
+jms/DurableConnectionFactory
+Command list-jms-resources executed successfully.
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<a id="GJSHA" name="GJSHA" class="anchor"></a>
+<div id="JEETT00281" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.3.2.2</span> To Run the transactedexample Clients</h3>
+<p class="cye-lm-tag">You will need four terminal windows to run the clients. Make sure that you start the clients in the correct order.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/transactedexample/
+</pre></li>
+<li>
+<p class="cye-lm-tag">To build and package all the modules, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p class="cye-lm-tag">Go to the <code dir="ltr">genericsupplier</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd genericsupplier
+</pre></li>
+<li id="BABFCGBI">
+<p class="cye-lm-tag">Use the following command to start the CPU supplier client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target\genericsupplier.jar CPU
+</pre>
+<p class="cye-lm-tag">After some initial output, the client reports the following:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Starting CPU supplier
+</pre></li>
+<li>
+<p class="cye-lm-tag">In a second terminal window, go to the <code dir="ltr">genericsupplier</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/transactedexample/genericsupplier
+</pre></li>
+<li>
+<p class="cye-lm-tag">Use the following command to start the hard drive supplier client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target\genericsupplier.jar HD
+</pre>
+<p class="cye-lm-tag">After some initial output, the client reports the following:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Starting Hard Drive supplier
+</pre></li>
+<li>
+<p class="cye-lm-tag">In a third terminal window, go to the <code dir="ltr">vendor</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/transactedexample/vendor
+</pre></li>
+<li>
+<p class="cye-lm-tag">Use the following command to start the <code dir="ltr">Vendor</code> client:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target\vendor.jar
+</pre>
+<p class="cye-lm-tag">After some initial output, the client reports the following:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Starting vendor
+</pre></li>
+<li>
+<p class="cye-lm-tag">In another terminal window, go to the <code dir="ltr">retailer</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/transactedexample/retailer
+</pre></li>
+<li id="BABBIHCE">
+<p class="cye-lm-tag">Use a command like the following to run the <code dir="ltr">Retailer</code> client. The argument specifies the number of computers to order:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/retailer.jar 4
+</pre>
+<p class="cye-lm-tag">After some initial output, the <code dir="ltr">Retailer</code> client reports something like the following. In this case, the first order is filled, but the second is not:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Retailer: Quantity to be ordered is 4
+Retailer: Ordered 4 computer(s)
+Retailer: Order filled
+Retailer: Placing another order
+Retailer: Ordered 8 computer(s)
+Retailer: Order not filled
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">Vendor</code> client reports something like the following, stating in this case that it is able to send all the computers in the first order, but not in the second:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Vendor: Retailer ordered 4 Computer(s)
+Vendor: Ordered 4 CPU(s) and hard drive(s)
+  Vendor: Committed transaction 1
+Vendor: Completed processing for order 1
+Vendor: Sent 4 computer(s)
+  Vendor: committed transaction 2
+Vendor: Retailer ordered 8 Computer(s)
+Vendor: Ordered 8 CPU(s) and hard drive(s)
+  Vendor: Committed transaction 1
+Vendor: Completed processing for order 2
+Vendor: Unable to send 8 computer(s)
+  Vendor: Committed transaction 2
+</pre>
+<p class="cye-lm-tag">The CPU supplier reports something like the following. In this case, it is able to send all the CPUs for both orders:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">CPU Supplier: Vendor ordered 4 CPU(s)
+CPU Supplier: Sent 4 CPU(s)
+  CPU Supplier: Committed transaction
+CPU Supplier: Vendor ordered 8 CPU(s)
+CPU Supplier: Sent 8 CPU(s)
+  CPU Supplier: Committed transaction
+</pre>
+<p class="cye-lm-tag">The hard drive supplier reports something like the following. In this case, it has a shortage of hard drives for the second order:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Hard Drive Supplier: Vendor ordered 4 Hard Drive(s)
+Hard Drive Supplier: Sent 4 Hard Drive(s)
+  Hard Drive Supplier: Committed transaction
+Hard Drive Supplier: Vendor ordered 8 Hard Drive(s)
+Hard Drive Supplier: Sent 1 Hard Drive(s)
+  Hard Drive Supplier: Committed transaction
+</pre></li>
+<li>
+<p class="cye-lm-tag">Repeat steps <a href="#BABFCGBI">4</a> through <a href="#BABBIHCE">10</a> as many times as you wish. Occasionally, the vendor will report an exception that causes a rollback:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Vendor: JMSException occurred: javax.jms.JMSException: Simulated 
+database concurrent access exception
+  Vendor: Rolled back transaction 1
+</pre></li>
+<li>
+<p class="cye-lm-tag">After you finish running the clients, you can delete the destination resources by using the following commands:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">asadmin delete-jms-resource jms/AQueue
+asadmin delete-jms-resource jms/BQueue
+asadmin delete-jms-resource jms/CQueue
+asadmin delete-jms-resource jms/OTopic
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.4</span> Writing High Performance and Scalable JMS Applications</h1>
+<p class="cye-lm-tag">This section describes how to use the JMS API to write applications that can handle high volumes of messages robustly. These examples use both nondurable and durable shared consumers.</p>
+<a id="BABIBEAC" name="BABIBEAC" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.4.1</span> Using Shared Nondurable Subscriptions</h2>
+<p class="cye-lm-tag">This section describes the receiving clients in an example that shows how to use a shared consumer to distribute messages sent to a topic among different consumers. This section then explains how to compile and run the clients using GlassFish Server.</p>
+<p class="cye-lm-tag">You may wish to compare this example to the results of <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BABDDHHC">Running Multiple Consumers on the Same Destination</a> using an unshared consumer. In that example, messages are distributed among the consumers on a queue, but each consumer on the topic receives all the messages because each consumer on the topic is using a separate topic subscription.</p>
+<p class="cye-lm-tag">In this example, however, messages are distributed among multiple consumers on a topic, because all the consumers are sharing the same subscription. Each message added to the topic subscription is received by only one consumer, similarly to the way in which each message added to a queue is received by only one consumer.</p>
+<p class="cye-lm-tag">A topic may have multiple subscriptions. Each message sent to the topic will be added to each topic subscription. However, if there are multiple consumers on a particular subscription, each message added to that subscription will be delivered to only one of those consumers.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2416" name="sthref2416" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.4.1.1</span> Writing the Clients for the Shared Consumer Example</h3>
+<p class="cye-lm-tag">The sending client is <code dir="ltr">Producer.java</code>, the same client used in previous examples.</p>
+<p class="cye-lm-tag">The receiving client is <code dir="ltr">SharedConsumer.java</code>. It is very similar to <code dir="ltr">AsynchConsumer.java</code>, except that it always uses a topic. It performs the following steps.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Injects resources for a connection factory and topic.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a <code dir="ltr">try</code>-with-resources block, creates a <code dir="ltr">JMSContext</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Creates a consumer on a shared nondurable subscription, specifying a subscription name:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">consumer = context.createSharedConsumer(topic, "SubName");
+</pre></li>
+<li>
+<p class="cye-lm-tag">Creates an instance of the <code dir="ltr">TextListener</code> class and registers it as the message listener for the shared consumer.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Listens for the messages published to the destination, stopping when the user types the character <code dir="ltr">q</code> or <code dir="ltr">Q</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Catches and handles any exceptions. The end of the <code dir="ltr">try</code>-with-resources block automatically causes the <code dir="ltr">JMSContext</code> to be closed.</p>
+</li>
+</ol>
+<p class="cye-lm-tag">The <code dir="ltr">TextListener.java</code> class is identical to the one for the <code dir="ltr">asynchconsumer</code> example.</p>
+<p class="cye-lm-tag">For this example, you will use the default connection factory and the topic you created in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BABHEFCB">To Create Resources for the Simple Examples</a>.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2417" name="sthref2417" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.4.1.2</span> To Run the SharedConsumer and Producer Clients</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">Open three command windows. In the first, go to the <code dir="ltr">simple/producer/</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/simple/producer/
+</pre></li>
+<li>
+<p class="cye-lm-tag">In the second and third command windows, go to the <code dir="ltr">shared/sharedconsumer/</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/shared/sharedconsumer/
+</pre></li>
+<li>
+<p class="cye-lm-tag">In one of the <code dir="ltr">sharedconsumer</code> windows, build the example:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p class="cye-lm-tag">In each of the two <code dir="ltr">sharedconsumer</code> windows, start running the client. You do not need to specify a <code dir="ltr">topic</code> argument:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/sharedconsumer.jar
+</pre>
+<p class="cye-lm-tag">Wait until you see the following output in both windows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Waiting for messages on topic
+To end program, enter Q or q, then &lt;return&gt;
+</pre></li>
+<li>
+<p class="cye-lm-tag">In the <code dir="ltr">producer</code> window, run the client, specifying the topic and a number of messages:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 20
+</pre>
+<p class="cye-lm-tag">Each consumer client receives some of the messages. Only one of the clients receives the non-text message that signals the end of the message stream.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Enter <code dir="ltr">Q</code> or <code dir="ltr">q</code> and press <span class="gui-object-action cye-lm-tag">Return</span> to stop each client and see a report of the number of text messages received.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BABEJBHA" name="BABEJBHA" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.4.2</span> <a id="sthref2418" name="sthref2418" class="anchor"></a><a id="sthref2419" name="sthref2419" class="anchor"></a>Using Shared Durable Subscriptions</h2>
+<p class="cye-lm-tag">The <code dir="ltr">shareddurableconsumer</code> client shows how to use shared durable subscriptions. It shows how shared durable subscriptions combine the advantages of durable subscriptions (the subscription remains active when the client is not) with those of shared consumers (the message load can be divided among multiple clients).</p>
+<p class="cye-lm-tag">The example is much more similar to the <code dir="ltr">sharedconsumer</code> example than to the <code dir="ltr">DurableConsumer.java</code> client. It uses two classes, <code dir="ltr">SharedDurableConsumer.java</code> and <code dir="ltr">TextListener.java</code>, which can be found under the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/shared/shareddurableconsumer/</code> directory.</p>
+<p class="cye-lm-tag">The client uses <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>, the connection factory that does not have a client identifier, as is recommended for shared durable subscriptions. It uses the <code dir="ltr">createSharedDurableConsumer</code> method with a subscription name to establish the subscription:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">consumer = context.createSharedDurableConsumer(topic, "MakeItLast");
+</pre>
+<p class="cye-lm-tag">You run the example in combination with the <code dir="ltr">Producer.java</code> client.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2420" name="sthref2420" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.4.2.1</span> To Run the SharedDurableConsumer and Producer Clients</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/shared/shareddurableconsumer
+</pre></li>
+<li>
+<p class="cye-lm-tag">To compile and package the client, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+<li>
+<p class="cye-lm-tag">Run the client first to establish the durable subscription:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/shareddurableconsumer.jar
+</pre></li>
+<li>
+<p class="cye-lm-tag">The client displays the following and pauses:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Waiting for messages on topic
+To end program, enter Q or q, then &lt;return&gt;
+</pre></li>
+<li>
+<p class="cye-lm-tag">In the <code dir="ltr">shareddurableconsumer</code> window, enter <code dir="ltr">q</code> or <code dir="ltr">Q</code> to exit the program. The subscription remains active, although the client is not running.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Open another terminal window and go to the <code dir="ltr">producer</code> example directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">cd <span class="variable cye-lm-tag">tut-install</span>/examples/jms/simple/producer
+</pre></li>
+<li>
+<p class="cye-lm-tag">Run the <code dir="ltr">producer</code> example, sending a number of messages to the topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 6
+</pre></li>
+<li>
+<p class="cye-lm-tag">After the producer has sent the messages, open a third terminal window and go to the <code dir="ltr">shareddurableconsumer</code> directory.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Run the client in both the first and third terminal windows. Whichever client starts first will receive all the messages that were sent when there was no active subscriber:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/shareddurableconsumer.jar
+</pre></li>
+<li>
+<p class="cye-lm-tag">With both <code dir="ltr">shareddurableconsumer</code> clients still running, go to the <code dir="ltr">producer</code> window and send a larger number of messages to the topic:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">appclient -client target/producer.jar topic 25
+</pre>
+<p class="cye-lm-tag">Now the messages will be shared by the two consumer clients. If you continue sending groups of messages to the topic, each client receives some of the messages. If you exit one of the clients and send more messages, the other client will receive all the messages.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.5</span> <a id="sthref2421" name="sthref2421" class="anchor"></a><a id="sthref2422" name="sthref2422" class="anchor"></a><a id="sthref2423" name="sthref2423" class="anchor"></a>Sending and Receiving Messages Using a Simple Web Application</h1>
+<p class="cye-lm-tag">Web applications can use the JMS API to send and receive messages, as noted in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#BNCGN">Using Java EE Components to Produce and to Synchronously Receive Messages</a>. This section describes the components of a very simple web application that uses the JMS API.</p>
+<p class="cye-lm-tag">This section assumes that you are familiar with the basics of JavaServer Faces technology, described in <a href="https://docs.oracle.com/javaee/7/tutorial/partwebtier.htm#BNADP">Part III, "The Web Tier."</a></p>
+<p class="cye-lm-tag">The example, <code dir="ltr">websimplemessage</code>, is under the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/jms/examples/</code> directory. It uses sending and receiving Facelets pages as well as corresponding backing beans. When a user enters a message in the text field of the sending page and clicks a button, the backing bean for the page sends the message to a queue and displays it on the page. When the user goes to the receiving page and clicks another button, the backing bean for that page receives the message synchronously and displays it.</p>
+<div class="figure"><a id="sthref2424" name="sthref2424" class="anchor"></a>
+<p class="titleinfigure cye-lm-tag">Figure 46-2 The websimplemessage Application</p>
+<img width="569" height="243" src="img/jeett_dt_035.png" alt="Description of Figure 46-2 follows" longdesc="img_text/jeett_dt_035.htm"><br>
+<a id="sthref2425" name="sthref2425" href="img_text/jeett_dt_035.htm">Description of "Figure 46-2 The websimplemessage Application"</a><br>
+<br></div>
+<!-- class="figure" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref2426" name="sthref2426" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.5.1</span> The websimplemessage Facelets Pages</h2>
+<p class="cye-lm-tag">The Facelets pages for the example are as follows.</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">sender.xhtml</code>, which provides a labeled <code dir="ltr">h:InputText</code> tag where the user enters the message, along with two command buttons. When the user clicks the Send Message button, the <code dir="ltr">senderBean.sendMessage</code> method is called to send the message to the queue and display its contents. When the user clicks the Go to Receive Page button, the <code dir="ltr">receiver.xhtml</code> page appears.</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">receiver.xhtml</code>, which also provides two command buttons. When the user clicks the Receive Message button, the <code dir="ltr">receiverBean.getMessage</code> method is called to fetch the message from the queue and display its contents. When the user clicks the Send Another Message button, the sender.xhtml page appears again.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref2427" name="sthref2427" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.5.2</span> The websimplemessage Managed Beans</h2>
+<p class="cye-lm-tag">The two managed beans for the example are as follows.</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">SenderBean.java</code>, a CDI managed bean with one property, <code dir="ltr">messageText</code>, and one business method, <code dir="ltr">sendMessage</code>. The class is annotated with <code dir="ltr">@JMSDestinationDefinition</code> to create a component-private queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@JMSDestinationDefinition(
+        name = "java:comp/jms/webappQueue",
+        interfaceName = "javax.jms.Queue",
+        destinationName = "PhysicalWebappQueue")
+@Named
+@RequestScoped
+public class SenderBean {
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">sendMessage</code> method injects a <code dir="ltr">JMSContext</code> (using the default connection factory) and the queue, creates a producer, sends the message the user typed on the Facelets page, and creates a <code dir="ltr">FacesMessage</code> to display on the Facelets page:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Inject
+private JMSContext context;
+@Resource(lookup = "java:comp/jms/webappQueue")
+private Queue queue;
+private String messageText;
+...
+public void sendMessage() {
+    try {
+        String text = "Message from producer: " + messageText;
+        context.createProducer().send(queue, text);
+
+        FacesMessage facesMessage = 
+                new FacesMessage("Sent message: " + text);
+        FacesContext.getCurrentInstance().addMessage(null, facesMessage);
+    } catch (Throwable t) {
+        logger.log(Level.SEVERE,
+                "SenderBean.sendMessage: Exception: {0}",
+                t.toString());
+    }
+}
+</pre></li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">ReceiverBean.java</code>, a CDI managed bean with one business method, <code dir="ltr">getMessage</code>. The method injects a <code dir="ltr">JMSContext</code> (using the default connection factory) and the queue that was defined in <code dir="ltr">SenderBean</code>, creates a consumer, receives the message, and creates a <code dir="ltr">FacesMessage</code> to display on the Facelets page:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Inject
+private JMSContext context;
+@Resource(lookup = "java:comp/jms/webappQueue")
+private Queue queue;
+...
+public void getMessage() {
+    try {
+        JMSConsumer receiver = context.createConsumer(queue);
+        String text = receiver.receiveBody(String.class);
+
+        if (text != null) {
+            FacesMessage facesMessage = 
+                    new FacesMessage("Reading message: " + text);
+            FacesContext.getCurrentInstance().addMessage(null, facesMessage);
+        } else {
+            FacesMessage facesMessage =
+                    new FacesMessage("No message received after 1 second");
+            FacesContext.getCurrentInstance().addMessage(null, facesMessage);
+        }
+    } catch (Throwable t) {
+        logger.log(Level.SEVERE,
+                "ReceiverBean.getMessage: Exception: {0}",
+                t.toString());
+    }
+}
+</pre></li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref2428" name="sthref2428" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.5.3</span> Running the websimplemessage Example</h2>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, package, deploy, and run the <code dir="ltr">websimplemessage</code> application.</p>
+<div class="sect3"><a id="sthref2429" name="sthref2429" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.5.3.1</span> Creating Resources for the websimplemessage Example</h3>
+<p class="cye-lm-tag">This example uses an annotation-defined queue and the preconfigured default connection factory <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2430" name="sthref2430" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.5.3.2</span> To Package and Deploy websimplemessage Using NetBeans IDE</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">websimplemessage</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">websimplemessage</code> project and select <span class="gui-object-action cye-lm-tag">Build</span>.</p>
+<p class="cye-lm-tag">This command builds and deploys the project.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2431" name="sthref2431" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.5.3.3</span> To Package and Deploy websimplemessage Using Maven</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/websimplemessage/
+</pre></li>
+<li>
+<p class="cye-lm-tag">To compile the source files and package and deploy the application, use the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2432" name="sthref2432" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.5.3.4</span> To Run the websimplemessage Example</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/websimplemessage
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter a message in the text field and click <span class="gui-object-action cye-lm-tag">Send Message</span>.</p>
+<p class="cye-lm-tag">If, for example, you enter "Hello, Duke", the following appears below the buttons:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Sent message: Message from producer: Hello, Duke
+</pre></li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Go to Receive Page</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Receive Message</span>.</p>
+<p class="cye-lm-tag">The following appears below the buttons:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Reading message: Message from producer: Hello, Duke
+</pre></li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Send Another Message</span> to return to the sending page.</p>
+</li>
+<li>
+<p class="cye-lm-tag">After you have finished running the application, undeploy it using either the <span class="gui-object-action cye-lm-tag">Services</span> tab of NetBeans IDE or the <code dir="ltr">mvn cargo:undeploy</code> command.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00088" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.6</span> <a id="sthref2433" name="sthref2433" class="anchor"></a><a id="sthref2434" name="sthref2434" class="anchor"></a><a id="sthref2435" name="sthref2435" class="anchor"></a>Receiving Messages Asynchronously Using a Message-Driven Bean</h1>
+<p class="cye-lm-tag">If you are writing an application to run in the Java EE application client container or on the Java SE platform, and you want to receive messages asynchronously, you need to define a class that implements the <code dir="ltr">MessageListener</code> interface, create a <code dir="ltr">JMSConsumer</code>, and call the method <code dir="ltr">setMessageListener</code>.</p>
+<p class="cye-lm-tag">If you're writing an application to run in the Java EE web or EJB container and want it to receive messages asynchronously, you also need to need to define a class that implements the <code dir="ltr">MessageListener</code> interface. However, instead of creating a <code dir="ltr">JMSConsumer</code> and calling the method <code dir="ltr">setMessageListener</code>, you must configure your message listener class to be a message-driven bean. The application server will then take care of the rest.</p>
+<p class="cye-lm-tag">Message-driven beans can implement any messaging type. Most commonly, however, they implement the Java Message Service (JMS) technology.</p>
+<p class="cye-lm-tag">This section describes a simple message-driven bean example. Before proceeding, you should read the basic conceptual information in the section <a href="https://docs.oracle.com/javaee/7/tutorial/ejb-intro003.htm#GIPKO">What Is a Message-Driven Bean?</a> as well as <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#BNCGQ">Using Message-Driven Beans to Receive Messages Asynchronously</a>.</p>
+<a id="BNBPL" name="BNBPL" class="anchor"></a>
+<div id="JEETT00453" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.6.1</span> Overview of the simplemessage Example</h2>
+<p class="cye-lm-tag">The <code dir="ltr">simplemessage</code> application has the following components:</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">SimpleMessageClient</code>: An application client that sends several messages to a queue</p>
+</li>
+<li>
+<p class="cye-lm-tag"><code dir="ltr">SimpleMessageBean</code>: A message-driven bean that asynchronously processes the messages that are sent to the queue</p>
+</li>
+</ul>
+<p class="cye-lm-tag"><a href="#BNBPM">Figure 46-3</a> illustrates the structure of this application. The application client sends messages to the queue, which was created administratively using the Administration Console. The JMS provider (in this case, GlassFish Server) delivers the messages to the instances of the message-driven bean, which then processes the messages.</p>
+<div id="JEETT00028" class="figure"><a id="BNBPM" name="BNBPM" class="anchor"></a>
+<p class="titleinfigure cye-lm-tag">Figure 46-3 The simplemessage Application</p>
+<img width="453" height="183" src="img/jeett_dt_036.png" alt="Description of Figure 46-3 follows" longdesc="img_text/jeett_dt_036.htm"><br>
+<a id="sthref2436" name="sthref2436" href="img_text/jeett_dt_036.htm">Description of "Figure 46-3 The simplemessage Application"</a><br>
+<br></div>
+<!-- class="figure" -->
+<p class="cye-lm-tag">The source code for this application is in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/simplemessage/</code> directory.</p>
+</div>
+<!-- class="sect2" -->
+<a id="BNBPN" name="BNBPN" class="anchor"></a>
+<div id="JEETT00454" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.6.2</span> <a id="sthref2437" name="sthref2437" class="anchor"></a><a id="sthref2438" name="sthref2438" class="anchor"></a><a id="sthref2439" name="sthref2439" class="anchor"></a><a id="sthref2440" name="sthref2440" class="anchor"></a><a id="sthref2441" name="sthref2441" class="anchor"></a>The simplemessage Application Client</h2>
+<p class="cye-lm-tag">The <code dir="ltr">SimpleMessageClient</code> sends messages to the queue that the <code dir="ltr">SimpleMessageBean</code> listens to. The client starts by injecting the connection factory and queue resources:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Resource(lookup = "java:comp/DefaultJMSConnectionFactory")
+private static ConnectionFactory connectionFactory;
+
+@Resource(lookup = "jms/MyQueue")
+private static Queue queue;
+</pre>
+<p class="cye-lm-tag">Next, the client creates the <code dir="ltr">JMSContext</code> in a <code dir="ltr">try</code>-with-resources block:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">String text;
+final int NUM_MSGS = 3;
+
+try (JMSContext context = connectionFactory.createContext();) {
+</pre>
+<p class="cye-lm-tag">Finally, the client sends several text messages to the queue:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">for (int i = 0; i &lt; NUM_MSGS; i++) {
+    text = "This is message " + (i + 1);
+    System.out.println("Sending message: " + text);
+    context.createProducer().send(queue, text);
+}
+</pre></div>
+<!-- class="sect2" -->
+<a id="BNBPO" name="BNBPO" class="anchor"></a>
+<div id="JEETT00455" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.6.3</span> <a id="sthref2442" name="sthref2442" class="anchor"></a><a id="sthref2443" name="sthref2443" class="anchor"></a>The simplemessage Message-Driven Bean Class</h2>
+<p class="cye-lm-tag">The code for the <code dir="ltr">SimpleMessageBean</code> class illustrates the requirements of a message-driven bean class described in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#BNCGQ">Using Message-Driven Beans to Receive Messages Asynchronously</a>.</p>
+<p class="cye-lm-tag">The first few lines of the <code dir="ltr">SimpleMessageBean</code> class use the <code dir="ltr">@MessageDriven</code> annotation's <code dir="ltr">activationConfig</code> attribute to specify configuration properties:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = "destinationLookup",
+            propertyValue = "jms/MyQueue"),
+    @ActivationConfigProperty(propertyName = "destinationType",
+            propertyValue = "javax.jms.Queue")
+})
+</pre>
+<p class="cye-lm-tag">See <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#GJKOH">Table 45-3</a> for a list of the available properties.</p>
+<p class="cye-lm-tag">See <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples007.htm#BNCGW">Sending Messages from a Session Bean to an MDB</a> for examples of the <code dir="ltr">subscriptionDurability</code>, <code dir="ltr">clientId</code>, <code dir="ltr">subscriptionName</code>, and <code dir="ltr">messageSelector</code> properties.</p>
+<a id="BNBPP" name="BNBPP" class="anchor"></a>
+<div id="JEETT01113" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.6.3.1</span> <a id="sthref2444" name="sthref2444" class="anchor"></a><a id="sthref2445" name="sthref2445" class="anchor"></a><a id="sthref2446" name="sthref2446" class="anchor"></a>The onMessage Method</h3>
+<p class="cye-lm-tag">When the queue receives a message, the EJB container invokes the message listener method or methods. For a bean that uses JMS, this is the <code dir="ltr">onMessage</code> method of the <code dir="ltr">MessageListener</code> interface.</p>
+<p class="cye-lm-tag">In the <code dir="ltr">SimpleMessageBean</code> class, the <code dir="ltr">onMessage</code> method casts the incoming message to a <code dir="ltr">TextMessage</code> and displays the text:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public void onMessage(Message inMessage) {
+
+    try {
+        if (inMessage instanceof TextMessage) {
+            logger.log(Level.INFO,
+                    "MESSAGE BEAN: Message received: {0}",
+                    inMessage.getBody(String.class));
+        } else {
+            logger.log(Level.WARNING,
+                    "Message of wrong type: {0}",
+                    inMessage.getClass().getName());
+        }
+    } catch (JMSException e) {
+        logger.log(Level.SEVERE,
+                "SimpleMessageBean.onMessage: JMSException: {0}",
+                e.toString());
+        mdc.setRollbackOnly();
+    }
+}
+</pre></div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNBPQ" name="BNBPQ" class="anchor"></a>
+<div id="JEETT00456" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.6.4</span> Running the simplemessage Example</h2>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, deploy, and run the <code dir="ltr">simplemessage</code> example.</p>
+<a id="BNBPR" name="BNBPR" class="anchor"></a>
+<div id="JEETT01114" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.6.4.1</span> <a id="sthref2447" name="sthref2447" class="anchor"></a><a id="sthref2448" name="sthref2448" class="anchor"></a>Creating Resources for the simplemessage Example</h3>
+<p class="cye-lm-tag">This example uses the queue named <code dir="ltr">jms/MyQueue</code> and the preconfigured default connection factory <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>.</p>
+<p class="cye-lm-tag">If you have run the simple JMS examples in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BNCFA">Writing Simple JMS Applications</a> and have not deleted the resources, you already have the queue. Otherwise, follow the instructions in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#BABHEFCB">To Create Resources for the Simple Examples</a> to create it.</p>
+<p class="cye-lm-tag">For more information on creating JMS resources, see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples002.htm#GKTJS">Creating JMS Administered Objects</a>.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref2449" name="sthref2449" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.6.4.2</span> To Run the simplemessage Example Using NetBeans IDE</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/simplemessage
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">simplemessage</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Make sure that the <span class="gui-object-action cye-lm-tag">Open Required Projects</span> check box is selected, then click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">simplemessage</code> project and select <span class="gui-object-action cye-lm-tag">Build</span>. (If NetBeans IDE suggests that you run a priming build, click the box to do so.)</p>
+<p class="cye-lm-tag">This command packages the application client and the message-driven bean, then creates a file named <code dir="ltr">simplemessage.ear</code> in the <code dir="ltr">simplemessage-ear/target/</code> directory. It then deploys the <code dir="ltr">simplemessage-ear</code> module, retrieves the client stubs, and runs the application client.</p>
+<p class="cye-lm-tag">The output in the output window looks like this (preceded by application client container output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Sending message: This is message 1
+Sending message: This is message 2
+Sending message: This is message 3
+To see if the bean received the messages,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.
+</pre>
+<p class="cye-lm-tag">In the server log file, lines similar to the following appear:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">MESSAGE BEAN: Message received: This is message 1
+MESSAGE BEAN: Message received: This is message 2
+MESSAGE BEAN: Message received: This is message 3
+</pre>
+<p class="cye-lm-tag">The received messages may appear in a different order from the order in which they were sent.</p>
+</li>
+<li>
+<p class="cye-lm-tag">After you have finished running the application, undeploy it using the <span class="gui-object-action cye-lm-tag">Services</span> tab.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<a id="BNBPT" name="BNBPT" class="anchor"></a>
+<div id="JEETT00208" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.6.4.3</span> To Run the simplemessage Example Using Maven</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/simplemessage/
+</pre></li>
+<li>
+<p class="cye-lm-tag">To compile the source files and package the application, use the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p class="cye-lm-tag">This target packages the application client and the message-driven bean, then creates a file named <code dir="ltr">simplemessage.ear</code> in the <code dir="ltr">simplemessage-ear/target/</code> directory. It then deploys the <code dir="ltr">simplemessage-ear</code> module, retrieves the client stubs, and runs the application client.</p>
+<p class="cye-lm-tag">The output in the terminal window looks like this (preceded by application client container output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Sending message: This is message 1
+Sending message: This is message 2
+Sending message: This is message 3
+To see if the bean received the messages,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.
+</pre>
+<p class="cye-lm-tag">In the server log file, lines similar to the following appear:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">MESSAGE BEAN: Message received: This is message 1
+MESSAGE BEAN: Message received: This is message 2
+MESSAGE BEAN: Message received: This is message 3
+</pre>
+<p class="cye-lm-tag">The received messages may appear in a different order from the order in which they were sent.</p>
+</li>
+<li>
+<p class="cye-lm-tag">After you have finished running the application, undeploy it using the <code dir="ltr">mvn cargo:undeploy</code> command.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00556" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.7</span> <a id="sthref2450" name="sthref2450" class="anchor"></a><a id="sthref2451" name="sthref2451" class="anchor"></a><a id="sthref2452" name="sthref2452" class="anchor"></a><a id="sthref2453" name="sthref2453" class="anchor"></a><a id="sthref2454" name="sthref2454" class="anchor"></a>Sending Messages from a Session Bean to an MDB</h1>
+<p class="cye-lm-tag">This section explains how to write, compile, package, deploy, and run an application that uses the JMS API in conjunction with a session bean. The application contains the following components:</p>
+<ul>
+<li>
+<p class="cye-lm-tag">An application client that invokes a session bean</p>
+</li>
+<li>
+<p class="cye-lm-tag">A session bean that publishes several messages to a topic</p>
+</li>
+<li>
+<p class="cye-lm-tag">A message-driven bean that receives and processes the messages using a durable topic subscription and a message selector</p>
+</li>
+</ul>
+<p class="cye-lm-tag">You will find the source files for this section in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jms/clientsessionmdb/</code> directory. Path names in this section are relative to this directory.</p>
+<a id="BNCGX" name="BNCGX" class="anchor"></a>
+<div id="JEETT01299" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.7.1</span> Writing the Application Components for the clientsessionmdb Example</h2>
+<p class="cye-lm-tag">This application demonstrates how to send messages from an enterprise bean (in this case, a session bean) rather than from an application client, as in the example in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples006.htm#BNBPK">Receiving Messages Asynchronously Using a Message-Driven Bean</a>. <a href="#BNCGY">Figure 46-4</a> illustrates the structure of this application. Sending messages from an enterprise bean is very similar to sending messages from a managed bean, which was shown in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples005.htm#BABBABFC">Sending and Receiving Messages Using a Simple Web Application</a>.</p>
+<div id="JEETT00057" class="figure"><a id="BNCGY" name="BNCGY" class="anchor"></a>
+<p class="titleinfigure cye-lm-tag">Figure 46-4 An Enterprise Bean Application: Client to Session Bean to Message-Driven Bean</p>
+<img width="423" height="287" src="img/jeett_dt_037.png" alt="Description of Figure 46-4 follows" longdesc="img_text/jeett_dt_037.htm"><br>
+<a id="sthref2455" name="sthref2455" href="img_text/jeett_dt_037.htm">Description of "Figure 46-4 An Enterprise Bean Application: Client to Session Bean to Message-Driven Bean"</a><br>
+<br></div>
+<!-- class="figure" -->
+<p class="cye-lm-tag">The Publisher enterprise bean in this example is the enterprise-application equivalent of a wire-service news feed that categorizes news events into six news categories. The message-driven bean could represent a newsroom, where the sports desk, for example, would set up a subscription for all news events pertaining to sports.</p>
+<p class="cye-lm-tag">The application client in the example injects the Publisher enterprise bean's remote home interface and then calls the bean's business method. The enterprise bean creates 18 text messages. For each message, it sets a <code dir="ltr">String</code> property randomly to one of six values representing the news categories and then publishes the message to a topic. The message-driven bean uses a message selector for the property to limit which of the published messages will be delivered to it.</p>
+<a id="BNCGZ" name="BNCGZ" class="anchor"></a>
+<div id="JEETT00829" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.7.1.1</span> Coding the Application Client: MyAppClient.java</h3>
+<p class="cye-lm-tag">The application client, <code dir="ltr">MyAppClient.java</code>, found under <code dir="ltr">clientsessionmdb-app-client</code>, performs no JMS API operations and so is simpler than the client in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples006.htm#BNBPK">Receiving Messages Asynchronously Using a Message-Driven Bean</a>. The client uses dependency injection to obtain the Publisher enterprise bean's business interface:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@EJB(name="PublisherRemote")
+private static PublisherRemote publisher;
+</pre>
+<p class="cye-lm-tag">The client then calls the bean's business method twice.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCHA" name="BNCHA" class="anchor"></a>
+<div id="JEETT00830" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.7.1.2</span> Coding the Publisher Session Bean</h3>
+<p class="cye-lm-tag">The Publisher bean is a stateless session bean that has one business method. The Publisher bean uses a remote interface rather than a local interface because it is accessed from the application client.</p>
+<p class="cye-lm-tag">The remote interface, <code dir="ltr">PublisherRemote.java</code>, found under <code dir="ltr">clientsessionmdb-ejb</code>, declares a single business method, <code dir="ltr">publishNews</code>.</p>
+<p class="cye-lm-tag">The bean class, <code dir="ltr">PublisherBean.java</code>, also found under <code dir="ltr">clientsessionmdb-ejb</code>, implements the <code dir="ltr">publishNews</code> method and its helper method <code dir="ltr">chooseType</code>. The bean class injects <code dir="ltr">SessionContext</code> and <code dir="ltr">Topic</code> resources (the topic is defined in the message-driven bean). It then injects a <code dir="ltr">JMSContext</code>, which uses the preconfigured default connection factory unless you specify otherwise. The bean class begins as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Stateless
+@Remote({
+    PublisherRemote.class
+})
+public class PublisherBean implements PublisherRemote {
+
+    @Resource
+    private SessionContext sc;
+    @Resource(lookup = "java:module/jms/newsTopic")
+    private Topic topic;
+    @Inject
+    private JMSContext context;
+    ...
+</pre>
+<p class="cye-lm-tag">The business method <code dir="ltr">publishNews</code> creates a <code dir="ltr">JMSProducer</code> and publishes the messages.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCHB" name="BNCHB" class="anchor"></a>
+<div id="JEETT00831" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.7.1.3</span> <a id="sthref2456" name="sthref2456" class="anchor"></a><a id="sthref2457" name="sthref2457" class="anchor"></a>Coding the Message-Driven Bean: MessageBean.java</h3>
+<p class="cye-lm-tag">The message-driven bean class, <code dir="ltr">MessageBean.java</code>, found under <code dir="ltr">clientsessionmdb-ejb</code>, is almost identical to the one in <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples006.htm#BNBPK">Receiving Messages Asynchronously Using a Message-Driven Bean</a>. However, the <code dir="ltr">@MessageDriven</code> annotation is different, because instead of a queue, the bean is using a topic, a durable subscription, and a message selector. The bean defines a topic for the use of the application; the definition uses the <code dir="ltr">java:module</code> scope because both the session bean and the message-driven bean are in the same module. Because the destination is defined in the message-driven bean, the <code dir="ltr">@MessageDriven</code> annotation uses the <code dir="ltr">destinationLookup</code> activation config property. (See <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts005.htm#BABHFBDH">Creating Resources for Java EE Applications</a> for more information.) The annotation also sets the activation config properties <code dir="ltr">messageSelector</code>, <code dir="ltr">subscriptionDurability</code>, <code dir="ltr">clientId</code>, and <code dir="ltr">subscriptionName</code>, as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@JMSDestinationDefinition(
+        name = "java:module/jms/newsTopic",
+        interfaceName = "javax.jms.Topic",
+        destinationName = "PhysicalNewsTopic")
+@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = "destinationLookup",
+            propertyValue = "java:module/jms/newsTopic"),
+    @ActivationConfigProperty(propertyName = "destinationType",
+            propertyValue = "javax.jms.Topic"),
+    @ActivationConfigProperty(propertyName = "messageSelector",
+            propertyValue = "NewsType = 'Sports' OR NewsType = 'Opinion'"),
+    @ActivationConfigProperty(propertyName = "subscriptionDurability",
+            propertyValue = "Durable"),
+    @ActivationConfigProperty(propertyName = "clientId",
+            propertyValue = "MyID"),
+    @ActivationConfigProperty(propertyName = "subscriptionName",
+            propertyValue = "MySub")
+})
+</pre>
+<p class="cye-lm-tag">The topic is the one defined in the <code dir="ltr">PublisherBean</code>. The message selector in this case represents both the sports and opinion desks, just to demonstrate the syntax of message selectors.</p>
+<p class="cye-lm-tag">The JMS resource adapter uses these properties to create a connection factory for the message-driven bean that allows the bean to use a durable subscription.</p>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref2458" name="sthref2458" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.7.2</span> Running the clientsessionmdb Example</h2>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, deploy, and run the <code dir="ltr">simplemessage</code> example.</p>
+<p class="cye-lm-tag">This example uses an annotation-defined topic and the preconfigured default connection factory <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code>, so you do not have to create resources for it.</p>
+<div class="sect3"><a id="sthref2459" name="sthref2459" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.7.2.1</span> To Run clientsessionmdb Using NetBeans IDE</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/clientsessionmdb
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">clientsessionmdb</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Make sure that the <span class="gui-object-action cye-lm-tag">Open Required Projects</span> check box is selected, then click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">clientsessionmdb</code> project and select <span class="gui-object-action cye-lm-tag">Build</span>. (If NetBeans IDE suggests that you run a priming build, click the box to do so.)</p>
+<p class="cye-lm-tag">This command creates the following:</p>
+<ul>
+<li>
+<p class="cye-lm-tag">An application client JAR file that contains the client class file and the session bean's remote interface, along with a manifest file that specifies the main class and places the EJB JAR file in its classpath</p>
+</li>
+<li>
+<p class="cye-lm-tag">An EJB JAR file that contains both the session bean and the message-driven bean</p>
+</li>
+<li>
+<p class="cye-lm-tag">An application EAR file that contains the two JAR files</p>
+</li>
+</ul>
+<p class="cye-lm-tag">The <code dir="ltr">clientsessionmdb.ear</code> file is created in the <code dir="ltr">clientsessionmdb-ear/target/</code> directory.</p>
+<p class="cye-lm-tag">The command then deploys the EAR file, retrieves the client stubs, and runs the client.</p>
+<p class="cye-lm-tag">The client displays these lines:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">To view the bean output,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.
+</pre>
+<p class="cye-lm-tag">The output from the enterprise beans appears in the server log file. The Publisher session bean sends two sets of 18 messages numbered 0 through 17. Because of the message selector, the message-driven bean receives only the messages whose <code dir="ltr">NewsType</code> property is <code dir="ltr">Sports</code> or <code dir="ltr">Opinion</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Use the <span class="gui-object-action cye-lm-tag">Services</span> tab to undeploy the application after you have finished running it.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref2460" name="sthref2460" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">46.7.2.2</span> To Run clientsessionmdb Using Maven</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">Go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jms/clientsessionmdb/
+</pre></li>
+<li>
+<p class="cye-lm-tag">To compile the source files and package, deploy, and run the application, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p class="cye-lm-tag">This command creates the following:</p>
+<ul>
+<li>
+<p class="cye-lm-tag">An application client JAR file that contains the client class file and the session bean's remote interface, along with a manifest file that specifies the main class and places the EJB JAR file in its classpath</p>
+</li>
+<li>
+<p class="cye-lm-tag">An EJB JAR file that contains both the session bean and the message-driven bean</p>
+</li>
+<li>
+<p class="cye-lm-tag">An application EAR file that contains the two JAR files</p>
+</li>
+</ul>
+<p class="cye-lm-tag">The <code dir="ltr">clientsessionmdb.ear</code> file is created in the <code dir="ltr">clientsessionmdb-ear/target/</code> directory.</p>
+<p class="cye-lm-tag">The command then deploys the EAR file, retrieves the client stubs, and runs the client.</p>
+<p class="cye-lm-tag">The client displays these lines:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">To view the bean output,
+ check &lt;install_dir&gt;/domains/domain1/logs/server.log.
+</pre>
+<p class="cye-lm-tag">The output from the enterprise beans appears in the server log file. The Publisher session bean sends two sets of 18 messages numbered 0 through 17. Because of the message selector, the message-driven bean receives only the messages whose <code dir="ltr">NewsType</code> property is <code dir="ltr">Sports</code> or <code dir="ltr">Opinion</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Undeploy the application after you have finished running it:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn cargo:undeploy
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+
+<div id="JEETT00557" class="sect1">
+<h1 class="sect1"><span class="secnum">46.8</span> <a id="sthref2461" name="sthref2461" class="anchor"></a><a id="sthref2462" name="sthref2462" class="anchor"></a><a id="sthref2463" name="sthref2463" class="anchor"></a><a id="sthref2464" name="sthref2464" class="anchor"></a>Using an Entity to Join Messages from Two MDBs</h1>
+<p>This section explains how to write, compile, package, deploy, and run an application that uses the JMS API with an entity. The application uses the following components:</p>
+<ul>
+<li>
+<p>An application client that both sends and receives messages</p>
+</li>
+<li>
+<p>Two message-driven beans</p>
+</li>
+<li>
+<p>An entity class</p>
+</li>
+</ul>
+<p>You will find the source files for this section in the <span class="variable">tut-install</span><code dir="ltr">/examples/jms/clientmdbentity/</code> directory. Path names in this section are relative to this directory.</p>
+<a id="BNCHG" name="BNCHG" class="anchor"></a>
+<div id="JEETT01301" class="sect2">
+<h2 class="sect2"><span class="secnum">46.8.1</span> Overview of the clientmdbentity Example Application</h2>
+<p>This application simulates, in a simplified way, the work flow of a company's human resources (HR) department when it processes a new hire. This application also demonstrates how to use the Java EE platform to accomplish a task that many JMS applications need to perform.</p>
+<p>A messaging client must often wait for several messages from various sources. It then uses the information in all these messages to assemble a message that it then sends to another destination. The common term for this design pattern (which is not specific to JMS) is <span class="glossaryterm">joining messages</span>. Such a task must be transactional, with all the receives and the send as a single transaction. If not all the messages are received successfully, the transaction can be rolled back. For an application client example that illustrates this task, see <a href="https://docs.oracle.com/javaee/7/tutorial/jms-examples003.htm#BNCGJ">Using Local Transactions</a>.</p>
+<p>A message-driven bean can process only one message at a time in a transaction. To provide the ability to join messages, an application can have the message-driven bean store the interim information in a Java Persistence API entity. The entity can then determine whether all the information has been received; when it has, the entity can report this back to one of the message-driven beans, which then creates and sends the message to the other destination. After it has completed its task, the entity can be removed.</p>
+<p>The basic steps of the application are as follows.</p>
+<ol>
+<li>
+<p>The HR department's application client generates an employee ID for each new hire and then publishes a message (M1) containing the new hire's name, employee ID, and position. It publishes the message to a topic because the message needs to be consumed by two message-driven beans. The client then creates a temporary queue, <code dir="ltr">ReplyQueue</code>, with a message listener that waits for a reply to the message. (See <a href="https://docs.oracle.com/javaee/7/tutorial/jms-concepts004.htm#BNCGB">Creating Temporary Destinations</a> for more information.)</p>
+</li>
+<li>
+<p>Two message-driven beans process each message: One bean, <code dir="ltr">OfficeMDB</code>, assigns the new hire's office number, and the other bean, <code dir="ltr">EquipmentMDB</code>, assigns the new hire's equipment. The first bean to process the message creates and persists an entity named <code dir="ltr">SetupOffice</code>, then calls a business method of the entity to store the information it has generated. The second bean locates the existing entity and calls another business method to add its information.</p>
+</li>
+<li>
+<p>When both the office and the equipment have been assigned, the entity business method returns a value of <code dir="ltr">true</code> to the message-driven bean that called the method. The message-driven bean then sends to the reply queue a message (M2) describing the assignments. Then it removes the entity. The application client's message listener retrieves the information.</p>
+</li>
+</ol>
+<p><a href="#BNCHH">Figure 46-5</a> illustrates the structure of this application. Of course, an actual HR application would have more components; other beans could set up payroll and benefits records, schedule orientation, and so on.</p>
+<p><a href="#BNCHH">Figure 46-5</a> assumes that <code dir="ltr">OfficeMDB</code> is the first message-driven bean to consume the message from the client. <code dir="ltr">OfficeMDB</code> then creates and persists the <code dir="ltr">SetupOffice</code> entity and stores the office information. <code dir="ltr">EquipmentMDB</code> then finds the entity, stores the equipment information, and learns that the entity has completed its work. <code dir="ltr">EquipmentMDB</code> then sends the message to the reply queue and removes the entity.</p>
+<div id="JEETT00058" class="figure"><a id="BNCHH" name="BNCHH" class="anchor"></a>
+<p class="titleinfigure">Figure 46-5 An Enterprise Bean Application: Client to Message-Driven Beans to Entity</p>
+<img width="566" height="291" src="img/jeett_dt_038.png" alt="Description of Figure 46-5 follows" longdesc="img_text/jeett_dt_038.htm"><br>
+<a id="sthref2465" name="sthref2465" href="img_text/jeett_dt_038.htm">Description of "Figure 46-5 An Enterprise Bean Application: Client to Message-Driven Beans to Entity"</a><br>
+<br></div>
+<!-- class="figure" --></div>
+<!-- class="sect2" -->
+<a id="BNCHI" name="BNCHI" class="anchor"></a>
+<div id="JEETT01302" class="sect2">
+<h2 class="sect2"><span class="secnum">46.8.2</span> Writing the Application Components for the clientmdbentity Example</h2>
+<p>Writing the components of the application involves coding the application client, the message-driven beans, and the entity class.</p>
+<a id="BNCHJ" name="BNCHJ" class="anchor"></a>
+<div id="JEETT00832" class="sect3">
+<h3 class="sect3"><span class="secnum">46.8.2.1</span> <a id="sthref2466" name="sthref2466" class="anchor"></a><a id="sthref2467" name="sthref2467" class="anchor"></a><a id="sthref2468" name="sthref2468" class="anchor"></a><a id="sthref2469" name="sthref2469" class="anchor"></a>Coding the Application Client: HumanResourceClient.java</h3>
+<p>The application client, <code dir="ltr">HumanResourceClient.java</code>, found under <code dir="ltr">clientmdbentity-app-client</code>, performs the following steps:</p>
+<ol>
+<li>
+<p>Defines a topic for the application, using the <code dir="ltr">java:app</code> namespace because the topic is used in both the application client and the EJB module</p>
+</li>
+<li>
+<p>Injects <code dir="ltr">ConnectionFactory</code> and <code dir="ltr">Topic</code> resources</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">TemporaryQueue</code> to receive notification of processing that occurs, based on new-hire events it has published</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">JMSConsumer</code> for the <code dir="ltr">TemporaryQueue</code>, sets the <code dir="ltr">JMSConsumer</code>'s message listener, and starts the connection</p>
+</li>
+<li>
+<p>Creates a <code dir="ltr">MapMessage</code></p>
+</li>
+<li>
+<p>Creates five new employees with randomly generated names, positions, and ID numbers (in sequence) and publishes five messages containing this information</p>
+</li>
+</ol>
+<p>The message listener, <code dir="ltr">HRListener</code>, waits for messages that contain the assigned office and equipment for each employee. When a message arrives, the message listener displays the information received and determines whether all five messages have arrived. When they have, the message listener notifies the <code dir="ltr">main</code> method, which then exits.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNCHK" name="BNCHK" class="anchor"></a>
+<div id="JEETT00833" class="sect3">
+<h3 class="sect3"><span class="secnum">46.8.2.2</span> <a id="sthref2470" name="sthref2470" class="anchor"></a>Coding the Message-Driven Beans for the clientmdbentity Example</h3>
+<p>This example uses two message-driven beans, both under <code dir="ltr">clientmdbentity-ejb</code>:</p>
+<ul>
+<li>
+<p><code dir="ltr">EquipmentMDB.java</code></p>
+</li>
+<li>
+<p><code dir="ltr">OfficeMDB.java</code></p>
+</li>
+</ul>
+<p>The beans take the following steps.</p>
+<ol>
+<li>
+<p>They inject a <code dir="ltr">MessageDrivenContext</code> resource, an <code dir="ltr">EntityManager</code>, and a <code dir="ltr">JMSContext</code>.</p>
+</li>
+<li>
+<p>The <code dir="ltr">onMessage</code> method retrieves the information in the message. The <code dir="ltr">EquipmentMDB</code>'s <code dir="ltr">onMessage</code> method chooses equipment, based on the new hire's position; the <code dir="ltr">OfficeMDB</code>'s <code dir="ltr">onMessage</code> method randomly generates an office number.</p>
+</li>
+<li>
+<p>After a slight delay to simulate real world processing hitches, the <code dir="ltr">onMessage</code> method calls a helper method, <code dir="ltr">compose</code>.</p>
+</li>
+<li>
+<p>The <code dir="ltr">compose</code> method takes the following steps.</p>
+<ol>
+<li>
+<p>It either creates and persists the <code dir="ltr">SetupOffice</code> entity or finds it by primary key.</p>
+</li>
+<li>
+<p>It uses the entity to store the equipment or the office information in the database, calling either the <code dir="ltr">doEquipmentList</code> or the <code dir="ltr">doOfficeNumber</code> business method.</p>
+</li>
+<li>
+<p>If the business method returns <code dir="ltr">true</code>, meaning that all of the information has been stored, it retrieves the reply destination information from the message, creates a <code dir="ltr">JMSProducer</code>, and sends a reply message that contains the information stored in the entity.</p>
+</li>
+<li>
+<p>It removes the entity.</p>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<a id="BNCHL" name="BNCHL" class="anchor"></a>
+<div id="JEETT00834" class="sect3">
+<h3 class="sect3"><span class="secnum">46.8.2.3</span> Coding the Entity Class for the clientmdbentity Example</h3>
+<p>The <code dir="ltr">SetupOffice.java</code> class, also under <code dir="ltr">clientmdbentity-ejb</code>, is an entity class. The entity and the message-driven beans are packaged together in an EJB JAR file. The entity class is declared as follows:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Entity
+public class SetupOffice implements Serializable {
+</pre>
+<p>The class contains a no-argument constructor and a constructor that takes two arguments, the employee ID and name. It also contains getter and setter methods for the employee ID, name, office number, and equipment list. The getter method for the employee ID has the <code dir="ltr">@Id</code> annotation to indicate that this field is the primary key:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Id
+public String getEmployeeId() {
+    return id;
+}
+</pre>
+<p>The class also implements the two business methods, <code dir="ltr">doEquipmentList</code> and <code dir="ltr">doOfficeNumber</code>, and their helper method, <code dir="ltr">checkIfSetupComplete</code>.</p>
+<p>The message-driven beans call the business methods and the getter methods.</p>
+<p>The <code dir="ltr">persistence.xml</code> file for the entity specifies the most basic settings:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;persistence version="2.1" 
+             xmlns="http://xmlns.jcp.org/xml/ns/persistence" 
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence 
+               http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"&gt;
+  &lt;persistence-unit name="clientmdbentity-ejbPU" transaction-type="JTA"&gt;
+    &lt;provider&gt;org.eclipse.persistence.jpa.PersistenceProvider&lt;/provider&gt;
+    &lt;jta-data-source&gt;java:comp/DefaultDataSource&lt;/jta-data-source&gt;
+    &lt;properties&gt;
+      &lt;property name="eclipselink.ddl-generation" 
+                value="drop-and-create-tables"/&gt;
+    &lt;/properties&gt;
+  &lt;/persistence-unit&gt;
+&lt;/persistence&gt;
+</pre></div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref2471" name="sthref2471" class="anchor"></a>
+<h2 class="sect2"><span class="secnum">46.8.3</span> Running the clientmdbentity Example</h2>
+<p>You can use either NetBeans IDE or Maven to build, deploy, and run the <code dir="ltr">clientmdbentity</code> example.</p>
+<p>Because the example defines its own application-private topic and uses the preconfigured default connection factory <code dir="ltr">java:comp/DefaultJMSConnectionFactory</code> and the preconfigured default JDBC resource <code dir="ltr">java:comp/DefaultDataSource</code>, you do not need to create resources for it.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2472" name="sthref2472" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.8.3.1</span> To Run clientmdbentity Using NetBeans IDE</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>), as well as the database server (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples004.htm#BNADK">Starting and Stopping the Java DB Server</a>).</p>
+</li>
+<li>
+<p>From the <span class="gui-object-action">File</span> menu, choose <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-title">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/jms/clientmdbentity
+</pre></li>
+<li>
+<p>Select the <code dir="ltr">clientmdbentity</code> folder.</p>
+</li>
+<li>
+<p>Click <span class="gui-object-action">Open Project</span>.</p>
+</li>
+<li>
+<p>In the <span class="gui-object-action">Projects</span> tab, right-click the <code dir="ltr">clientmdbentity</code> project and select <span class="gui-object-action">Build</span>.</p>
+<p>This command creates the following:</p>
+<ul>
+<li>
+<p>An application client JAR file that contains the client class and listener class files, along with a manifest file that specifies the main class</p>
+</li>
+<li>
+<p>An EJB JAR file that contains the message-driven beans and the entity class, along with the <code dir="ltr">persistence.xml</code> file</p>
+</li>
+<li>
+<p>An application EAR file that contains the two JAR files along with an <code dir="ltr">application.xml</code> file</p>
+<p>The <code dir="ltr">clientmdbentity.ear</code> file is created in the <code dir="ltr">clientmdbentity-ear/target/</code> directory.</p>
+</li>
+</ul>
+<p>The command then deploys the EAR file, retrieves the client stubs, and runs the application client.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref2473" name="sthref2473" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.8.3.2</span> To Run clientmdbentity Using Maven</h3>
+<ol>
+<li>
+<p>Make sure that GlassFish Server has been started (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>), as well as the database server (see <a href="https://docs.oracle.com/javaee/7/tutorial/usingexamples004.htm#BNADK">Starting and Stopping the Java DB Server</a>).</p>
+</li>
+<li>
+<p>Go to the following directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable">tut-install</span>/examples/jms/clientmdbentity/
+</pre></li>
+<li>
+<p>To compile the source files and package, deploy, and run the application, enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p>This command creates the following:</p>
+<ul>
+<li>
+<p>An application client JAR file that contains the client class and listener class files, along with a manifest file that specifies the main class</p>
+</li>
+<li>
+<p>An EJB JAR file that contains the message-driven beans and the entity class, along with the <code dir="ltr">persistence.xml</code> file</p>
+</li>
+<li>
+<p>An application EAR file that contains the two JAR files along with an <code dir="ltr">application.xml</code> file</p>
+</li>
+</ul>
+<p>The command then deploys the application, retrieves the client stubs, and runs the application client.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref2474" name="sthref2474" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">46.8.3.3</span> Viewing the Application Output</h3>
+<p>The output in the NetBeans IDE output window or in the terminal window looks something like this (preceded by application client container output and Maven output):</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">SENDER: Setting hire ID to 50, name Bill Tudor, position Programmer
+SENDER: Setting hire ID to 51, name Carol Jones, position Senior Programmer
+SENDER: Setting hire ID to 52, name Mark Wilson, position Manager
+SENDER: Setting hire ID to 53, name Polly Wren, position Senior Programmer
+SENDER: Setting hire ID to 54, name Joe Lawrence, position Director
+Waiting for 5 message(s)
+New hire event processed:
+  Employee ID: 52
+  Name: Mark Wilson
+  Equipment: Tablet
+  Office number: 294
+Waiting for 4 message(s)
+New hire event processed:
+  Employee ID: 53
+  Name: Polly Wren
+  Equipment: Laptop
+  Office number: 186
+Waiting for 3 message(s)
+New hire event processed:
+  Employee ID: 54
+  Name: Joe Lawrence
+  Equipment: Mobile Phone
+  Office number: 135
+Waiting for 2 message(s)
+New hire event processed:
+  Employee ID: 50
+  Name: Bill Tudor
+  Equipment: Desktop System
+  Office number: 200
+Waiting for 1 message(s)
+New hire event processed:
+  Employee ID: 51
+  Name: Carol Jones
+  Equipment: Laptop
+  Office number: 262
+</pre>
+<p>The output from the message-driven beans and the entity class appears in the server log.</p>
+<p>For each employee, the application first creates the entity and then finds it. You may see runtime errors in the server log, and transaction rollbacks may occur. The errors occur if both of the message-driven beans discover at the same time that the entity does not yet exist, so they both try to create it. The first attempt succeeds, but the second fails because the bean already exists. After the rollback, the second message-driven bean tries again and succeeds in finding the entity. Container-managed transactions allow the application to run correctly, in spite of these errors, with no special programming.</p>
+<p>To undeploy the application after you have finished running it, use the <span class="gui-object-action">Services</span> tab or issue the <code dir="ltr">mvn cargo:undeploy</code> command.</p>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">46.9</span> Using NetBeans IDE to Create JMS Resources</h1>
+<p class="cye-lm-tag">When you write your own JMS applications, you will need to create resources for them. This section explains how to use NetBeans IDE to create <code dir="ltr">src/main/setup/glassfish-resources.xml</code> files similar to those used in the examples in this chapter. It also explains how to use NetBeans IDE to delete the resources.</p>
+<p class="cye-lm-tag">You can also create, list, and delete JMS resources using the Administration Console or the <code dir="ltr">asadmin create-jms-resource</code>, <code dir="ltr">asadmin list-jms-resources</code>, and <code dir="ltr">asadmin delete-jms-resources</code> commands. For information, consult the GlassFish Server documentation or enter <code dir="ltr">asadmin help</code> <span class="variable cye-lm-tag">command-name</span>.</p>
+<div class="sect2"><a id="sthref2475" name="sthref2475" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.9.1</span> <a id="sthref2476" name="sthref2476" class="anchor"></a><a id="sthref2477" name="sthref2477" class="anchor"></a><a id="sthref2478" name="sthref2478" class="anchor"></a><a id="sthref2479" name="sthref2479" class="anchor"></a>To Create JMS Resources Using NetBeans IDE</h2>
+<p class="cye-lm-tag">Follow these steps to create a JMS resource in GlassFish Server using NetBeans IDE. Repeat these steps for each resource you need.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Right-click the project for which you want to create resources and select <span class="gui-object-action cye-lm-tag">New</span>, then select <span class="gui-object-action cye-lm-tag">Other</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">New File</span> wizard, under <span class="gui-object-action cye-lm-tag">Categories</span>, select <span class="gui-object-action cye-lm-tag">GlassFish</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Under <span class="gui-object-action cye-lm-tag">File Types</span>, select <span class="gui-object-action cye-lm-tag">JMS Resource</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">On the <span class="gui-object-title cye-lm-tag">General Attributes - JMS Resource</span> page, in the <span class="gui-object-action cye-lm-tag">JNDI Name</span> field, enter the name of the resource.</p>
+<p class="cye-lm-tag">By convention, JMS resource names begin with <code dir="ltr">jms/</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Select the option for the resource type.</p>
+<p class="cye-lm-tag">Normally, this is either <code dir="ltr">javax.jms.Queue</code>, <code dir="ltr">javax.jms.Topic</code>, or <code dir="ltr">javax.jms.ConnectionFactory</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Next</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">On the <span class="gui-object-title cye-lm-tag">JMS Properties</span> page, for a queue or topic, enter a name for a physical queue in the <span class="gui-object-action cye-lm-tag">Value</span> field for the <span class="gui-object-action cye-lm-tag">Name</span> property.</p>
+<p class="cye-lm-tag">You can enter any value for this required field.</p>
+<p class="cye-lm-tag">Connection factories have no required properties. In a few situations, you may need to specify a property.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Finish</span>.</p>
+<p class="cye-lm-tag">A file named <code dir="ltr">glassfish-resources.xml</code> is created in your Maven project, in a directory named <code dir="ltr">src/main/setup/</code>. In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, you can find it under the <span class="gui-object-action cye-lm-tag">Other Sources</span> node. You will need to run the <code dir="ltr">asadmin add-resources</code> command to create the resources in GlassFish Server.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect2" -->
+<div class="sect2"><a id="sthref2480" name="sthref2480" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">46.9.2</span> To Delete JMS Resources Using NetBeans IDE</h2>
+<ol>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Services</span> tab, expand the <span class="gui-object-action cye-lm-tag">Servers</span> node, then expand the <span class="gui-object-action cye-lm-tag">GlassFish Server</span> node.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Expand the <span class="gui-object-action cye-lm-tag">Resources</span> node, then expand the <span class="gui-object-action cye-lm-tag">Connector Resources</span> node.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Expand the <span class="gui-object-action cye-lm-tag">Admin Object Resources</span> node.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Right-click any destination you want to remove and select <span class="gui-object-action cye-lm-tag">Unregister</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Expand the <span class="gui-object-action cye-lm-tag">Connector Connection Pools</span> node.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Right-click the connection pool that corresponds to the connection factory you removed and select <span class="gui-object-action cye-lm-tag">Unregister</span>.</p>
+<p class="cye-lm-tag">When you remove a connector connection pool, the associated connector resource is also deleted. This action removes the connection factory.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect2" --></div>
+
+</body>
+</html>

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>JMS tut</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="http://docs.oracle.com/javaee/6/tutorial/doc/bnceh.html">src</a>
+<h2>The JMS API Programming Model</h2>
+<div class="maincontent cye-lm-tag">      	 
+<a name="indexterm-2364"></a><a name="indexterm-2365"></a><p class="cye-lm-tag">The basic building blocks of a JMS application are:</p>
+<ul><li><p class="cye-lm-tag">Administered objects: connection factories and destinations</p>
+</li>
+<li><p class="cye-lm-tag">Connections</p>
+</li>
+<li><p class="cye-lm-tag">Sessions</p>
+</li>
+<li><p class="cye-lm-tag">Message producers</p>
+</li>
+<li><p class="cye-lm-tag">Message consumers</p>
+</li>
+<li><p class="cye-lm-tag">Messages</p>
+</li></ul>
+<p class="cye-lm-tag"><a href="#bncei">Figure&nbsp;47-5</a> shows how all these objects fit together in a JMS client application.</p>
+<a name="bncei"></a><p class="caption cye-lm-tag">Figure&nbsp;47-5 The JMS API Programming Model</p><img src="figures/jms-programmingModel.gif" alt="Diagram of the JMS API programming model: connection factory, connection, session, message producer, message consumer, messages, and destinations"><p class="cye-lm-tag">This section describes all these objects briefly and provides sample commands and code
+snippets that show how to create and use the objects. The last subsection
+briefly describes JMS API exception handling.</p>
+<p class="cye-lm-tag">Examples that show how to combine all these objects in applications appear in
+later sections. For more detail, see the JMS API documentation, part of the
+Java EE API documentation.</p>
+<a name="bncej"></a><h3>JMS Administered Objects</h3>
+<a name="indexterm-2366"></a><a name="indexterm-2367"></a><a name="indexterm-2368"></a><a name="indexterm-2369"></a><p class="cye-lm-tag">Two parts of a JMS application, destinations and connection factories, are best maintained
+administratively rather than programmatically. The technology underlying these objects is likely to be
+very different from one implementation of the JMS API to another. Therefore, the
+management of these objects belongs with other administrative tasks that vary from provider
+to provider.</p>
+<p class="cye-lm-tag">JMS clients access these objects through interfaces that are portable, so a client
+application can run with little or no change on more than one implementation
+of the JMS API. Ordinarily, an administrator configures administered objects in a JNDI
+namespace, and JMS clients then access them by using resource injection.</p>
+<p class="cye-lm-tag">With GlassFish Server, you can use the <tt>asadmin create-jms-resource</tt> command or the Administration Console
+to create JMS administered objects in the form of connector resources. You can
+also specify the resources in a file named <tt>glassfish-resources.xml</tt> that you can
+bundle with an application.</p>
+<p class="cye-lm-tag">NetBeans IDE provides a wizard that allows you to create JMS resources for
+GlassFish Server. See <a href="bncfa.html#gkthg">To Create JMS Resources Using NetBeans IDE</a> for details.</p>
+<a name="bncek"></a><h4>JMS Connection Factories</h4>
+<a name="indexterm-2370"></a><a name="indexterm-2371"></a><p class="cye-lm-tag">A <b>connection factory</b> is the object a client uses to create a connection to
+a provider. A connection factory encapsulates a set of connection configuration parameters that
+has been defined by an administrator. Each connection factory is an instance of
+the <tt>ConnectionFactory</tt>, <tt>QueueConnectionFactory</tt>, or <tt>TopicConnectionFactory</tt> interface. To learn how to create connection factories,
+see <a href="bncfa.html#gkthg">To Create JMS Resources Using NetBeans IDE</a>.</p>
+<p class="cye-lm-tag"><a name="indexterm-2372"></a><a name="indexterm-2373"></a>At the beginning of a JMS client program, you usually inject a connection
+factory resource into a <tt>ConnectionFactory</tt> object. For example, the following code fragment specifies a
+resource whose JNDI name is <tt>jms/ConnectionFactory</tt> and assigns it to a <tt>ConnectionFactory</tt> object:</p>
+<pre>@Resource(lookup = "jms/ConnectionFactory")
+private static ConnectionFactory connectionFactory;</pre><p class="cye-lm-tag"><a name="indexterm-2374"></a>In a Java EE application, JMS administered objects are normally placed in the
+<tt>jms</tt> naming subcontext.</p>
+<a name="bncel"></a><h4>JMS Destinations</h4>
+<a name="indexterm-2375"></a><a name="indexterm-2376"></a><a name="indexterm-2377"></a><a name="indexterm-2378"></a><a name="indexterm-2379"></a><a name="indexterm-2380"></a><a name="indexterm-2381"></a><a name="indexterm-2382"></a><p class="cye-lm-tag">A <b>destination</b> is the object a client uses to specify the target of
+messages it produces and the source of messages it consumes. In the PTP
+messaging domain, destinations are called queues. In the pub/sub messaging domain, destinations are
+called topics. A JMS application can use multiple queues or topics (or both).
+To learn how to create destination resources, see <a href="bncfa.html#gkthg">To Create JMS Resources Using NetBeans IDE</a>.</p>
+<p class="cye-lm-tag">To create a destination using the GlassFish Server, you create a JMS
+destination resource that specifies a JNDI name for the destination.</p>
+<p class="cye-lm-tag">In the GlassFish Server implementation of JMS, each destination resource refers to a
+physical destination. You can create a physical destination explicitly, but if you do
+not, the Application Server creates it when it is needed and deletes it
+when you delete the destination resource.</p>
+<p class="cye-lm-tag"><a name="indexterm-2383"></a>In addition to injecting a connection factory resource into a client program, you
+usually inject a destination resource. Unlike connection factories, destinations are specific to one
+domain or the other. To create an application that allows you to use
+the same code for both topics and queues, you assign the destination to
+a <tt>Destination</tt> object.</p>
+<p class="cye-lm-tag"><a name="indexterm-2384"></a>The following code specifies two resources, a queue and a topic. The resource
+names are mapped to destination resources created in the JNDI namespace.</p>
+<pre>@Resource(lookup = "jms/Queue")
+private static Queue queue;
+@Resource(lookup = "jms/Topic")
+private static Topic topic;</pre><p class="cye-lm-tag">With the common interfaces, you can mix or match connection factories and destinations.
+That is, in addition to using the <tt>ConnectionFactory</tt> interface, you can inject
+a <tt>QueueConnectionFactory</tt> resource and use it with a <tt>Topic</tt>, and you can inject
+a <tt>TopicConnectionFactory</tt> resource and use it with a <tt>Queue</tt>. The behavior of the application
+will depend on the kind of destination you use and not on
+the kind of connection factory you use.</p>
+<a name="bncem"></a><h3>JMS Connections</h3>
+<a name="indexterm-2385"></a><a name="indexterm-2386"></a><p class="cye-lm-tag">A <b>connection</b> encapsulates a virtual connection with a JMS provider. For example, a
+connection could represent an open TCP/IP socket between a client and a provider
+service daemon. You use a connection to create one or more sessions.</p>
+<hr><p class="cye-lm-tag"><b>Note - </b>In the Java EE platform, the ability to create multiple sessions from a
+single connection is limited to application clients. In web and enterprise bean components,
+a connection can create no more than one session.</p>
+<hr>
+<p class="cye-lm-tag">Connections implement the <tt>Connection</tt> interface. When you have a <tt>ConnectionFactory</tt> object, you can use
+it to create a <tt>Connection</tt>:</p>
+<pre>Connection connection = connectionFactory.createConnection();</pre><p class="cye-lm-tag">Before an application completes, you must close any connections you have created. Failure
+to close a connection can cause resources not to be released by the
+JMS provider. Closing a connection also closes its sessions and their message producers
+and message consumers.</p>
+<pre>connection.close();</pre><p class="cye-lm-tag">Before your application can consume messages, you must call the connection’s <tt>start</tt>
+method; for details, see <a href="#bncep">JMS Message Consumers</a>. If you want to stop message delivery
+temporarily without closing the connection, you call the <tt>stop</tt> method.</p>
+<a name="bncen"></a><h3>JMS Sessions</h3>
+<a name="indexterm-2387"></a><a name="indexterm-2388"></a><p class="cye-lm-tag">A <b>session</b> is a single-threaded context for producing and consuming messages. You use
+sessions to create the following:</p>
+<ul><li><p class="cye-lm-tag">Message producers</p>
+</li>
+<li><p class="cye-lm-tag">Message consumers</p>
+</li>
+<li><p class="cye-lm-tag">Messages</p>
+</li>
+<li><p class="cye-lm-tag">Queue browsers</p>
+</li>
+<li><p class="cye-lm-tag">Temporary queues and topics (see <a href="bncfu.html#bncgb">Creating Temporary Destinations</a>)</p>
+</li></ul>
+<p class="cye-lm-tag">Sessions serialize the execution of message listeners; for details, see <a href="#bnceq">JMS Message Listeners</a>.</p>
+<p class="cye-lm-tag">A session provides a transactional context with which to group a set of
+sends and receives into an atomic unit of work. For details, see
+<a href="bncfu.html#bncgh">Using JMS API Local Transactions</a>.</p>
+<p class="cye-lm-tag">Sessions implement the <tt>Session</tt> interface. After you create a <tt>Connection</tt> object, you use it
+to create a <tt>Session</tt>:</p>
+<pre>Session session = connection.createSession(false,
+     Session.AUTO_ACKNOWLEDGE);</pre><p class="cye-lm-tag">The first argument means the session is not transacted; the second means the
+session automatically acknowledges messages when they have been received successfully. (For more information,
+see <a href="bncfu.html#bncfw">Controlling Message Acknowledgment</a>.)</p>
+<p class="cye-lm-tag">To create a transacted session, use the following code:</p>
+<pre>Session session = connection.createSession(true, 0);</pre><p class="cye-lm-tag">Here, the first argument means the session is transacted; the second indicates that
+message acknowledgment is not specified for transacted sessions. For more information on transactions,
+see <a href="bncfu.html#bncgh">Using JMS API Local Transactions</a>. For information about the way JMS transactions work in Java EE
+applications, see <a href="bncgl.html">Using the JMS API in Java EE Applications</a>.</p>
+<a name="bnceo"></a><h3>JMS Message Producers</h3>
+<a name="indexterm-2389"></a><a name="indexterm-2390"></a><a name="indexterm-2391"></a><p class="cye-lm-tag">A <b>message producer</b> is an object that is created by a session and used
+for sending messages to a destination. It implements the <tt>MessageProducer</tt> interface.</p>
+<p class="cye-lm-tag">You use a <tt>Session</tt> to create a <tt>MessageProducer</tt> for a destination. The
+following examples show that you can create a producer for a <tt>Destination</tt> object, a
+<tt>Queue</tt> object, or a <tt>Topic</tt> object.</p>
+<pre>MessageProducer producer = session.createProducer(dest);
+MessageProducer producer = session.createProducer(queue);
+MessageProducer producer = session.createProducer(topic);</pre><p class="cye-lm-tag">You can create an unidentified producer by specifying <tt>null</tt> as the argument to
+<tt>createProducer</tt>. With an unidentified producer, you do not specify a destination until you
+send a message.</p>
+<p class="cye-lm-tag">After you have created a message producer, you can use it to
+send messages by using the <tt>send</tt> method:</p>
+<pre>producer.send(message);</pre><p class="cye-lm-tag">You must first create the messages; see <a href="#bnces">JMS Messages</a>.</p>
+<p class="cye-lm-tag">If you have created an unidentified producer, use an overloaded <tt>send</tt> method
+that specifies the destination as the first parameter. For example:</p>
+<pre>MessageProducer anon_prod = session.createProducer(null);
+anon_prod.send(dest, message);</pre>
+<a name="bncep"></a><h3>JMS Message Consumers</h3>
+<a name="indexterm-2392"></a><a name="indexterm-2393"></a><p class="cye-lm-tag">A <b>message consumer</b> is an object that is created by a session and used
+for receiving messages sent to a destination. It implements the <tt>MessageConsumer</tt> interface.</p>
+<p class="cye-lm-tag">A message consumer allows a JMS client to register interest in a
+destination with a JMS provider. The JMS provider manages the delivery of messages
+from a destination to the registered consumers of the destination.</p>
+<p class="cye-lm-tag">For example, you could use a <tt>Session</tt> to create a <tt>MessageConsumer</tt> for a
+<tt>Destination</tt> object, a <tt>Queue</tt> object, or a <tt>Topic</tt> object:</p>
+<pre>MessageConsumer consumer = session.createConsumer(dest);
+MessageConsumer consumer = session.createConsumer(queue);
+MessageConsumer consumer = session.createConsumer(topic);</pre><p class="cye-lm-tag">You use the <tt>Session.createDurableSubscriber</tt> method to create a durable topic subscriber. This method
+is valid only if you are using a topic. For details, see <a href="bncfu.html#bncgd">Creating Durable Subscriptions</a>.</p>
+<p class="cye-lm-tag">After you have created a message consumer it becomes active, and you can
+use it to receive messages. You can use the <tt>close</tt> method for a
+<tt>MessageConsumer</tt> to make the message consumer inactive. Message delivery does not begin until
+you start the connection you created by calling its <tt>start</tt> method. (Remember always to
+call the <tt>start</tt> method; forgetting to start the connection is one of the
+most common JMS programming errors.)</p>
+<p class="cye-lm-tag">You use the <tt>receive</tt> method to consume a message synchronously. You can use
+this method at any time after you call the <tt>start</tt> method:</p>
+<pre>connection.start();
+Message m = consumer.receive();
+connection.start();
+Message m = consumer.receive(1000); // time out after a second</pre><p class="cye-lm-tag">To consume a message asynchronously, you use a message listener, as described in
+the next section.</p>
+<a name="bnceq"></a><h4>JMS Message Listeners</h4>
+<a name="indexterm-2394"></a><a name="indexterm-2395"></a><a name="indexterm-2396"></a><p class="cye-lm-tag">A message listener is an object that acts as an asynchronous event
+handler for messages. This object implements the <tt>MessageListener</tt> interface, which contains one method, <tt>onMessage</tt>.
+In the <tt>onMessage</tt> method, you define the actions to be taken when
+a message arrives.</p>
+<p class="cye-lm-tag">You register the message listener with a specific MessageConsumer by using the
+<tt>setMessageListener</tt> method. For example, if you define a class named <tt>Listener</tt> that implements the
+<tt>MessageListener</tt> interface, you can register the message listener as follows:</p>
+<pre>Listener myListener = new Listener();
+consumer.setMessageListener(myListener);</pre>
+<hr><p class="cye-lm-tag"><b>Note - </b>In the Java EE platform, a <tt>MessageListener</tt> can be used only in an
+application client, not in a web component or enterprise bean.</p>
+<hr>
+<p class="cye-lm-tag">After you register the message listener, you call the <tt>start</tt> method on the
+<tt>Connection</tt> to begin message delivery. (If you call <tt>start</tt> before you register the
+message listener, you are likely to miss messages.)</p>
+<p class="cye-lm-tag">When message delivery begins, the JMS provider automatically calls the message listener’s <tt>onMessage</tt>
+method whenever a message is delivered. The <tt>onMessage</tt> method takes one argument of type
+<tt>Message</tt>, which your implementation of the method can cast to any of the
+other message types (see <a href="#bncew">Message Bodies</a>).</p>
+<p class="cye-lm-tag">A message listener is not specific to a particular destination type. The same
+listener can obtain messages from either a queue or a topic, depending on
+the type of destination for which the message consumer was created. A
+message listener does, however, usually expect a specific message type and format.</p>
+<p class="cye-lm-tag">Your <tt>onMessage</tt> method should handle all exceptions. It must not throw checked exceptions,
+and throwing a <tt>RuntimeException</tt> is considered a programming error.</p>
+<p class="cye-lm-tag">The session used to create the message consumer serializes the execution of all
+message listeners registered with the session. At any time, only one of the
+session’s message listeners is running.</p>
+<p class="cye-lm-tag">In the Java EE platform, a message-driven bean is a special kind
+of message listener. For details, see <a href="bncgl.html#bncgq">Using Message-Driven Beans to Receive Messages Asynchronously</a>.</p>
+<a name="bncer"></a><h4>JMS Message Selectors</h4>
+<a name="indexterm-2397"></a><p class="cye-lm-tag">If your messaging application needs to filter the messages it receives, you can
+use a JMS API message selector, which allows a message consumer to specify
+the messages that interest it. Message selectors assign the work of filtering messages
+to the JMS provider rather than to the application. For an example of
+an application that uses a message selector, see <a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a>.</p>
+<p class="cye-lm-tag">A message selector is a <tt>String</tt> that contains an expression. The syntax of
+the expression is based on a subset of the SQL92 conditional expression syntax.
+The message selector in the example selects any message that has a <tt>NewsType</tt>
+property that is set to the value <tt>'Sports'</tt> or <tt>'Opinion'</tt>:</p>
+<pre>NewsType = ’Sports’ OR NewsType = ’Opinion’</pre><p class="cye-lm-tag">The <tt>createConsumer</tt> and <tt>createDurableSubscriber</tt> methods allow you to specify a message selector
+as an argument when you create a message consumer.</p>
+<p class="cye-lm-tag">The message consumer then receives only messages whose headers and properties match the
+selector. (See <a href="#bncet">Message Headers</a>, and <a href="#bncev">Message Properties</a>.) A message selector cannot select messages on the basis
+of the content of the message body.</p>
+<a name="bnces"></a><h3>JMS Messages</h3>
+<a name="indexterm-2398"></a><p class="cye-lm-tag">The ultimate purpose of a JMS application is to produce and consume messages
+that can then be used by other software applications. JMS messages have a
+basic format that is simple but highly flexible, allowing you to create messages
+that match formats used by non-JMS applications on heterogeneous platforms.</p>
+<p class="cye-lm-tag">A JMS message can have three parts: a header, properties, and a
+body. Only the header is required. The following sections describe these parts.</p>
+<p class="cye-lm-tag">For complete documentation of message headers, properties, and bodies, see the documentation of
+the <tt>Message</tt> interface in the API documentation.</p>
+<a name="bncet"></a><h4>Message Headers</h4>
+<a name="indexterm-2399"></a><a name="indexterm-2400"></a><p class="cye-lm-tag">A JMS message header contains a number of predefined fields that contain values
+used by both clients and providers to identify and route messages. <a href="#bnceu">Table&nbsp;47-1</a>
+lists the JMS message header fields and indicates how their values are set.
+For example, every message has a unique identifier, which is represented in the
+header field <tt>JMSMessageID</tt>. The value of another header field, <tt>JMSDestination</tt>, represents the queue
+or the topic to which the message is sent. Other fields include a
+timestamp and a priority level.</p>
+<p class="cye-lm-tag">Each header field has associated setter and getter methods, which are documented in
+the description of the <tt>Message</tt> interface. Some header fields are intended to be
+set by a client, but many are set automatically by the <tt>send</tt> or
+the <tt>publish</tt> method, which overrides any client-set values.</p>
+<a name="bnceu"></a><p class="caption cye-lm-tag">Table&nbsp;47-1 How JMS Message Header Field Values Are Set</p><table><colgroup><col width="33%"><col width="66%"></colgroup><tbody><tr><th align="left" valign="top" scope="column"><p class="cye-lm-tag">Header Field</p>
+</th>
+<th align="left" valign="top" scope="column"><p class="cye-lm-tag">Set By</p>
+</th>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2401"></a><a name="indexterm-2402"></a><tt>JMSDestination</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt> or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2403"></a><a name="indexterm-2404"></a><tt>JMSDeliveryMode</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt>
+or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2405"></a><a name="indexterm-2406"></a><tt>JMSExpiration</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt> or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2407"></a><a name="indexterm-2408"></a><tt>JMSPriority</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt> or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2409"></a><a name="indexterm-2410"></a><tt>JMSMessageID</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt> or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2411"></a><a name="indexterm-2412"></a><tt>JMSTimestamp</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag"><tt>send</tt>
+or <tt>publish</tt> method</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2413"></a><a name="indexterm-2414"></a><tt>JMSCorrelationID</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">Client</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2415"></a><a name="indexterm-2416"></a><tt>JMSReplyTo</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">Client</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2417"></a><tt>JMSType</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">Client</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2418"></a><a name="indexterm-2419"></a><tt>JMSRedelivered</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">JMS provider</p>
+</td>
+</tr>
+</tbody></table>
+<a name="bncev"></a><h4>Message Properties</h4>
+<a name="indexterm-2420"></a><a name="indexterm-2421"></a><p class="cye-lm-tag">You can create and set properties for messages if you need values
+in addition to those provided by the header fields. You can use properties
+to provide compatibility with other messaging systems, or you can use them to create
+message selectors (see <a href="#bncer">JMS Message Selectors</a>). For an example of setting a property to be
+used as a message selector, see <a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a>.</p>
+<p class="cye-lm-tag">The JMS API provides some predefined property names that a provider can support.
+The use of these predefined properties or of user-defined properties is optional.</p>
+<a name="bncew"></a><h4>Message Bodies</h4>
+<a name="indexterm-2422"></a><a name="indexterm-2423"></a><p class="cye-lm-tag">The JMS API defines five message body formats, also called message types, which
+allow you to send and receive data in many different forms and
+which provide compatibility with existing messaging formats. <a href="#bncex">Table&nbsp;47-2</a> describes these message types.</p>
+<a name="bncex"></a><p class="caption cye-lm-tag">Table&nbsp;47-2 JMS Message Types</p><table><colgroup><col width="25%"><col width="75%"></colgroup><tbody><tr><th align="left" valign="top" scope="column"><p class="cye-lm-tag">Message Type</p>
+</th>
+<th align="left" valign="top" scope="column"><p class="cye-lm-tag">Body
+Contains</p>
+</th>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2424"></a><tt>TextMessage</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">A <tt>java.lang.String</tt> object (for example, the contents of an XML file).</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2425"></a><tt>MapMessage</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">A set of
+name-value pairs, with names as <tt>String</tt> objects and values as primitive types in
+the Java programming language. The entries can be accessed sequentially by enumerator or
+randomly by name. The order of the entries is undefined.</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2426"></a><tt>BytesMessage</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">A stream of uninterpreted
+bytes. This message type is for literally encoding a body to match an
+existing message format.</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2427"></a><tt>StreamMessage</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">A stream of primitive values in the Java programming language,
+filled and read sequentially.</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2428"></a><tt>ObjectMessage</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">A <tt>Serializable</tt> object in the Java programming language.</p>
+</td>
+</tr>
+<tr><td align="left" valign="top" scope="row"><p class="cye-lm-tag"><a name="indexterm-2429"></a><tt>Message</tt></p>
+</td>
+<td align="left" valign="top" scope="row"><p class="cye-lm-tag">Nothing. Composed of header
+fields and properties only. This message type is useful when a message body
+is not required.</p>
+</td>
+</tr>
+</tbody></table><p class="cye-lm-tag">The JMS API provides methods for creating messages of each type and for
+filling in their contents. For example, to create and send a <tt>TextMessage</tt>,
+you might use the following statements:</p>
+<pre class="cye-lm-tag">TextMessage message = session.createTextMessage();
+message.setText(msg_text);     // msg_text is a String
+producer.send(message);</pre><p class="cye-lm-tag">At the consuming end, a message arrives as a generic <tt>Message</tt> object
+and must be cast to the appropriate message type. You can use one
+or more getter methods to extract the message contents. The following code fragment
+uses the <tt>getText</tt> method:</p>
+<pre>Message m = consumer.receive();
+if (m instanceof TextMessage) {
+    TextMessage message = (TextMessage) m;
+    System.out.println("Reading message: " + message.getText());
+} else {
+    // Handle error
+}</pre>
+<a name="bncey"></a><h3>JMS Queue Browsers</h3>
+<a name="indexterm-2430"></a><a name="indexterm-2431"></a><a name="indexterm-2432"></a><p class="cye-lm-tag">Messages sent to a queue remain in the queue until the message
+consumer for that queue consumes them. The JMS API provides a <tt>QueueBrowser</tt> object that
+allows you to browse the messages in the queue and display the
+header values for each message. To create a <tt>QueueBrowser</tt> object, use the <tt>Session.createBrowser</tt> method.
+For example:</p>
+<pre>QueueBrowser browser = session.createBrowser(queue);</pre><p class="cye-lm-tag">See <a href="bncfa.html#bncfl">A Simple Example of Browsing Messages in a Queue</a> for an example of using a <tt>QueueBrowser</tt> object.</p>
+<p class="cye-lm-tag">The <tt>createBrowser</tt> method allows you to specify a message selector as a second
+argument when you create a <tt>QueueBrowser</tt>. For information on message selectors, see
+<a href="#bncer">JMS Message Selectors</a>.</p>
+<p class="cye-lm-tag">The JMS API provides no mechanism for browsing a topic. Messages usually disappear
+from a topic as soon as they appear: If there are no
+message consumers to consume them, the JMS provider removes them. Although durable subscriptions allow
+messages to remain on a topic while the message consumer is not
+active, no facility exists for examining them.</p>
+<a name="bncez"></a><h3>JMS Exception Handling</h3>
+<a name="indexterm-2433"></a><a name="indexterm-2434"></a><p class="cye-lm-tag">The root class for exceptions thrown by JMS API methods is <tt>JMSException</tt>.
+Catching <tt>JMSException</tt> provides a generic way of handling all exceptions related to the
+JMS API. </p>
+<p class="cye-lm-tag">The <tt>JMSException</tt> class includes the following subclasses, described in the API documentation:</p>
+<ul><li><p class="cye-lm-tag"><tt>IllegalStateException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>InvalidClientIDException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>InvalidDestinationException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>InvalidSelectorException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>JMSSecurityException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>MessageEOFException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>MessageFormatException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>MessageNotReadableException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>MessageNotWriteableException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>ResourceAllocationException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>TransactionInProgressException</tt></p>
+</li>
+<li><p class="cye-lm-tag"><tt>TransactionRolledBackException</tt></p>
+</li></ul>
+<p class="cye-lm-tag">All the examples in the tutorial catch and handle <tt>JMSException</tt> when it is
+appropriate to do so.</p>
+         </div>
+<br><hr>
+<div class="maincontent">      	 
+             
+<a name="bncfu"></a><h2>Creating Robust JMS Applications</h2>
+<a name="indexterm-2435"></a><p>This section explains how to use features of the JMS API to
+achieve the level of reliability and performance your application requires. Many people choose to
+implement JMS applications because they cannot tolerate dropped or duplicate messages and because
+they require that every message be received once and only once. The JMS
+API provides this functionality.</p>
+<p>The most reliable way to produce a message is to send a
+<tt>PERSISTENT</tt> message within a transaction. JMS messages are <tt>PERSISTENT</tt> by default. A <b>transaction</b>
+is a unit of work into which you can group a series of
+operations, such as message sends and receives, so that the operations either all
+succeed or all fail. For details, see <a href="#bncfy">Specifying Message Persistence</a> and <a href="#bncgh">Using JMS API Local Transactions</a>.</p>
+<p>The most reliable way to consume a message is to do so
+within a transaction, either from a queue or from a durable subscription to
+a topic. For details, see <a href="#bncgb">Creating Temporary Destinations</a>, <a href="#bncgd">Creating Durable Subscriptions</a>, and <a href="#bncgh">Using JMS API Local Transactions</a>.</p>
+<p>For other applications, a lower level of reliability can reduce overhead and improve
+performance. You can send messages with varying priority levels (see <a href="#bncfz">Setting Message Priority Levels</a>) and you can
+set them to expire after a certain length of time (see <a href="#bncga">Allowing Messages to Expire</a>).</p>
+<p>The JMS API provides several ways to achieve various kinds and degrees of
+reliability. This section divides them into two categories, basic and advanced.</p>
+<p>The following sections describe these features as they apply to JMS clients. Some
+of the features work differently in Java EE applications; in these cases, the
+differences are noted here and are explained in detail in <a href="bncgl.html">Using the JMS API in Java EE Applications</a>.</p>
+<a name="bncfv"></a><h3>Using Basic Reliability Mechanisms</h3>
+<a name="indexterm-2436"></a><p>The basic mechanisms for achieving or affecting reliable message delivery are as follows:</p>
+<ul><li><p><b>Controlling message acknowledgment</b>: You can specify various levels of control over message acknowledgment.</p>
+</li>
+<li><p><b>Specifying message persistence</b>: You can specify that messages are persistent, meaning they must not be lost in the event of a provider failure.</p>
+</li>
+<li><p><b>Setting message priority levels</b>: You can set various priority levels for messages, which can affect the order in which the messages are delivered.</p>
+</li>
+<li><p><b>Allowing messages to expire</b>: You can specify an expiration time for messages so they will not be delivered if they are obsolete.</p>
+</li>
+<li><p><b>Creating temporary destinations</b>: You can create temporary destinations that last only for the duration of the connection in which they are created.</p>
+</li></ul>
+<a name="bncfw"></a><h4>Controlling Message Acknowledgment</h4>
+<a name="indexterm-2437"></a><a name="indexterm-2438"></a><p>Until a JMS message has been acknowledged, it is not considered to
+be successfully consumed. The successful consumption of a message ordinarily takes place in three
+stages.</p>
+<ol><li><p>The client receives the message.</p>
+</li>
+<li><p>The client processes the message.</p>
+</li>
+<li><p>The message is acknowledged. Acknowledgment is initiated either by the JMS provider or by the client, depending on the session acknowledgment mode.</p>
+</li></ol>
+<p><a name="indexterm-2439"></a>In transacted sessions (see <a href="#bncgh">Using JMS API Local Transactions</a>), acknowledgment happens automatically when a transaction is committed. If
+a transaction is rolled back, all consumed messages are redelivered.</p>
+<p>In nontransacted sessions, when and how a message is acknowledged depend on the
+value specified as the second argument of the <tt>createSession</tt> method. The three possible
+argument values are as follows:</p>
+<ul><li><p><a name="indexterm-2440"></a><tt>Session.AUTO_ACKNOWLEDGE</tt>: The session automatically acknowledges a client’s receipt of a message either when the client has successfully returned from a call to <tt>receive</tt> or when the <tt>MessageListener</tt> it has called to process the message returns successfully.</p>
+<p>A synchronous receive in an <tt>AUTO_ACKNOWLEDGE</tt> session is the one exception to the rule that message consumption is a three-stage process as described earlier. In this case, the receipt and acknowledgment take place in one step, followed by the processing of the message.</p>
+</li>
+<li><p><a name="indexterm-2441"></a><a name="indexterm-2442"></a><tt>Session.CLIENT_ACKNOWLEDGE</tt>: A client acknowledges a message by calling the message’s <tt>acknowledge</tt> method. In this mode, acknowledgment takes place on the session level: Acknowledging a consumed message automatically acknowledges the receipt of <b>all</b> messages that have been consumed by its session. For example, if a message consumer consumes ten messages and then acknowledges the fifth message delivered, all ten messages are acknowledged.</p>
+<hr><p><b>Note - </b>In the Java EE platform, a <tt>CLIENT_ACKNOWLEDGE</tt> session can be used only in an application client, not in a web component or enterprise bean.</p>
+<hr>
+</li>
+<li><p><a name="indexterm-2443"></a><a name="indexterm-2444"></a><tt>Session.DUPS_OK_ACKNOWLEDGE</tt>: This option instructs the session to lazily acknowledge the delivery of messages. This is likely to result in the delivery of some duplicate messages if the JMS provider fails, so it should be used only by consumers that can tolerate duplicate messages. (If the JMS provider redelivers a message, it must set the value of the <tt>JMSRedelivered</tt> message header to <tt>true</tt>.) This option can reduce session overhead by minimizing the work the session does to prevent duplicates.</p>
+</li></ul>
+<p>If messages have been received from a queue but not acknowledged when a
+session terminates, the JMS provider retains them and redelivers them when a consumer
+next accesses the queue. The provider also retains unacknowledged messages for a terminated
+session that has a durable <tt>TopicSubscriber</tt>. (See <a href="#bncgd">Creating Durable Subscriptions</a>.) Unacknowledged messages for a nondurable
+<tt>TopicSubscriber</tt> are dropped when the session is closed.</p>
+<p><a name="indexterm-2445"></a>If you use a queue or a durable subscription, you can use
+the <tt>Session.recover</tt> method to stop a nontransacted session and restart it with its
+first unacknowledged message. In effect, the session’s series of delivered messages is reset
+to the point after its last acknowledged message. The messages it now delivers
+may be different from those that were originally delivered, if messages have expired
+or if higher-priority messages have arrived. For a nondurable <tt>TopicSubscriber</tt>, the provider may drop
+unacknowledged messages when its session is recovered.</p>
+<p>The sample program in <a href="giwfh.html#bncfx">A Message Acknowledgment Example</a> demonstrates two ways to ensure that a
+message will not be acknowledged until processing of the message is complete.</p>
+<a name="bncfy"></a><h4>Specifying Message Persistence</h4>
+<a name="indexterm-2446"></a><a name="indexterm-2447"></a><a name="indexterm-2448"></a><a name="indexterm-2449"></a><a name="indexterm-2450"></a><a name="indexterm-2451"></a><p>The JMS API supports two delivery modes specifying whether messages are lost if
+the JMS provider fails. These delivery modes are fields of the <tt>DeliveryMode</tt>
+interface.</p>
+<ul><li><p><a name="indexterm-2452"></a>The <tt>PERSISTENT</tt> delivery mode, the default, instructs the JMS provider to take extra care to ensure that a message is not lost in transit in case of a JMS provider failure. A message sent with this delivery mode is logged to stable storage when it is sent.</p>
+</li>
+<li><p><a name="indexterm-2453"></a>The <tt>NON_PERSISTENT</tt> delivery mode does not require the JMS provider to store the message or otherwise guarantee that it is not lost if the provider fails.</p>
+</li></ul>
+<p>You can specify the delivery mode in either of two ways.</p>
+<ul><li><p>You can use the <tt>setDeliveryMode</tt> method of the <tt>MessageProducer</tt> interface to set the delivery mode for all messages sent by that producer. For example, the following call sets the delivery mode to <tt>NON_PERSISTENT</tt> for a producer:</p>
+<pre>producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);</pre></li>
+<li><p>You can use the long form of the <tt>send</tt> or the <tt>publish</tt> method to set the delivery mode for a specific message. The second argument sets the delivery mode. For example, the following <tt>send</tt> call sets the delivery mode for <tt>message</tt> to <tt>NON_PERSISTENT</tt>:</p>
+<pre>producer.send(message, DeliveryMode.NON_PERSISTENT, 3, 10000);</pre><p>The third and fourth arguments set the priority level and expiration time, which are described in the next two subsections.</p>
+</li></ul>
+<p>If you do not specify a delivery mode, the default is <tt>PERSISTENT</tt>. Using
+the <tt>NON_PERSISTENT</tt> delivery mode may improve performance and reduce storage overhead, but you
+should use it only if your application can afford to miss messages.</p>
+<a name="bncfz"></a><h4>Setting Message Priority Levels</h4>
+<a name="indexterm-2454"></a><a name="indexterm-2455"></a><a name="indexterm-2456"></a><p>You can use message priority levels to instruct the JMS provider to deliver
+urgent messages first. You can set the priority level in either of two
+ways.</p>
+<ul><li><p>You can use the <tt>setPriority</tt> method of the <tt>MessageProducer</tt> interface to set the priority level for all messages sent by that producer. For example, the following call sets a priority level of 7 for a producer:</p>
+<pre>producer.setPriority(7);</pre></li>
+<li><p>You can use the long form of the <tt>send</tt> or the <tt>publish</tt> method to set the priority level for a specific message. The third argument sets the priority level. For example, the following <tt>send</tt> call sets the priority level for <tt>message</tt> to 3:</p>
+<pre>producer.send(message, DeliveryMode.NON_PERSISTENT, 3, 10000);</pre></li></ul>
+<p>The ten levels of priority range from 0 (lowest) to 9 (highest).
+If you do not specify a priority level, the default level is 4.
+A JMS provider tries to deliver higher-priority messages before lower-priority ones but does not
+have to deliver messages in exact order of priority.</p>
+<a name="bncga"></a><h4>Allowing Messages to Expire</h4>
+<a name="indexterm-2457"></a><a name="indexterm-2458"></a><a name="indexterm-2459"></a><p>By default, a message never expires. If a message will become obsolete after
+a certain period, however, you may want to set an expiration time.
+You can do this in either of two ways.</p>
+<ul><li><p>You can use the <tt>setTimeToLive</tt> method of the <tt>MessageProducer</tt> interface to set a default expiration time for all messages sent by that producer. For example, the following call sets a time to live of one minute for a producer:</p>
+<pre>producer.setTimeToLive(60000);</pre></li>
+<li><p>You can use the long form of the <tt>send</tt> or the <tt>publish</tt> method to set an expiration time for a specific message. The fourth argument sets the expiration time in milliseconds. For example, the following <tt>send</tt> call sets a time to live of 10 seconds:</p>
+<pre>producer.send(message, DeliveryMode.NON_PERSISTENT, 3, 10000);</pre></li></ul>
+<p>If the specified <tt>timeToLive</tt> value is <tt>0</tt>, the message never expires.</p>
+<p>When the message is sent, the specified <tt>timeToLive</tt> is added to the current
+time to give the expiration time. Any message not delivered before the specified
+expiration time is destroyed. The destruction of obsolete messages conserves storage and computing
+resources.</p>
+<a name="bncgb"></a><h4>Creating Temporary Destinations</h4>
+<a name="indexterm-2460"></a><a name="indexterm-2461"></a><a name="indexterm-2462"></a><a name="indexterm-2463"></a><a name="indexterm-2464"></a><p>Normally, you create JMS destinations (queues and topics) administratively rather than programmatically. Your
+JMS provider includes a tool to create and remove destinations, and it is
+common for destinations to be long-lasting.</p>
+<p>The JMS API also enables you to create destinations (<tt>TemporaryQueue</tt> and <tt>TemporaryTopic</tt>
+objects) that last only for the duration of the connection in which they
+are created. You create these destinations dynamically using the <tt>Session.createTemporaryQueue</tt> and the <tt>Session.createTemporaryTopic</tt>
+methods.</p>
+<p>The only message consumers that can consume from a temporary destination are those
+created by the same connection that created the destination. Any message producer can
+send to the temporary destination. If you close the connection to which a
+temporary destination belongs, the destination is closed and its contents are lost.</p>
+<p><a name="indexterm-2465"></a>You can use temporary destinations to implement a simple request/reply mechanism. If you
+create a temporary destination and specify it as the value of the <tt>JMSReplyTo</tt>
+message header field when you send a message, then the consumer of the
+message can use the value of the <tt>JMSReplyTo</tt> field as the destination to
+which it sends a reply. The consumer can also reference the original request
+by setting the <tt>JMSCorrelationID</tt> header field of the reply message to the value of
+the <tt>JMSMessageID</tt> header field of the request. For example, an <tt>onMessage</tt> method can create
+a session so that it can send a reply to the message
+it receives. It can use code such as the following:</p>
+<pre>producer = session.createProducer(msg.getJMSReplyTo());
+replyMsg = session.createTextMessage("Consumer " +
+    "processed message: " + msg.getText());
+replyMsg.setJMSCorrelationID(msg.getJMSMessageID());
+producer.send(replyMsg);</pre><p>For more examples, see <a href="bncgv.html">Chapter&nbsp;48, Java Message Service Examples</a>.</p>
+<a name="bncgc"></a><h3>Using Advanced Reliability Mechanisms</h3>
+<a name="indexterm-2466"></a><p>The more advanced mechanisms for achieving reliable message delivery are the following:</p>
+<ul><li><p><b>Creating durable subscriptions</b>: You can create durable topic subscriptions, which receive messages published while the subscriber is not active. Durable subscriptions offer the reliability of queues to the publish/subscribe message domain.</p>
+</li>
+<li><p><b>Using local transactions</b>: You can use local transactions, which allow you to group a series of sends and receives into an atomic unit of work. Transactions are rolled back if they fail at any time.</p>
+</li></ul>
+<a name="bncgd"></a><h4>Creating Durable Subscriptions</h4>
+<a name="indexterm-2467"></a><a name="indexterm-2468"></a><a name="indexterm-2469"></a><a name="indexterm-2470"></a><p>To ensure that a pub/sub application receives all published messages, use <tt>PERSISTENT</tt> delivery
+mode for the publishers and durable subscriptions for the subscribers.</p>
+<p>The <tt>Session.createConsumer</tt> method creates a nondurable subscriber if a topic is specified as
+the destination. A nondurable subscriber can receive only messages that are published while
+it is active.</p>
+<p>At the cost of higher overhead, you can use the <tt>Session.createDurableSubscriber</tt> method
+to create a durable subscriber. A durable subscription can have only one active
+subscriber at a time.</p>
+<p>A durable subscriber registers a durable subscription by specifying a unique identity that
+is retained by the JMS provider. Subsequent subscriber objects that have the same
+identity resume the subscription in the state in which it was left by
+the preceding subscriber. If a durable subscription has no active subscriber, the JMS
+provider retains the subscription’s messages until they are received by the subscription or
+until they expire.</p>
+<p><a name="indexterm-2471"></a><a name="indexterm-2472"></a>You establish the unique identity of a durable subscriber by setting the following:</p>
+<ul><li><p>A client ID for the connection</p>
+</li>
+<li><p>A topic and a subscription name for the subscriber</p>
+</li></ul>
+<p>You set the client ID administratively for a client-specific connection factory using either
+the command line or the Administration Console.</p>
+<p>After using this connection factory to create the connection and the session, you
+call the <tt>createDurableSubscriber</tt> method with two arguments: the topic and a string that
+specifies the name of the subscription:</p>
+<pre>String subName = "MySub";
+MessageConsumer topicSubscriber =
+     session.createDurableSubscriber(myTopic, subName);</pre><p>The subscriber becomes active after you start the <tt>Connection</tt> or <tt>TopicConnection</tt>. Later, you
+might close the subscriber:</p>
+<pre>topicSubscriber.close();</pre><p>The JMS provider stores the messages sent or published to the topic, as
+it would store messages sent to a queue. If the program or
+another application calls <tt>createDurableSubscriber</tt> using the same connection factory and its client ID, the
+same topic, and the same subscription name, then the subscription is reactivated and
+the JMS provider delivers any messages that were published while the subscriber was
+inactive.</p>
+<p>To delete a durable subscription, first close the subscriber, then use the <tt>unsubscribe</tt>
+method with the subscription name as the argument:</p>
+<pre>topicSubscriber.close();
+session.unsubscribe("MySub");</pre><p>The <tt>unsubscribe</tt> method deletes the state the provider maintains for the subscriber.</p>
+<p><a href="#bncge">Figure&nbsp;47-6</a> and <a href="#bncgf">Figure&nbsp;47-7</a> show the difference between a nondurable and a durable subscriber.
+With an ordinary, nondurable subscriber, the subscriber and the subscription begin and end
+at the same point and are, in effect, identical. When a subscriber is
+closed, the subscription also ends. Here, <tt>create</tt> stands for a call to <tt>Session.createConsumer</tt>
+with a <tt>Topic</tt> argument, and <tt>close</tt> stands for a call to <tt>MessageConsumer.close</tt>. Any
+messages published to the topic between the time of the first <tt>close</tt>
+and the time of the second <tt>create</tt> are not consumed by the subscriber. In
+<a href="#bncge">Figure&nbsp;47-6</a>, the subscriber consumes messages M1, M2, M5, and M6, but messages M3
+and M4 are lost.</p>
+<a name="bncge"></a><p class="caption">Figure&nbsp;47-6 Nondurable Subscribers and Subscriptions</p><img src="figures/jms-nondurableSubscriber.gif" alt="Diagram showing messages being lost when nondurable subscriptions are used"><p>With a durable subscriber, the subscriber can be closed and re-created, but the
+subscription continues to exist and to hold messages until the application calls the
+<tt>unsubscribe</tt> method. In <a href="#bncgf">Figure&nbsp;47-7</a>, <tt>create</tt> stands for a call to <tt>Session.createDurableSubscriber</tt>, <tt>close</tt> stands
+for a call to <tt>MessageConsumer.close</tt>, and <tt>unsubscribe</tt> stands for a call to <tt>Session.unsubscribe</tt>.
+Messages published while the subscriber is closed are received when the subscriber is
+created again, so even though messages M2, M4, and M5 arrive while the
+subscriber is closed, they are not lost.</p>
+<a name="bncgf"></a><p class="caption">Figure&nbsp;47-7 A Durable Subscriber and Subscription</p><img src="figures/jms-durableSubscriber.gif" alt="Diagram showing messages being preserved when durable subscriptions are used"><p>See <a href="giwfh.html#bncfx">A Message Acknowledgment Example</a>, <a href="giwfh.html#bncgg">A Durable Subscription Example</a>, and <a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a> for examples of Java EE applications that use
+durable subscriptions.</p>
+<a name="bncgh"></a><h4>Using JMS API Local Transactions</h4>
+<a name="indexterm-2473"></a><a name="indexterm-2474"></a><a name="indexterm-2475"></a><a name="indexterm-2476"></a><a name="indexterm-2477"></a><p>You can group a series of operations into an atomic unit of
+work called a <b>transaction</b>. If any one of the operations fails, the transaction can
+be rolled back, and the operations can be attempted again from the beginning.
+If all the operations succeed, the transaction can be committed.</p>
+<p>In a JMS client, you can use local transactions to group message
+sends and receives. The JMS API <tt>Session</tt> interface provides <tt>commit</tt> and <tt>rollback</tt> methods you can
+use in a JMS client. A transaction commit means that all produced messages
+are sent and all consumed messages are acknowledged. A transaction rollback means that
+all produced messages are destroyed and all consumed messages are recovered and redelivered
+unless they have expired (see <a href="#bncga">Allowing Messages to Expire</a>).</p>
+<p>A transacted session is always involved in a transaction. As soon as the
+<tt>commit</tt> or the <tt>rollback</tt> method is called, one transaction ends and another transaction
+begins. Closing a transacted session rolls back its transaction in progress, including any
+pending sends and receives.</p>
+<p>In an Enterprise JavaBeans component, you cannot use the <tt>Session.commit</tt> and <tt>Session.rollback</tt>
+methods. Instead, you use distributed transactions, described in <a href="bncgl.html">Using the JMS API in Java EE Applications</a>.</p>
+<p>You can combine several sends and receives in a single JMS API
+local transaction. If you do so, you need to be careful about the
+order of the operations. You will have no problems if the transaction consists
+of all sends or all receives, or if the receives all come before
+the sends. However, if you try to use a request/reply mechanism, in which
+you send a message and then try to receive a reply to that
+message in the same transaction, the program will hang, because the send cannot
+take place until the transaction is committed. The following code fragment illustrates the
+problem:</p>
+<pre>// Don’t do this!
+outMsg.setJMSReplyTo(replyQueue);
+producer.send(outQueue, outMsg);
+consumer = session.createConsumer(replyQueue);
+inMsg = consumer.receive();
+session.commit();</pre><p>Because a message sent during a transaction is not actually sent until the
+transaction is committed, the transaction cannot contain any receives that depend on that
+message’s having been sent.</p>
+<p>In addition, the production and the consumption of a message cannot both be
+part of the same transaction. The reason is that the transactions take place
+between the clients and the JMS provider, which intervenes between the production and
+the consumption of the message. <a href="#bncgi">Figure&nbsp;47-8</a> illustrates this interaction.</p>
+<a name="bncgi"></a><p class="caption">Figure&nbsp;47-8 Using JMS API Local Transactions</p><img src="figures/jms-localTransactions.gif" alt="Diagram of local transactions, showing separate transactions for sending and consuming a message"><p>The sending of one or more messages to one or more destinations
+by Client 1 can form a single transaction, because it forms a single
+set of interactions with the JMS provider using a single session. Similarly, the
+receiving of one or more messages from one or more destinations by Client
+2 also forms a single transaction using a single session. But because the
+two clients have no direct interaction and are using two different sessions, no
+transactions can take place between them.</p>
+<p>Another way of putting this is that the act of producing and/or
+consuming messages in a session can be transactional, but the act of producing
+and consuming a specific message across different sessions cannot be transactional.</p>
+<p>This is the fundamental difference between messaging and synchronized processing. Instead of tightly
+coupling the sending and receiving of data, message producers and consumers use an
+alternative approach to reliability, built on a JMS provider’s ability to supply a
+once-and-only-once message delivery guarantee.</p>
+<p>When you create a session, you specify whether it is transacted. The first
+argument to the <tt>createSession</tt> method is a <tt>boolean</tt> value. A value of
+<tt>true</tt> means the session is transacted; a value of <tt>false</tt> means it is
+not transacted. The second argument to this method is the acknowledgment mode, which
+is relevant only to nontransacted sessions (see <a href="#bncfw">Controlling Message Acknowledgment</a>). If the session is transacted,
+the second argument is ignored, so it is a good idea to specify
+<tt>0</tt> to make the meaning of your code clear. For example:</p>
+<pre>session = connection.createSession(true, 0);</pre><p>The <tt>commit</tt> and the <tt>rollback</tt> methods for local transactions are associated with the
+session. You can combine queue and topic operations in a single transaction if
+you use the same session to perform the operations. For example, you can
+use the same session to receive a message from a queue and send
+a message to a topic in the same transaction.</p>
+<p>You can pass a client program’s session to a message listener’s constructor function
+and use it to create a message producer. In this way, you can
+use the same session for receives and sends in asynchronous message consumers.</p>
+<p><a href="giwfh.html#bncgj">A Local Transaction Example</a> provides an example of using JMS API local transactions.</p>
+         </div>
+<br><hr>
+<div class="maincontent cye-lm-tag">      	 
+             
+<a name="bncgl"></a><h2 class="cye-lm-tag">Using the JMS API in Java EE Applications</h2>
+<a name="indexterm-2478"></a><p class="cye-lm-tag">This section describes how using the JMS API in enterprise bean applications or
+web applications differs from using it in application clients.</p>
+<p class="cye-lm-tag">A general rule in the Java EE platform specification applies to all Java
+EE components that use the JMS API within EJB or web containers:
+Application components in the web and EJB containers must not attempt to create
+more than one active (not closed) <tt>Session</tt> object per connection.</p>
+<p class="cye-lm-tag">This rule does not apply to application clients. The application client container supports
+the creation of multiple sessions for each connection.</p>
+<a name="bncgm"></a><h3>Using <tt>@Resource</tt> Annotations in Enterprise Bean or Web Components</h3>
+<p class="cye-lm-tag">When you use the <tt>@Resource</tt> annotation in an application client component, you normally
+declare the JMS resource static:</p>
+<pre>@Resource(lookup = "jms/ConnectionFactory")
+private static ConnectionFactory connectionFactory;
+@Resource(lookup = "jms/Queue")
+private static Queue queue;</pre><p class="cye-lm-tag">However, when you use this annotation in a session bean, a message-driven bean,
+or a web component, do <b>not</b> declare the resource static:</p>
+<pre>@Resource(lookup = "jms/ConnectionFactory")
+private ConnectionFactory connectionFactory;
+@Resource(lookup = "jms/Topic")
+private Topic topic;</pre><p class="cye-lm-tag">If you declare the resource static in these components, runtime errors will result.</p>
+<a name="bncgn"></a><h3>Using Session Beans to Produce and to Synchronously Receive Messages</h3>
+<p class="cye-lm-tag">An application that produces messages or synchronously receives them can use a session
+bean to perform these operations. The example in <a href="bncgw.html">An Application That Uses the JMS API with a Session Bean</a> uses a stateless session
+bean to publish messages to a topic.</p>
+<p class="cye-lm-tag">Because a blocking synchronous receive ties up server resources, it is not a
+good programming practice to use such a <tt>receive</tt> call in an enterprise bean.
+Instead, use a timed synchronous receive, or use a message-driven bean to receive
+messages asynchronously. For details about blocking and timed synchronous receives, see <a href="bncfa.html#bncfc">Writing the Clients for the Synchronous Receive Example</a>.</p>
+<p class="cye-lm-tag">Using the JMS API in an enterprise bean is in many ways
+similar to using it in an application client. The main differences are the
+areas of resource management and transactions.</p>
+<a name="bncgo"></a><h4>Managing JMS Resources in Session Beans</h4>
+<a name="indexterm-2479"></a><a name="indexterm-2480"></a><a name="indexterm-2481"></a><p class="cye-lm-tag">The JMS API resources are a JMS API connection and a JMS
+API session. In general, it is important to release JMS resources when they
+are no longer being used. Here are some useful practices to follow:</p>
+<ul><li><p class="cye-lm-tag">If you wish to maintain a JMS API resource only for the life span of a business method, it is a good idea to close the resource in a <tt>finally</tt> block within the method.</p>
+</li>
+<li><p class="cye-lm-tag">If you would like to maintain a JMS API resource for the life span of an enterprise bean instance, it is a good idea to use a <tt>@PostConstruct</tt> callback method to create the resource and to use a <tt>@PreDestroy</tt> callback method to close the resource. If you use a stateful session bean and you wish to maintain the JMS API resource in a cached state, you must close the resource in a <tt>@PrePassivate</tt> callback method and set its value to <tt>null</tt>, and you must create it again in a <tt>@PostActivate</tt> callback method.</p>
+</li></ul>
+<a name="bncgp"></a><h4>Managing Transactions in Session Beans</h4>
+<a name="indexterm-2482"></a><p class="cye-lm-tag">Instead of using local transactions, you use container-managed transactions for bean methods that
+perform sends or receives, allowing the EJB container to handle transaction demarcation. Because
+container-managed transactions are the default, you do not have to use an annotation
+to specify them.</p>
+<p class="cye-lm-tag">You can use bean-managed transactions and the <tt>javax.transaction.UserTransaction</tt> interface’s transaction demarcation methods,
+but you should do so only if your application has special requirements and
+you are an expert in using transactions. Usually, container-managed transactions produce the most efficient
+and correct behavior. This tutorial does not provide any examples of bean-managed transactions.</p>
+<a name="bncgq"></a><h3>Using Message-Driven Beans to Receive Messages Asynchronously</h3>
+<a name="indexterm-2483"></a><a name="indexterm-2484"></a><p class="cye-lm-tag">The sections <a href="gipko.html">What Is a Message-Driven Bean?</a> and <a href="bncdr.html#bncdw">How Does the JMS API Work with the Java EE Platform?</a> describe how the Java EE platform supports a
+special kind of enterprise bean, the message-driven bean, which allows Java EE applications
+to process JMS messages asynchronously. Session beans allow you to send messages and
+to receive them synchronously but not asynchronously.</p>
+<p class="cye-lm-tag">A message-driven bean is a message listener that can reliably consume messages from
+a queue or a durable subscription. The messages can be sent by any
+Java EE component (from an application client, another enterprise bean, or a web
+component) or from an application or a system that does not use
+Java EE technology.</p>
+<p class="cye-lm-tag"><a name="indexterm-2485"></a>Like a message listener in an application client, a message-driven bean contains an
+<tt>onMessage</tt> method that is called automatically when a message arrives. Like a message
+listener, a message-driven bean class can implement helper methods invoked by the <tt>onMessage</tt>
+method to aid in message processing.</p>
+<p class="cye-lm-tag">A message-driven bean, however, differs from an application client’s message listener in the
+following ways:</p>
+<ul><li><p class="cye-lm-tag">Certain setup tasks are performed by the EJB container.</p>
+</li>
+<li><p class="cye-lm-tag">The bean class uses the <tt>@MessageDriven</tt> annotation to specify properties for the bean or the connection factory, such as a destination type, a durable subscription, a message selector, or an acknowledgment mode. The examples in <a href="bncgv.html">Chapter&nbsp;48, Java Message Service Examples</a> show how the JMS resource adapter works in the GlassFish Server.</p>
+</li></ul>
+<p class="cye-lm-tag">The EJB container automatically performs several setup tasks that a stand-alone client must
+perform:</p>
+<ul><li><p class="cye-lm-tag">Creating a message consumer to receive the messages. Instead of creating a message consumer in your source code, you associate the message-driven bean with a destination and a connection factory at deployment time. If you want to specify a durable subscription or use a message selector, you do this at deployment time also.</p>
+</li>
+<li><p class="cye-lm-tag">Registering the message listener. You must not call <tt>setMessageListener</tt>.</p>
+</li>
+<li><p class="cye-lm-tag"><a name="indexterm-2486"></a>Specifying a message acknowledgment mode. The default mode, <tt>AUTO_ACKNOWLEDGE</tt>, is used unless it is overridden by a property setting.</p>
+</li></ul>
+<p class="cye-lm-tag">If JMS is integrated with the application server using a resource adapter, the
+JMS resource adapter handles these tasks for the EJB container.</p>
+<p class="cye-lm-tag">Your message-driven bean class must implement the <tt>javax.jms.MessageListener</tt> interface and the <tt>onMessage</tt>
+method.</p>
+<p class="cye-lm-tag">It may implement a <tt>@PostConstruct</tt> callback method to create a connection, and a
+<tt>@PreDestroy</tt> callback method to close the connection. Typically, it implements these methods if
+it produces messages or performs synchronous receives from another destination.</p>
+<p class="cye-lm-tag">The bean class commonly injects a <tt>MessageDrivenContext</tt> resource, which provides some additional methods
+you can use for transaction management.</p>
+<p class="cye-lm-tag">The main difference between a message-driven bean and a session bean is that
+a message-driven bean has no local or remote interface. Instead, it has only
+a bean class.</p>
+<p class="cye-lm-tag">A message-driven bean is similar in some ways to a stateless session bean:
+Its instances are relatively short-lived and retain no state for a specific client.
+The instance variables of the message-driven bean instance can contain some state across
+the handling of client messages: for example, a JMS API connection, an open
+database connection, or an object reference to an enterprise bean object.</p>
+<p class="cye-lm-tag">Like a stateless session bean, a message-driven bean can have many interchangeable instances
+running at the same time. The container can pool these instances to allow
+streams of messages to be processed concurrently. The container attempts to deliver messages
+in chronological order when that would not impair the concurrency of message processing,
+but no guarantees are made as to the exact order in which messages
+are delivered to the instances of the message-driven bean class. Because concurrency can
+affect the order in which messages are delivered, you should write your applications
+to handle messages that arrive out of sequence.</p>
+<p class="cye-lm-tag">For example, your application could manage conversations by using application-level sequence numbers. An
+application-level conversation control mechanism with a persistent conversation state could cache later messages
+until earlier messages have been processed.</p>
+<p class="cye-lm-tag">Another way to ensure order is to have each message or message
+group in a conversation require a confirmation message that the sender blocks on receipt
+of. This forces the responsibility for order back onto the sender and more
+tightly couples senders to the progress of message-driven beans.</p>
+<p class="cye-lm-tag">To create a new instance of a message-driven bean, the container does the
+following:</p>
+<ul><li><p class="cye-lm-tag">Instantiates the bean</p>
+</li>
+<li><p class="cye-lm-tag">Performs any required resource injection</p>
+</li>
+<li><p class="cye-lm-tag">Calls the <tt>@PostConstruct</tt> callback method, if it exists</p>
+</li></ul>
+<p class="cye-lm-tag">To remove an instance of a message-driven bean, the container calls the <tt>@PreDestroy</tt>
+callback method.</p>
+<p class="cye-lm-tag"><a href="#bncgr">Figure&nbsp;47-9</a> shows the lifecycle of a message-driven bean.</p>
+<a name="bncgr"></a><p class="caption cye-lm-tag">Figure&nbsp;47-9 Lifecycle of a Message-Driven Bean</p><img src="figures/ejbcon-mdblifecycle.gif" alt="Diagram showing message-driven bean lifecycle">
+<a name="bncgs"></a><h3>Managing Distributed Transactions</h3>
+<a name="indexterm-2487"></a><p class="cye-lm-tag">JMS client applications use JMS API local transactions (described in <a href="bncfu.html#bncgh">Using JMS API Local Transactions</a>), which
+allow the grouping of sends and receives within a specific JMS session. Java
+EE applications commonly use distributed transactions to ensure the integrity of accesses to external
+resources. For example, distributed transactions allow multiple applications to perform atomic updates on
+the same database, and they allow a single application to perform atomic updates
+on multiple databases.</p>
+<p class="cye-lm-tag">In a Java EE application that uses the JMS API, you can
+use transactions to combine message sends or receives with database updates and other
+resource manager operations. You can access resources from multiple application components within a single
+transaction. For example, a servlet can start a transaction, access multiple databases, invoke
+an enterprise bean that sends a JMS message, invoke another enterprise bean that
+modifies an EIS system using the Connector architecture, and finally commit the transaction.
+Your application cannot, however, both send a JMS message and receive a reply
+to it within the same transaction; the restriction described in <a href="bncfu.html#bncgh">Using JMS API Local Transactions</a> still applies.</p>
+<p class="cye-lm-tag">Distributed transactions within the EJB container can be either of two kinds:</p>
+<ul><li><p class="cye-lm-tag"><a name="indexterm-2488"></a><b>Container-managed transactions</b>: The EJB container controls the integrity of your transactions without your having to call <tt>commit</tt> or <tt>rollback</tt>. Container-managed transactions are recommended for Java EE applications that use the JMS API. You can specify appropriate transaction attributes for your enterprise bean methods.</p>
+<p class="cye-lm-tag">Use the <tt>Required</tt> transaction attribute (the default) to ensure that a method is always part of a transaction. If a transaction is in progress when the method is called, the method will be part of that transaction; if not, a new transaction will be started before the method is called and will be committed when the method returns.</p>
+</li>
+<li><p class="cye-lm-tag"><a name="indexterm-2489"></a><a name="indexterm-2490"></a><a name="indexterm-2491"></a><b>Bean-managed transactions</b>: You can use these in conjunction with the <tt>javax.transaction.UserTransaction</tt> interface, which provides its own <tt>commit</tt> and <tt>rollback</tt> methods you can use to delimit transaction boundaries. Bean-managed transactions are recommended only for those who are experienced in programming transactions.</p>
+</li></ul>
+<p class="cye-lm-tag">You can use either container-managed transactions or bean-managed transactions with message-driven beans. To
+ensure that all messages are received and handled within the context of a
+transaction, use container-managed transactions and use the <tt>Required</tt> transaction attribute (the default) for the
+<tt>onMessage</tt> method. This means that if there is no transaction in progress, a
+new transaction will be started before the method is called and will be
+committed when the method returns.</p>
+<p class="cye-lm-tag">When you use container-managed transactions, you can call the following <tt>MessageDrivenContext</tt> methods:</p>
+<ul><li><p class="cye-lm-tag"><a name="indexterm-2492"></a><tt>setRollbackOnly</tt>: Use this method for error handling. If an exception occurs, <tt>setRollbackOnly</tt> marks the current transaction so that the only possible outcome of the transaction is a rollback.</p>
+</li>
+<li><p class="cye-lm-tag"><a name="indexterm-2493"></a><tt>getRollbackOnly</tt>: Use this method to test whether the current transaction has been marked for rollback.</p>
+</li></ul>
+<p class="cye-lm-tag">If you use bean-managed transactions, the delivery of a message to the
+<tt>onMessage</tt> method takes place outside the distributed transaction context. The transaction begins when
+you call the <tt>UserTransaction.begin</tt> method within the <tt>onMessage</tt> method, and it ends when
+you call <tt>UserTransaction.commit</tt> or <tt>UserTransaction.rollback</tt>. Any call to the <tt>Connection.createSession</tt> method must
+take place within the transaction. If you call <tt>UserTransaction.rollback</tt>, the message is
+not redelivered, whereas calling <tt>setRollbackOnly</tt> for container-managed transactions does cause a message to be
+redelivered.</p>
+<p class="cye-lm-tag">Neither the JMS API specification nor the Enterprise JavaBeans specification (available from <a href="http://jcp.org/en/jsr/detail?id=318">http://jcp.org/en/jsr/detail?id=318</a>) specifies
+how to handle calls to JMS API methods outside transaction boundaries. The Enterprise
+JavaBeans specification does state that the EJB container is responsible for acknowledging a
+message that is successfully processed by the <tt>onMessage</tt> method of a message-driven bean
+that uses bean-managed transactions. Using bean-managed transactions allows you to process the message by
+using more than one transaction or to have some parts of the message
+processing take place outside a transaction context. In most cases, however, container-managed transactions
+provide greater reliability and are therefore preferable.</p>
+<p class="cye-lm-tag">When you create a session in an enterprise bean, the container ignores the
+arguments you specify, because it manages all transactional properties for enterprise beans. It
+is still a good idea to specify arguments of <tt>true</tt> and <tt>0</tt>
+to the <tt>createSession</tt> method to make this situation clear:</p>
+<pre>session = connection.createSession(true, 0);</pre><p class="cye-lm-tag"><a name="indexterm-2494"></a><a name="indexterm-2495"></a>When you use container-managed transactions, you normally use the <tt>Required</tt> transaction attribute (the default)
+for your enterprise bean’s business methods.</p>
+<p class="cye-lm-tag">You do not specify a message acknowledgment mode when you create a
+message-driven bean that uses container-managed transactions. The container acknowledges the message automatically when it
+commits the transaction.</p>
+<p class="cye-lm-tag"><a name="indexterm-2496"></a>If a message-driven bean uses bean-managed transactions, the message receipt cannot be part
+of the bean-managed transaction, so the container acknowledges the message outside the transaction.</p>
+<p class="cye-lm-tag">If the <tt>onMessage</tt> method throws a <tt>RuntimeException</tt>, the container does not acknowledge
+processing the message. In that case, the JMS provider will redeliver the unacknowledged
+message in the future.</p>
+<a name="bncgt"></a><h3>Using the JMS API with Application Clients and Web Components</h3>
+<a name="indexterm-2497"></a><p class="cye-lm-tag">An application client in a Java EE application can use the JMS
+API in much the same way that a stand-alone client program does. It
+can produce messages, and it can consume messages by using either synchronous receives
+or message listeners. See <a href="bnbpk.html">Chapter&nbsp;25, A Message-Driven Bean Example</a> for an example of an application client that
+produces messages. For an example of using an application client to produce and
+to consume messages, see <a href="bnchx.html">An Application Example That Deploys a Message-Driven Bean on Two Servers</a>.</p>
+<p class="cye-lm-tag">The Java EE platform specification does not impose strict constraints on how web
+components should use the JMS API. In the GlassFish Server, a web component
+can send messages and consume them synchronously but cannot consume them asynchronously.</p>
+<p class="cye-lm-tag">Because a blocking synchronous receive ties up server resources, it is not a
+good programming practice to use such a <tt>receive</tt> call in a web component.
+Instead, use a timed synchronous receive. For details about blocking and timed synchronous
+receives, see <a href="bncfa.html#bncfc">Writing the Clients for the Synchronous Receive Example</a>.</p>
+         </div>
+<br><hr>
+<div class="maincontent">      	 
+             
+<a name="bncgu"></a><h2>Further Information about JMS</h2>
+<p>For more information about JMS, see:</p>
+<ul><li><p>Java Message Service web site:</p>
+<p><a href="http://www.oracle.com/technetwork/java/index-jsp-142945.html">http://www.oracle.com/technetwork/java/index-jsp-142945.html</a></p>
+</li>
+<li><p>Java Message Service specification, version 1.1, available from:</p>
+<p><a href="http://www.oracle.com/technetwork/java/docs-136352.html">http://www.oracle.com/technetwork/java/docs-136352.html</a></p>
+</li></ul>
+         </div>
+</body>
+</html>
