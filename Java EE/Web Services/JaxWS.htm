@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>JaxWS</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="https://docs.oracle.com/javaee/7/tutorial/jaxws.htm">src</a>
+<div id="JEETT00082" class="chapter"><a id="BNAYL" name="BNAYL" class="anchor"></a>
+<h1 class="chapter"><span class="secnum">28</span> Building Web Services with JAX-WS</h1>
+<p><a id="sthref1457" name="sthref1457" class="anchor"></a><a id="sthref1458" name="sthref1458" class="anchor"></a>Java API for XML Web Services (JAX-WS) is a technology for building web services and clients that communicate using XML. JAX-WS allows developers to write message-oriented as well as Remote Procedure Call–oriented (RPC-oriented) web services.</p>
+<p><a id="sthref1459" name="sthref1459" class="anchor"></a><a id="sthref1460" name="sthref1460" class="anchor"></a>In JAX-WS, a web service operation invocation is represented by an XML-based protocol, such as SOAP. The SOAP specification defines the envelope structure, encoding rules, and conventions for representing web service invocations and responses. These calls and responses are transmitted as SOAP messages (XML files) over HTTP.</p>
+<p><a id="sthref1461" name="sthref1461" class="anchor"></a>Although SOAP messages are complex, the JAX-WS API hides this complexity from the application developer. On the server side, the developer specifies the web service operations by defining methods in an interface written in the Java programming language. The developer also codes one or more classes that implement those methods. Client programs are also easy to code. A client creates a proxy (a local object representing the service) and then simply invokes methods on the proxy. With JAX-WS, the developer does not generate or parse SOAP messages. It is the JAX-WS runtime system that converts the API calls and responses to and from SOAP messages.</p>
+<p><a id="sthref1462" name="sthref1462" class="anchor"></a><a id="sthref1463" name="sthref1463" class="anchor"></a><a id="sthref1464" name="sthref1464" class="anchor"></a><a id="sthref1465" name="sthref1465" class="anchor"></a>With JAX-WS, clients and web services have a big advantage: the platform independence of the Java programming language. In addition, JAX-WS is not restrictive: A JAX-WS client can access a web service that is not running on the Java platform and vice versa. This flexibility is possible because JAX-WS uses technologies defined by the W3C: HTTP, SOAP, and WSDL. WSDL specifies an XML format for describing a service as a set of endpoints operating on messages.</p>
+<div class="infoboxnote">
+<p class="notep1">Note:</p>
+Several files in the JAX-WS examples depend on the port that you specified when you installed GlassFish Server. These tutorial examples assume that the server runs on the default port, 8080. They do not run with a nondefault port setting.</div>
+<p>The following topics are addressed here:</p>
+<ul>
+<li>
+<p><a href="jaxws001.htm#BNAYN">Creating a Simple Web Service and Clients with JAX-WS</a></p>
+</li>
+<li>
+<p><a href="jaxws002.htm#BNAZC">Types Supported by JAX-WS</a></p>
+</li>
+<li>
+<p><a href="jaxws003.htm#BNAZD">Web Services Interoperability and JAX-WS</a></p>
+</li>
+<li>
+<p><a href="jaxws004.htm#BNAZE">Further Information about JAX-WS</a></p>
+</li>
+</ul>
+
+
+</div>
+<div id="JEETT00423" class="sect1 cye-lm-tag">
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">28.1</span> <a id="sthref1466" name="sthref1466" class="anchor"></a><a id="sthref1467" name="sthref1467" class="anchor"></a><a id="sthref1468" name="sthref1468" class="anchor"></a>Creating a Simple Web Service and Clients with JAX-WS</h1>
+<p class="cye-lm-tag">This section shows how to build and deploy a simple web service and two clients: an application client and a web client. The source code for the service is in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/helloservice-war/</code> directory, and the clients are in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/hello-appclient/</code> and <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/hello-webclient/</code> directories.</p>
+<p class="cye-lm-tag"><a href="#BNAYO">Figure 28-1</a> illustrates how JAX-WS technology manages communication between a web service and a client.</p>
+<div id="JEETT00021" class="figure"><a id="BNAYO" name="BNAYO" class="anchor"></a>
+<p class="titleinfigure cye-lm-tag">Figure 28-1 Communication between a JAX-WS Web Service and a Client</p>
+<img width="380" height="66" src="img/jeett_dt_019.png" alt="Description of Figure 28-1 follows" longdesc="img_text/jeett_dt_019.htm"><br>
+<a id="sthref1469" name="sthref1469" href="img_text/jeett_dt_019.htm">Description of "Figure 28-1 Communication between a JAX-WS Web Service and a Client"</a><br>
+<br></div>
+<!-- class="figure" -->
+<p class="cye-lm-tag"><a id="sthref1470" name="sthref1470" class="anchor"></a>The starting point for developing a JAX-WS web service is a Java class annotated with the <code dir="ltr">javax.jws.WebService</code> annotation. The <code dir="ltr">@WebService</code> annotation defines the class as a web service endpoint.</p>
+<p class="cye-lm-tag"><a id="sthref1471" name="sthref1471" class="anchor"></a>A <span class="glossaryterm cye-lm-tag">service endpoint interface</span> or <span class="glossaryterm cye-lm-tag">service endpoint implementation</span> (SEI) is a Java interface or class, respectively, that declares the methods that a client can invoke on the service. An interface is not required when building a JAX-WS endpoint. The web service implementation class implicitly defines an SEI.</p>
+<p class="cye-lm-tag">You may specify an explicit interface by adding the <code dir="ltr">endpointInterface</code> element to the <code dir="ltr">@WebService</code> annotation in the implementation class. You must then provide an interface that defines the public methods made available in the endpoint implementation class.</p>
+<p class="cye-lm-tag">The basic steps for creating a web service and client are as follows.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Code the implementation class.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Compile the implementation class.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Package the files into a WAR file.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Deploy the WAR file. The web service artifacts, which are used to communicate with clients, are generated by GlassFish Server during deployment.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Code the client class.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Use the <code dir="ltr">wsimport</code> Maven goal to generate and compile the web service artifacts needed to connect to the service.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Compile the client class.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Run the client.</p>
+</li>
+</ol>
+<p class="cye-lm-tag">If you use NetBeans IDE to create a service and client, the IDE performs the <code dir="ltr">wsimport</code> task for you.</p>
+<p class="cye-lm-tag">The sections that follow cover these steps in greater detail.</p>
+<a id="BNAYP" name="BNAYP" class="anchor"></a>
+<div id="JEETT01044" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.1</span> Requirements of a JAX-WS Endpoint<a id="sthref1472" name="sthref1472" class="anchor"></a></h2>
+<p class="cye-lm-tag">JAX-WS endpoints must follow these requirements.</p>
+<ul>
+<li>
+<p class="cye-lm-tag">The implementing class must be annotated with either the <code dir="ltr">javax.jws.WebService</code> or the <code dir="ltr">javax.jws.WebServiceProvider</code> annotation.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The implementing class may explicitly reference an SEI through the <code dir="ltr">endpointInterface</code> element of the <code dir="ltr">@WebService</code> annotation but is not required to do so. If no <code dir="ltr">endpointInterface</code> is specified in <code dir="ltr">@WebService</code>, an SEI is implicitly defined for the implementing class.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The business methods of the implementing class must be public and must not be declared <code dir="ltr">static</code> or <code dir="ltr">final</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Business methods that are exposed to web service clients must be annotated with <code dir="ltr">javax.jws.WebMethod</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Business methods that are exposed to web service clients must have JAXB-compatible parameters and return types. See the list of JAXB default data type bindings in <a href="jaxws002.htm#BNAZC">Types Supported by JAX-WS</a>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The implementing class must not be declared <code dir="ltr">final</code> and must not be <code dir="ltr">abstract</code>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The implementing class must have a default public constructor.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The implementing class must not define the <code dir="ltr">finalize</code> method.</p>
+</li>
+<li>
+<p class="cye-lm-tag">The implementing class may use the <code dir="ltr">javax.annotation.PostConstruct</code> or the <code dir="ltr">javax.annotation.PreDestroy</code> annotations on its methods for lifecycle event callbacks.</p>
+<p class="cye-lm-tag">The <code dir="ltr">@PostConstruct</code> method is called by the container before the implementing class begins responding to web service clients.</p>
+<p class="cye-lm-tag">The <code dir="ltr">@PreDestroy</code> method is called by the container before the endpoint is removed from operation.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<a id="BNAYQ" name="BNAYQ" class="anchor"></a>
+<div id="JEETT01045" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.2</span> Coding the Service Endpoint Implementation Class</h2>
+<p class="cye-lm-tag">In this example, the implementation class, <code dir="ltr">Hello</code>, is annotated as a web service endpoint using the <code dir="ltr">@WebService</code> annotation. <code dir="ltr">Hello</code> declares a single method named <code dir="ltr">sayHello</code>, annotated with the <code dir="ltr">@WebMethod</code> annotation, which exposes the annotated method to web service clients. The <code dir="ltr">sayHello</code> method returns a greeting to the client, using the name passed to it to compose the greeting. The implementation class also must define a default, public, no-argument constructor.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">package javaeetutorial.helloservice;
+
+import javax.jws.WebService;
+import javax.jws.WebMethod;
+
+@WebService
+public class Hello {
+    private final String message = "Hello, ";
+
+    public Hello() {
+    }
+
+    @WebMethod
+    public String sayHello(String name) {
+        return message + name + ".";
+    }
+}
+</pre></div>
+<!-- class="sect2" -->
+<a id="BNAYR" name="BNAYR" class="anchor"></a>
+<div id="JEETT01046" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.3</span> Building, Packaging, and Deploying the Service</h2>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, package, and deploy the <code dir="ltr">helloservice-war</code> application.</p>
+<a id="BNAYS" name="BNAYS" class="anchor"></a>
+<div id="JEETT00179" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.3.1</span> To Build, Package, and Deploy the Service Using NetBeans IDE</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">helloservice-war</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">helloservice-war</code> project and select <span class="gui-object-action cye-lm-tag">Run</span>.</p>
+<p class="cye-lm-tag">This command builds and packages the application into a WAR file, <code dir="ltr">helloservice-war.war</code>, located in <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/helloservice-war/target/</code>, and deploys this WAR file to your GlassFish Server instance. It also opens the web service test interface at the URL shown in <a href="#BNAYW">To Test the Service without a Client</a>.</p>
+</li>
+</ol>
+<a id="sthref1473" name="sthref1473" class="anchor"></a>
+<p class="subhead2 cye-lm-tag">Next Steps</p>
+<p class="cye-lm-tag">You can view the WSDL file of the deployed service by requesting the URL <code dir="ltr">http://localhost:8080/helloservice-war/HelloService?wsdl</code> in a web browser. Now you are ready to create a client that accesses this service.</p>
+</div>
+<!-- class="sect3" -->
+<a id="BNAYT" name="BNAYT" class="anchor"></a>
+<div id="JEETT00180" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.3.2</span> To Build, Package, and Deploy the Service Using Maven</h3>
+<ol>
+<li>
+<p class="cye-lm-tag">Make sure that GlassFish Server has been started (see <a href="usingexamples002.htm#BNADI">Starting and Stopping GlassFish Server</a>).</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws/helloservice-war/
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p class="cye-lm-tag">This command builds and packages the application into a WAR file, <code dir="ltr">helloservice-war.war</code>, located in the <code dir="ltr">target</code> directory, and then deploys the WAR to GlassFish Server.</p>
+</li>
+</ol>
+<a id="sthref1474" name="sthref1474" class="anchor"></a>
+<p class="subhead2 cye-lm-tag">Next Steps</p>
+<p class="cye-lm-tag">You can view the WSDL file of the deployed service by requesting the URL <code dir="ltr">http://localhost:8080/helloservice-war/HelloService?wsdl</code> in a web browser. Now you are ready to create a client that accesses this service.</p>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="GKAJL" name="GKAJL" class="anchor"></a>
+<div id="JEETT01047" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.4</span> Testing the Methods of a Web Service Endpoint</h2>
+<p class="cye-lm-tag">GlassFish Server allows you to test the methods of a web service endpoint.</p>
+<a id="BNAYW" name="BNAYW" class="anchor"></a>
+<div id="JEETT00181" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.4.1</span> To Test the Service without a Client</h3>
+<p class="cye-lm-tag">To test the <code dir="ltr">sayHello</code> method of <code dir="ltr">HelloService</code>, follow these steps.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">Open the web service test interface by entering the following URL in a web browser:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/helloservice-war/HelloService?Tester
+</pre></li>
+<li>
+<p class="cye-lm-tag">Under <span class="gui-object-action cye-lm-tag">Methods</span>, enter a name as the parameter to the <code dir="ltr">sayHello</code> method.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">sayHello</span>.</p>
+<p class="cye-lm-tag">This takes you to the <code dir="ltr">sayHello</code> Method invocation page.</p>
+<p class="cye-lm-tag">Under <span class="gui-object-action cye-lm-tag">Method returned</span>, you'll see the response from the endpoint.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="BNAYX" name="BNAYX" class="anchor"></a>
+<div id="JEETT01048" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.5</span> A Simple JAX-WS Application Client</h2>
+<p class="cye-lm-tag">The <code dir="ltr">HelloAppClient</code> class is a stand-alone application client that accesses the <code dir="ltr">sayHello</code> method of <code dir="ltr">HelloService</code>. This call is made through a port, a local object that acts as a proxy for the remote service. The port is created at development time by the <code dir="ltr">wsimport</code> Maven goal, which generates JAX-WS portable artifacts based on a WSDL file.</p>
+<a id="BNAYY" name="BNAYY" class="anchor"></a>
+<div id="JEETT00634" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.5.1</span> Coding the Application Client</h3>
+<p class="cye-lm-tag">When invoking the remote methods on the port, the client performs these steps.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">It uses the generated <code dir="ltr">helloservice.endpoint.HelloService</code> class, which represents the service at the URI of the deployed service's WSDL file:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">import javaeetutorial.helloservice.endpoint.HelloService;
+import javax.xml.ws.WebServiceRef;
+
+public class HelloAppClient {
+    @WebServiceRef(wsdlLocation = 
+      "http://localhost:8080/helloservice-war/HelloService?WSDL")
+    private static HelloService service;
+</pre></li>
+<li>
+<p class="cye-lm-tag">It retrieves a proxy to the service, also known as a port, by invoking <code dir="ltr">getHelloPort</code> on the service:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">javaeetutorial.helloservice.endpoint.Hello port = service.getHelloPort();
+</pre>
+<p class="cye-lm-tag">The port implements the SEI defined by the service.</p>
+</li>
+<li>
+<p class="cye-lm-tag">It invokes the port's <code dir="ltr">sayHello</code> method, passing a string to the service:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">return port.sayHello(arg0);
+</pre></li>
+</ol>
+<p class="cye-lm-tag">Here is the full source of <code dir="ltr">HelloAppClient.java</code>, which is located in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/hello-appclient/src/main/java/javaeetutorial/hello/appclient/</code> directory:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">package javaeetutorial.hello.appclient;
+
+import javaeetutorial.helloservice.endpoint.HelloService;
+import javax.xml.ws.WebServiceRef;
+
+public class HelloAppClient {
+    @WebServiceRef(wsdlLocation = 
+      "http://localhost:8080/helloservice-war/HelloService?WSDL")
+    private static HelloService service;
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+       System.out.println(sayHello("world"));
+    }
+
+    private static String sayHello(java.lang.String arg0) {
+        javaeetutorial.helloservice.endpoint.Hello port = 
+                service.getHelloPort();
+        return port.sayHello(arg0);
+    }
+}
+</pre></div>
+<!-- class="sect3" -->
+<a id="BNAYZ" name="BNAYZ" class="anchor"></a>
+<div id="JEETT00635" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.5.2</span> Running the Application Client</h3>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, package, deploy, and run the <code dir="ltr">hello-appclient</code> application. To build the client, you must first have deployed <code dir="ltr">helloservice-war</code>, as described in <a href="#BNAYR">Building, Packaging, and Deploying the Service</a>.</p>
+<p class="orderedlisttitle cye-lm-tag">To Run the Application Client Using NetBeans IDE&nbsp;</p>
+<ol>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">hello-appclient</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">hello-appclient</code> project and select <span class="gui-object-action cye-lm-tag">Build</span>.</p>
+<p class="cye-lm-tag">This command runs the <code dir="ltr">wsimport</code> goal, then builds, packages, and runs the client. You will see the output of the application client in the <span class="gui-object-action cye-lm-tag">hello-appclient</span> output tab:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">--- exec-maven-plugin:1.2.1:exec (run-appclient) @ hello-appclient ---
+Hello, world.
+</pre></li>
+</ol>
+<p class="orderedlisttitle cye-lm-tag">To Run the Application Client Using Maven&nbsp;</p>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws/hello-appclient/
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p class="cye-lm-tag">This command runs the <code dir="ltr">wsimport</code> goal, then builds, packages, and runs the client. The application client output looks like this:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">--- exec-maven-plugin:1.2.1:exec (run-appclient) @ hello-appclient ---
+Hello, world.
+</pre></li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<a id="GJYGB" name="GJYGB" class="anchor"></a>
+<div id="JEETT01049" class="sect2">
+<h2 class="sect2"><span class="secnum cye-lm-tag">28.1.6</span> A Simple JAX-WS Web Client</h2>
+<p class="cye-lm-tag"><code dir="ltr">HelloServlet</code> is a servlet that, like the Java client, calls the <code dir="ltr">sayHello</code> method of the web service. Like the application client, it makes this call through a port.</p>
+<a id="GJYFL" name="GJYFL" class="anchor"></a>
+<div id="JEETT00636" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.6.1</span> Coding the Servlet</h3>
+<p class="cye-lm-tag">To invoke the method on the port, the client performs these steps.</p>
+<ol>
+<li>
+<p class="cye-lm-tag">It imports the <code dir="ltr">HelloService</code> endpoint and the <code dir="ltr">WebServiceRef</code> annotation:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">import javaeetutorial.helloservice.endpoint.HelloService;
+...
+import javax.xml.ws.WebServiceRef;
+</pre></li>
+<li>
+<p class="cye-lm-tag">It defines a reference to the web service by specifying the WSDL location:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@WebServiceRef(wsdlLocation = 
+  "http://localhost:8080/helloservice-war/HelloService?WSDL")
+</pre></li>
+<li>
+<p class="cye-lm-tag">It declares the web service, then defines a private method that calls the <code dir="ltr">sayHello</code> method on the port:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">private HelloService service;
+...
+private String sayHello(java.lang.String arg0) {
+    javaeetutorial.helloservice.endpoint.Hello port =
+            service.getHelloPort();
+    return port.sayHello(arg0);
+}
+</pre></li>
+<li>
+<p class="cye-lm-tag">In the servlet, it calls this private method:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">out.println("&lt;p&gt;" + sayHello("world") + "&lt;/p&gt;");
+</pre></li>
+</ol>
+<p class="cye-lm-tag">The significant parts of the <code dir="ltr">HelloServlet</code> code follow. The code is located in the <span class="variable cye-lm-tag">tut-install</span><code dir="ltr">/examples/jaxws/hello-webclient/src/java/javaeetutorial/hello/<br>
+webclient/</code> directory.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">package javaeetutorial.hello.webclient;
+
+import javaeetutorial.helloservice.endpoint.HelloService;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.ws.WebServiceRef;
+
+@WebServlet(name="HelloServlet", urlPatterns={"/HelloServlet"})
+public class HelloServlet extends HttpServlet {
+    @WebServiceRef(wsdlLocation = 
+      "http://localhost:8080/helloservice-war/HelloService?WSDL")
+    private HelloService service;
+   
+    /** 
+     * Processes requests for both HTTP &lt;code&gt;GET&lt;/code&gt; 
+     *   and &lt;code&gt;POST&lt;/code&gt; methods.
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    protected void processRequest(HttpServletRequest request, 
+            HttpServletResponse response)
+    throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter out = response.getWriter()) {
+            
+            out.println("&lt;html lang=\"en\"&gt;");
+            out.println("&lt;head&gt;");
+            out.println("&lt;title&gt;Servlet HelloServlet&lt;/title&gt;");  
+            out.println("&lt;/head&gt;");
+            out.println("&lt;body&gt;");
+            out.println("&lt;h1&gt;Servlet HelloServlet at " + 
+                request.getContextPath () + "&lt;/h1&gt;");
+            out.println("&lt;p&gt;" + sayHello("world") + "&lt;/p&gt;");
+            out.println("&lt;/body&gt;");
+            out.println("&lt;/html&gt;");
+        }
+    } 
+    
+    // doGet and doPost methods, which call processRequest, and
+    //   getServletInfo method
+    
+    private String sayHello(java.lang.String arg0) {
+        javaeetutorial.helloservice.endpoint.Hello port = 
+                service.getHelloPort();
+        return port.sayHello(arg0);
+    }
+}
+</pre></div>
+<!-- class="sect3" -->
+<a id="GJYGE" name="GJYGE" class="anchor"></a>
+<div id="JEETT00637" class="sect3">
+<h3 class="sect3"><span class="secnum cye-lm-tag">28.1.6.2</span> Running the Web Client</h3>
+<p class="cye-lm-tag">You can use either NetBeans IDE or Maven to build, package, deploy, and run the <code dir="ltr">hello-webclient</code> application. To build the client, you must first have deployed <code dir="ltr">helloservice-war</code>, as described in <a href="#BNAYR">Building, Packaging, and Deploying the Service</a>.</p>
+<p class="orderedlisttitle cye-lm-tag">To Run the Web Client Using NetBeans IDE&nbsp;</p>
+<ol>
+<li>
+<p class="cye-lm-tag">From the <span class="gui-object-action cye-lm-tag">File</span> menu, choose <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-title cye-lm-tag">Open Project</span> dialog box, navigate to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws
+</pre></li>
+<li>
+<p class="cye-lm-tag">Select the <code dir="ltr">hello-webclient</code> folder.</p>
+</li>
+<li>
+<p class="cye-lm-tag">Click <span class="gui-object-action cye-lm-tag">Open Project</span>.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In the <span class="gui-object-action cye-lm-tag">Projects</span> tab, right-click the <code dir="ltr">hello-webclient</code> project and select <span class="gui-object-action cye-lm-tag">Build</span>.</p>
+<p class="cye-lm-tag">This task runs the <code dir="ltr">wsimport</code> goal, builds and packages the application into a WAR file, <code dir="ltr">hello-webclient.war</code>, located in the <code dir="ltr">target</code> directory, and deploys it to GlassFish Server.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/hello-webclient/HelloServlet
+</pre>
+<p class="cye-lm-tag">The output of the <code dir="ltr">sayHello</code> method appears in the window.</p>
+</li>
+</ol>
+<p class="orderedlisttitle cye-lm-tag">To Run the Web Client Using Maven&nbsp;</p>
+<ol>
+<li>
+<p class="cye-lm-tag">In a terminal window, go to:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr"><span class="variable cye-lm-tag">tut-install</span>/examples/jaxws/hello-webclient/
+</pre></li>
+<li>
+<p class="cye-lm-tag">Enter the following command:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">mvn install
+</pre>
+<p class="cye-lm-tag">This command runs the <code dir="ltr">wsimport</code> goal, then build and packages the application into a WAR file, <code dir="ltr">hello-webclient.war</code>, located in the <code dir="ltr">target</code> directory. The WAR file is then deployed to GlassFish Server.</p>
+</li>
+<li>
+<p class="cye-lm-tag">In a web browser, enter the following URL:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">http://localhost:8080/hello-webclient/HelloServlet
+</pre>
+<p class="cye-lm-tag">The output of the <code dir="ltr">sayHello</code> method appears in the window.</p>
+</li>
+</ol>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+
+<br><hr>
+<div id="JEETT00424" class="sect1">
+<h1 class="sect1"><span class="secnum">28.2</span> Types Supported by JAX-WS</h1>
+<p>JAX-WS delegates the mapping of Java programming language types to and from XML definitions to JAXB. Application developers don't need to know the details of these mappings but should be aware that not every class in the Java language can be used as a method parameter or return type in JAX-WS.</p>
+<p>The following sections explain the default schema-to-Java and Java-to-schema data type bindings.</p>
+<a id="BNAZT" name="BNAZT" class="anchor"></a>
+<div id="JEETT01050" class="sect2">
+<h2 class="sect2"><span class="secnum">28.2.1</span> <a id="sthref1479" name="sthref1479" class="anchor"></a>Schema-to-Java Mapping</h2>
+<p>The Java language provides a richer set of data types than XML schema. <a href="#BNAZU">Table 28-1</a> lists the mapping of XML data types to Java data types in JAXB.</p>
+<div class="tblhruleformal"><a id="sthref1480" name="sthref1480" class="anchor"></a><a id="BNAZU" name="BNAZU" class="anchor"></a>
+<p class="titleintable">Table 28-1 Mapping of XML Data Types to Java Data Types in JAXB</p>
+<table class="HRuleFormal" title="Mapping of XML Data Types to Java Data Types in JAXB" summary="This table lists the mappings of XML schema types to Java data types in JAXB." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="27%">
+<col width="*">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t3">XML Schema Type</th>
+<th align="left" valign="bottom" id="r1c2-t3">Java Data Type</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:string</code></p>
+</td>
+<td align="left" headers="r2c1-t3 r1c2-t3">
+<p><code dir="ltr">java.lang.String</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:integer</code></p>
+</td>
+<td align="left" headers="r3c1-t3 r1c2-t3">
+<p><code dir="ltr">java.math.BigInteger</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:int</code></p>
+</td>
+<td align="left" headers="r4c1-t3 r1c2-t3">
+<p><code dir="ltr">int</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd.long</code></p>
+</td>
+<td align="left" headers="r5c1-t3 r1c2-t3">
+<p><code dir="ltr">long</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:short</code></p>
+</td>
+<td align="left" headers="r6c1-t3 r1c2-t3">
+<p><code dir="ltr">short</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r7c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:decimal</code></p>
+</td>
+<td align="left" headers="r7c1-t3 r1c2-t3">
+<p><code dir="ltr">java.math.BigDecimal</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r8c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:float</code></p>
+</td>
+<td align="left" headers="r8c1-t3 r1c2-t3">
+<p><code dir="ltr">float</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r9c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:double</code></p>
+</td>
+<td align="left" headers="r9c1-t3 r1c2-t3">
+<p><code dir="ltr">double</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r10c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:boolean</code></p>
+</td>
+<td align="left" headers="r10c1-t3 r1c2-t3">
+<p><code dir="ltr">boolean</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r11c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:byte</code></p>
+</td>
+<td align="left" headers="r11c1-t3 r1c2-t3">
+<p><code dir="ltr">byte</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r12c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:QName</code></p>
+</td>
+<td align="left" headers="r12c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.namespace.QName</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r13c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:dateTime</code></p>
+</td>
+<td align="left" headers="r13c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.datatype.XMLGregorianCalendar</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r14c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:base64Binary</code></p>
+</td>
+<td align="left" headers="r14c1-t3 r1c2-t3">
+<p><code dir="ltr">byte[]</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r15c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:hexBinary</code></p>
+</td>
+<td align="left" headers="r15c1-t3 r1c2-t3">
+<p><code dir="ltr">byte[]</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r16c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:unsignedInt</code></p>
+</td>
+<td align="left" headers="r16c1-t3 r1c2-t3">
+<p><code dir="ltr">long</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r17c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:unsignedShort</code></p>
+</td>
+<td align="left" headers="r17c1-t3 r1c2-t3">
+<p><code dir="ltr">int</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r18c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:unsignedByte</code></p>
+</td>
+<td align="left" headers="r18c1-t3 r1c2-t3">
+<p><code dir="ltr">short</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r19c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:time</code></p>
+</td>
+<td align="left" headers="r19c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.datatype.XMLGregorianCalendar</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r20c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:date</code></p>
+</td>
+<td align="left" headers="r20c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.datatype.XMLGregorianCalendar</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r21c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:g</code></p>
+</td>
+<td align="left" headers="r21c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.datatype.XMLGregorianCalendar</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r22c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:anySimpleType</code></p>
+</td>
+<td align="left" headers="r22c1-t3 r1c2-t3">
+<p><code dir="ltr">java.lang.Object</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r23c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:anySimpleType</code></p>
+</td>
+<td align="left" headers="r23c1-t3 r1c2-t3">
+<p><code dir="ltr">java.lang.String</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r24c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:duration</code></p>
+</td>
+<td align="left" headers="r24c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.datatype.Duration</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r25c1-t3" headers="r1c1-t3">
+<p><code dir="ltr">xsd:NOTATION</code></p>
+</td>
+<td align="left" headers="r25c1-t3 r1c2-t3">
+<p><code dir="ltr">javax.xml.namespace.QName</code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" --></div>
+<!-- class="sect2" -->
+<a id="BNAZW" name="BNAZW" class="anchor"></a>
+<div id="JEETT01051" class="sect2">
+<h2 class="sect2"><span class="secnum">28.2.2</span> <a id="sthref1481" name="sthref1481" class="anchor"></a>Java-to-Schema Mapping</h2>
+<p><a href="#BNAZX">Table 28-2</a> shows the default mapping of Java classes to XML data types.</p>
+<div class="tblhruleformal"><a id="sthref1482" name="sthref1482" class="anchor"></a><a id="BNAZX" name="BNAZX" class="anchor"></a>
+<p class="titleintable">Table 28-2 Mapping of Java Classes to XML Data Types in JAXB</p>
+<table class="HRuleFormal" title="Mapping of Java Classes to XML Data Types in JAXB" summary="This table lists the mappings of Java classes to XML data types in JAXB." dir="ltr" border="1" width="100%" frame="hsides" rules="rows" cellpadding="3" cellspacing="0">
+<colgroup><col width="*">
+<col width="49%">
+</colgroup><thead>
+<tr align="left" valign="top">
+<th align="left" valign="bottom" id="r1c1-t4">Java Class</th>
+<th align="left" valign="bottom" id="r1c2-t4">XML Data Type</th>
+</tr>
+</thead>
+<tbody>
+<tr align="left" valign="top">
+<td align="left" id="r2c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.lang.String</code></p>
+</td>
+<td align="left" headers="r2c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:string</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r3c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.math.BigInteger</code></p>
+</td>
+<td align="left" headers="r3c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:integer</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r4c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.math.BigDecimal</code></p>
+</td>
+<td align="left" headers="r4c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:decimal</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r5c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.util.Calendar</code></p>
+</td>
+<td align="left" headers="r5c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:dateTime</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r6c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.util.Date</code></p>
+</td>
+<td align="left" headers="r6c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:dateTime</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r7c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">javax.xml.namespace.QName</code></p>
+</td>
+<td align="left" headers="r7c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:QName</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r8c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.net.URI</code></p>
+</td>
+<td align="left" headers="r8c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:string</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r9c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">javax.xml.datatype.XMLGregorianCalendar</code></p>
+</td>
+<td align="left" headers="r9c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:anySimpleType</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r10c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">javax.xml.datatype.Duration</code></p>
+</td>
+<td align="left" headers="r10c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:duration</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r11c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.lang.Object</code></p>
+</td>
+<td align="left" headers="r11c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:anyType</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r12c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.awt.Image</code></p>
+</td>
+<td align="left" headers="r12c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:base64Binary</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r13c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">javax.activation.DataHandler</code></p>
+</td>
+<td align="left" headers="r13c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:base64Binary</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r14c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">javax.xml.transform.Source</code></p>
+</td>
+<td align="left" headers="r14c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:base64Binary</code></p>
+</td>
+</tr>
+<tr align="left" valign="top">
+<td align="left" id="r15c1-t4" headers="r1c1-t4">
+<p><code dir="ltr">java.util.UUID</code></p>
+</td>
+<td align="left" headers="r15c1-t4 r1c2-t4">
+<p><code dir="ltr">xs:string</code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br></div>
+<!-- class="tblhruleformal" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div id="JEETT00425" class="sect1">
+<h1 class="sect1"><span class="secnum">28.3</span> Web Services Interoperability and JAX-WS</h1>
+<p>JAX-WS supports the Web Services Interoperability (WS-I) Basic Profile Version 1.1. The WS-I Basic Profile is a document that clarifies the SOAP 1.1 and WSDL 1.1 specifications to promote SOAP interoperability. For links related to WS-I, see <a href="jaxws004.htm#BNAZE">Further Information about JAX-WS</a>.</p>
+<p>To support WS-I Basic Profile Version 1.1, the JAX-WS runtime supports doc/literal and rpc/literal encodings for services, static ports, dynamic proxies, and the Dynamic Invocation Interface (DII).</p>
+</div>
+<div id="JEETT00426" class="sect1">
+<h1 class="sect1"><span class="secnum">28.4</span> Further Information about JAX-WS</h1>
+<p>For more information about JAX-WS and related technologies, see</p>
+<ul>
+<li>
+<p><a id="sthref1483" name="sthref1483" class="anchor"></a>Java API for XML Web Services 2.2 specification:</p>
+<p><code dir="ltr"><a target="_blank" href="http://jcp.org/en/jsr/detail?id=224">http://jcp.org/en/jsr/detail?id=224</a></code></p>
+</li>
+<li>
+<p>JAX-WS home:</p>
+<p><code dir="ltr"><a target="_blank" href="https://jax-ws.java.net/">https://jax-ws.java.net/</a></code></p>
+</li>
+<li>
+<p><a id="sthref1484" name="sthref1484" class="anchor"></a><a id="sthref1485" name="sthref1485" class="anchor"></a>Simple Object Access Protocol (SOAP) 1.2 W3C Note:</p>
+<p><code dir="ltr"><a target="_blank" href="http://www.w3.org/TR/soap/">http://www.w3.org/TR/soap/</a></code></p>
+</li>
+<li>
+<p><a id="sthref1486" name="sthref1486" class="anchor"></a>Web Services Description Language (WSDL) 1.1 W3C Note:</p>
+<p><code dir="ltr"><a target="_blank" href="http://www.w3.org/TR/wsdl">http://www.w3.org/TR/wsdl</a></code></p>
+</li>
+<li>
+<p>WS-I Basic Profile 1.2 and 2.0:</p>
+<p><code dir="ltr"><a target="_blank" href="http://www.ws-i.org">http://www.ws-i.org</a></code></p>
+</li>
+</ul>
+</div>
+<br><hr>
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Web Services</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<div id="JEETT00420" class="sect1">
+<h1 class="sect1"><span class="secnum">27.1</span> <a id="sthref1451" name="sthref1451" class="anchor"></a>What Are Web Services?</h1>
+<p><span class="glossaryterm">Web services</span> are client and server applications that communicate over the World Wide Web's (WWW) HyperText Transfer Protocol (HTTP). As described by the World Wide Web Consortium (W3C), web services provide a standard means of interoperating between software applications running on a variety of platforms and frameworks. Web services are characterized by their great interoperability and extensibility as well as their machine-processable descriptions, thanks to the use of XML. Web services can be combined in a loosely coupled way to achieve complex operations. Programs providing simple services can interact with each other to deliver sophisticated added-value services.</p>
+</div>
+<div id="JEETT00421" class="sect1">
+<h1 class="sect1"><span class="secnum">27.2</span> <a id="sthref1452" name="sthref1452" class="anchor"></a><a id="sthref1453" name="sthref1453" class="anchor"></a><a id="sthref1454" name="sthref1454" class="anchor"></a>Types of Web Services</h1>
+<p>On the conceptual level, a service is a software component provided through a network-accessible endpoint. The service consumer and provider use messages to exchange invocation request and response information in the form of self-containing documents that make very few assumptions about the technological capabilities of the receiver.</p>
+<p>On a technical level, web services can be implemented in various ways. The two types of web services discussed in this section can be distinguished as "big" web services and "RESTful" web services.</p>
+<a id="GKCDG" name="GKCDG" class="anchor"></a>
+<div id="JEETT01042" class="sect2">
+<h2 class="sect2"><span class="secnum">27.2.1</span> <a id="sthref1455" name="sthref1455" class="anchor"></a>"Big" Web Services</h2>
+<p>In Java EE 7, JAX-WS provides the functionality for "big" web services, which are described in <a href="jaxws.htm#BNAYL">Chapter 28, "Building Web Services with JAX-WS"</a>. Big web services use XML messages that follow the Simple Object Access Protocol (SOAP) standard, an XML language defining a message architecture and message formats. Such systems often contain a machine-readable description of the operations offered by the service, written in the Web Services Description Language (WSDL), an XML language for defining interfaces syntactically.</p>
+<p>The SOAP message format and the WSDL interface definition language have gained widespread adoption. Many development tools, such as NetBeans IDE, can reduce the complexity of developing web service applications.</p>
+<p>A SOAP-based design must include the following elements.</p>
+<ul>
+<li>
+<p>A formal contract must be established to describe the interface that the web service offers. WSDL can be used to describe the details of the contract, which may include messages, operations, bindings, and the location of the web service. You may also process SOAP messages in a JAX-WS service without publishing a WSDL.</p>
+</li>
+<li>
+<p>The architecture must address complex nonfunctional requirements. Many web service specifications address such requirements and establish a common vocabulary for them. Examples include transactions, security, addressing, trust, coordination, and so on.</p>
+</li>
+<li>
+<p>The architecture needs to handle asynchronous processing and invocation. In such cases, the infrastructure provided by standards, such as Web Services Reliable Messaging (WSRM), and APIs, such as JAX-WS, with their client-side asynchronous invocation support, can be leveraged out of the box.</p>
+</li>
+</ul>
+</div>
+<!-- class="sect2" -->
+<a id="GKCAW" name="GKCAW" class="anchor"></a>
+<div id="JEETT01043" class="sect2">
+<h2 class="sect2"><span class="secnum">27.2.2</span> <a id="sthref1456" name="sthref1456" class="anchor"></a>RESTful Web Services</h2>
+<p>In Java EE 7, JAX-RS provides the functionality for Representational State Transfer (RESTful) web services. REST is well suited for basic, ad hoc integration scenarios. RESTful web services, often better integrated with HTTP than SOAP-based services are, do not require XML messages or WSDL service-API definitions.</p>
+<p>Project Jersey is the production-ready reference implementation for the JAX-RS specification. Jersey implements support for the annotations defined in the JAX-RS specification, making it easy for developers to build RESTful web services with Java and the Java Virtual Machine (JVM).</p>
+<p>Because RESTful web services use existing well-known W3C and Internet Engineering Task Force (IETF) standards (HTTP, XML, URI, MIME) and have a lightweight infrastructure that allows services to be built with minimal tooling, developing RESTful web services is inexpensive and thus has a very low barrier for adoption. You can use a development tool such as NetBeans IDE to further reduce the complexity of developing RESTful web services.</p>
+<p>A RESTful design may be appropriate when the following conditions are met.</p>
+<ul>
+<li>
+<p>The web services are completely stateless. A good test is to consider whether the interaction can survive a restart of the server.</p>
+</li>
+<li>
+<p>A caching infrastructure can be leveraged for performance. If the data that the web service returns is not dynamically generated and can be cached, the caching infrastructure that web servers and other intermediaries inherently provide can be leveraged to improve performance. However, the developer must take care because such caches are limited to the HTTP <code dir="ltr">GET</code> method for most servers.</p>
+</li>
+<li>
+<p>The service producer and service consumer have a mutual understanding of the context and content being passed along. Because there is no formal way to describe the web services interface, both parties must agree out of band on the schemas that describe the data being exchanged and on ways to process it meaningfully. In the real world, most commercial applications that expose services as RESTful implementations also distribute so-called value-added toolkits that describe the interfaces to developers in popular programming languages.</p>
+</li>
+<li>
+<p>Bandwidth is particularly important and needs to be limited. REST is particularly useful for limited-profile devices, such as PDAs and mobile phones, for which the overhead of headers and additional layers of SOAP elements on the XML payload must be restricted.</p>
+</li>
+<li>
+<p>Web service delivery or aggregation into existing websites can be enabled easily with a RESTful style. Developers can use such technologies as JAX-RS and Asynchronous JavaScript with XML (Ajax) and such toolkits as Direct Web Remoting (DWR) to consume the services in their web applications. Rather than starting from scratch, services can be exposed with XML and consumed by HTML pages without significantly refactoring the existing website architecture. Existing developers will be more productive because they are adding to something they are already familiar with rather than having to start from scratch with new technology.</p>
+</li>
+</ul>
+<p>RESTful web services are discussed in <a href="jaxrs.htm#GIEPU">Chapter 29, "Building RESTful Web Services with JAX-RS"</a>. This chapter contains information about generating the skeleton of a RESTful web service using both NetBeans IDE and the Maven project-management tool.</p>
+</div>
+<!-- class="sect2" --></div>
+<div id="JEETT00422" class="sect1">
+<h1 class="sect1"><span class="secnum">27.3</span> Deciding Which Type of Web Service to Use</h1>
+<p>Basically, you want to use RESTful web services for integration over the web and big web services in enterprise application–integration scenarios that have advanced quality-of-service (QoS) requirements.</p>
+<ul>
+<li>
+<p><span class="bold">JAX-WS</span>: Addresses advanced QoS requirements that commonly occur in enterprise computing. When compared to JAX-RS, JAX-WS makes it easier to support the WS-* set of protocols, which provide standards for security and reliability, among other things, and interoperate with other WS-* conforming clients and servers.</p>
+</li>
+<li>
+<p><span class="bold">JAX-RS</span>: Makes it easier to write web applications that apply some or all of the constraints of the REST style to induce desirable properties in the application, such as loose coupling (evolving the server is easier without breaking existing clients), scalability (start small and grow), and architectural simplicity (use off-the-shelf components, such as proxies or HTTP routers). You would choose to use JAX-RS for your web application because it is easier for many types of clients to consume RESTful web services while enabling the server side to evolve and scale. Clients can choose to consume some or all aspects of the service and mash it up with other web-based services.</p>
+</li>
+</ul>
+</div>
+
+<br><hr>
+<br><hr>
+<br><hr>
+<br><hr>
+</body>
+</html>

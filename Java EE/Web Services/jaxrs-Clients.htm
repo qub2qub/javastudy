@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>REST Resources</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    </style>
+</head>
+<body>
+<a href="https://docs.oracle.com/javaee/7/tutorial/jaxrs-client.htm">src</a>
+<div class="chapter cye-lm-tag"><a id="BABEIGIH" name="BABEIGIH" class="anchor"></a>
+<h1 class="chapter cye-lm-tag"><span class="secnum cye-lm-tag">30</span> <a id="sthref1561" name="sthref1561" class="anchor"></a><a id="sthref1562" name="sthref1562" class="anchor"></a>Accessing REST Resources with the JAX-RS Client API</h1>
+<p class="cye-lm-tag">This chapter describes the JAX-RS Client API and includes examples of how to access REST resources using the Java programming language.</p>
+<p class="cye-lm-tag">JAX-RS provides a client API for accessing REST resources from other Java applications.</p>
+<p class="cye-lm-tag">The following topics are addressed here:</p>
+<ul>
+<li>
+<p class="cye-lm-tag"><a href="jaxrs-client001.htm#BABBIHEJ">Overview of the Client API</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="jaxrs-client002.htm#BABJCIJC">Using the Client API in the JAX-RS Example Applications</a></p>
+</li>
+<li>
+<p class="cye-lm-tag"><a href="jaxrs-client003.htm#BABCDDGH">Advanced Features of the Client API</a></p>
+</li>
+</ul>
+
+
+</div>
+<br><hr>
+<div class="sect1"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1"><span class="secnum">30.1</span> Overview of the Client API</h1>
+<p>The JAX-RS Client API provides a high-level API for accessing any REST resources, not just JAX-RS services. The Client API is defined in the <code dir="ltr">javax.ws.rs.client</code> package.</p>
+<div class="sect2"><a id="sthref1563" name="sthref1563" class="anchor"></a>
+<h2 class="sect2"><span class="secnum">30.1.1</span> Creating a Basic Client Request Using the Client API</h2>
+<p>The following steps are needed to access a REST resource using the Client API.</p>
+<ol>
+<li>
+<p>Obtain an instance of the <code dir="ltr">javax.ws.rs.client.Client</code> interface.</p>
+</li>
+<li>
+<p>Configure the <code dir="ltr">Client</code> instance with a target.</p>
+</li>
+<li>
+<p>Create a request based on the target.</p>
+</li>
+<li>
+<p>Invoke the request.</p>
+</li>
+</ol>
+<p>The Client API is designed to be fluent, with method invocations chained together to configure and submit a request to a REST resource in only a few lines of code.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+String name = client.target("http://example.com/webapi/hello")
+        .request(MediaType.TEXT_PLAIN)
+        .get(String.class);
+</pre>
+<p>In this example, the client instance is first created by calling the <code dir="ltr">javax.ws.rs.client.ClientBuilder.newClient</code> method. Then, the request is configured and invoked by chaining method calls together in one line of code. The <code dir="ltr">Client.target</code> method sets the target based on a URI. The <code dir="ltr">javax.ws.rs.client.WebTarget.request</code> method sets the media type for the returned entity. The <code dir="ltr">javax.ws.rs.client.Invocation.Builder.get</code> method invokes the service using an HTTP <code dir="ltr">GET</code> request, setting the type of the returned entity to <code dir="ltr">String</code>.</p>
+<div class="sect3"><a id="sthref1564" name="sthref1564" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">30.1.1.1</span> Obtaining the Client Instance</h3>
+<p>The <code dir="ltr">Client</code> interface defines the actions and infrastructure a REST client requires to consume a RESTful web service. Instances of <code dir="ltr">Client</code> are obtained by calling the <code dir="ltr">ClientBuilder.newClient</code> method.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+</pre>
+<p>Use the <code dir="ltr">close</code> method to close <code dir="ltr">Client</code> instances after all the invocations for the target resource have been performed:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+...
+client.close();
+</pre>
+<p><code dir="ltr">Client</code> instances are heavyweight objects. For performance reasons, limit the number of <code dir="ltr">Client</code> instances in your application, as the initialization and destruction of these instances may be expensive in your runtime environment.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref1565" name="sthref1565" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">30.1.1.2</span> Setting the Client Target</h3>
+<p>The target of a client, the REST resource at a particular URI, is represented by an instance of the <code dir="ltr">javax.ws.rs.client.WebTarget</code> interface. You obtain a <code dir="ltr">WebTarget</code> instance by calling the <code dir="ltr">Client.target</code> method and passing in the URI of the target REST resource.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi");
+</pre>
+<p>For complex REST resources, it may be beneficial to create several instances of <code dir="ltr">WebTarget</code>. In the following example, a base target is used to construct several other targets that represent different services provided by a REST resource.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget base = client.target("http://example.com/webapi");
+// WebTarget at http://example.com/webapi/read
+WebTarget read = base.path("read");
+// WebTarget at http://example.com/webapi/write
+WebTarget write = base.path("write");
+</pre>
+<p>The <code dir="ltr">WebTarget.path</code> method creates a new <code dir="ltr">WebTarget</code> instance by appending the current target URI with the path that was passed in.</p>
+</div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref1566" name="sthref1566" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">30.1.1.3</span> Setting Path Parameters in Targets</h3>
+<p><a id="sthref1567" name="sthref1567" class="anchor"></a>Path parameters in client requests can be specified as URI template parameters, similar to the template parameters used when defining a resource URI in a JAX-RS service. Template parameters are specified by surrounding the template variable with braces (<code dir="ltr">{}</code>). Call the <code dir="ltr">resolveTemplate</code> method to substitute the <code dir="ltr">{username}</code>, and then call the <code dir="ltr">queryParam</code> method to add another variable to pass.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">WebTarget myResource = client.target("http://example.com/webapi/read")
+        .path("{userName}")
+        .resolveTemplate("userName", "janedoe")        .queryParam("chapter", "1");// http://example.com/webapi/read/janedoe?chapter=1Response response = myResource.request(...)        .get();
+</pre></div>
+<!-- class="sect3" -->
+<div class="sect3"><a id="sthref1568" name="sthref1568" class="anchor"></a>
+<h3 class="sect3"><span class="secnum">30.1.1.4</span> Invoking the Request</h3>
+<p><a id="sthref1569" name="sthref1569" class="anchor"></a>After setting and applying any configuration options to the target, call one of the <code dir="ltr">WebTarget.request</code> methods to begin creating the request. This is usually accomplished by passing to <code dir="ltr">WebTarget.request</code> the accepted media response type for the request either as a string of the MIME type or using one of the constants in <code dir="ltr">javax.ws.rs.core.MediaType</code>. The <code dir="ltr">WebTarget.request</code> method returns an instance of <code dir="ltr">javax.ws.rs.client.Invocation.Builder</code>, a helper object that provides methods for preparing the client request.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+Invocation.Builder builder = myResource.request(MediaType.TEXT_PLAIN);
+</pre>
+<p>Using a <code dir="ltr">MediaType</code> constant is equivalent to using the string defining the MIME type.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Invocation.Builder builder = myResource.request("text/plain");
+</pre>
+<p>After setting the media type, invoke the request by calling one of the methods of the <code dir="ltr">Invocation.Builder</code> instance that corresponds to the type of HTTP request the target REST resource expects. These methods are:</p>
+<ul>
+<li>
+<p><code dir="ltr">get()</code></p>
+</li>
+<li>
+<p><code dir="ltr">post()</code></p>
+</li>
+<li>
+<p><code dir="ltr">delete()</code></p>
+</li>
+<li>
+<p><code dir="ltr">put()</code></p>
+</li>
+<li>
+<p><code dir="ltr">head()</code></p>
+</li>
+<li>
+<p><code dir="ltr">options()</code></p>
+</li>
+</ul>
+<p>For example, if the target REST resource is for an HTTP GET request, call the <code dir="ltr">Invocation.Builder.get</code> method. The return type should correspond to the entity returned by the target REST resource.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+String response = myResource.request(MediaType.TEXT_PLAIN)
+        .get(String.class);
+</pre>
+<p>If the target REST resource is expecting an HTTP POST request, call the <code dir="ltr">Invocation.Builder.post</code> method.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+StoreOrder order = new StoreOrder(...);
+WebTarget myResource = client.target("http://example.com/webapi/write");
+TrackingNumber trackingNumber = myResource.request(MediaType.APPLICATION_XML)
+                                   .post(Entity.xml(order), TrackingNumber.class);
+</pre>
+<p>In the preceding example, the return type is a custom class and is retrieved by setting the type in the <code dir="ltr">Invocation.Builder.post(Entity&lt;?&gt; entity, Class&lt;T&gt; responseType)</code> method as a parameter.</p>
+<p>If the return type is a collection, use <code dir="ltr">javax.ws.rs.core.GenericType&lt;T&gt;</code> as the response type parameter, where <code dir="ltr">T</code> is the collection type:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">List&lt;StoreOrder&gt; orders = client.target("http://example.com/webapi/read")
+        .path("allOrders")
+        .request(MediaType.APPLICATION_XML)
+        .get(new GenericType&lt;List&lt;StoreOrder&gt;&gt;() {});
+</pre>
+<p>This preceding example shows how methods are chained together in the Client API to simplify how requests are configured and invoked.</p>
+</div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">30.2</span> Using the Client API in the JAX-RS Example Applications</h1>
+<p class="cye-lm-tag">The <code dir="ltr">rsvp</code> and <code dir="ltr">customer</code> examples use the Client API to call JAX-RS services. This section describes how each example application uses the Client API.</p>
+<a id="BABEDFIG" name="BABEDFIG" class="anchor"></a>
+<div class="sect2"><!-- infolevel="all" infotype="General" -->
+<h2 class="sect2"><span class="secnum cye-lm-tag">30.2.1</span> The Client API in the rsvp Example Application</h2>
+<p class="cye-lm-tag">The <code dir="ltr">rsvp</code> application allows users to respond to event invitations using JAX-RS resources, as explained in <a href="jaxrs003.htm#GJVBC">Chapter 29, "The rsvp Example Application"</a>. The web application uses the Client API in CDI backing beans to interact with the service resources, and the Facelets web interface displays the results.</p>
+<p class="cye-lm-tag">The <code dir="ltr">StatusManager</code> CDI backing bean retrieves all the current events in the system. The client instance used in the backing bean is obtained in the constructor:</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public StatusManager() {
+    this.client = ClientBuilder.newClient();
+}
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">StatusManager.getEvents</code> method returns a collection of all the current events in the system by calling the resource at <code dir="ltr">http://localhost:8080/rsvp/webapi/status/all</code>, which returns an XML document with entries for each event. The Client API automatically unmarshals the XML and creates a <code dir="ltr">List&lt;Event&gt;</code> instance.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public List&lt;Event&gt; getEvents() {
+        List&lt;Event&gt; returnedEvents = null;
+        try {
+            returnedEvents = client.target(baseUri)
+                    .path("all")
+                    .request(MediaType.APPLICATION_XML)
+                    .get(new GenericType&lt;List&lt;Event&gt;&gt;() {
+            });
+            if (returnedEvents == null) {
+                logger.log(Level.SEVERE, "Returned events null.");
+            } else {
+                logger.log(Level.INFO, "Events have been returned.");
+            }
+        } catch (WebApplicationException ex) {
+            throw new WebApplicationException(Response.Status.NOT_FOUND);
+        }
+        ...
+        return returnedEvents;
+    }
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">StatusManager.changeStatus</code> method is used to update the attendee's response. It creates an HTTP <code dir="ltr">POST</code> request to the service with the new response. The body of the request is an XML document.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public String changeStatus(ResponseEnum userResponse, 
+            Person person, Event event) {
+        String navigation;
+        try {
+            logger.log(Level.INFO, 
+                    "changing status to {0} for {1} {2} for event ID {3}.",
+                    new Object[]{userResponse,
+                        person.getFirstName(),
+                        person.getLastName(),
+                        event.getId().toString()});
+             client.target(baseUri)
+                     .path(event.getId().toString())
+                     .path(person.getId().toString())
+                     .request(MediaType.APPLICATION_XML)
+                     .post(Entity.xml(userResponse.getLabel()));
+            navigation = "changedStatus";
+        } catch (ResponseProcessingException ex) {
+            logger.log(Level.WARNING, "couldn''t change status for {0} {1}",
+                    new Object[]{person.getFirstName(),
+                        person.getLastName()});
+            logger.log(Level.WARNING, ex.getMessage());
+            navigation = "error";
+        }
+        return navigation;
+    }
+</pre></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1570" name="sthref1570" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">30.2.2</span> The Client API in the customer Example Application</h2>
+<p class="cye-lm-tag">The <code dir="ltr">customer</code> example application stores customer data in a database and exposes the resource as XML, as explained in <a href="jaxrs-advanced008.htm#GKOIB">Chapter 31, "The customer Example Application"</a>. The service resource exposes methods that create customers and retrieve all the customers. A Facelets web application acts as a client for the service resource, with a form for creating customers and displaying the list of customers in a table.</p>
+<p class="cye-lm-tag">The <code dir="ltr">CustomerBean</code> stateless session bean uses the JAX-RS Client API to interface with the service resource. The <code dir="ltr">CustomerBean.createCustomer</code> method takes the <code dir="ltr">Customer</code> entity instance created by the Facelets form and makes a POST call to the service URI.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public String createCustomer(Customer customer) {
+    if (customer == null) {
+        logger.log(Level.WARNING, "customer is null.");
+        return "customerError";
+    }
+    String navigation;
+    Response response =
+            client.target("http://localhost:8080/customer/webapi/Customer")
+            .request(MediaType.APPLICATION_XML)
+            .post(Entity.entity(customer, MediaType.APPLICATION_XML),
+                    Response.class);
+    if (response.getStatus() == Status.CREATED.getStatusCode()) {
+        navigation = "customerCreated";
+    } else {
+        logger.log(Level.WARNING, 
+                "couldn''t create customer with id {0}. Status returned was {1}",
+                new Object[]{customer.getId(), response.getStatus()});
+        FacesContext context = FacesContext.getCurrentInstance();
+        context.addMessage(null, 
+                new FacesMessage("Could not create customer."));
+        navigation = "customerError";
+    }
+    return navigation;
+}
+</pre>
+<p class="cye-lm-tag">The XML request entity is created by calling the <code dir="ltr">Invocation.Builder.post</code> method, passing in a new <code dir="ltr">Entity</code> instance from the <code dir="ltr">Customer</code> instance, and specifying the media type as <code dir="ltr">MediaType.APPLICATION_XML</code>.</p>
+<p class="cye-lm-tag">The <code dir="ltr">CustomerBean.retrieveCustomer</code> method retrieves a <code dir="ltr">Customer</code> entity instance from the service by appending the customer's ID to the service URI.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public String retrieveCustomer(String id) {
+    String navigation;
+    Customer customer =
+            client.target("http://localhost:8080/customer/webapi/Customer")
+            .path(id)
+            .request(MediaType.APPLICATION_XML)
+            .get(Customer.class);
+    if (customer == null) {
+        navigation = "customerError";
+    } else {
+        navigation = "customerRetrieved";
+    }
+    return navigation;
+}
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">CustomerBean.retrieveAllCustomers</code> method retrieves a collection of customers as a <code dir="ltr">List&lt;Customer&gt;</code> instance. This list is then displayed as a table in the Facelets web application.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">public List&lt;Customer&gt; retrieveAllCustomers() {
+    List&lt;Customer&gt; customers =
+            client.target("http://localhost:8080/customer/webapi/Customer")
+            .path("all")
+            .request(MediaType.APPLICATION_XML)
+            .get(new GenericType&lt;List&lt;Customer&gt;&gt;() {
+            });
+    return customers;
+}
+</pre>
+<p class="cye-lm-tag">Because the response type is a collection, the <code dir="ltr">Invocation.Builder.get</code> method is called by passing in a new instance of <code dir="ltr">GenericType&lt;List&lt;Customer&gt;&gt;</code>.</p>
+</div>
+<!-- class="sect2" --></div>
+<br><hr>
+<div class="sect1 cye-lm-tag"><!-- infolevel="all" infotype="General" -->
+<h1 class="sect1 cye-lm-tag"><span class="secnum cye-lm-tag">30.3</span> Advanced Features of the Client API</h1>
+<p class="cye-lm-tag">This section describes some of the advanced features of the JAX-RS Client API.</p>
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1571" name="sthref1571" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">30.3.1</span> Configuring the Client Request</h2>
+<p class="cye-lm-tag">Additional configuration options may be added to the client request after it is created but before it is invoked.</p>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1572" name="sthref1572" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">30.3.1.1</span> Setting Message Headers in the Client Request</h3>
+<p class="cye-lm-tag"><a id="sthref1573" name="sthref1573" class="anchor"></a>You can set HTTP headers on the request by calling the <code dir="ltr">Invocation.Builder.header</code> method.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+String response = myResource.request(MediaType.TEXT_PLAIN)
+        .header("myHeader", "The header value")
+        .get(String.class);
+</pre>
+<p class="cye-lm-tag">If you need to set multiple headers on the request, call the <code dir="ltr">Invocation.Builder.headers</code> method and pass in a <code dir="ltr">javax.ws.rs.core.MultivaluedMap</code> instance with the name-value pairs of the HTTP headers. Calling the <code dir="ltr">headers</code> method replaces all the existing headers with the headers supplied in the <code dir="ltr">MultivaluedMap</code> instance.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+MultivaluedMap&lt;String, Object&gt; myHeaders = 
+    new MultivaluedMap&lt;&gt;("myHeader", "The header value");
+myHeaders.add(...);
+String response = myResource.request(MediaType.TEXT_PLAIN)
+        .headers(myHeaders)
+        .get(String.class);
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">MultivaluedMap</code> interface allows you to specify multiple values for a given key.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">MultivaluedMap&lt;String, Object&gt; myHeaders = 
+    new MultivaluedMap&lt;String, Object&gt;();
+List&lt;String&gt; values = new ArrayList&lt;&gt;();
+values.add(...)
+myHeaders.add("myHeader", values
+</pre></div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1574" name="sthref1574" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">30.3.1.2</span> Setting Cookies in the Client Request</h3>
+<p class="cye-lm-tag"><a id="sthref1575" name="sthref1575" class="anchor"></a><a id="sthref1576" name="sthref1576" class="anchor"></a>You can add HTTP cookies to the request by calling the <code dir="ltr">Invocation.Builder.cookie</code> method, which takes a name-value pair as parameters.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+String response = myResource.request(MediaType.TEXT_PLAIN)
+        .cookie("myCookie", "The cookie value")
+        .get(String.class);
+</pre>
+<p class="cye-lm-tag">The <code dir="ltr">javax.ws.rs.core.Cookie</code> class encapsulates the attributes of an HTTP cookie, including the name, value, path, domain, and RFC specification version of the cookie. In the following example, the <code dir="ltr">Cookie</code> object is configured with a name-value pair, a path, and a domain.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+Cookie myCookie = new Cookie("myCookie", "The cookie value", 
+    "/webapi/read", "example.com"); 
+String response = myResource.request(MediaType.TEXT_PLAIN)
+        .cookie(myCookie)
+        .get(String.class);
+</pre></div>
+<!-- class="sect3" -->
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1577" name="sthref1577" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">30.3.1.3</span> Adding Filters to the Client</h3>
+<p class="cye-lm-tag"><a id="sthref1578" name="sthref1578" class="anchor"></a>You can register custom filters with the client request or the response received from the target resource. To register filter classes when the <code dir="ltr">Client</code> instance is created, call the <code dir="ltr">Client.register</code> method.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient().register(MyLoggingFilter.class);
+</pre>
+<p class="cye-lm-tag">In the preceding example, all invocations that use this <code dir="ltr">Client</code> instance have the <code dir="ltr">MyLoggingFilter</code> filter registered with them.</p>
+<p class="cye-lm-tag">You can also register the filter classes on the target by calling <code dir="ltr">WebTarget.register</code>.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient().register(MyLoggingFilter.class);
+WebTarget target = client.target("http://example.com/webapi/secure")
+        .register(MyAuthenticationFilter.class);
+</pre>
+<p class="cye-lm-tag">In the preceding example, both the <code dir="ltr">MyLoggingFilter</code> and <code dir="ltr">MyAuthenticationFilter</code> filters are attached to the invocation.</p>
+<p class="cye-lm-tag">Request and response filter classes implement the <code dir="ltr">javax.ws.rs.client.ClientRequestFilter</code> and <code dir="ltr">javax.ws.rs.client.ClientResponseFilter</code> interfaces, respectively. Both of these interfaces define a single method, <code dir="ltr">filter</code>. All filters must be annotated with <code dir="ltr">javax.ws.rs.ext.Provider</code>.</p>
+<p class="cye-lm-tag">The following class is a logging filter for both client requests and client responses.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Provider
+public class MyLoggingFilter implements ClientRequestFilter, 
+        ClientResponseFilter {
+    static final Logger logger = Logger.getLogger(...);
+
+    // implement the ClientRequestFilter.filter method
+    @Override
+    public void filter(ClientRequestContext requestContext) 
+            throws IOException {
+        logger.log(...);
+        ...
+    }
+
+    // implement the ClientResponseFilter.filter method
+    @Override
+    public void filter(ClientRequestContext requestContext, 
+           ClientResponseContext responseContext) throws IOException {
+        logger.log(...);
+        ...
+    }
+}
+</pre>
+<p class="cye-lm-tag">If the invocation must be stopped while the filter is active, call the context object's <code dir="ltr">abortWith</code> method, and pass in a <code dir="ltr">javax.ws.rs.core.Response</code> instance from within the filter.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">@Override
+public void filter(ClientRequestContext requestContext) throws IOException {
+    ...
+    Response response = new Response();
+    response.status(500);
+    requestContext.abortWith(response);
+}
+</pre></div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" -->
+<div class="sect2"><!-- infolevel="all" infotype="General" --><a id="sthref1579" name="sthref1579" class="anchor"></a>
+<h2 class="sect2"><span class="secnum cye-lm-tag">30.3.2</span> <a id="sthref1580" name="sthref1580" class="anchor"></a>Asynchronous Invocations in the Client API</h2>
+<p class="cye-lm-tag">In networked applications, network issues can affect the perceived performance of the application, particularly in long-running or complicated network calls. Asynchronous processing helps prevent blocking and makes better use of an application's resources.</p>
+<p class="cye-lm-tag">In the JAX-RS Client API, the <code dir="ltr">Invocation.Builder.async</code> method is used when constructing a client request to indicate that the call to the service should be performed asynchronously. An asynchronous invocation returns control to the caller immediately, with a return type of <a target="_blank" href="http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Future.html?is-external=true"><code dir="ltr">java.util.concurrent.Future&lt;T&gt;</code></a> (part of the Java SE concurrency API) and with the type set to the return type of the service call. <code dir="ltr">Future&lt;T&gt;</code> objects have methods to check if the asynchronous call has been completed, to retrieve the final result, to cancel the invocation, and to check if the invocation has been cancelled.</p>
+<p class="cye-lm-tag">The following example shows how to invoke an asynchronous request on a resource.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+Future&lt;String&gt; response = myResource.request(MediaType.TEXT_PLAIN)
+        .async()
+        .get(String.class);
+</pre>
+<div class="sect3"><!-- infolevel="all" infotype="General" --><a id="sthref1581" name="sthref1581" class="anchor"></a>
+<h3 class="sect3"><span class="secnum cye-lm-tag">30.3.2.1</span> Using Custom Callbacks in Asynchronous Invocations</h3>
+<p class="cye-lm-tag">The <code dir="ltr">InvocationCallback</code> interface defines two methods, <code dir="ltr">completed</code> and <code dir="ltr">failed</code>, that are called when an asynchronous invocation either completes successfully or fails, respectively. You may register an <code dir="ltr">InvocationCallback</code> instance on your request by creating a new instance when specifying the request method.</p>
+<p class="cye-lm-tag">The following example shows how to register a callback object on an asynchronous invocation.</p>
+<pre xml:space="preserve" class="oac_no_warn" dir="ltr">Client client = ClientBuilder.newClient();
+WebTarget myResource = client.target("http://example.com/webapi/read");
+Future&lt;Customer&gt; fCustomer = myResource.request(MediaType.TEXT_PLAIN)
+        .async()
+        .get(new InvocationCallback&lt;Customer&gt;() {
+            @Override
+            public void completed(Customer customer) {
+            // Do something with the customer object
+            }
+            @Override
+             public void failed(Throwable throwable) {
+            // handle the error
+            }
+    });
+</pre></div>
+<!-- class="sect3" --></div>
+<!-- class="sect2" --></div>
+<br><hr>
+
+</body>
+</html>
