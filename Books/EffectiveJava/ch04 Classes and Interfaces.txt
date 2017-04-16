@@ -81,49 +81,63 @@ _3_ and you can’t take auxiliary action when a field is accessed.
 
 If a public class exposes its data fields, all hope of changing its representation is lost, as client code can be distributed far and wide.
 
-However, if a class is package-private or is a private nested class, there is nothing inherently wrong with exposing its data fields—assuming they do an adequate job of describing the abstraction provided by the class.
+However, if a class is package-private or is a private nested class, there is nothing inherently wrong with exposing its data fields — assuming they do an adequate job of describing the abstraction provided by the class.
 
 If a change in representation becomes desirable, you can make the change without touching any code outside the package. 
 
-In summary, public classes should never expose mutable fields. It is less harmful, though still questionable, for public classes to expose immutable fields. It is, however, sometimes desirable for package-private or private nested classes to expose fields, whether mutable or immutable.
+In summary, public classes should never expose mutable fields. 
+It is less harmful, though still questionable, for public classes to expose immutable fields. 
+It is, however, sometimes desirable for package-private or private nested classes to expose fields, whether mutable or immutable.
 
 ******************************************************
 *** Item 15: Minimize mutability ***
 
-An immutable class is simply a class whose instances cannot be modified. All of the information contained in each instance is provided when it is created and is fixed for the lifetime of the object.
+An IMMUTABLE CLASS is simply a CLASS WHOSE INSTANCES CANNOT BE MODIFIED.
+        All of the information contained in each instance is provided when it is created and is fixed for the lifetime of the object.
 Immutable classes are easier to design, implement, and use than mutable classes. They are less prone to error and are more secure.
 
 To make a class immutable, follow these five rules:
 
 1....Don’t provide any methods that modify the object’s state (known as mutators).
 
-2....Ensure that the class can’t be extended. This prevents careless or malicious subclasses from compromising the immutable behavior of the class by behaving as if the object’s state has changed. Preventing subclassing is generally accomplished by making the class final, but there is an alternative that we’ll discuss later.
+2....Ensure that the class can’t be extended. 
+This prevents careless or malicious subclasses from compromising the immutable behavior of the class by behaving as if the object’s state has changed. 
+Preventing subclassing is generally accomplished by making the class final, but there is an alternative that we’ll discuss later.
 
-3....Make all fields final. This clearly expresses your intent in a manner that is enforced by the system. Also, it is necessary to ensure correct behavior if a reference to a newly created instance is passed from one thread to another without synchronization, as spelled out in the memory model [JLS, 17.5; Goetz06 16].
+3....Make all fields final. =не значит "неизменяемые" для объектов 
+This clearly expresses your intent in a manner that is enforced by the system. Also, it is necessary to ensure correct behavior if a reference to a newly created instance is passed from one thread to another without synchronization, as spelled out in the memory model.
 
-4....Make all fields private. This prevents clients from obtaining access to mutable objects referred to by fields and modifying these objects directly. While it is technically permissible for immutable classes to have public final fields containing primitive values or references to immutable objects, it is not recommended because it precludes[prı`klu:d] (предотвращать, устранять, мешать, препятствовать) changing the internal representation in a later release (Item 13).
+4....Make all fields private.
+This prevents clients from obtaining access to mutable objects referred to by fields and modifying these objects directly. 
+While it is technically permissible for immutable classes to have public final fields containing primitive values or references to immutable objects, it is not recommended because it precludes[prı`klu:d] (предотвращать, устранять, мешать, препятствовать) changing the internal representation in a later release (Item 13).
 
-5....Ensure exclusive access to any mutable components. If your class has any fields that refer to mutable objects, ensure that clients of the class cannot obtain references to these objects. Never initialize such a field to a client-provided object reference or return the object reference from an accessor. Make defensive copies (Item 39) in constructors, accessors, and readObject methods (Item 76).
-
+5....Ensure exclusive access to any mutable compOnents. 
+If your class has any fields that refer to mutable objects, ensure that clients of the class cannot obtain references to these objects.
+Never initialize such a field to a client-provided object reference or return the object reference from an accessor. 
+Make defensive copies (Item 39) in constructors, accessors, and readObject methods (Item 76).
+-----------------------------------------
 public final class Complex {..}
-arithmetic operations create and return a new Complex instance rather than modifying this instance. This pattern is used in most nontrivial immutable classes. It is known as the functional approach because methods return the result of applying a function to their operand without modifying it.
+arithmetic operations create and return a new Complex instance rather than modifying this instance. This pattern is used in most nontrivial immutable classes. It is known as the FUNCTIONAL APPROACH because methods return the result of applying a function to their operand without modifying it.
 
 Приемущества immutability:
-1) An immutable object can be in exactly one state, the state in which it was created. 
-2) If you make sure that all constructors establish class invariants, then it is guaranteed that these invariants will remain true for all time, with no further effort on your part or on the part of the programmer who uses the class.
++1) An immutable object can be in exactly one state, the state in which it was created. 
++2) If you make sure that all constructors establish class invariants, then it is guaranteed that these invariants will remain true for all time, with no further effort on your part or on the part of the programmer who uses the class.
 
 ---Mutable objects, on the other hand, can have arbitrarily complex state spaces. 
 If the documentation does not provide a precise description of the state transitions performed by mutator methods, it can be difficult or impossible to use a mutable class reliably.
 
-3) Immutable objects are inherently thread-safe; they require no synchronization. They cannot be corrupted by multiple threads accessing them concurrently. This is far and away the easiest approach to achieving thread safety. In fact, no thread can ever observe any effect of another thread on an immutable object. Therefore, immutable objects can be shared freely. 
-4) Immutable classes should take advantage of this by encouraging clients to reuse existing instances wherever possible. One easy way to do this is to provide public static final constants for frequently used values. 
++3) Immutable objects are inherently thread-safe; they require no synchronization. 
+They cannot be corrupted by multiple threads accessing them concurrently. This is far and away the easiest approach to achieving thread safety. 
+In fact, no thread can ever observe any effect of another thread on an immutable object. Therefore, immutable objects can be shared freely. 
 
-5) This approach can be taken one step further. An immutable class can PROVIDE STATIC FACTORIES (Item 1) that cache frequently requested instances to avoid creating new instances when existing ones would do. 
++4) Immutable classes should take advantage of this by encouraging clients to reuse existing instances wherever possible. One easy way to do this is to provide public static final constants for frequently used values. 
+
++5) This approach can be taken one step further. An immutable class can PROVIDE STATIC FACTORIES (Item 1) that cache frequently requested instances to avoid creating new instances when existing ones would do. 
 All the boxed primitive classes and BigInteger do this. Using such static factories causes clients to share instances instead of creating new ones, reducing memory footprint and garbage collection costs. Opting for static factories in place of public constructors when designing a new class gives you the flexibility to add caching later, without modifying clients.
 
 A consequence of the fact that immutable objects can be shared freely is that you never have to make defensive copies (Item 39). In fact, you never have to make any copies at all because the copies would be forever equivalent to the originals. Therefore, you need not and should not provide a clone method or copy constructor (Item 11) on an immutable class. This was not well understood in the early days of the Java platform, so the String class does have a copy constructor, but it should rarely, if ever, be used (Item 5).
 
-Not only can you share immutable objects, but you can share their internals. For example, the BigInteger class uses a sign-magnitude representation internally.
+Not only can you share IMMUTABLE objects, but you can share their internals. For example, the BigInteger class uses a sign-magnitude representation internally.
 ....This is necessary to ensure that there is exactly one representation for each BigInteger value.
 
 Immutable objects make great building blocks for other objects, whether mutable or immutable. It’s much easier to maintain the invariants of a complex object if you know that its component objects will not change underneath it. A special case of this principle is that immutable objects make great map keys and set elements: you don’t have to worry about their values changing once they’re in the map or set, which would destroy the map or set’s invariants.
@@ -132,12 +146,414 @@ The only real disadvantage of immutable classes is that they require a separate 
 
 Contrast this to java.util.BitSet. Like BigInteger, BitSet represents an arbitrarily long sequence of bits, but unlike BigInteger, BitSet is mutable. The BitSet class provides a method that allows you to change the state of a single bit of a million-bit instance in constant time.
 
-The performance problem is magnified if you perform a multistep operation that generates a new object at every step, eventually discarding all objects except the final result. There are two approaches to coping with this problem. The first is to guess which multistep operations will be commonly required and provide them as primitives.
+The performance problem is magnified [увеличивается] if you perform a multistep operation that generates a new object at every step, eventually discarding all objects except the final result. There are two approaches to coping with this problem. The first is to guess which multistep operations will be commonly required and provide them as primitives.
+BigInteger has a package-private mutable “companion class” that it uses to speed up multistep operations such as modular exponentiation.
+
 ....
 
-The package-private mutable companion class approach works fine if you can accurately predict which complex multistage operations clients will want to perform on your immutable class. If not, then your best bet is to provide a public mutable companion class. The main example of this approach in the Java platform libraries is the String class, whose mutable companion is StringBuilder (and the largely obsolete StringBuffer). Arguably, BitSet plays the role of mutable companion to BigInteger under certain circumstances.
+The package-private MUTABLE COMPANION CLASS APPROACH works fine if you can accurately predict which complex multistage operations clients will want to perform on your immutable class. 
+If not, then your best bet is to provide a public MUTABLE COMPANION CLASS. The main example of this approach in the Java platform libraries is the String class, whose mutable companion is StringBuilder (and the largely obsolete StringBuffer). Arguably, BitSet plays the role of mutable companion to BigInteger under certain circumstances.
 
 -----------------
-Recall that to guarantee immutability, a class must not permit itself to be subclassed. Typically this is done by making the class final, but there is another, more flexible way to do it. The alternative to making an immutable class final is to make all of its constructors private or package-private, and to add public static factories in place of the public constructors (Item 1).
-While this approach is not commonly used, it is often the best alternative. It is the most flexible because it allows the use of multiple package-private implementation classes. 
+!!! Recall that TO GUARANTEE IMMUTABILITY, a CLASS MUST NOT PERMIT ITSELF TO BE SUBCLASSED. 
+(а бигинтежер и бигдесимал можно наследовать)
+Typically this is done by __1__ MAKING THE CLASS FINAL, but there is another, more flexible way to do it. 
+The alternative to making an immutable class final is __2__ TO MAKE ALL OF ITS CONSTRUCTORS PRIVATE OR PACKAGE-PRIVATE, AND TO ADD PUBLIC STATIC FACTORIES IN PLACE OF THE PUBLIC CONSTRUCTORS (Item 1).
+While this approach is not commonly used, it is often the best alternative. It is the most flexible because IT ALLOWS THE USE OF MULTIPLE PACKAGE-PRIVATE IMPLEMENTATION CLASSES. 
+   To its clients that reside outside its package, the immutable class is effectively final because it is impossible to extend a class that comes from another package and that lacks a public or protected constructor. 
+      Besides allowing the flexibility of multiple implementation classes, this approach makes it possible to TUNE THE PERFORMANCE of the class in subsequent releases by improving the object caching capabilities of the static factories.
 
+Static factories have many other advantages over constructors, as discussed in Item 1.
+Например, если надо создать объект из других входных данных, но с такими же типами как в уже существующем конструкторе, дополнительный конструктор внесёт неразбериху, а вот статик фактори метод можно легко создать новый с любым другим именем, которое будет чётко и ясно отражать из чего (каких входных данных) будет создан экземпляр.
+
+It was not widely understood that IMMUTABLE CLASSES HAD TO BE EFFECTIVELY FINAL when BigInteger and BigDecimal were written, SO ALL OF THEIR METHODS MAY BE OVERRIDDEN. Unfortunately, this could not be corrected after the fact while preserving backward compatibility.
+
+The list of rules for immutable classes at the beginning of this item says that NO METHODS MAY MODIFY THE OBJECT AND THAT ALL ITS FIELDS MUST BE FINAL. In fact these rules are a bit stronger than necessary and can be relaxed to IMPROVE PERFORMANCE. 
+In truth, no method may produce an externally visible change in the object’s state. However, some immutable classes have one or more nonfinal fields in which they CACHE THE RESULTS OF EXPENSIVE COMPUTATIONS THE FIRST TIME THEY ARE NEEDED. 
+If the same value is requested again, the cached value is returned, saving the cost of recalculation. This trick works precisely because the object is immutable, which guarantees that the computation would yield the same result if it were repeated.
+
+One caveat should be added concerning serializability. If you choose to have your immutable class implement Serializable and it contains one or more fields that refer to MUTABLE OBJECTS, you must provide an explicit readObject() or readResolve() method, or use the ObjectOutputStream.writeUnshared() and ObjectInputStream.readUnshared() methods, even if the default serialized form is acceptable. 
+Otherwise an attacker could create a mutable instance of your not-quite-immutable class. This topic is covered in detail in Item 76.
+
+To summarize, resist the urge to write a set method for every get method. Classes should be immutable unless there’s a very good reason to make them mutable. 
+Immutable classes provide many advantages, and their only disadvantage is the potential for performance problems under certain circumstances. 
+You should always make small value objects, such as PhoneNumber and Complex, immutable.
+
+You should provide a PUBLIC MUTABLE COMPANION CLASS for your immutable class only once you’ve confirmed that it’s necessary to achieve satisfactory performance (Item 55).
+
+There are some classes for which immutability is impractical. 
+If a class cannot be made immutable, limit its mutability as much as possible. Reducing the number of states in which an object can exist makes it easier to reason about[рассуждать о (чем-либо)] the object and reduces the likelihood of errors. Therefore, make every field final unless there is a compelling reason to make it nonfinal.
+
+Constructors should create fully initialized objects with all of their invariants established. 
+Don’t provide a public initialization method separate from the constructor or static factory unless there is a compelling reason to do so. 
+Similarly, don’t provide a “reinitialize” method that enables an object to be reused as if it had been constructed with a different initial state.
+   Such methods generally provide little if any performance benefit at the expense of increased complexity.
+
+******************************************************
+*** Item 16: Favor composition over inheritance ***
+
+It is safe to use inheritance within a package, where the subclass and the superclass implementations are under the control of the same programmers.
+   It is also safe to use inheritance when extending classes specifically designed and documented for extension (Item 17). 
+        Inheriting from ordinary concrete classes across package boundaries, however, is dangerous.
+
+Unlike method invocation, INHERITANCE VIOLATES ENCAPSULATION. 
+Инкапсуляцию в родительском классе?
+A subclass depends on the implementation details of its superclass for its proper function. The superclass’s implementation may change from release to release, and if it does, the subclass may break, even though its code has not been touched. 
+
+Например, подсчитывать кол-во всех добавленных элементов в хэшсете, надо переопределить 2 метода add и addAll, но это даёт ошибку при подсчёте, можем не переопределять addAll, но тогда если в имплементации изменится его логика - получим ошибку при подсчёте. Можем сама переопределить addAll, из из него вызывать add, но это усложняет логику и увеличивает возможность ошибок.
+
+Additionally, it isn’t always possible, as some methods cannot be implemented without access to private fields inaccessible to the subclass.
+
+A related cause of fragility in subclasses is that their superclass can acquire new methods in subsequent releases. 
+Когда перед инсертом в каждом методе подклассе добавлена проверка, а в новой версии хэшсета добавили новый метод, который может добавлять новые элементы, и в нём этой провеки нет.
+
+Both of the above problems stem from overriding methods. You might think that it is safe to extend a class if you merely add new methods and refrain from overriding existing methods. While this sort of extension is much safer, it is not without risk. 
+If the superclass acquires a new method in a subsequent release and you have the bad luck to have given the subclass a method with the same signature and a different return type, your subclass will no longer compile. 
+If you’ve given the subclass a method with the same signature and return type as the new superclass method, then you’re now overriding it, so you’re subject to the two problems described above. Furthermore, it is doubtful that your method will fulfill the contract of the new superclass method, as that contract had not yet been written when you wrote the subclass method.
+
+Luckily, there is a way to avoid all of the problems described earlier. Instead of extending an existing class, give your new class A PRIVATE FIELD THAT REFERENCES AN INSTANCE OF THE EXISTING CLASS. 
+This design is called COMPOSITION because the EXISTING CLASS BECOMES A COMPONENT OF THE NEW ONE.
+
+Each instance method in the new class invokes the corresponding method on the contained instance of the existing class and returns the results. This is known as FORWARDING, and the methods in the new class are known as FORWARDING METHODS. The resulting class will be rock solid, with no dependencies on the implementation details of the existing class. 
+* * *
+....the wrapper class can be used to instrument any Set implementation and will work in conjunction with any preexisting constructor
+
+The InstrumentedSet class is known as a WRAPPER CLASS because each InstrumentedSet instance CONTAINS (“WRAPS”) another Set instance. 
+This is also known as the DECORATOR PATTERN, because the InstrumentedSet class “DECORATES” A SET BY ADDING INSTRUMENTATION. 
+Sometimes the combination of composition and forwarding is loosely referred to as delegation. Technically it’s not delegation unless the wrapper object passes itself to the wrapped object.
+
+т.е. delegation - это когда the wrapper object passes itself to the wrapped object. 
+Когда внешний врапер передаёт себя в оборачиваемый объект (в тот который он оборачивает).
+
+Немного недостатков:
+_1_ wrapper classes are not suited for use in callback frameworks, wherein objects pass selfreferences to other objects for subsequent invocations (“CALLBACKS”).
+Because a wrapped object doesn’t know of its wrapper, it passes a reference to itself (this) and callbacks elude the wrapper. 
+----- elude [ı`lu:d] избегать, уклоняться; ускользать ----
+This is known as the SELF problem.
+
+Some people worry about the performance impact of forwarding method invocations or the memory footprint impact of wrapper objects. 
+Neither turn out to have much impact in practice. It’s tedious to write forwarding methods, but you have to write the forwarding class for each interface only once, and forwarding classes may be provided for you by the package containing the interface.
+
+Inheritance is appropriate only in circumstances where the subclass really is a subtype of the superclass.
+       !!! a class B should extend a class A only if an “IS-A” relationship exists between the two classes.
+
+ASK yourself the question: Is every B really an A? 
+__ If you cannot truthfully answer YES to this question, B should not extend A.
+__ If the answer is NO, it is often the case that B should contain a private instance of A and expose a smaller and simpler API: A is not an essential part of B, merely a detail of its implementation.
+
+There are a number of obvious violations of this principle in the Java platform libraries.
+
+If you use inheritance where composition is appropriate, you needlessly expose implementation details. 
+  The resulting API ties you to the original implementation, forever limiting the performance of your class. 
+    More seriously, by exposing the internals you let the client access them directly. At the very least, this can lead to confusing semantics. 
+       Most seriously, the client may be able to corrupt invariants of the subclass by modifying the superclass directly. 
+
+public class Properties extends Hashtable...
+p.getProperty(key) may yield different results from p.get(key): the former method takes defaults into account, while the latter method, which is inherited from Hashtable, does not. 
+
+Properties, the designers intended that only strings be allowed as keys and values, but direct access to the underlying Hashtable allows this invariant to be violated. Once this invariant is violated, it is no longer possible to use other parts of the Properties API (load and store). By the time this problem was discovered, it was too late to correct it because clients depended on the use of nonstring keys and values.
+
+Does the class that you contemplate extending [намереваетись расширить/унаследовать] have any flaws in its API? [изъян, недостаток, дефект, порок; слабое место]
+If so, are you comfortable propagating those flaws into your class’s API? Inheritance propagates any flaws in the superclass’s API, while COMPOSITION LETS YOU DESIGN A NEW API THAT HIDES THESE FLAWS.
+
+To summarize, inheritance is powerful, but it is problematic because it violates encapsulation. It is appropriate only when a genuine ([`ʤenjʊın] a
+подлинный, истинный, настоящий]) subtype relationship exists between the subclass and the superclass. Even then, inheritance may lead to fragility if the subclass is in a DIFFERENT PACKAGE from the superclass and the superclass is NOT DESIGNED FOR INHERITANCE. 
+To avoid this fragility, use composition and forwarding instead of inheritance, especially if an appropriate interface to implement a wrapper class exists. Not only are wrapper classes more robust than subclasses, they are also more powerful.
+
+************************************************************************
+*** Item 17: Design and document for inheritance or else prohibit it ***
+
+First, the class must document precisely the effects of overriding any method. In other words, the class must document its self-use of overridable methods. 
+For each public or protected method or constructor, the documentation must indicate which overridable methods the method or constructor invokes, in what sequence, and how the results of each invocation affect subsequent processing. 
+(By overridable, we mean nonfinal and either public or protected.) 
+More generally, a class must document any circumstances under which it might invoke an overridable method. For example, invocations might come from background threads or static initializers.
+
+By convention, a method that invokes overridable methods contains a description of these invocations at the end of its documentation comment. The description begins with the phrase “This implementation....”
+
+This violates the dictum [изречение, афоризм; авторитетное заявление, авторитетное мнение, суждение] that good API documentation should describe WHAT a given method does and not HOW it does it.
+This is an unfortunate CONSEQUENCE of the fact that INHERITANCE VIOLATES ENCAPSULATION. 
+To document a class so that it can be safely subclassed, you must describe implementation details that should otherwise be left unspecified.
+
+    You should expose as few protected members as possible, because each one represents a commitment to an implementation detail. 
+    On the other hand, you must not expose too few, as a missing protected member can render a class practically unusable for inheritance.
+The only way to test a class designed for inheritance is to write subclasses.
+
+If you omit a crucial protected member, trying to write a subclass will make the omission painfully obvious. Conversely, if several subclasses are written and none uses a protected member, you should probably make it private.
+
+When you design for inheritance a class that is likely to achieve wide use, realize that you are committing forever to the self-use patterns that you document and to the implementation decisions implicit in its protected methods and fields. These commitments can make it difficult or impossible to improve the performance or functionality of the class in a subsequent release. Therefore, you must test your class by writing subclasses before you release it.
+
+Also, note that the special documentation required for inheritance clutters up normal documentation, which is designed for programmers who create instances of your class and invoke methods on them.
+
+* * *
+There are a few more restrictions that a class must obey to allow inheritance. 
+Constructors must not invoke overridable methods, directly or indirectly. If you violate this rule, program failure will result. The superclass constructor runs before the subclass constructor, so the overriding method in the subclass will get invoked before the subclass constructor has run. If the overriding method depends on any initialization performed by the subclass constructor, the method will not behave as expected.
+
+... Note that this program observes a final field in two different states! Note also that if overrideMe() had invoked any method on date, the invocation would have thrown a NullPointerException when the Super constructor invoked overrideMe.
+* * *
+The Cloneable and Serializable interfaces present special difficulties when designing for inheritance. It is generally not a good idea for a class designed for inheritance to implement either of these interfaces, as they place a substantial burden on programmers who extend the class. There are, however, special actions that you can take to allow subclasses to implement these interfaces without mandating that they do so. These actions are described in Item 11 and Item 74.
+
+If you do decide to implement Cloneable or Serializable in a class designed for inheritance, you should be aware that because the clone() and readObject() methods behave a lot like constructors, a similar restriction applies:
+__!!! neither clone() nor readObject() may invoke an overridable method, directly or indirectly. 
+__ In the case of the readObject() method, the overriding method will run before the subclass’s state has been deserialized. 
+__ In the case of the clone() method, the overriding method will run before the subclass’s clone method has a chance to fix the clone’s state. 
+In either case, a program failure is likely to follow. 
+__ In the case of clone, the failure can damage the original object as well as the clone. 
+This can happen, for example, if the overriding method assumes it is modifying the clone’s copy of the object’s deep structure, but the copy hasn’t been made yet.
+
+Finally, if you decide to implement Serializable in a class designed for inheritance and the class has a readResolve() or writeReplace() method, you must make the readResolve() or writeReplace() method protected rather than private. If these methods are private, they will be silently ignored by subclasses. This is one more case where an implementation detail becomes part of a class’s API to permit inheritance.
+
+!!!! By now it should be apparent [явный, очевидный, несомненный; наглядный] that designing a class for inheritance places substantial limitations on the class. !!!
+
+!!! а для обычных классов: Each time a change is made in such a class, there is a chance that client classes that extend the class will break. !!!
+
+The best solution to this problem is to prohibit subclassing in classes that are not designed and documented to be safely subclassed. 
+There are two ways to prohibit subclassing:
+1) declare the class final.
+2) make all the constructors private or package-private and to add public static factories in place of the constructors. 
+
+If a concrete class does not implement a standard interface, then you may inconvenience some programmers by prohibiting inheritance. у прогеров не будет никакой возможности как-то расширить функционал, т.к. нет даже интерфейса, и сам класс файнал.
+
+If you feel that you must allow inheritance from such a class, one reasonable approach is to ensure that the class never invokes any of its overridable methods and to document this fact. 
+In other words, eliminate the class’s self-use of overridable methods entirely. In doing so, you’ll create a class that is reasonably safe to subclass. Overriding a method will never affect the behavior of any other method.
+
+You can eliminate a class’s self-use of overridable methods mechanically, without changing its behavior. Move the body of each overridable method to a private “helper method” and have each overridable method invoke its private helper method. Then replace each self-use of an overridable method with a direct invocation of the overridable method’s private helper method.
+
+******************************************************
+*** Item 18: Prefer interfaces to abstract classes ***
+
+interfaces and abstract classes -- это типы, которые permits multiple implementations.
+abstract classes are permitted to contain implementations for some methods while interfaces are not.
+Чтобы to implement the type defined by an abstract class, a class must be a subclass of the abstract class. 
+Any class that defines all of the required methods and obeys the general contract is permitted to implement an interface, regardless of where the class resides in the class hierarchy. 
+Java permits only single inheritance.
+
+Existing classes can be easily retrofitted to implement a new interface.
+Existing classes cannot, in general, be retrofitted to extend a new abstract class.
+
+грубо говоря Loosely speaking, a MIXIN is a type that a class can implement in addition to its “primary type” to declare that it provides some optional behavior. 
+Such an interface is called a mixin because it allows the optional functionality to be “mixed in” to the type’s primary functionality. 
+
+Interfaces allow the construction of nonhierarchical type frameworks. 
+
+....The alternative is a bloated class hierarchy containing a separate class for every supported combination of attributes.
+If there are n attributes in the type system, there are 2n possible combinations that you might have to support. This is what’s known as a combinatorial explosion. 
+
+Interfaces enable safe, powerful functionality enhancements via the wrapper class idiom.
+If you use abstract classes to define types,...use inheritance to add functionality.
+* * * *
+By convention, skeletal implementations are called Abstract<Interface>, where Interface is the name of the interface they implement. For example, the Collections Framework provides a skeletal implementation to go along with each main collection interface.
+
+The beauty of skeletal implementations is that they provide the implementation assistance of abstract classes without imposing the severe constraints that abstract classes impose when they serve as type definitions. 
+
+The class implementing the interface can forward invocations of interface methods to a contained instance of a private inner class that extends the skeletal implementation. This technique, known as SIMULATED MULTIPLE INHERITANCE, is closely related to the wrapper class idiom.
+
+Because skeletal implementations are designed for inheritance, you should follow all of the design and documentation guidelines in Item 17. 
+For brevity’s sake, the documentation comments were omitted from the previous example, but good documentation is absolutely essential for skeletal implementations.
+
+A minor variant on the skeletal implementation is the simple implementation, exemplified by AbstractMap.SimpleEntry. 
+A simple implementation is like a skeletal implementation in that it implements an interface and is designed for inheritance, but it differs in that it isn’t abstract: it is the simplest possible working implementation. You can use it as it stands or subclass it as circumstances warrant.
+
+It is far easier to evolve an abstract class than an interface. 
+If, in a subsequent release, you want to add a new method to an abstract class, you can always add a concrete method containing a reasonable default implementation. All existing implementations of the abstract class will then provide the new method. This does not work for interfaces.
+
+It is, generally speaking, impossible to add a method to a public interface without breaking all existing classes that implement the interface. 
+
+Public interfaces, therefore, must be designed carefully. 
+Once an interface is released and widely implemented, it is almost impossible to change. 
+The best thing to do when releasing a new interface is to have as many programmers as possible implement the interface in as many ways as possible before the interface is frozen. This will allow you to discover flaws while you can still correct them.
+
+To summarize, an interface is generally the best way to define a type that permits multiple implementations. 
+An exception to this rule is the case where ease of evolution is deemed more important than flexibility and power. Under these circumstances, you should use an abstract class to define the type, but only if you understand and can accept the limitations. If you export a nontrivial interface, you should strongly consider providing a skeletal implementation to go with it. Finally, you should design all of your public interfaces with the utmost care and test them thoroughly by writing multiple implementations.
+
+******************************************************
+*** Item 19: Use interfaces only to define types *****
+
+When a class implements an interface, the INTERFACE SERVES AS A TYPE that can be used to refer to instances of the class.
+That a class implements an interface should therefore say something about WHAT A CLIENT CAN DO WITH INSTANCES OF THE CLASS. 
+It is INAPPROPRIATE to define an interface for ANY OTHER PURPOSE.
+
+One kind of interface that fails this test is the so-called constant interface. Such an interface contains no methods; it consists solely of static final fields, each exporting a constant. Classes using these constants implement the interface to avoid the need to qualify constant names with a class name.
+
+// Constant interface antipattern - do not use!
+Константы, используемые в классе -- это implementation detail.
+Implementing a constant interface causes this implementation detail to leak into the class’s exported API.
+
+if in a future release the class is modified so that it no longer needs to use the constants, it still must implement the interface to ensure binary compatibility.
+
+ If a nonfinal class implements a constant interface, all of its subclasses will have their namespaces polluted by the constants in the interface.
+
+If you want to export constants, there are several reasonable choices:
+
+__1__  If the constants are strongly tied to an existing class or interface, you should add them to the class or interface. 
+For example, all of the boxed numerical primitive classes, such as Integer and Double, export MIN_VALUE and MAX_VALUE constants. 
+__2__ If the constants are best viewed as members of an enumerated type, you should export them with an enum type (Item 30).
+__3__ Otherwise, you should export the constants with a noninstantiable utility class (Item 4).
+
+Normally a utility class requires clients to qualify constant names with a class name.
+Или если очень много ссылок, ис-ть static import facility, introduced in release 1.5.
+
+In summary, interfaces should be used only to define types. They should not be used to export constants.
+
+************************************************************
+*** Item 20: Prefer class hierarchies to tagged classes ****
+
+Such tagged classes have numerous shortcomings [недостаток, несовершенство; изъян, слабое место]. 
+They are cluttered with boilerplate, including enum declarations, tag fields, and switch statements. 
+--clutter with details-- перегружать деталями
+
+Readability is further harmed because multiple implementations are jumbled  together [путаница, беспорядок] in a single class. Memory footprint is increased because instances are burdened with irrelevant fields belonging to other flavors. Fields can’t be made final unless constructors initialize irrelevant fields, resulting in more boilerplate.
+--his thoughts were all jumbled together — его мысли путались; в голове у него всё смешалось
+
+You can’t add a flavor to a tagged class unless you can modify its source file. If you do add a flavor, you must remember to add a case to every switch statement, or the class will fail at runtime. 
+Finally, the data type of an instance gives no clue as to its flavor. 
+In short, tagged classes are verbose, error-prone, and inefficient.
+
+ЛУЧШЕ ДЕЛАТЬ: subtyping
+ДЛЯ ЭТОГО:
+1) first define an abstract class containing an abstract method for each method in the tagged class [whose behavior depends on the tag value].
+2)  If there are any methods whose behavior does not depend on the value of the tag, put them in this class. Similarly, if there are any data fields used by all the flavors, put them in this class.
+3) Next, define a concrete subclass of the root class for each flavor of the original tagged class.
+Include in each subclass the data fields particular to its flavor.
+4) Also include in each subclass the appropriate implementation of each abstract method in the root class.
+
+This class hierarchy corrects every shortcoming of tagged classes noted previously. The code is simple and clear, containing none of the boilerplate found in the original. 
+The implementation of each flavor is allotted its own class, and none of these classes are encumbered by irrelevant data fields. All fields are final. 
+The compiler ensures that each class’s constructor initializes its data fields, and that each class has an implementation for every abstract method declared in the root class. 
+
+Another advantage of class hierarchies is that they can be made to reflect natural hierarchical relationships among types, allowing for increased flexibility and better compile-time type checking.
+
+*************************************************************
+*** Item 21: Use function objects to represent strategies ***
+
+However, it is possible to define an OBJECT [whose methods perform operations on other objects], passed explicitly to the methods. 
+An INSTANCE of a class that exports exactly one such method IS effectively A POINTER to that method. 
+Such instances are known as function objects. 
+class StringLengthComparator {
+	public int compare(String s1, String s2) {
+		return s1.length() - s2.length();
+	}
+}
+Т.е. сам объект служит всего лишь ссылкой на единственный метод, который в нём определён.
+A reference to a StringLengthComparator object serves as a “function pointer” to this comparator, allowing it to be invoked on arbitrary pairs of strings. In other words, a StringLengthComparator instance is a concrete strategy for string comparison.
+
+As is typical for concrete strategy classes, the StringLengthComparator CLASS IS STATELESS: it has no fields, hence all instances of the class are functionally equivalent. 
+Thus IT SHOULD BE A SINGLETON to save on unnecessary object creation costs.
+
+!!! we need to define a strategy interface to go with the concrete strategy class.
+
+using an anonymous class in this way will create a new instance each time the call is executed. If it is to be executed repeatedly, consider storing the function object in a private static final field and reusing it. 
+Another advantage of doing this is that you can give the field a descriptive name for the function object.
+
+To summarize, a primary use of function pointers is to implement the Strategy pattern. To implement this pattern in Java, declare an interface to represent the strategy, and a class that implements this interface for each concrete strategy. When a concrete strategy is used only once, it is typically declared and instantiated as an anonymous class. When a concrete strategy is designed for repeated use, it is generally implemented as a private static member class and exported in a public static final field whose type is the strategy interface.
+
+***********************************************************
+*** Item 22: Favor static member classes over nonstatic ***
+
+A NESTED CLASS --- is a CLASS DEFINED WITHIN ANOTHER CLASS.
+
+A nested class should exist only to serve its enclosing class. 
+If a nested class would be useful in some other context, then it should be a top-level class. 
+
+There are four kinds of nested classes: 
+1) static member classes, (просто NESTED)
+2) nonstatic member classes, (NESTED-INNER)
+3) anonymous classes, (NESTED-INNER)
+4) local classes. (NESTED-INNER)
+
+All but the first kind are known as INNER CLASSES. 
+This item tells you when to use which kind of nested class and why.
+* * * 
+1) STATIC MEMBER CLASS, (просто NESTED) --- 
+  It is best thought of as an ORDINARY CLASS that happens to be declared inside another class and HAS ACCESS TO ALL of the enclosing class’s MEMBERS, even those declared PRIVATE. 
+     A static member class is a static member of its enclosing class and obeys the same accessibility rules as other static members. 
+     If it is declared private, it is accessible only within the enclosing class, and so forth.
+
+!!!One common use of a static member class is as a PUBLIC HELPER CLASS, USEFUL ONLY IN CONJUNCTION WITH ITS OUTER CLASS. 
+
+For example, consider an enum describing the operations supported by a calculator (Item 30). 
+The Operation enum should be a public static member class of the Calculator class. Clients of Calculator could then refer to operations using names like Calculator.Operation.PLUS and Calculator.Operation.MINUS.
+
+- - - -
+2) NONSTATIC MEMBER CLASS, (NESTED-INNER) --- 
+Syntactically, the only difference between static and nonstatic member classes is that static member classes have the MODIFIER STATIC in their declarations.
+!!BUT these two kinds of nested classes are very different.
+
+Each instance of a nonstatic member class is IMPLICITLY ASSOCIATED WITH AN ENCLOSING INSTANCE OF ITS CONTAINING CLASS. 
+Within instance methods of a nonstatic member class, you can invoke methods on the enclosing instance or obtain a reference to the enclosing instance using the qualified "this" construct: EnclosingClass.this.counter
+
+If an instance of a nested class can exist in isolation from an instance of its enclosing class, then the nested class must be a static member class: it is impossible to create an instance of a nonstatic member class without an enclosing instance.
+
+The association between a nonstatic member class instance and its enclosing instance is established when the enclosing instance is created; it cannot be modified thereafter. 
+
+ Normally, the association is established automatically by invoking a nonstatic member class constructor from within an instance method of the enclosing class. 
+ It is possible, although rare, to establish the association manually using the expression "enclosingInstance.new MemberClass(args)". 
+ As you would expect, the association takes up space in the nonstatic member class instance and adds time to its construction.
+
+One common use of a nonstatic member class is to define an Adapter that allows an [INSTANCE OF THE OUTER CLASS] TO BE VIEWED AS [AN INSTANCE OF SOME UNRELATED CLASS]. 
+For example, implementations of the Map interface typically use nonstatic member classes to implement their collection views, which are returned by Map’s keySet, entrySet, and values methods. 
+
+java.util.HashMap.KeySet
+java.util.ArrayList.Itr
+
+Similarly, implementations of the collection interfaces, such as Set and List, typically use nonstatic member classes to implement their iterators.
+
+!!! If you declare a member class that does not require access to an enclosing instance, always put the static modifier in its declaration
+
+If you omit this modifier, each instance will have an extraneous [чуждый, посторонний;стоящий вне (чего-л.); не связанный (с чем-л.)] reference to its enclosing instance. 
+Storing this reference costs time and space, and can result in the enclosing instance being retained [удерживать; сдерживать; поддерживать; сохранять; помнить, хранить в памяти] when it would otherwise be eligible for garbage collection (Item 6). 
+And should you ever need to allocate an instance without an enclosing instance, you’ll be unable to do so, as nonstatic member class instances are required to have an enclosing instance.
+
+A common use of PRIVATE STATIC MEMBER CLASSES is to REPRESENT [COMPONENTS OF THE OBJECT] [represented by their enclosing class].
+Представлять компоненты объекта, которым является их [внешний/окружающий/обрамляющий] класс.
+
+java.util.HashMap.Node
+static class Node<K,V> implements Map.Entry<K,V> {... }
+
+В мапе у класса Entry (object for each key-value pair in the map) нет нужды иметь доступ к самой мапе.
+While each entry is ASSOCIATED WITH A MAP, the methods on an entry (getKey, getValue, and setVal ue) do NOT need access to the map.
+Therefore, it would be wasteful to use a nonstatic member class to represent entries: a private static member class is best. 
+
+It is doubly important to choose correctly between a static and a nonstatic member class IF THE CLASS in question IS A PUBLIC OR PROTECTED MEMBER of an EXPORTED CLASS. 
+In this case, the member class is [an exported API element] and cannot be changed from a nonstatic to a static member class in a subsequent release without violating binary compatibility.
+
+- - - -
+3) ANONYMOUS CLASSES, (NESTED-INNER) ---
+Anonymous classes are unlike anything else in the Java programming language. 
+As you would expect, an ANONYMOUS CLASS HAS NO NAME. 
+It is NOT A MEMBER OF ITS ENCLOSING CLASS. 
+Rather than being declared along with other members, it is simultaneously DECLARED AND INSTANTIATED AT THE POINT OF USE. 
+Anonymous classes are PERMITTED AT ANY POINT IN THE CODE WHERE AN EXPRESSION IS LEGAL. 
+Anonymous classes HAVE ENCLOSING INSTANCES if and only if they occur IN A NONSTATIC CONTEXT. 
+But even if they occur in a static context, they CANNOT HAVE ANY STATIC MEMBERS.
+---
+The problem is that inner classes cannot have a static initializer block which is required to initialize non-trivial constants and non-constants.
+а обычные константы при этом могу инициализироваться. как?
+Simple primitive field have a default value in the byte code, they don't need a static block to initialise them.
+**the compiler error "inner classes cannot have static declarations" is strictly speaking wrong (or misleading, at best), since inner classes are allowed to have static declarations. The error should have been something like "inner classes cannot have static initializer code"**
+---
+Because an instance of an inner class is implicitly associated with an instance of its outer class, it cannot define any static methods itself. Since a static nested class cannot refer directly to instance variables or methods defined in its enclosing class, it can use them only through an object reference, it's safe to declare static methods in a static nested class.
+---
+
+There are many limitations on the applicability of anonymous classes. You can’t instantiate them except at the point they’re declared. 
+You can’t perform INSTANCEOF tests or do anything else that requires you to name the class. 
+You can’t declare an anonymous class to implement multiple interfaces, or to extend a class and implement an interface at the same time. 
+Clients of an anonymous class can’t invoke any members except those it inherits from its supertype. 
+Because anonymous classes occur in the midst of expressions, they must be kept short— about ten lines or fewer—or readability will suffer.
+
+One common use of anonymous classes is to create function objects (Item 21) on the fly.
+Another common use of anonymous classes is to create process objects, such as Runnable, Thread, or TimerTask instances. 
+или как колбэки.
+A third common use is within static factory methods (see the intArrayAsList method in Item 18).
+
+- - - - 
+4) LOCAL CLASSES. (NESTED-INNER)
+Local classes are the least frequently used of the four kinds of nested classes. 
+A local class CAN BE DECLARED ANYWHERE A LOCAL VARIABLE CAN BE DECLARED AND OBEYS THE SAME SCOPING RULES. 
+Local classes have attributes in common with each of the other kinds of nested classes. Like member classes, THEY HAVE NAMES AND CAN BE USED REPEATEDLY. Like anonymous classes, THEY HAVE ENCLOSING INSTANCES ONLY IF THEY ARE DEFINED IN A NONSTATIC CONTEXT, and they CANNOT CONTAIN STATIC MEMBERS. And like anonymous classes, THEY SHOULD BE KEPT SHORT SO AS NOT TO HARM READABILITY.
+
+ - - - - -
+If a nested class needs to be visible outside of a single method or is too long to fit comfortably inside a method, USE A MEMBER CLASS. 
+
+If each instance of the member class needs a reference to its enclosing instance, make it nonstatic; otherwise, make it static. 
+
+Assuming the class belongs inside a method, if you need to create instances from only one location and there is a preexisting type that characterizes the class, make it an anonymous class; otherwise, make it a local class.

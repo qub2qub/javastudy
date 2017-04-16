@@ -1,0 +1,188 @@
+ch05 Generics
+
+******************************************************
+*** Item 23: Don’t use raw types in new code ***
+
+A class or interface whose declaration has one or more type parameters is a generic class or interface/
+Generic classes and interfaces are collectively known as generic types.
+
+Each generic type defines a set of parameterized types. which consist of the class or interface name followed by an angle-bracketed list of actual type parameters corresponding to the generic type’s formal type parameters
+
+List<String> (read “list of string”) is a parameterized type representing a list whose elements are of type String. 
+(String is the ACTUAL TYPE PARAMETER corresponding to the FORMAL TYPE PARAMETER E.)
+
+Finally. each generic type defines a RAW TYPE. which is the name of the generic type used without any accompanying actual type parameters/
+For all practical purposes, the raw type List behaves the same way as the interface type List did before generics were added to the platform.
+
+As mentioned throughout this book, it pays to discover errors as soon as possible after they are made, ideally at compile time. In this case, you don’t discover the error till runtime, long after it has happened, and in code that is far removed from the code containing the error. 
+
+The compiler inserts invisible casts for you and guarantees that they won’t fail (assuming, again, that all of your code was compiled with a generics-aware compiler and did not produce or suppress any warnings).
+
+If you use raw types, you lose all the safety and expressiveness benefits of generics.
+language designers allow raw types to provide compatibility for older java versions. 
+It had to be legal to pass instances of parameterized types to methods that were designed for use with ordinary types, and vice versa. This requirement, known as migration compatibility, drove the decision to support raw types.
+
+what is the difference between the raw type List and the parameterized type List<Object>? 
+Loosely speaking, the former/первый/"List" has [opted out of] generic type checking, while the latter/второй/"List<Object>" has explicitly told the compiler that it is capable of holding objects of any type. 
+
+--- opt out of ---
+1) не принимать участия в 
+(Students should have the option to opt out of dissecting animals in science class.), 
+отказаться от участия в
+2) дип. устраняться от участия в (ч-л)
+
+While you can pass a List<String> to a parameter of type List, you can’t pass it to a parameter of type List<Object>. 
+There are subtyping rules for generics, and List<String> is a subtype of the raw type List, but not of the parameterized type List<Object> (Item 25). 
+As a consequence, you lose type safety if you use a raw type like List, but not if you use a parameterized type like List<Object>.
+
+You might be tempted to use a raw type for a collection whose element type is unknown and doesn’t matter. For example, suppose you want to write a method that takes two sets and returns the number of elements they have in common.
+Java has provided a safe alternative known as UNBOUNDED WILDCARD TYPES. 
+If you want to use a generic type but you DON’T KNOW OR CARE WHAT THE ACTUAL TYPE PARAMETER IS, you can use a question mark instead. 
+For example, the UNBOUNDED WILDCARD TYPE for the generic type Set<E> is Set<?> (read “SET OF SOME TYPE”).
+It is the most general parameterized Set type, capable of holding any set. 
+
+!!! wildcard type is safe and the raw type isn’t. 
+You can put any element into a collection with a raw type, easily corrupting the collection’s type invariant/
+
+You can’t put any element (other than null) into a Collection<?>. 
+Attempting to do so will generate a compile-time error message/
+
+А ТАКЖЕ you can’t assume anything about the type of the objects that you get out ИЗ "Collection<?>". 
+If these restrictions are unacceptable, you can use generic methods (Item 27) or bounded wildcard types (Item 28).
+
+There are two minor exceptions to the rule that you should not use raw types in new code, both of which stem from the fact that generic type information is erased at runtime (Item 25). 
+
+1) You MUST USE RAW TYPES IN CLASS LITERALS. 
+The specification does not permit the use of parameterized types (though it does permit array types and primitive types). 
+In other words, List.class, String[].class, and int.class are all legal, but List<String>.class and List<?>.class are not.
+
+2) The second exception to the rule concerns the INSTANCEOF operator. Because generic type information is erased at runtime, IT IS ILLEGAL TO USE THE INSTANCEOF OPERATOR ON PARAMETERIZED TYPES OTHER THAN UNBOUNDED WILDCARD TYPES. 
+The use of unbounded wildcard types in place of raw types does not affect the behavior of the instanceof operator in any way. 
+In this case, the angle brackets and question marks are just noise.
+
+This is the preferred way to use the instanceof operator
+with generic types:
+// Legitimate use of raw type - instanceof operator
+	if (o instanceof Set) { 		// Raw type
+		Set<?> m = (Set<?>) o; 		// Wildcard type
+		// This is a checked cast, so it will not cause a
+compiler warning.
+	}
+
+In summary, using raw types can lead to exceptions at runtime, so don’t use them in new code. 
+They are provided only for compatibility and interoperability with legacy code that predates the introduction of generics. 
+As a quick review, Set<Object> is a parameterized type representing a set that can contain objects of any type, 
+Set<?> is a wildcard type representing a set that can contain only objects of some unknown type, 
+and Set is a raw type, which opts out of the generic type system. The first two are safe and the last is not.
+
+******************************************************
+*** Item 24: Eliminate unchecked warnings *** СТР 116
+
+ When you get warnings that require some thought, persevere!
+ --- persevere [pɜ:sı`vıə] ---
+  [упорно, настойчиво добиваться; стойко, упорно продолжать] 
+
+ Eliminate every unchecked warning that you can. If you eliminate all warnings, you are assured that your code is typesafe, which is a very good thing.
+ It means that you won’t get a ClassCastExcepti on at runtime, and it increases your confidence that your program is behaving as you intended.
+
+ --  crop up -- неожиданно появляться, возникать; нарисовываться
+ -- amidst  -- в середине, между; посреди, среди, в условиях
+
+ The SuppressWarnings annotation can be used at any granularity, from an individual local variable declaration to an entire class. Always use the SuppressWarnings annotation on the smallest scope possible. Typically this will be a variable declaration or a very short method or constructor. Never use Suppress-Warnings on an entire class. Doing so could mask critical warnings.
+
+It is illegal to put a SuppressWarnings annotation on the return statement, because it isn’t a declaration. You might be tempted to put the annotation on the entire method, but don’t. 
+Instead, declare a local variable to hold the return value and annotate its declaration
+
+// This cast is correct because the array we're creating
+// is of the same type as the one passed in, which is T[].
+	@SuppressWarnings("unchecked") T[] result =
+		(T[]) Arrays.copyOf(elements, size, a.getClass());
+	return result;
+
+!!! Every time you use an @SuppressWarnings("unchecked") annotation,
+add a comment saying why it’s safe to do so. 
+
+In summary, unchecked warnings are important. Don’t ignore them. Every unchecked warning represents the potential for a ClassCastException at runtime. Do your best to eliminate these warnings. If you can’t eliminate an unchecked warning and you can prove that the code that provoked it is typesafe, suppress the warning with an @SuppressWarnings("unchecked") annotation in the narrowest possible scope. Record the rationale for your decision to suppress the warning in a comment.
+
+******************************************************
+*** Item 25: Prefer lists to arrays ***
+
+Arrays differ from generic types in TWO important ways. 
+1__ First, ARRAYS ARE COVARIANT. 
+[COVARIANT -- changing so that interrelations with another variable quantity or set of quantities remain unchanged]
+This scary-sounding word means simply that if Sub is a subtype of Super, then the array type Sub[] is a subtype of Super[]. 
+
+Generics, by contrast, are INVARIANT: [инвариантный; неизменный, постоянный, неизменяющийся]
+for any two distinct types Type1 and Type2, List<Type1> is neither a subtype nor a supertype of List<Type2>. 
+
+You might think this means that generics are deficient, but arguably it is arrays that are deficient.
+
+Either way you can’t put a String into a Long container, but with an array you find out that you’ve made a mistake at runtime; with a list, you find out at compile time. Of course you’d rather find out at compile time.
+
+2__ The second major difference between arrays and generics is that ARRAYS ARE REIFIED / материализованный. 
+This means that ARRAYS KNOW AND ENFORCE THEIR ELEMENT TYPES AT RUNTIME. 
+As noted above, if you try to store a String into an array of Long, you’ll get an ArrayStoreException. 
+
+Generics, by contrast, are implemented by erasure. 
+This means that GENERICS ENFORCE THEIR TYPE CONSTRAINTS ONLY AT COMPILE TIME AND DISCARD (OR ERASE) THEIR ELEMENT TYPE INFORMATION AT RUNTIME. Erasure is what allows generic types to interoperate freely with legacy code that does not use generics (Item 23).
+
+Because of these fundamental differences, ARRAYS AND GENERICS DO NOT MIX WELL.
+ For example, it is ILLEGAL to create AN ARRAY OF A GENERIC TYPE, a parameterized type, or a type parameter. None of these array creation expressions are legal: new List<E>[], new List<String>[], new E[]. All will result in generic array creation errors at compile time.
+
+Why is it illegal to create a generic array? Because it isn’t typesafe. If it were legal, casts generated by the compiler in an otherwise correct program could fail at runtime with a ClassCastException. This would violate the fundamental guarantee provided by the generic type system.
+
+Types such as E, List<E>, and List<String> are technically known as non-reifiable types.
+Intuitively speaking, a NON-REIFIABLE TYPE is one whose RUNTIME REPRESENTATION CONTAINS LESS INFORMATION THAN ITS COMPILE-TIME REPRESENTATION.
+
+The only parameterized types that are REIFIABLE ARE UNBOUNDED WILDCARD TYPES such as List<?> and Map<?,?> (Item 23). It is legal, though infrequently useful, to create arrays of unbounded wildcard types.
+
+Поэтому -- it’s not generally possible for a generic type to return an array of its element type,
+It also means that you can get confusing warnings when using varargs methods (Item 42) in combination with generic types. 
+
+the best solution is often to use the collection type List<E> in preference to the array type E[]. You might sacrifice some performance or conciseness, but in exchange you get better type safety and interoperability.
+
+In summary, arrays and generics have very different type rules. 
+		Arrays are covariant and reified; 
+		generics are invariant and erased. 
+As a consequence, arrays provide runtime type safety but not compile-time type safety and vice versa for generics. Generally speaking, arrays and generics don’t mix well. If you find yourself mixing them and getting compile-time errors or warnings, your first impulse should be to replace the arrays with lists.
+
+******************************************************
+*** Item 26: Favor generic types
+
+As it stands, you have to cast objects that are popped off the stack, and those casts might fail at runtime. The first step in generifying a class is to add one or more type parameters to its declaration. In this case there is one type parameter, representing the element type of the stack, and the conventional name for this parameter is E (Item 44).
+The next step is to replace all the uses of the type Object with the appropriate type parameter, and then try to compile the resulting program
+
+As explained in Item 25, you can’t create an array of a non-reifiable type, such as E. This problem arises every time you write a generic type that is backed by an array. There are two ways to solve it. 
+
+1__ The first solution directly circumvents the prohibition on generic array creation: create an array of Object and cast it to the generic array type. Now in place of an error, the compiler will emit a warning. This usage is legal, but it’s not (in general) typesafe.
+
+		elements = (E[]) new Object[DEFAULT_INITIAL_CAPACITY];
+
+The compiler may not be able to prove that your program is typesafe, but you can. You must convince yourself that the unchecked cast will not compromise the type safety of the program. The array in question (elements) is stored in a private field and never returned to the client or passed to any other method. The only elements stored in the array are those passed to the push method, which are of type E, so the unchecked cast can do no harm.
+
+2__ The second way to eliminate the generic array creation error in Stack is to change the type of the field elements from E[] to Object[]. If you do this, you’ll get a different error..
+
+Because E is a non-reifiable type, there’s no way the compiler can check the cast at runtime. Again, you can easily prove to yourself that the unchecked cast is safe, so it’s appropriate to suppress the warning. In line with the advice of Item 24, we suppress the warning only on the assignment that contains the unchecked cast, not on the entire pop method
+
+		@SuppressWarnings("unchecked")
+		E result = (E) elements[--size]; // here !!!
+----------------
+
+The foregoing [предшествующий, вышеупомянутый] example may appear to contradict Item 25, which encourages the use of lists in preference to arrays. 
+It is not always possible or desirable to use lists inside your generic types. 
+Java doesn’t support lists natively, so some generic types, such as ArrayList, must be implemented atop arrays. 
+Other generic types, such as HashMap, are implemented atop arrays for performance.
+- - - -
+The great majority of generic types are like our Stack example in that their TYPE PARAMETERS HAVE NO RESTRICTIONS: 
+you can create a Stack<Object>, Stack<int[]>, Stack<List<String>>, or a Stack of any other object reference type. Note that you can’t create a Stack of a primitive type
+- - - -
+The type parameter list (<E extends Delayed>) requires that the actual type parameter E must be a subtype of java.util.concurrent.Delayed. 
+This allows the DelayQueue implementation and its clients to take advantage of Delayed methods on the elements of a DelayQueue, without the need for explicit casting or the risk of a ClassCastException. 
+  The type parameter E is known as a bounded type parameter.
+     Note that the subtype relation is defined so that EVERY TYPE IS A SUBTYPE OF ITSELF, so it is legal to create a DelayQueue<Delayed>.
+
+In summary, generic types are safer and easier to use than types that require casts in client code. When you design new types, make sure that they can be used without such casts. This will often mean making the types generic. Generify your existing types as time permits. This will make life easier for new users of these types without breaking existing clients (Item 23).
+
+******************************************************
+*** Item 27: Favor generic methods
+
