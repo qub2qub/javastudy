@@ -108,3 +108,38 @@ A handy way to push the current branch to the same name on the remote.
 
 git push origin HEAD:master
 Push the current branch to the remote ref matching master in the origin repository. This form is convenient to push the current branch without thinking about its local name.
+
+13 ___ ВЕТКИ
+https://git-scm.com/book/ru/v2/%D0%92%D0%B5%D1%82%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B2-Git-%D0%A3%D0%B4%D0%B0%D0%BB%D1%91%D0%BD%D0%BD%D1%8B%D0%B5-%D0%B2%D0%B5%D1%82%D0%BA%D0%B8
+
+Выполните git push (удал. сервер) (ветка) --> git push origin myBranch
+Вы также можете выполнить git push origin serverfix:serverfix — произойдёт то же самое — здесь говорится “возьми мой serverfix и сделай его удалённым serverfix.” Можно использовать этот формат для отправки локальной ветки в удалённую ветку с другим именем.
+
+Если вам нужна своя собственная ветка serverfix, над которой вы сможете работать, то вы можете создать её на основе удалённой ветки:
+$ git checkout -b serverfix origin/serverfix
+Branch serverfix set up to track remote branch serverfix from origin.
+Switched to a new branch 'serverfix'
+
+Существует общепринятая операция, которую git предоставляет, --track:
+		$ git checkout --track origin/serverfix
+Branch serverfix set up to track remote branch serverfix from origin
+
+Чтобы настроить локальную ветку с именем, отличным от имени удалённой ветки, вы можете легко использовать первую версию с другим именем локальной ветки:
+		$ git checkout -b mysf origin/serverfix
+Branch sf set up to track remote branch serverfix from origin.
+Switched to a new branch 'mysf'
+Теперь ваша локальная ветка mysf будет автоматически получать (pull) изменения из origin/serverfix.
+
+Если у вас уже есть локальная ветка и вы хотите настроить ее на удаленную ветку, которую вы только получили, или хотите изменить upstream-ветку, которую вы отслеживаете, вы можете воспользоваться ключами -u или --set-upstream-to с командой git branch, чтобы явно установить ее в любое время.
+		$ git branch -u origin/serverfix
+Branch serverfix set up to track remote branch serverfix from origin.
+
+14___  Получение изменений
+Команда git fetch загрузит с сервера все изменения, которых у вас еще нет, но пока не будет изменять вашу рабочую директорию. Эта команда просто получает данные для вас и позволяет вам самостоятельно сделать слияние. Тем не менее, существует команда под названием git pull, которая является по существу командой git fetch, непосредственно за которой следует команда git merge.
+
+Удаление веток на удалённом сервере
+Скажем, вы и ваши соавторы закончили с нововведением и слили его в ветку master на удалённом сервере (или в какую-то другую ветку, где хранится стабильный код). Вы можете удалить ветку на удалённом сервере, используя опцию --delete для git push. Если вы хотите удалить ветку serverfix на сервере, выполните следующее:
+
+$ git push origin --delete serverfix
+To https://github.com/schacon/simplegit
+ - [deleted]         serverfix
