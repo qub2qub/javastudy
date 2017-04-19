@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>InjectMock</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    	td.code {
+			font-family: "Trebuchet MS",Tahoma,Arial;
+			font-size: 18px;
+			font-weight: bold;
+			border: 1px solid #000;
+			background-color: #999;
+			padding: 5px;
+		}
+    </style>
+</head>
+<body>
+<a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/">src</a>
+<div id="post-529" class="post-529 post type-post status-publish format-standard has-post-thumbnail hentry category-java category-mocks category-testing tag-mockito clear">
+
+		<div class="post-header"><h2 class="post-title entry-title"><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/" rel="bookmark">Mockito: Why You Should Not Use InjectMocks Annotation to Autowire&nbsp;Fields</a></h2></div>			<div class="featured-media">
+				<img width="575" height="355" src="https://tedvinke.files.wordpress.com/2014/02/mockito.jpg?w=575" class="attachment-baskerville-post-image size-baskerville-post-image wp-post-image" alt="" srcset="https://tedvinke.files.wordpress.com/2014/02/mockito.jpg 575w, https://tedvinke.files.wordpress.com/2014/02/mockito.jpg?w=80 80w, https://tedvinke.files.wordpress.com/2014/02/mockito.jpg?w=300 300w" sizes="(max-width: 575px) 100vw, 575px" data-attachment-id="542" data-permalink="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/mockito/" data-orig-file="https://tedvinke.files.wordpress.com/2014/02/mockito.jpg" data-orig-size="575,355" data-comments-opened="1" data-image-meta="{&quot;aperture&quot;:&quot;0&quot;,&quot;credit&quot;:&quot;&quot;,&quot;camera&quot;:&quot;&quot;,&quot;caption&quot;:&quot;&quot;,&quot;created_timestamp&quot;:&quot;0&quot;,&quot;copyright&quot;:&quot;&quot;,&quot;focal_length&quot;:&quot;0&quot;,&quot;iso&quot;:&quot;0&quot;,&quot;shutter_speed&quot;:&quot;0&quot;,&quot;title&quot;:&quot;&quot;}" data-image-title="Mockito" data-image-description="" data-medium-file="https://tedvinke.files.wordpress.com/2014/02/mockito.jpg?w=300" data-large-file="https://tedvinke.files.wordpress.com/2014/02/mockito.jpg?w=575">			</div> <!-- /featured-media -->
+		
+			<div class="post-content clear">
+				<p>People like the way how Mockito is able to mock Spring’s auto-wired fields with the <code>@InjectMocks</code> annotation. When I read <a title="Lubos Krnac about mocking auto-wired fields" href="http://lkrnac.net/blog/2014/01/21/mock-autowired-fields/" target="_blank">this post of Lubos Krnac last week</a>, I thought I should explain why I think the use of InjectMocks is a bad signal and how you should avoid it. Hint: it’s about visibility.</p>
+<p>Let’s say we have a <code>PlannerServiceImpl</code> which delegates to a <code>PlannerClient</code>. Uses Spring for auto-wiring all together; there’s no constructor, but Spring is able to use <em>field injection</em>.</p>
+<div><div id="highlighter_848572" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div><div class="line number16 index15 alt1">16</div><div class="line number17 index16 alt2">17</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Service</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImpl </code><code class="java keyword">implements</code> <code class="java plain">PlannerService {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">static</code> <code class="java keyword">final</code> <code class="java plain">Logger LOG = LoggerFactory.getLogger(PlannerServiceImpl.</code><code class="java keyword">class</code><code class="java plain">);</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number7 index6 alt2">&nbsp;</div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java plain">Long createWeddingPlan() {</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">try</code> <code class="java plain">{</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">CreateWeddingPlanResponse response = plannerClient.createWeddingPlan();</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">convert(response).getId();</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">} </code><code class="java keyword">catch</code> <code class="java plain">(Exception e) {</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">LOG.error(</code><code class="java string">"Unable to create wedding plan"</code><code class="java plain">, e);</code></div><div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java keyword">null</code><code class="java plain">;</code></div><div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div><div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>An associated test could look like:</p>
+<div><div id="highlighter_430014" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div><div class="line number16 index15 alt1">16</div><div class="line number17 index16 alt2">17</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@RunWith</code><code class="java plain">(MockitoJUnitRunner.</code><code class="java keyword">class</code><code class="java plain">)</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImplTest {</code></div><div class="line number3 index2 alt2">&nbsp;</div><div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Mock</code></div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@InjectMocks</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">final</code> <code class="java plain">PlannerServiceImpl plannerService = </code><code class="java keyword">new</code> <code class="java plain">PlannerServiceImpl();</code></div><div class="line number9 index8 alt2">&nbsp;</div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Test</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">testCreateWeddingPlanWhenClientReturnsUndefinedResponseThenNullIsReturned() </code><code class="java keyword">throws</code> <code class="java plain">Exception {</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">when(plannerClient.createWeddingPlan()).thenReturn(</code><code class="java keyword">null</code><code class="java plain">);</code></div><div class="line number13 index12 alt2">&nbsp;</div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">final</code> <code class="java plain">Long actual = plannerService.createWeddingPlan();</code></div><div class="line number15 index14 alt2">&nbsp;</div><div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertThat(actual, is(nullValue()));</code></div><div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>The <code>org.mockito.InjectMocks</code> annotation can be seen as an equivalent of Spring’s own dependency injection. The Javadoc states:</p>
+<blockquote><p>Mockito will try to inject mocks only either by constructor injection, setter injection, or property injection in order and as described below. If any of the following strategy fail, then Mockito <strong>won’t report failure</strong>; i.e. you will have to provide dependencies yourself.</p></blockquote>
+<p>(Whoever would design this to fail silently at all?)</p>
+<p>So what if someone decides to <strong>create a new dependency</strong>, say an AuditService and upgrades a bunch of services by adding it as an additional property, also marked as <code>@Autowired</code>?</p>
+<div><div id="highlighter_621947" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div><div class="line number16 index15 alt1">16</div><div class="line number17 index16 alt2">17</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Service</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImpl </code><code class="java keyword">implements</code> <code class="java plain">PlannerService {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">static</code> <code class="java keyword">final</code> <code class="java plain">Logger LOG = LoggerFactory.getLogger(PlannerServiceImpl.</code><code class="java keyword">class</code><code class="java plain">);</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div><div class="line number6 index5 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number7 index6 alt2">&nbsp;</div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AuditService auditService;</code></div><div class="line number10 index9 alt1">&nbsp;</div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Override</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java plain">Long createWeddingPlan() {</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">try</code> <code class="java plain">{</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">CreateWeddingPlanResponse response = plannerClient.createWeddingPlan();</code></div><div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">auditService.addEntry(</code><code class="java string">"Wedding plan created."</code><code class="java plain">);</code></div><div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">convert(response).getId();</code></div><div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>The test will fail, probably on a <code>NullPointerException</code> on a missing AuditService – and <strong>it is not visible why</strong>. <code>InjectMocks</code> will fail silently and there’s no indication the test needs this. <em>Did I already ask whoever would design something like this to fail <strong>silently</strong>?</em></p>
+<p>If you’re doing TDD or not (and we are able to change the test first) – clients of this code don’t know about an additional dependency, because it’s completely hidden. You shouldn’t use InjectMocks to deal with injecting private fields (err..or at all) , because this kind of Dependency Injection is <strong>evil</strong> – and signals you should change your design.</p>
+<p>There, I said it.</p>
+<h2>Fix #1: Solve your design and make your dependencies visible.</h2>
+<p>Create a constructor. Pass along the PlannerClient.</p>
+<div><div id="highlighter_662893" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Service</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImpl </code><code class="java keyword">implements</code> <code class="java plain">PlannerService {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">static</code> <code class="java keyword">final</code> <code class="java plain">Logger LOG = LoggerFactory.getLogger(PlannerServiceImpl.</code><code class="java keyword">class</code><code class="java plain">);</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">final</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div><div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java plain">PlannerServiceImpl(</code><code class="java keyword">final</code> <code class="java plain">PlannerClient plannerClient) {</code></div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">this</code><code class="java plain">.plannerClient = plannerClient;</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>Now, when there are more dependencies needed, they’re clearly in sight <a href="http://blog.schauderhaft.de/2012/01/01/the-one-correct-way-to-do-dependency-injection/" target="_blank">because the constructor says so</a>. So don’t go creating a bunch of setters now – they still don’t force you to pass along your required dependencies!</p>
+<div><div id="highlighter_735317" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@Service</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImpl </code><code class="java keyword">implements</code> <code class="java plain">PlannerService {</code></div><div class="line number3 index2 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">static</code> <code class="java keyword">final</code> <code class="java plain">Logger LOG = LoggerFactory.getLogger(PlannerServiceImpl.</code><code class="java keyword">class</code><code class="java plain">);</code></div><div class="line number4 index3 alt1">&nbsp;</div><div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">final</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java keyword">final</code> <code class="java plain">AuditService auditService;</code></div><div class="line number8 index7 alt1">&nbsp;</div><div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div><div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">PlannerServiceImpl(PlannerClient plannerClient, AuditService auditService) {</code></div><div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">this</code><code class="java plain">.plannerClient = plannerClient;</code></div><div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">this</code><code class="java plain">.auditService = auditService;</code></div><div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>The test itself won’t compile any more (luckily, because of the way we’ve been instantiating the field as <code>plannerService = new PlannerServiceImpl()</code>!) as soon as e.g. the AuditService is added to the constructor. So it’s time to..</p>
+<h2>Fix #2: Get rid of @InjectMocks</h2>
+<p>There’s no need to use <code>@InjectMocks</code> anymore. Instead instantiate the class-under-test properly in a <code>@Before</code>-annotated method – where it belongs, passing along all needed dependencies.</p>
+<div><div id="highlighter_183832" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@RunWith</code><code class="java plain">(MockitoJUnitRunner.</code><code class="java keyword">class</code><code class="java plain">)</code></div><div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">PlannerServiceImplTest {</code></div><div class="line number3 index2 alt2">&nbsp;</div><div class="line number4 index3 alt1"><code class="java color1">@Mock</code></div><div class="line number5 index4 alt2"><code class="java keyword">private</code> <code class="java plain">PlannerClient plannerClient;</code></div><div class="line number6 index5 alt1">&nbsp;</div><div class="line number7 index6 alt2"><code class="java color1">@Mock</code></div><div class="line number8 index7 alt1"><code class="java keyword">private</code> <code class="java plain">AuditService auditService;</code></div><div class="line number9 index8 alt2">&nbsp;</div><div class="line number10 index9 alt1"><code class="java keyword">private</code> <code class="java plain">PlannerServiceImpl plannerService;</code></div><div class="line number11 index10 alt2">&nbsp;</div><div class="line number12 index11 alt1"><code class="java color1">@Before</code></div><div class="line number13 index12 alt2"><code class="java keyword">void</code> <code class="java plain">setUp() {</code></div><div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">plannerService = </code><code class="java keyword">new</code> <code class="java plain">PlannerServiceImpl(plannerClient, auditService);</code></div><div class="line number15 index14 alt2"><code class="java plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>Luckily, Lubos – which I mentioned earlier – <a href="http://lkrnac.net/blog/2014/02/01/promoting-constructor-field-injection/" target="_blank">completely independently came to the same conclusion</a> in the mean time </p>
+			<style type="text/css">
+			div.wpmrec2x{max-width:610px;}
+			div.wpmrec2x div.u > div{float:left;margin-right:10px;}
+			div.wpmrec2x div.u > div:nth-child(3n){margin-right:0px;}
+			</style>		<div class="wpcnt">
+			<div class="wpa wpmrec wpmrec2x" fr9cbtb="" hidden="">
+				<span class="wpa-about">Advertisements</span>
+				<div class="u">
+								<script type="text/javascript">
+				(function(g){if("undefined"!=typeof g.__ATA){g.__ATA.initAd({sectionId:26942, width:300, height:250});
+					g.__ATA.initAd({sectionId:114160, width:300, height:250});}})(window);
+			</script>
+				</div>
+				        <div id="crt-1763700137" style="width: 300px; height: 250px; display: none !important; visibility: hidden !important;"></div>
+        <script type="text/javascript">
+        var o = document.getElementById('crt-1763700137');
+        if ("undefined"!=typeof Criteo) {
+            var p = o.parentNode;
+            p.style.setProperty('display', 'inline-block', 'important');
+            o.style.setProperty('display', 'block', 'important');
+            Criteo.DisplayAcceptableAdIfAdblocked({zoneid:388248,containerid:"crt-1763700137",collapseContainerIfNotAdblocked:true,"callifnotadblocked": function () {var o = document.getElementById('crt-1763700137'); o.style.setProperty('display','none','important');o.style.setProperty('visbility','hidden','important'); }
+        });
+        } else {
+            o.style.setProperty('display', 'none', 'important');
+            o.style.setProperty('visibility', 'hidden', 'important');
+        }
+        </script>
+			</div>
+		</div><div id="jp-post-flair" class="sharedaddy sd-like-enabled sd-sharing-enabled"><div class="sharedaddy sd-sharing-enabled"><div class="robots-nocontent sd-block sd-social sd-social-official sd-sharing"><h3 class="sd-title">Share this:</h3><div class="sd-content"><ul><li class="share-twitter"><iframe id="twitter-widget-1" scrolling="no" frameborder="0" allowtransparency="true" class="twitter-share-button twitter-share-button-rendered twitter-tweet-button" style="position: static; visibility: visible; width: 61px; height: 20px;" title="Twitter Tweet Button" src="https://platform.twitter.com/widgets/tweet_button.4ca9f1d9cb5a373a2f7d0969f5b40084.en.html#dnt=true&amp;id=twitter-widget-1&amp;lang=en&amp;original_referer=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;related=wordpressdotcom&amp;size=m&amp;text=Mockito%3A%20Why%20You%20Should%20Not%20Use%20InjectMocks%20Annotation%20to%20Autowire%20Fields&amp;time=1492601918129&amp;type=share&amp;url=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;via=tvinke" data-url="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/"></iframe></li><li class="share-facebook"><div class="fb-share-button fb_iframe_widget" data-href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/" data-layout="button_count" fb-xfbml-state="rendered" fb-iframe-plugin-query="app_id=249643311490&amp;container_width=0&amp;href=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;layout=button_count&amp;locale=en_US&amp;sdk=joey"><span style="vertical-align: bottom; width: 69px; height: 20px;"><iframe name="f1760f7b0a576fc" width="1000px" height="1000px" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" title="fb:share_button Facebook Social Plugin" src="https://www.facebook.com/v2.3/plugins/share_button.php?app_id=249643311490&amp;channel=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter%2Fr%2F_dMxoUH0Bax.js%3Fversion%3D42%23cb%3Dfb83155d899674%26domain%3Dtedvinke.wordpress.com%26origin%3Dhttps%253A%252F%252Ftedvinke.wordpress.com%252Ffa8c8763925ca8%26relation%3Dparent.parent&amp;container_width=0&amp;href=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;layout=button_count&amp;locale=en_US&amp;sdk=joey" style="border: none; visibility: visible; width: 69px; height: 20px;" class=""></iframe></span></div></li><li class="share-google-plus-1"><div class="googleplus1_button"><div class="g-plus" data-action="share" data-size="medium" data-annotation="bubble" data-href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/" id="___plusone_0" style="text-indent: 0px; margin: 0px; padding: 0px; background: transparent; border-style: none; float: none; line-height: normal; font-size: 1px; vertical-align: baseline; display: inline-block; width: 90px; height: 20px;"><iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" style="position: static; top: 0px; width: 90px; margin: 0px; border-style: none; left: 0px; visibility: visible; height: 20px;" tabindex="0" vspace="0" width="100%" id="I0_1492601917304" name="I0_1492601917304" src="https://apis.google.com/u/0/se/0/_/+1/fastbutton?usegapi=1&amp;size=medium&amp;annotation=bubble&amp;origin=https%3A%2F%2Ftedvinke.wordpress.com&amp;url=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;gsrc=3p&amp;jsh=m%3B%2F_%2Fscs%2Fapps-static%2F_%2Fjs%2Fk%3Doz.gapi.ru.oeSr52rXVpY.O%2Fm%3D__features__%2Fam%3DEQ%2Frt%3Dj%2Fd%3D1%2Frs%3DAGLTcCMnodfB-RgpofC1JU1Aq26Y8PDehg#_methods=onPlusOne%2C_ready%2C_close%2C_open%2C_resizeMe%2C_renderstart%2Concircled%2Cdrefresh%2Cerefresh&amp;id=I0_1492601917304&amp;parent=https%3A%2F%2Ftedvinke.wordpress.com&amp;pfname=&amp;rpctoken=10789505" data-gapiattached="true" title="+1"></iframe></div></div></li><li class="share-linkedin"><div class="linkedin_button"><span class="IN-widget" style="line-height: 1; vertical-align: baseline; display: inline-block; text-align: center;"><span style="padding: 0px !important; margin: 0px !important; text-indent: 0px !important; display: inline-block !important; vertical-align: baseline !important; font-size: 1px !important;"><span id="li_ui_li_gen_1492601918095_0"><a id="li_ui_li_gen_1492601918095_0-link" href="javascript:void(0);"><span id="li_ui_li_gen_1492601918095_0-logo">in</span><span id="li_ui_li_gen_1492601918095_0-title"><span id="li_ui_li_gen_1492601918095_0-mark"></span><span id="li_ui_li_gen_1492601918095_0-title-text">Share</span></span></a></span></span><span style="padding: 0px !important; margin: 0px !important; text-indent: 0px !important; display: inline-block !important; vertical-align: baseline !important; font-size: 1px !important;"><span id="li_ui_li_gen_1492601918102_1-container" class="IN-right"><span id="li_ui_li_gen_1492601918102_1" class="IN-right"><span id="li_ui_li_gen_1492601918102_1-inner" class="IN-right"><span id="li_ui_li_gen_1492601918102_1-content" class="IN-right">23</span></span></span></span></span></span><script type="in/share+init" data-url="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/" data-counter="right"></script></div></li><li><a href="#" class="sharing-anchor sd-button share-more"><span>More</span></a></li><li class="share-end"></li></ul><div class="sharing-hidden"><div class="inner" style="display: none;"><ul><li class="share-email share-service-visible"><a rel="nofollow" data-shared="" class="share-email sd-button" href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/?share=email&amp;nb=1" target="_blank" title="Click to email"><span>Email</span></a></li><li class="share-reddit"><div class="reddit_button"><iframe src="https://www.reddit.com/static/button/button1.html?width=120&amp;url=https%3A%2F%2Ftedvinke.wordpress.com%2F2014%2F02%2F13%2Fmockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields%2F&amp;title=Mockito%3A%20Why%20You%20Should%20Not%20Use%20InjectMocks%20Annotation%20to%20Autowire%20Fields" height="22" width="120" scrolling="no" frameborder="0"></iframe></div></li><li class="share-end"></li><li class="share-print"><a rel="nofollow" data-shared="" class="share-print sd-button" href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/#print" target="_blank" title="Click to print"><span>Print</span></a></li><li class="share-end"></li></ul></div></div></div></div></div></div>			</div><!--/.post-content-->
+
+		
+			<div class="post-meta-container clear">
+				
+	<div class="post-author">
+		<i class="fa fa-user"></i>
+		<div class="post-author-content">
+			<h4>Ted Vinke</h4>
+			<p>I'm a software developer and Java enthusiast. I like clean and modular code, enjoy Agile projects and have a passion for trying our new things. I try to learn and teach every day, and occasionally I'm even able to blog about it :-) 
+
+I currently work for First8, a Java software development company based in the Netherlands.</p>
+
+			<div class="author-links">
+				<a class="author-link-posts" title="Author archive" href="https://tedvinke.wordpress.com/author/tedvinke/">
+					<i class="fa fa-archive"></i>
+					Author archive				</a>
+									<a class="author-link-website" title="Author website" href="https://tedvinke.wordpress.com">
+						<i class="fa fa-home"></i>
+						Author website					</a>
+							</div> <!-- /author-links -->
+
+		</div> <!-- /post-author-content -->
+	</div> <!-- /post-author -->
+
+
+				<div class="post-meta clear">
+					
+	<time class="post-date updated" datetime="2014-02-13">
+		<i class="fa fa-clock-o"></i>
+		13/02/2014	</time>
+
+				<p class="post-categories"><i class="fa fa-folder-open"></i><a href="https://tedvinke.wordpress.com/category/java/" rel="category tag">Java</a>, <a href="https://tedvinke.wordpress.com/category/testing/mocks/" rel="category tag">Mocks</a>, <a href="https://tedvinke.wordpress.com/category/testing/" rel="category tag">Testing</a></p>
+	
+			<p class="post-tags"><i class="fa fa-tag"></i><a href="https://tedvinke.wordpress.com/tag/mockito/" rel="tag">Mockito</a></p>
+	
+					
+	<div class="post-nav clear">
+					<a class="post-nav-prev" title="Previous post: Introduction to Codenvy" href="https://tedvinke.wordpress.com/2014/01/04/introduction-to-codenvy/">
+				Previous post			</a>
+		
+					<a class="post-nav-next" title="Next post: Grails 2.4 Released: Installing Groovy-Eclipse Compiler 2.3 in&nbsp;Eclipse/GGTS" href="https://tedvinke.wordpress.com/2014/05/23/grails-2-4-released-installing-groovy-eclipse-compiler-2-3-in-eclipse-ggts/">
+				Next post			</a>
+		
+		
+
+	</div>
+
+					</div>
+			</div> <!-- /post-meta-container -->
+			
+	<div class="comments">
+
+		<a name="comments"></a>
+		<div class="comments-title-container clear">
+			<h2 class="comments-title fleft">
+				5 thoughts on “<span>Mockito: Why You Should Not Use InjectMocks Annotation to Autowire&nbsp;Fields</span>”			</h2>
+
+			
+		</div> <!-- /comments-title-container -->
+
+		<ol class="commentlist">
+		    		<li class="comment even thread-even depth-1 highlander-comment" id="li-comment-171">
+
+			<div id="comment-171" class="comment">
+				<img alt="" src="https://0.gravatar.com/avatar/367fb39afa7959e2b6c9e4db4845cfa4?s=120&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" class="avatar avatar-80 grav-hashed grav-hijack" height="80" width="80" originals="80" src-orig="https://0.gravatar.com/avatar/367fb39afa7959e2b6c9e4db4845cfa4?s=80&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" scale="1.5" id="grav-367fb39afa7959e2b6c9e4db4845cfa4-0">				<div class="comment-inner">
+
+					<div class="comment-header">
+						<cite class="fn">Darrell Burgan</cite>						<p><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/#comment-171">16/02/2014 at 02:09</a></p>
+
+						<div class="comment-actions clear">
+																				</div> <!-- /comment-actions -->
+					</div> <!-- /comment-header -->
+
+					<div class="comment-content">
+												<p>You have a good point, but I disagree with you for two reasons.</p>
+<p>The first is that the intent of TDD is to do white box testing, not just black box testing. So it is permissible, in my view, for a unit test to know more about what is going on than what is visible via the public facade of a class. Note I said “permissible”, not “desirable”.  </p>
+<p>The second reason is bigger. While it is a good thing to have the compiler tell you when you’re missing a dependency, you are essentially advocating that people should not use the Spring or JEE dependency injection annotations, which is a far bigger topic than just how do you do unit testing using Mockito. Essentially you are arguing against that paradigm of development in favor of explicit dependency injection via constructors. That may be a superior programming approach (or it may not) but either way it is a big change from common practice. I’d love to hear your thoughts on that.</p>
+<p>Cheers,<br>
+Darrell</p>
+<p id="comment-like-171" data-liked="comment-not-liked" class="comment-likes comment-not-liked"><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/?like_comment=171&amp;_wpnonce=b6d732bf92" class="comment-like-link needs-login" rel="nofollow" data-blog="6557354"><span>Like</span></a><span id="comment-like-count-171" class="comment-like-feedback">Like</span></p>
+					</div><!-- /comment-content -->
+
+					<div class="comment-actions-below hidden clear">
+																	</div> <!-- /comment-actions -->
+				</div> <!-- /comment-inner -->
+			</div><!-- /comment-## -->
+		</li><!-- #comment-## -->
+		<li class="comment odd alt thread-odd thread-alt depth-1 highlander-comment" id="li-comment-172">
+
+			<div id="comment-172" class="comment">
+				<img alt="" src="https://1.gravatar.com/avatar/1cd7b5629508f84d86a752c9a346f7ae?s=120&amp;d=https%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" class="avatar avatar-80 grav-hashed grav-hijack" height="80" width="80" originals="80" src-orig="https://1.gravatar.com/avatar/1cd7b5629508f84d86a752c9a346f7ae?s=80&amp;d=https%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" scale="1.5" id="grav-1cd7b5629508f84d86a752c9a346f7ae-0">				<div class="comment-inner">
+
+					<div class="comment-header">
+						<cite class="fn"><a href="http://gravatar.com/davidgrant" rel="external nofollow" class="url">David Grant</a></cite>						<p><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/#comment-172">17/02/2014 at 07:19</a></p>
+
+						<div class="comment-actions clear">
+																				</div> <!-- /comment-actions -->
+					</div> <!-- /comment-header -->
+
+					<div class="comment-content">
+												<p>IMHO, setter injection should be banished forever, and should be replaced with constructor injection. I have never had a situation where I couldn’t use constructor injection instead of setter injection. My experience includes 2 large projects using Guice and 1 large project using Spring (which we migrated from setter injection to constructor injection).</p>
+<p>Darrell, when Spring started I think setter injection was strongly favoured. I’m not sure why, but anyways, that paradigm became very entrenched. Slowly, constructor injection is becoming more popular.</p>
+<p>Check out this blog post:<br>
+<a href="http://spring.io/blog/2007/07/11/setter-injection-versus-constructor-injection-and-the-use-of-required" rel="nofollow">http://spring.io/blog/2007/07/11/setter-injection-versus-constructor-injection-and-the-use-of-required</a><br>
+where they talk about the history of setter vs constructor injection and give a recommendation (use constructor injection).</p>
+<p id="comment-like-172" data-liked="comment-not-liked" class="comment-likes comment-not-liked"><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/?like_comment=172&amp;_wpnonce=0660fba6bc" class="comment-like-link needs-login" rel="nofollow" data-blog="6557354"><span>Like</span></a><span id="comment-like-count-172" class="comment-like-feedback">Like</span></p>
+					</div><!-- /comment-content -->
+
+					<div class="comment-actions-below hidden clear">
+																	</div> <!-- /comment-actions -->
+				</div> <!-- /comment-inner -->
+			</div><!-- /comment-## -->
+		<ul class="children">
+		<li class="comment even depth-2 highlander-comment" id="li-comment-173">
+
+			<div id="comment-173" class="comment">
+				<img alt="" src="https://0.gravatar.com/avatar/367fb39afa7959e2b6c9e4db4845cfa4?s=120&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" class="avatar avatar-80 grav-hashed grav-hijack" height="80" width="80" originals="80" src-orig="https://0.gravatar.com/avatar/367fb39afa7959e2b6c9e4db4845cfa4?s=80&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" scale="1.5" id="grav-367fb39afa7959e2b6c9e4db4845cfa4-1">				<div class="comment-inner">
+
+					<div class="comment-header">
+						<cite class="fn">Darrell Burgan</cite>						<p><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/#comment-173">18/02/2014 at 05:27</a></p>
+
+						<div class="comment-actions clear">
+																				</div> <!-- /comment-actions -->
+					</div> <!-- /comment-header -->
+
+					<div class="comment-content">
+												<p>Good blog post. Like I said, having the compiler track the dependencies is superior than runtime injection usually. But there are still cases to be made for deferring the binding until the last moment, along with the many cases against it. Food for thought ….</p>
+<p id="comment-like-173" data-liked="comment-not-liked" class="comment-likes comment-not-liked"><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/?like_comment=173&amp;_wpnonce=e5f7fc6642" class="comment-like-link needs-login" rel="nofollow" data-blog="6557354"><span>Like</span></a><span id="comment-like-count-173" class="comment-like-feedback">Liked by <a href="#" class="view-likers" data-like-count="1">1 person</a></span></p>
+					</div><!-- /comment-content -->
+
+					<div class="comment-actions-below hidden clear">
+																	</div> <!-- /comment-actions -->
+				</div> <!-- /comment-inner -->
+			</div><!-- /comment-## -->
+		</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+		<li class="comment byuser comment-author-tedvinke bypostauthor odd alt thread-even depth-1 highlander-comment" id="li-comment-174">
+
+			<div id="comment-174" class="comment">
+				<img alt="" src="https://0.gravatar.com/avatar/0162e4fc0714206d466b196acc7cb3ea?s=120&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" class="avatar avatar-80 grav-hashed grav-hijack" height="80" width="80" originals="80" src-orig="https://0.gravatar.com/avatar/0162e4fc0714206d466b196acc7cb3ea?s=80&amp;d=https%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G" scale="1.5" id="grav-0162e4fc0714206d466b196acc7cb3ea-0">				<div class="comment-inner">
+
+					<div class="comment-header">
+						<cite class="fn"><a href="https://tedvinke.wordpress.com" rel="external nofollow" class="url">Ted Vinke</a></cite>						<p><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/#comment-174">18/02/2014 at 16:39</a></p>
+
+						<div class="comment-actions clear">
+																				</div> <!-- /comment-actions -->
+					</div> <!-- /comment-header -->
+
+					<div class="comment-content">
+												<p>Thanks David, you beat me to it. </p>
+<p>Darrell, I’m <strong>not</strong> advocating that people should not use the Spring or JEE dependency injection annotations, because I’ve added a constructor, still to be used with Spring’s auto-wiring right? But it’s a constructor (instead of field or setter injection) and that’s the proper way of doing it IMHO. </p>
+<p>Consequently, in the test itself <em>no</em> @InjectMocks magic is needed anymore.</p>
+<p>Both thanks for your responses!</p>
+<p id="comment-like-174" data-liked="comment-not-liked" class="comment-likes comment-not-liked"><a href="https://tedvinke.wordpress.com/2014/02/13/mockito-why-you-should-not-use-injectmocks-annotation-to-autowire-fields/?like_comment=174&amp;_wpnonce=00b2a20fdb" class="comment-like-link needs-login" rel="nofollow" data-blog="6557354"><span>Like</span></a><span id="comment-like-count-174" class="comment-like-feedback">Like</span></p>
+					</div><!-- /comment-content -->
+
+					<div class="comment-actions-below hidden clear">
+																	</div> <!-- /comment-actions -->
+				</div> <!-- /comment-inner -->
+			</div><!-- /comment-## -->
+		</li><!-- #comment-## -->
+		</ol>
+
+					<div class="pingbacks">
+				<div class="pingbacks-inner">
+					<h3 class="pingbacks-title">
+						1 Pingback					</h3>
+
+					<ol class="pingbacklist">
+					    
+		<li class="pingback even thread-even depth-1 highlander-comment" id="comment-175">
+			 <a href="http://www.baeldung.com/2014-week-review-7" rel="external nofollow" class="url">The Baeldung Weekly Review 7</a> 		</li>
+
+	<!-- #comment-## -->
+					</ol>
+				</div>
+			</div>
+		
+		
+	</div><!-- /comments -->
+
+
+	<p class="nocomments">Comments are closed.</p>
+
+
+
+	</div>
+<br><hr>
+</body>
+</html>
