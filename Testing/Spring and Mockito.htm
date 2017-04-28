@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Spring and Mockito</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+</head>
+<body>
+<a href="https://solutiondesign.com/blog/-/blogs/spring-and-mockito-happy-together">src</a>
+<div class="portlet-body cye-lm-tag"> <div class="taglib-header  cye-lm-tag"> <span class="header-back-to cye-lm-tag"> </span> <h3 class="header-title cye-lm-tag"> <span class="cye-lm-tag"> Spring and Mockito - Happy Together </span> </h3> </div>
+
+ <div class="entry-body"> <div> <p class="cye-lm-tag">Mockito has become a very popular and well-documented open source mock testing library. Spring is obviously the application framework of choice these days. Most of the time when writing unit tests for your Service layer, you will either be writing a Mockito test or a Spring test. Mockito tests are used to isolate testing to only the method being tested. Mock objects stand-in for and simulate the behavior of real objects and thus allow the tester to control the behavior of any dependent objects.</p> <p class="cye-lm-tag">On the other hand, Spring tests are commonly used when you want to verify that Spring dependency injection is working and wire-up certain classes that have been configured for testing. A common usage of a Spring test is for testing data access objects (DAO) that access an in-memory database for testing instead of the actual database. &nbsp;</p> <p class="cye-lm-tag">Here is an example JUnit4 test case that uses Mockito as the mocking framework:</p> <div><div id="highlighter_490244" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+ <td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@RunWith</code><code class="java plain">(MockitoJUnitRunner.</code><code class="java keyword">class</code><code class="java plain">)</code></div>
+<div class="line number2 index1 alt1"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">AccountServiceTest {</code></div>
+<div class="line number3 index2 alt2">&nbsp;</div>
+<div class="line number4 index3 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Mock</code></div>
+<div class="line number5 index4 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">NotificationService notificationService;</code></div>
+<div class="line number6 index5 alt1">&nbsp;</div>
+<div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Mock</code></div>
+<div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AccountDAO accountDAO;</code></div>
+<div class="line number9 index8 alt2">&nbsp;</div>
+<div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@InjectMocks</code></div>
+<div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AccountServiceImpl accountService = </code><code class="java keyword">new</code> <code class="java plain">AccountServiceImpl();</code></div>
+<div class="line number12 index11 alt1">&nbsp;</div>
+<div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Test</code></div>
+<div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">createNewAccount() {</code></div>
+<div class="line number15 index14 alt2">&nbsp;</div>
+<div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Expected objects</code></div>
+<div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">String name = </code><code class="java string">"Test Account"</code><code class="java plain">;</code></div>
+<div class="line number18 index17 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account accountToSave = </code><code class="java keyword">new</code> <code class="java plain">Account(name);</code></div>
+<div class="line number19 index18 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">long</code> <code class="java plain">accountId = </code><code class="java value">12345</code><code class="java plain">;</code></div>
+<div class="line number20 index19 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account persistedAccount = </code><code class="java keyword">new</code> <code class="java plain">Account(name);</code></div>
+<div class="line number21 index20 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">persistedAccount.setId(accountId);</code></div>
+<div class="line number22 index21 alt1">&nbsp;</div>
+<div class="line number23 index22 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Mockito expectations&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code></div>
+<div class="line number24 index23 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">when(accountDAO.save(any(Account.</code><code class="java keyword">class</code><code class="java plain">))).thenReturn(persistedAccount);</code></div>
+<div class="line number25 index24 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">doNothing().when(notificationService).notifyOfNewAccount(accountId);</code></div>
+<div class="line number26 index25 alt1">&nbsp;</div>
+<div class="line number27 index26 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Execute the method being tested&nbsp;&nbsp;&nbsp;&nbsp; </code></div>
+<div class="line number28 index27 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account newAccount = accountService.createNewAccount(name);</code></div>
+<div class="line number29 index28 alt2">&nbsp;</div>
+<div class="line number30 index29 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Validation&nbsp; </code></div>
+<div class="line number31 index30 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertNotNull(newAccount);</code></div>
+<div class="line number32 index31 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertEquals(accountId, newAccount.getId());</code></div>
+<div class="line number33 index32 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertEquals(name, newAccount.getName());</code></div>
+<div class="line number34 index33 alt1">&nbsp;</div>
+<div class="line number35 index34 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">verify(notificationService).notifyOfNewAccount(accountId);</code></div>
+<div class="line number36 index35 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">verify(accountDAO).save(accountToSave);</code></div>
+<div class="line number37 index36 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div>
+<div class="line number38 index37 alt1"><code class="java plain">}</code></div>
+</div>
+</td></tr></tbody></table></div>
+</div>
+ <p class="cye-lm-tag">You’ll notice the use of annotations throughout the test. The @RunWith annotation causes the MockitoJunitRunner to execute the test. This runner extends a JUnit runner and takes care of creating any mocks and setting them on the class under test. In the test above, the NotificationService and AccountDAO are mocked and injected into the AccountServiceImpl.</p> <p class="cye-lm-tag">Below is an example Spring test case:</p> <div><div id="highlighter_812030" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div>
+<div class="line number2 index1 alt1">2</div>
+<div class="line number3 index2 alt2">3</div>
+<div class="line number4 index3 alt1">4</div>
+<div class="line number5 index4 alt2">5</div>
+<div class="line number6 index5 alt1">6</div>
+<div class="line number7 index6 alt2">7</div>
+<div class="line number8 index7 alt1">8</div>
+<div class="line number9 index8 alt2">9</div>
+<div class="line number10 index9 alt1">10</div>
+<div class="line number11 index10 alt2">11</div>
+<div class="line number12 index11 alt1">12</div>
+<div class="line number13 index12 alt2">13</div>
+<div class="line number14 index13 alt1">14</div>
+<div class="line number15 index14 alt2">15</div>
+<div class="line number16 index15 alt1">16</div>
+<div class="line number17 index16 alt2">17</div>
+<div class="line number18 index17 alt1">18</div>
+<div class="line number19 index18 alt2">19</div>
+<div class="line number20 index19 alt1">20</div>
+<div class="line number21 index20 alt2">21</div>
+<div class="line number22 index21 alt1">22</div>
+<div class="line number23 index22 alt2">23</div>
+<div class="line number24 index23 alt1">24</div>
+<div class="line number25 index24 alt2">25</div>
+<div class="line number26 index25 alt1">26</div>
+<div class="line number27 index26 alt2">27</div>
+<div class="line number28 index27 alt1">28</div>
+<div class="line number29 index28 alt2">29</div>
+<div class="line number30 index29 alt1">30</div>
+<div class="line number31 index30 alt2">31</div>
+<div class="line number32 index31 alt1">32</div>
+<div class="line number33 index32 alt2">33</div>
+</td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@RunWith</code><code class="java plain">(SpringJUnit4ClassRunner.</code><code class="java keyword">class</code><code class="java plain">)</code></div>
+<div class="line number2 index1 alt1"><code class="java color1">@ContextConfiguration</code><code class="java plain">({ </code><code class="java string">"classpath:test-context.xml"</code> <code class="java plain">})</code></div>
+<div class="line number3 index2 alt2"><code class="java color1">@TransactionConfiguration</code><code class="java plain">(transactionManager = </code><code class="java string">"transactionManager"</code><code class="java plain">, defaultRollback = </code><code class="java keyword">true</code><code class="java plain">)</code></div>
+<div class="line number4 index3 alt1"><code class="java color1">@Transactional</code></div>
+<div class="line number5 index4 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">AccountDAOTest {</code></div>
+<div class="line number6 index5 alt1">&nbsp;</div>
+<div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div>
+<div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AccountDAO accountDAO;</code></div>
+<div class="line number9 index8 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@PersistenceContext</code></div>
+<div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">EntityManager entityManager;</code></div>
+<div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number13 index12 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Test</code></div>
+<div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Transactional</code></div>
+<div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">save() {&nbsp;&nbsp; </code></div>
+<div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account newAccount = </code><code class="java keyword">new</code> <code class="java plain">Account(</code><code class="java string">"Test Account"</code><code class="java plain">);</code></div>
+<div class="line number18 index17 alt1">&nbsp;</div>
+<div class="line number19 index18 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Execute the method being tested</code></div>
+<div class="line number20 index19 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">accountDAO.save(newAccount); </code></div>
+<div class="line number21 index20 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number22 index21 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Validation</code></div>
+<div class="line number23 index22 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertNotNull(newAccount.getId());</code></div>
+<div class="line number24 index23 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account reloaded = flushAndGet(newAccount.getId());</code></div>
+<div class="line number25 index24 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertEquals(newAccount.getId(), reloaded.getId());</code></div>
+<div class="line number26 index25 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertEquals(newAccount.getName(), reloaded.getName());</code></div>
+<div class="line number27 index26 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div>
+<div class="line number28 index27 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number29 index28 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">Account flushAndGet(</code><code class="java keyword">long</code> <code class="java plain">id) {</code></div>
+<div class="line number30 index29 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">entityManager.flush();</code></div>
+<div class="line number31 index30 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">return</code> <code class="java plain">entityManager.find(Account.</code><code class="java keyword">class</code><code class="java plain">, id);</code></div>
+<div class="line number32 index31 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div>
+<div class="line number33 index32 alt2"><code class="java plain">}</code></div>
+</div>
+</td></tr></tbody></table></div>
+</div>
+ <p class="cye-lm-tag">In this example Spring test case, the SpringJUnit4ClassRunner initializes the Spring application framework and configures and loads the objects in the test-context.xml file. This configuration initializes and configures an in-memory database (such as the H2 Database Engine). The AccountDAO is autowired into the test and its save() method is tested. By using a Spring test instead of a Mockito test, the actual Hibernate mappings and underlying database queries can be tested.</p> <p class="cye-lm-tag">Sometimes, however, you may want to be able to mock a dependency or set of dependencies and also use Spring to inject the remaining dependencies. This is a scenario that is probably not real common and typically not the best practice for most tests since it introduces additional complexity into the test case but there are some legitimate reasons for wanting to set up a test this way. Some scenarios where you may want to use both Mockito and Spring are as follows:</p> <ul> <li>You are testing a complex method that has dependencies on both a service that accesses the database and a service that makes a remote procedure call to another server. You want to use Mockito to mock the service that makes the remote procedure call but you want to use Spring to wire all the other dependencies.</li> <li>You are testing exception handling and it’s difficult to reproduce a specific exception from the real object. It’s easy to test the exception handling behavior of an object using Mockito because you can mock an object and declare that a method throws a specific exception whenever it’s called. You may want to autowire all other dependencies using Spring.</li> <li>A system may be under development, and the interfaces but not the implementations may exist for a number of dependencies. You may want to autowire all other (implemented) dependencies using Spring but mock the unimplemented implementations.</li> <li>You may want to mock a service that is slow to execute in order to speed up test runs but autowire all other dependencies using Spring.</li> </ul> <p class="cye-lm-tag">Continuing on with the AccountService and AccountDAO examples above, here is a hypothetical example: Let’s say that we want to test the delete() method on AccountService. An account can only be deleted if the logged in user has the correct permissions. Spring Security is used to implement permissions, so we want to use a Spring test so that we can verify that the Spring Security configuration is correct.</p> <p class="cye-lm-tag">However, if an account is deleted, then as part of the service layer logic a REST call is made to another system for auditing purposes. That third party system is difficult to set up and run within a unit test. Besides, the third party system shouldn’t be set up anyway because this is a unit test and we just want to test the behavior of the AccountService delete() method and not the third party system. In other words, it’s good enough to test that the notify() method is called – perfect for a mock.</p> <p class="cye-lm-tag">But how can we do this, use both Spring’s testing framework and Mockito? We can use a MockitoJUnitRunner or a SpringJUnit4ClassRunner, but not both. The first time I ran across a case like this I was stumped. I went down the path of creating my own mock and setting this mock up as a Spring bean in the test application context so that it could be autowired into my Spring test. It turns out that there is a much easier way.</p> <p class="cye-lm-tag">MockitoJUnitRunner calls MockitoAnnotations.initMocks() to do its setup work. So if we just use the initMocks() method instead of the MockitoJUnitRunner and keep SpringJUnit4ClassRunner, it all works! &nbsp;Here’s some example code:</p> <div><div id="highlighter_507498" class="syntaxhighlighter  java"><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div>
+<div class="line number2 index1 alt1">2</div>
+<div class="line number3 index2 alt2">3</div>
+<div class="line number4 index3 alt1">4</div>
+<div class="line number5 index4 alt2">5</div>
+<div class="line number6 index5 alt1">6</div>
+<div class="line number7 index6 alt2">7</div>
+<div class="line number8 index7 alt1">8</div>
+<div class="line number9 index8 alt2">9</div>
+<div class="line number10 index9 alt1">10</div>
+<div class="line number11 index10 alt2">11</div>
+<div class="line number12 index11 alt1">12</div>
+<div class="line number13 index12 alt2">13</div>
+<div class="line number14 index13 alt1">14</div>
+<div class="line number15 index14 alt2">15</div>
+<div class="line number16 index15 alt1">16</div>
+<div class="line number17 index16 alt2">17</div>
+<div class="line number18 index17 alt1">18</div>
+<div class="line number19 index18 alt2">19</div>
+<div class="line number20 index19 alt1">20</div>
+<div class="line number21 index20 alt2">21</div>
+<div class="line number22 index21 alt1">22</div>
+<div class="line number23 index22 alt2">23</div>
+<div class="line number24 index23 alt1">24</div>
+<div class="line number25 index24 alt2">25</div>
+<div class="line number26 index25 alt1">26</div>
+<div class="line number27 index26 alt2">27</div>
+<div class="line number28 index27 alt1">28</div>
+<div class="line number29 index28 alt2">29</div>
+<div class="line number30 index29 alt1">30</div>
+<div class="line number31 index30 alt2">31</div>
+<div class="line number32 index31 alt1">32</div>
+<div class="line number33 index32 alt2">33</div>
+<div class="line number34 index33 alt1">34</div>
+<div class="line number35 index34 alt2">35</div>
+<div class="line number36 index35 alt1">36</div>
+<div class="line number37 index36 alt2">37</div>
+<div class="line number38 index37 alt1">38</div>
+<div class="line number39 index38 alt2">39</div>
+<div class="line number40 index39 alt1">40</div>
+<div class="line number41 index40 alt2">41</div>
+<div class="line number42 index41 alt1">42</div>
+<div class="line number43 index42 alt2">43</div>
+</td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="java color1">@RunWith</code><code class="java plain">(SpringJUnit4ClassRunner.</code><code class="java keyword">class</code><code class="java plain">)</code></div>
+<div class="line number2 index1 alt1"><code class="java color1">@ContextConfiguration</code><code class="java plain">({ </code><code class="java string">"classpath:test-context.xml"</code> <code class="java plain">})</code></div>
+<div class="line number3 index2 alt2"><code class="java color1">@TransactionConfiguration</code><code class="java plain">(transactionManager = </code><code class="java string">"transactionManager"</code><code class="java plain">, defaultRollback = </code><code class="java keyword">true</code><code class="java plain">)</code></div>
+<div class="line number4 index3 alt1"><code class="java color1">@Transactional</code></div>
+<div class="line number5 index4 alt2"><code class="java keyword">public</code> <code class="java keyword">class</code> <code class="java plain">AccountServiceSpringAndMockitoTest {</code></div>
+<div class="line number6 index5 alt1">&nbsp;</div>
+<div class="line number7 index6 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Mock</code></div>
+<div class="line number8 index7 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AuditService mockAuditService;</code></div>
+<div class="line number9 index8 alt2">&nbsp;</div>
+<div class="line number10 index9 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@InjectMocks</code></div>
+<div class="line number11 index10 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Autowired</code></div>
+<div class="line number12 index11 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">private</code> <code class="java plain">AccountService accountService;</code></div>
+<div class="line number13 index12 alt2">&nbsp;</div>
+<div class="line number14 index13 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Before</code></div>
+<div class="line number15 index14 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">setup() {</code></div>
+<div class="line number16 index15 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">MockitoAnnotations.initMocks(</code><code class="java keyword">this</code><code class="java plain">);</code></div>
+<div class="line number17 index16 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div>
+<div class="line number18 index17 alt1">&nbsp;</div>
+<div class="line number19 index18 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Test</code></div>
+<div class="line number20 index19 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java color1">@Transactional</code></div>
+<div class="line number21 index20 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">public</code> <code class="java keyword">void</code> <code class="java plain">deleteWithPermission() {</code></div>
+<div class="line number22 index21 alt1">&nbsp;</div>
+<div class="line number23 index22 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Set up Spring Security token for testing</code></div>
+<div class="line number24 index23 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">SecuredUser user = </code><code class="java keyword">new</code> <code class="java plain">SecuredUser();</code></div>
+<div class="line number25 index24 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">user.setUsername(</code><code class="java string">"test1"</code><code class="java plain">);</code></div>
+<div class="line number26 index25 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">TestingAuthenticationToken token = </code><code class="java keyword">new</code> <code class="java plain">TestingAuthenticationToken(user, </code><code class="java keyword">null</code><code class="java plain">, </code><code class="java string">"accountFullAccess"</code><code class="java plain">);</code></div>
+<div class="line number27 index26 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">SecurityContextHolder.getContext().setAuthentication(token);</code></div>
+<div class="line number28 index27 alt1">&nbsp;</div>
+<div class="line number29 index28 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Create account to be deleted</code></div>
+<div class="line number30 index29 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">Account accountToBeDeleted = accountService.createNewAccount(</code><code class="java string">"Test Account"</code><code class="java plain">);</code></div>
+<div class="line number31 index30 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java keyword">long</code> <code class="java plain">accountId = accountToBeDeleted.getId();</code></div>
+<div class="line number32 index31 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>&nbsp;</div>
+<div class="line number33 index32 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Mockito expectations</code></div>
+<div class="line number34 index33 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">doNothing().when(mockAuditService).notifyDelete(accountId);</code></div>
+<div class="line number35 index34 alt2">&nbsp;</div>
+<div class="line number36 index35 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Execute the method being tested</code></div>
+<div class="line number37 index36 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">accountService.delete(accountToBeDeleted);</code></div>
+<div class="line number38 index37 alt1">&nbsp;</div>
+<div class="line number39 index38 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java comments">// Validation</code></div>
+<div class="line number40 index39 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">assertNull(accountService.get(accountId));</code></div>
+<div class="line number41 index40 alt2"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">verify(mockAuditService).notifyDelete(accountId);</code></div>
+<div class="line number42 index41 alt1"><code class="java spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="java plain">}</code></div>
+<div class="line number43 index42 alt2"><code class="java plain">}</code></div>
+</div>
+</td></tr></tbody></table></div>
+</div>
+ <p class="cye-lm-tag">Notice the setup() method that is run before each test. In it, MockitoAnnotations.initMocks() is called. By the time initMocks() is called, Spring has already injected all of the other dependencies. The AccountService implementation is injected by Spring and then the mockAuditService is set on this implementation by Mockito. &nbsp;Pretty cool!</p> <p class="cye-lm-tag">I am hopeful that this article describes not only how to use Mockito and Spring together, but also provides some good examples about why or when you would want to use them together in a unit test. The references section below provides a couple of links that give some other good examples of using Mockito and Spring together. Happy testing!</p> <p class="cye-lm-tag"><strong>References</strong></p> <ul> <li><a href="http://stackoverflow.com/questions/10906945/mockito-junit-and-spring" target="_blank">http://stackoverflow.com/questions/10906945/mockito-junit-and-spring</a></li> <li><a href="http://markchensblog.blogspot.com/2013/02/use-spring-mvc-test-framework-and.html" target="_blank">http://markchensblog.blogspot.com/2013/02/use-spring-mvc-test-framework-and.html</a></li> <li><a href="https://en.wikipedia.org/wiki/Mock_object" target="_blank">https://en.wikipedia.org/wiki/Mock_object</a></li> </ul> <p class="cye-lm-tag">The full source code used for this article can be found on our <a href="http://sdg.repositoryhosting.com/git_public/sdg/sdg-blog.git/tree/HEAD:/sdg-mockitospring" target="_blank">git repository</a>.</p> </div>
+ </div>
+ <div class="entry-footer clearfix"> <div class="stats"> <span class="view-count cye-lm-tag"> </span> </div>
+ <span class="entry-categories cye-lm-tag"> <span class="taglib-asset-categories-summary cye-lm-tag"> Category: <a class="asset-category" href="https://solutiondesign.com/blog?p_p_id=33&amp;p_p_lifecycle=0&amp;p_p_state=normal&amp;p_p_mode=view&amp;p_p_col_id=_118_INSTANCE_KGtw0jO1mMp0__column-1&amp;p_p_col_count=1&amp;p_r_p_564233524_categoryId=12450">Technology</a> </span> </span> <span class="entry-tags cye-lm-tag"> <span class="taglib-asset-tags-summary cye-lm-tag"> <a class="tag" href="https://solutiondesign.com/blog?p_p_id=33&amp;p_p_lifecycle=0&amp;p_p_state=normal&amp;p_p_mode=view&amp;p_p_col_id=_118_INSTANCE_KGtw0jO1mMp0__column-1&amp;p_p_col_count=1&amp;p_r_p_564233524_tag=spring+and+mockito">spring and mockito</a> </span> </span> </div>
+ </div>
+ <div class="separator clearfix"><!-- --></div>
+  <div class="entry-navigation"> <a href="https://solutiondesign.com/blog/-/blogs/55958?_33_redirect=https%3A%2F%2Fsolutiondesign.com%2Fblog%3Fp_p_id%3D33%26p_p_lifecycle%3D0%26p_p_state%3Dnormal%26p_p_mode%3Dview%26p_p_col_id%3D_118_INSTANCE_KGtw0jO1mMp0__column-1%26p_p_col_count%3D1%26_33_struts_action%3D%252Fblogs%252Fview" class="previous">Previous</a> <a href="https://solutiondesign.com/blog/-/blogs/58258?_33_redirect=https%3A%2F%2Fsolutiondesign.com%2Fblog%3Fp_p_id%3D33%26p_p_lifecycle%3D0%26p_p_state%3Dnormal%26p_p_mode%3Dview%26p_p_col_id%3D_118_INSTANCE_KGtw0jO1mMp0__column-1%26p_p_col_count%3D1%26_33_struts_action%3D%252Fblogs%252Fview" class="next">Next</a> </div>
+ </div>
+
+<br><hr>
+</body>
+</html>

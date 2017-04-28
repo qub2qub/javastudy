@@ -1,0 +1,27 @@
+http://stackoverflow.com/questions/13557442/what-does-provider-in-jax-rs-mean
+---
+Could anyone explain to me what JAX-RS Provider is and what @Provider annotation does. I have been reading documentation but I cant get it.
+If there are resource classes that service the incoming requests, what do Providers do? How are they different from singleton resource classes when I create a persistent resource class (the one that is not per-request)? Or are those classes also providers?
+---
+
+Providers are a simply a way of extending and customizing the JAX-RS runtime. You can think of them as plugins that (potentially) alter the behavior of the runtime, in order to accomplish a set of (program defined) goals.
+
+Providers are not the same as resources classes, they exist, conceptually, at a level in-between resources classes and the JAX-RS implementation. If it helps, you can think of them in the same light as device drivers (existing between user and kernel space). This is a broad generalization.
+
+There are three classes of providers defined by the current JAX-RS specification. The commonality between them is that all providers must be identified by the @Provider annotation and follow certain rules for constructor declaration. Apart from that, different provider types may have additional annotations, and will implement different interfaces.
+
+Entity Providers
+
+These providers control the mapping of data representations (like XML, JSON, CSV) to their Java object equivalents.
+
+Context Providers
+
+These providers control the context that resources can access via @Context annotations.
+
+Exception Providers
+
+These providers control the mapping of Java exceptions to a JAX-RS Response instance.
+
+Your runtime will come with a number of predefined providers that will be responsible for implementing a base level of functionality (e.g for mapping to and from XML, translating the most common exceptions etc etc). You can also create your own providers as needed.
+
+The JAX-RS specification is a good reference for reading up on these different provider types and what they do (see Chapter 4).
