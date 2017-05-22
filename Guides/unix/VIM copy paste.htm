@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>VIM copy paste</title>
+    <link rel="stylesheet" href="../grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    	dt {
+    		font-weight: bold;
+    		/*background-color: #999;*/
+    		border-top: 1px solid black
+    	}
+    	dd {
+    		border-bottom: 1px solid black
+		}
+        code {
+            background-color: #C1E7CB; 
+        }
+    </style>
+</head>
+<body>
+<a href="http://vim.wikia.com/wiki/Copy,_cut_and_paste">src</a>
+<h2>VIM copy paste</h2>
+<div id="WikiaArticle" class="WikiaArticle cye-lm-tag">
+                    <div class="home-top-right-ads" hhmtw6x="" hidden="">
+                                        </div>
+
+                    
+                    <div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr mw-content-text cye-lm-tag"><div><b><a class="text" href="http://vim.wikia.com/wiki/Copy,_cut_and_paste">Tip 312</a></b> <a class="text" href="http://vim.wikia.com/wiki/Copy,_cut_and_paste?printable=yes">Printable</a> <a class="text" href="http://vim.wikia.com/wiki/Copy,_cut_and_paste?useskin=monobook">Monobook</a> <a href="http://vim.wikia.com/wiki/VimTip311" title="VimTip311" class="mw-redirect"><small>Previous</small></a> <a href="http://vim.wikia.com/wiki/VimTip313" title="VimTip313" class="mw-redirect"><small>Next</small></a>
+<p class="cye-lm-tag"><b>created</b>&nbsp;August 13, 2002 · <b>complexity</b>&nbsp;intermediate · <b>version</b>&nbsp;6.0
+</p>
+<hr>
+</div>
+<p class="cye-lm-tag">Here is how to cut-and-paste or copy-and-paste text using a visual selection in Vim. See <a href="http://vim.wikia.com/wiki/Cut/copy_and_paste_using_visual_selection" title="Cut/copy and paste using visual selection">Cut/copy and paste using visual selection</a> for the main article.
+</p><p class="cye-lm-tag"><b>Cut and paste:</b>
+</p>
+<ol class="cye-lm-tag"><li class="cye-lm-tag">Position the cursor where you want to begin cutting.
+</li><li>Press <code>v</code> to select characters (or uppercase <code>V</code> to select whole lines, or <code>Ctrl-v</code> to select rectangular blocks).
+</li><li>Move the cursor to the end of what you want to cut.
+</li><li>Press <code>d</code> to cut (or <code>y</code> to copy).
+</li><li>Move to where you would like to paste.
+</li><li>Press <code>P</code> to paste before the cursor, or <code>p</code> to paste after.
+</li></ol>
+<p class="cye-lm-tag"><b>Copy and paste</b> is performed with the same steps except for step 4 where you would press <code>y</code> instead of <code>d</code>:
+</p>
+<ul><li><code>d</code> stands for <i>delete</i> in Vim, which in other editors is usually called <i>cut</i>
+</li><li><code>y</code> stands for <i>yank</i> in Vim, which in other editors is usually called <i>copy</i>
+</li></ul>
+<nav id="toc" class="toc" data-loaded="false"><div id="toctitle"><h2>Contents</h2><span class="toctoggle cye-lm-tag">[<a href="#" class="internal" id="togglelink" data-show="show" data-hide="hide">show</a>]</span></div><ol></ol></nav>
+<h2><span class="mw-headline cye-lm-tag" id="Copying_and_cutting_in_normal_mode">Copying and cutting in normal mode</span></h2>
+<p class="cye-lm-tag">In normal mode, one can copy (yank) with <code>y{motion}</code>, where <code>{motion}</code> is a Vim motion. For example, <code>yw</code> copies to the beginning of the next word. Other helpful yanking commands include:
+</p>
+<ul><li><code>yy</code> or <code>Y</code> – yank the current line, including the newline character at the end of the line
+</li><li><code>y$</code> – yank to the end of the current line (but don't yank the newline character); note that many people like to remap <code>Y</code> to <code>y$</code> in line with <code>C</code> and <code>D</code>
+</li><li><code>yiw</code> – yank the current word (excluding surrounding whitespace)
+</li><li><code>yaw</code> – yank the current word (including leading or trailing whitespace)
+</li></ul>
+<p class="cye-lm-tag">Cutting can be done using <code>d{motion}</code>.
+</p><p class="cye-lm-tag">To copy into a register, one can use <code>"{register}</code> immediately before one of the above commands to copy into the register <code>{register}</code>. See <a href="http://vim.wikia.com/wiki/Pasting_registers" title="Pasting registers">pasting registers</a> for more information on register syntax.
+</p>
+<div id="INCONTENT_WRAPPER"><div id="INCONTENT_PLAYER" class="wikia-ad default-height" data-label="advertisement" hhmtw6x="" hidden=""><div class="provider-container" id="DirectGpt_INCONTENT_PLAYER"></div></div></div><h2><span class="mw-headline cye-lm-tag" id="Pasting_in_normal_mode">Pasting in normal mode</span></h2>
+<p class="cye-lm-tag">In normal mode, one can use <code>p</code> to paste after the cursor, or <code>P</code> to paste before the cursor.
+</p><p class="cye-lm-tag">The variants <code>gp</code> and <code>gP</code> move the cursor after the pasted text, instead of leaving the cursor stationary.
+</p><p class="cye-lm-tag">To select a register from which to paste, one can use <code>"{register}p</code> to paste from the register <code>{register}</code>. See <a href="http://vim.wikia.com/wiki/Pasting_registers" title="Pasting registers">pasting registers</a>.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Pasting_in_insert_mode">Pasting in insert mode</span></h2>
+<p class="cye-lm-tag">The contents of a register can be pasted while in insert mode: type Ctrl-r then a character that identifies the register. For example, Ctrl-r then <code>"</code> pastes from the default register, and Ctrl-r then <code>0</code> pastes from register zero which holds the text that was most recently yanked (copied). See <a href="http://vim.wikia.com/wiki/Pasting_registers" title="Pasting registers">pasting registers</a>.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Copying_and_cutting_in_command-line_mode">Copying and cutting in command-line mode</span></h2>
+<p class="cye-lm-tag">Command-line mode occurs after typing <code>:</code> to enter a command. By default, while in the command line, typing Ctrl-f opens the command-line window where commands can be edited using normal mode. For example, part of one command can be copied then pasted into another command. See <a href="http://vim.wikia.com/wiki/Using_command-line_history" title="Using command-line history">using command-line history</a>.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Pasting_in_command-line_mode">Pasting in command-line mode</span></h2>
+<p class="cye-lm-tag">There are two approaches to pasting in command-line mode. The first is to open the command-line window with Ctrl-f, then use normal-mode commands to paste. See the <a href="#Copying_and_cutting_in_command-line_mode">previous section</a>.
+</p><p class="cye-lm-tag">The second approach is to type Ctrl-r then a character to paste the contents of the register identified by the character. See <a href="#Pasting_in_insert_mode">Pasting in insert mode</a> above.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Copy.2C_cut.2C_and_paste_from_the_system_clipboard">Copy, cut, and paste from the system clipboard</span></h2>
+<p class="cye-lm-tag"><i>Main article: <a href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard" title="Accessing the system clipboard">Accessing the system clipboard</a></i>
+</p><p class="cye-lm-tag">Unlike most text editors, Vim distinguishes between its own registers and the system clipboard. By default, Vim copies to, cuts to, and pastes from its own default register, called the <i>unnamed register</i> (<code>""</code>, also called <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/htmldoc/change.html#quote_quote">quotequote</a>) instead of the system clipboard.
+</p><p class="cye-lm-tag">Assuming Vim was compiled with clipboard access, it is possible to access the <code>"+</code> or <code>"*</code> registers, which can modify the system clipboard. In this case, one can copy with e.g. <code>"+y</code> in visual mode, or <code>"+y{motion}</code> in normal mode, and paste with e.g. <code>"+p</code>.
+</p><p class="cye-lm-tag">If your installation of Vim was not compiled with clipboard support, you must either install a package that has clipboard support, or use an external command such as xclip as an intermediary. See <a href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard" title="Accessing the system clipboard">Accessing the system clipboard</a> for detailed information.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Multiple_copying">Multiple copying</span></h2>
+<p class="cye-lm-tag"><i>Main article: <a href="http://vim.wikia.com/wiki/Pasting_registers" title="Pasting registers">Pasting registers</a>.</i>
+</p><p class="cye-lm-tag">Deleted or copied text is placed in the unnamed register. If wanted, a register can be specified so the text is also copied to the named register. A register is a location in Vim's memory identified with a single letter. A double quote character is used to specify that the next letter typed is the name of a register.
+</p><p class="cye-lm-tag">For example, you could select the text <code>hello</code> then type <code>"ay</code> to copy "hello" to the <code>a</code> register. Then you could select the text <code>world</code> and type <code>"by</code> to copy "world" to the <code>b</code> register. After moving the cursor to another location, the text could be pasted: type <code>"ap</code> to paste "hello" or <code>"bp</code> to paste "world". These commands paste the text after the cursor. Alternatively, type <code>"aP</code> or <code>"bP</code> to paste before the cursor.
+</p>
+<h3><span class="mw-headline cye-lm-tag" id="Windows_clipboard">Windows clipboard</span></h3>
+<p class="cye-lm-tag">When using Vim under Windows, the clipboard can be accessed with the following:
+</p>
+<ul><li>In step 4, press Shift+Delete to cut or Ctrl+Insert to copy.
+</li><li>In step 6, press Shift+Insert to paste.
+</li></ul>
+<h3><span class="mw-headline cye-lm-tag" id="Different_instances">Different instances</span></h3>
+<p class="cye-lm-tag">How does one copy and paste between two instances of Vim on different Linux consoles?
+</p><p class="cye-lm-tag">After copying text, open a new buffer for a new file:
+</p>
+<pre>:e ~/dummy
+</pre>
+<ul><li>Paste the text to the new buffer.
+</li><li>Write the new buffer <code>:w</code>.
+</li><li>Switch to the previous buffer <code>:bp</code> to release *.swp.
+</li><li>Now switch to the other console.
+</li><li>Put the cursor at the desired place.
+</li><li>Read the dummy file <code>:r ~/dummy</code>
+</li></ul>
+<h2><span class="mw-headline cye-lm-tag" id="Increasing_the_buffer_size">Increasing the buffer size</span></h2>
+<p class="cye-lm-tag">By default, only the first 50 lines in a register are saved, and a register is not saved if it contains more than 10 kilobytes. <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=%27viminfo%27">:help&nbsp;'viminfo'</a>
+</p><p class="cye-lm-tag">In the example below, the first line displays the current settings, while the second line sets:
+</p>
+<ul><li><code>'100</code> <a href="http://vim.wikia.com/wiki/Using_marks" title="Using marks">Marks</a> will be remembered for the last 100 edited files.
+</li><li><code>&lt;100</code> Limits the number of lines saved for each register to 100 lines; if a register contains more than 100 lines, only the first 100 lines are saved.
+</li><li><code>s20</code> Limits the maximum size of each item to 20 kilobytes; if a register contains more than 20 kilobytes, the register is not saved.
+</li><li><code>h</code> Disables <a href="http://vim.wikia.com/wiki/Highlight_all_search_pattern_matches" title="Highlight all search pattern matches">search highlighting</a> when Vim starts.
+</li></ul>
+<pre>:set viminfo?
+:set viminfo='100,&lt;100,s20,h
+</pre>
+<h2><span class="mw-headline cye-lm-tag" id="See_also">See also</span></h2>
+<ul><li> <a href="http://vim.wikia.com/wiki/VimTip356" title="VimTip356" class="mw-redirect">Quick yank and paste</a>
+</li><li> <a href="http://vim.wikia.com/wiki/Cut/copy_and_paste_using_visual_selection" title="Cut/copy and paste using visual selection">Cut/copy and paste using visual selection</a>
+</li><li> <a href="http://vim.wikia.com/wiki/In_line_copy_and_paste_to_system_clipboard" title="In line copy and paste to system clipboard">In line copy and paste to system clipboard</a>
+</li><li> <a href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard" title="Accessing the system clipboard">Accessing the system clipboard</a>
+</li></ul>
+
+
+</div>
+</div>
+
+<br><hr>
+<div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr mw-content-text cye-lm-tag"><div><b><a class="text" href="http://vim.wikia.com/wiki/Cut/copy_and_paste_using_visual_selection">Tip 386</a></b> <a class="text" href="http://vim.wikia.com/wiki/Cut/copy_and_paste_using_visual_selection?printable=yes">Printable</a> <a class="text" href="http://vim.wikia.com/wiki/Cut/copy_and_paste_using_visual_selection?useskin=monobook">Monobook</a> <a href="/wiki/VimTip385" title="VimTip385" class="mw-redirect"><small>Previous</small></a> <a href="/wiki/VimTip387" title="VimTip387" class="mw-redirect"><small>Next</small></a>
+<p class="cye-lm-tag"><b>created</b>&nbsp;2002 · <b>complexity</b>&nbsp;basic · <b>author</b>&nbsp;rainbrot · <b>version</b>&nbsp;6.0
+</p>
+<hr>
+</div>
+<p class="cye-lm-tag">Visual selection is a common feature in applications, but Vim's visual selection has several benefits.
+</p><p class="cye-lm-tag">To cut-and-paste or copy-and-paste:
+</p>
+<ol><li>Position the cursor at the beginning of the text you want to cut/copy.
+</li><li>Press <b>v</b> to begin character-based visual selection, or <b>V</b> to select whole lines, or Ctrl-v or Ctrl-q to select a block.
+</li><li>Move the cursor to the end of the text to be cut/copied. While selecting text, you can perform searches and other advanced movement.
+</li><li>Press <b>d</b> (delete) to cut, or <b>y</b> (yank) to copy.
+</li><li>Move the cursor to the desired paste location.
+</li><li>Press <b>p</b> to paste after the cursor, or <b>P</b> to paste before.
+</li></ol>
+<p class="cye-lm-tag">Visual selection (steps 1-3) can be performed using a mouse.
+</p><p class="cye-lm-tag">If you want to change the selected text, press <b>c</b> instead of <b>d</b> or <b>y</b> in step 4. In a visual selection, pressing <b>c</b> performs a change by deleting the selected text and entering insert mode so you can type the new text.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Pasting_over_a_block_of_text">Pasting over a block of text</span></h2>
+<p class="cye-lm-tag">You can copy a block of text by pressing Ctrl-v (or Ctrl-q if you use Ctrl-v for paste), then moving the cursor to select, and pressing <code>y</code> to yank. Now you can move elsewhere and press <code>p</code> to paste the text after the cursor (or <code>P</code> to paste before). The paste inserts a <i>block</i> (which might, for example, be 4 rows by 3 columns of text).
+</p><p class="cye-lm-tag">Instead of inserting the block, it is also possible to <i>replace</i> (paste over) the destination. To do this, move to the target location then press <code>1vp</code> (<code>1v</code> selects an area equal to the original, and <code>p</code> pastes over it).
+</p><p class="cye-lm-tag">When a count is used before <code>v</code>, <code>V</code>, or <code>^V</code> (character, line or block selection), an area equal to the previous area, multiplied by the count, is selected. See the paragraph after <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=%3CLeftRelease%3E">:help&nbsp;&lt;LeftRelease&gt;</a>.
+</p><p class="cye-lm-tag">Note that this will only work if you actually did something to the previous visual selection, such as a yank, delete, or change operation. It will <i>not</i> work after visually selecting an area and leaving visual mode without taking any actions.
+</p>
+<div id="INCONTENT_WRAPPER"><div id="INCONTENT_PLAYER" class="wikia-ad default-height" data-label="advertisement" hgbnu99="" hidden=""><div class="provider-container" id="DirectGpt_INCONTENT_PLAYER"></div></div></div><h2><span class="mw-headline cye-lm-tag" id="See_also">See also</span></h2>
+<ul><li> <a href="/wiki/Visual_selection" title="Visual selection">Visual selection</a>
+</li><li> <a href="/wiki/Copy,_cut_and_paste" title="Copy, cut and paste">Copy, cut and paste</a>
+</li></ul>
+<h2><span class="mw-headline cye-lm-tag" id="Comments">Comments</span></h2>
+<p class="cye-lm-tag"><s>NOTE: after selecting the visual copy mode, you can hold the shift key while selection the region to get a multiple line copy. For example, to copy three lines, press V, then hold down the Shift key while pressing the down arrow key twice. Then do your action on the buffer.</s>
+</p>
+<dl><dd>I have struck out the above new comment because I think it is talking about something that may apply to those who have used <code>:behave mswin</code>. To visually select multiple lines, you type <code>V</code>, then press <code>j</code> (or cursor down). You hold down Shift only to type the uppercase <code>V</code>. Do not press Shift after that. If I am wrong, please explain here. <a href="/wiki/User:JohnBeckett" title="User:JohnBeckett">JohnBeckett</a> 10:48, October 7, 2010 (UTC)
+</dd></dl>
+<hr>
+<p class="cye-lm-tag">If you just want to copy (yank) the visually marked text, you do not need to 'y'ank it. Marking it will already copy it.
+</p><p class="cye-lm-tag">Using a mouse, you can insert it at another position by clicking the middle mouse button.
+</p><p class="cye-lm-tag">This also works in across Vim applications on Windows systems (clipboard is inserted)
+</p>
+<hr>
+<p class="cye-lm-tag">This is a really useful thing in Vim. I feel lost without it in any other editor. I have some more points I'd like to add to this tip:
+</p>
+<ul><li>While in (any of the three) Visual mode(s), pressing 'o' will move the cursor to the opposite end of the selection. In Visual Block mode, you can also press 'O', allowing you to position the cursor in any of the four corners.
+</li><li>If you have some yanked text, pressing 'p' or 'P' while in Visual mode will replace the selected text with the already yanked text. (After this, the previously selected text will be yanked.)
+</li><li>Press 'gv' in Normal mode to restore your previous selection.
+</li><li>It's really worth it to check out the register functionality in Vim: ':help registers'.
+</li><li>If you're still eager to use the mouse-juggling middle-mouse trick of common unix copy-n-paste, or are into bending space and time with i_CTRL-R&lt;reg&gt;, consider checking out ':set paste' and ':set pastetoggle'. (Or in the latter case, try with i_CTRL-R_CTRL-O..)
+</li></ul>
+<hr>
+<p class="cye-lm-tag">You can replace a set of text in a visual block very easily by selecting a block, press c and then make changes to the first line. Pressing &lt;Esc&gt; twice replaces all the text of the original selection. See <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=v_b_c">:help&nbsp;v_b_c</a>.
+</p>
+<hr>
+<p class="cye-lm-tag">On Windows the &lt;mswin.vim&gt; script seems to be getting sourced for many users.
+</p><p class="cye-lm-tag">Result: more Windows like behavior (ctrl-v is "paste", instead of visual-block selection). Hunt down your system vimrc and remove sourcing thereof if you don't like that behavior (or substitute &lt;mrswin.vim&gt; in its place, see <a href="/wiki/VimTip63" title="VimTip63" class="mw-redirect">VimTip63</a>.
+</p><p class="cye-lm-tag">With <a href="/wiki/VimTip588" title="VimTip588" class="mw-redirect">VimTip588</a> one can sort lines or blocks based on visual-block selection.
+</p>
+<hr>
+<p class="cye-lm-tag">With reference to the earlier post asking how to paste an inner block
+</p>
+<ol><li>Select the inner block to copy usint ctrl-v and highlighting with the hjkl keys
+</li><li>yank the visual region (y)
+</li><li>Select the inner block you want to overwrite (Ctrl-v then hightlight with hjkl keys)
+</li><li>paste the selection P (that is shift P) , this will overwrite keeping the block formation
+</li></ol>
+<hr>
+<p class="cye-lm-tag">The "yank" buffers in Vim are not the same as the Windows clipboard (i.e., cut-and-paste) buffers. If you're using the yank, it only puts it in a Vim buffer - that buffer is not accessible to the Windows paste command. You'll want to use the Edit | Copy and Edit | Paste (or their keyboard equivalents) if you're using the Windows GUI, or select with your mouse and use your X-Windows cut-n-paste mouse buttons if you're running UNIX.
+</p>
+<hr>
+<p class="cye-lm-tag">Double-quote and star gives one access to windows clippboard or the unix equivalent. as an example if I wanted to yank the current line into the clipboard I would type "*yy
+</p><p class="cye-lm-tag">If I wanted to paste the contents of the clippboard into Vim at my current curser location I would type "*p
+</p><p class="cye-lm-tag">The double-qoute and start trick work well with visual mode as well. ex: visual select text to copy to clippboard and then type "*y
+</p><p class="cye-lm-tag">I find this very useful and I use it all the time but it is a bit slow typing "* all the time so I am thinking about creating a macro to speed it up a bit.
+</p>
+<hr>
+<p class="cye-lm-tag"><b>Copy and Paste using the System Clipboard</b>
+</p><p class="cye-lm-tag">There are some caveats regarding how the "*y (copy into System Clipboard) command works. We have to be sure that we are using vim-full (sudo aptitude install vim-full on debian-based systems) or a Vim that has X11 support enabled. Only then will the "*y command work.
+</p><p class="cye-lm-tag">For our convenience as we are all familiar with using Ctrl+c to copy a block of text in most other GUI applications, we can also map Ctrl+c to "*y so that in Vim Visual Mode, we can simply Ctrl+c to copy the block of text we want into our system buffer. To do that, we simply add this line in our .vimrc file:
+</p><p class="cye-lm-tag">map &lt;C-c&gt; "+y&lt;CR&gt;
+</p><p class="cye-lm-tag">Restart our shell and we are good. Now whenever we are in Visual Mode, we can Ctrl+c to grab what we want and paste it into another application or another editor in a convenient and intuitive manner.
+</p>
+</div>
+<br><hr>
+<h2>Accessing the system clipboard</h2>
+<div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr mw-content-text cye-lm-tag"><div class="boilerplate metadata" id="delete" style="background-color: #fee; margin: 0 1em 0 1em; padding: 0 10px; border: 1px solid #aaa;">
+<p class="cye-lm-tag"><b>Please review this tip:</b>
+</p>
+<ul><li>This tip was imported from vim.org and needs <a href="/wiki/Vim_Tips_Wiki:General_guidelines" title="Vim Tips Wiki:General guidelines">general review</a>.
+</li><li>You might <a href="/wiki/Vim_Tips_Wiki:Comment_guidelines" title="Vim Tips Wiki:Comment guidelines">clean up comments</a> or <a href="/wiki/Vim_Tips_Wiki:Merge_guidelines" title="Vim Tips Wiki:Merge guidelines">merge similar tips</a>.
+</li><li>Add suitable <a href="/wiki/Vim_Tips_Wiki:Category_guidelines" title="Vim Tips Wiki:Category guidelines">categories</a> so people can find the tip.
+</li><li>Please <a href="/wiki/Vim_Tips_Wiki:Discussion_guidelines" title="Vim Tips Wiki:Discussion guidelines">avoid the discussion page</a> (use the Comments section below for notes).
+</li><li>If the tip contains good advice for current Vim, remove the <code>{{review}}</code> line.
+</li></ul>
+</div>
+<div id="News" style="background-color: #ccffcc; margin: 0 1em 0 1em; padding: 0 10px; border: 1px solid #000;">
+<p class="cye-lm-tag"><big><b>Duplicate tip</b></big>
+</p><p class="cye-lm-tag">This tip is very similar to the following:
+</p>
+<ul><li><a href="/wiki/VimTip21" title="VimTip21" class="mw-redirect">VimTip21</a>
+</li></ul>
+<p class="cye-lm-tag">These tips need to be merged – see the <a href="/wiki/Vim_Tips_Wiki:Merge_guidelines" title="Vim Tips Wiki:Merge guidelines">merge guidelines</a>.
+</p>
+</div>
+<div><b><a class="text" href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard">Tip 984</a></b> <a class="text" href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard?printable=yes">Printable</a> <a class="text" href="http://vim.wikia.com/wiki/Accessing_the_system_clipboard?useskin=monobook">Monobook</a> <a href="/wiki/VimTip983" title="VimTip983" class="mw-redirect"><small>Previous</small></a> <a href="/wiki/VimTip987" title="VimTip987" class="mw-redirect"><small>Next</small></a>
+<p class="cye-lm-tag"><b>created</b>&nbsp;2005 · <b>complexity</b>&nbsp;basic · <b>author</b>&nbsp;JimD · <b>version</b>&nbsp;7.4
+</p>
+<hr>
+</div>
+<p class="cye-lm-tag">When performing copy, cut, and paste with commands like <code>y</code>, <code>d</code>, and <code>p</code>, by default Vim uses its own location for this, called the unnamed register (<a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=quotequote">:help&nbsp;quotequote</a>). Note that this is different from what most modern graphical text editors and other applications like web browsers do; these applications interact with the system clipboard when using keybindings like CTRL-C, CTRL-X, and CTRL-V. Fortunately, in most cases it is easy to get Vim to work with the system clipboard.
+</p><p class="cye-lm-tag">Vim offers the <code>+</code> and <code>*</code> registers to reference the system clipboard (<a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=quoteplus">:help&nbsp;quoteplus</a> and <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=quotestar">:help&nbsp;quotestar</a>). Note that on some systems, <code>+</code> and <code>*</code> are the same, while on others they are different. Generally on Linux, <code>+</code> and <code>*</code> are different: <code>+</code> corresponds to the desktop clipboard (<code>XA_SECONDARY</code>) that is accessed using CTRL-C, CTRL-X, and CTRL-V, while <code>*</code> corresponds to the X11 primary selection (<code>XA_PRIMARY</code>), which stores the mouse selection and is pasted using the middle mouse button in most applications. We can use these registers like any other register. Here are a few common commands that demonstrate this:
+</p>
+<ul><li> <code>gg"+yG</code> – copy the entire buffer into <code>+</code> (normal mode)
+</li><li> <code>"*dd</code> – cut the current line into <code>*</code> (normal mode)
+</li><li> <code>"+p</code> – paste from <code>+</code> after the cursor (works in both normal and visual modes)
+</li><li> <code>:%y *</code> – copy the entire buffer into <code>*</code> (this one is an ex command)
+</li></ul>
+<p class="cye-lm-tag">One distinction to make is that using <code>+</code> and <code>*</code> is different from using CTRL-SHIFT-V on the terminal (or doing a right-click and then selecting "paste" in the terminal menu), where Vim essentially inserts each character in the clipboard one-by-one. In general using <code>+</code> and <code>*</code> is much more reliable than using CTRL-SHIFT-V.
+</p><p class="cye-lm-tag">See also <a href="/wiki/Pasting_registers" title="Pasting registers">pasting registers</a> for more general information about pasting from registers.
+</p><p class="cye-lm-tag">I searched though the tips and found only a few passing references to this feature: <a href="/wiki/VimTip71" title="VimTip71" class="mw-redirect">VimTip71</a> (implies it's a feature of gvim, but I find it works in console Vim just fine under Linux; I only use gvim under MS Windows). <a href="/wiki/VimTip771" title="VimTip771" class="mw-redirect">VimTip771</a> and <a href="/wiki/VimTip964" title="VimTip964" class="mw-redirect">VimTip964</a> refer to an extra utility named xclip which is only for X11 and seems to be completely unnecessary for Vim using the <code>*</code> register), and <a href="/wiki/VimTip960" title="VimTip960" class="mw-redirect">VimTip960</a> (misses the point but the comments mention it a few times).
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Using_the_clipboard_as_the_default_register">Using the clipboard as the default register</span></h2>
+<p class="cye-lm-tag"><a href="/wiki/VimTip21" title="VimTip21" class="mw-redirect">VimTip21</a> is spot on but the title suggests it's for MS Windows only. It also mentions that we can change out settings so the "anonymous" register is aliased to the <code>*</code> register using:
+</p>
+<pre>set clipboard=unnamed
+</pre>
+<dl><dd> <b>Note:</b> in vim 7.3.74 and higher you can set <code>clipboard=unnamedplus</code> to alias unnamed register to the <code>+</code> register, which is the X Window clipboard.
+</dd></dl>
+<p class="cye-lm-tag"><a href="/wiki/VimTip432" title="VimTip432" class="mw-redirect">VimTip432</a> and <a href="/wiki/VimTip600" title="VimTip600" class="mw-redirect">VimTip600</a> use the <code>*</code> register in some native Vim code (using <code>@*</code>) without explaining it in general. <a href="/wiki/VimTip448" title="VimTip448" class="mw-redirect">VimTip448</a> also uses it (for converting hex to decimal) but explains it in passing. <a href="/wiki/VimTip478" title="VimTip478" class="mw-redirect">VimTip478</a> uses it in a function for copying the results of a <code>:g</code> search into the <code>*</code> register. <a href="/wiki/VimTip687" title="VimTip687" class="mw-redirect">VimTip687</a> suggests that Mac OS X doesn't implement the * register (yet?) but suggests a workaround using the pbcopy and pbpaste utilities. <a href="/wiki/VimTip876" title="VimTip876" class="mw-redirect">VimTip876</a> also makes passing reference to it.
+</p><p class="cye-lm-tag">There are several tips for copying the current filename into the clipboard including: <a href="/wiki/VimTip432" title="VimTip432" class="mw-redirect">VimTip432</a>, <a href="/wiki/VimTip891" title="VimTip891" class="mw-redirect">VimTip891</a>, <a href="/wiki/VimTip600" title="VimTip600" class="mw-redirect">VimTip600</a> (most of the fuss is resolving forward slashes and backslashes for MS Windows paths).
+</p>
+<div id="INCONTENT_WRAPPER"><div id="INCONTENT_PLAYER" class="wikia-ad default-height" data-label="advertisement" foao762="" hidden=""><div class="provider-container" id="DirectGpt_INCONTENT_PLAYER"></div></div></div><h2><span class="mw-headline cye-lm-tag" id="Checking_for_X11-clipboard_support_in_terminal">Checking for X11-clipboard support in terminal</span></h2>
+<p class="cye-lm-tag">Getting Vim to work with the X11 clipboard can be a struggle if you want to run Vim in a terminal. In this case, you will have to check for X11 clipboard support. The GUI version of Vim always has clipboard support.
+</p><p class="cye-lm-tag">From the console, type:
+</p>
+<pre>vim --version | grep clipboard
+</pre>
+<p class="cye-lm-tag">If you see <code>+clipboard</code> or <code>+xterm_clipboard</code>, you are good to go. If it's <code>-clipboard</code> and <code>-xterm_clipboard</code>, you will need to look for a version of Vim that was compiled with clipboard support. On Debian and Ubuntu, to obtain clipboard support install the packages <code>vim-gtk</code> or <code>vim-gnome</code> (not vim-tiny).
+</p><p class="cye-lm-tag">If you are running Redhat/CentOS, you can install the vim-X11 package (if you have gvim then this is already installed). This provides the vimx command, which is a console version of Vim with X11-clipboard support. Or if you are running Debian (only test on 7.0), installing vim-gnome package fixes the problem. I like aliasing Vim to vimx by adding this line to my .bashrc/.cshrc:
+</p>
+<pre>.bashrc or .zshrc: if [ -e /usr/bin/vimx ]; then alias vim='/usr/bin/vimx'; fi
+.cshrc: if (-e /usr/bin/vimx) alias vim '/usr/bin/vimx'
+</pre>
+<p class="cye-lm-tag">If you are running Gentoo, emerge vim with the 'X' USE flag. For instance, adding this line to /etc/portage/package.use:
+</p>
+<pre>app-editors/vim X</pre>
+<h2><span class="mw-headline cye-lm-tag" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/Using_the_Windows_clipboard_in_Cygwin_Vim" title="Using the Windows clipboard in Cygwin Vim">Using the Windows clipboard in Cygwin Vim</a>
+</li></ul>
+<h2><span class="mw-headline cye-lm-tag" id="Comments">Comments</span></h2>
+<p class="cye-lm-tag">Under Windows, the * and + registers are equivalent. For X11 systems, though, they differ. For X11 systems, * is the selection, and + is the cut buffer (like clipboard).
+</p><p class="cye-lm-tag">Text selected, or otherwise highlighted in one X11 app is available in the selection buffer, and text explicitly copied or cut is available in the cut buffer.
+</p><p class="cye-lm-tag">All my inter-window copy &amp; paste to gvim is handled by the &lt;F7&gt; key. This works for all OSes only for gvim.
+</p>
+<pre>"copy
+vmap &lt;F7&gt; "+ygv"zy`&gt;
+"paste (Shift-F7 to paste after normal cursor, Ctrl-F7 to paste over visual selection)
+nmap &lt;F7&gt; "zgP
+nmap &lt;S-F7&gt; "zgp
+imap &lt;F7&gt; &lt;C-r&gt;&lt;C-o&gt;z
+vmap &lt;C-F7&gt; "zp`]
+cmap &lt;F7&gt; &lt;C-r&gt;&lt;C-o&gt;z
+"copy register
+
+autocmd FocusGained * let @z=@+
+</pre>
+<hr>
+<p class="cye-lm-tag">The + and * registers do <i>not</i> work running Vim under cygwin without an X session (for instance running Vim directly from a cmd or rxvt window). They also don't work under Mac OS X using Vim from the command line (via Terminal.app or iTerm.app). This should be documented (as should workarounds).
+</p>
+<dl><dd>For such systems, <a rel="nofollow" class="external text" href="https://vim.sourceforge.io/scripts/script.php?script_id=2098">fakeclip plugin</a> provides comprehensive and extensible emulation for the clipboard registers.
+</dd></dl>
+<hr>
+<p class="cye-lm-tag">in response to above comment (cygwin vim sans X session), as of the software versions below, there doesn't seem to be any problems using the "* register in or outside of rxvt, in a cmd window:
+</p><p class="cye-lm-tag">WinXP (SP3)<br>
+cygwin (2.831)<br>
+rxvt (20050409-21)<br>
+vim (7.3.1314-1)<br>
+</p>
+<hr>
+<p class="cye-lm-tag">If you're having trouble with GVIM on Ubuntu, and it doesn't seem to be doing what everybody is saying it should, try closing it completely and reopening. It's supposed to "just work" in the case of copy-paste integration with the system clipboard, especially if you use GVIM's GUI buttons or menus. However, sometimes it just stops working, and you have to close and reopen.
+</p><p class="cye-lm-tag">The Ubuntu vim-gtk package contains the +xterm_clipboard option, while the standard vim package does not ...
+</p>
+<dl><dd>I used to use the xsel/xclip kludges years ago with gpm, on Debian... but I've found out here that simply installing vim-gtk3 with vim-gnome (they are dependent, and vim.gtk3 gets mapped to vim) makes using "*p a complete breeze, in old CLI vim. --October 5, 2016
+</dd></dl>
+<hr>
+<p class="cye-lm-tag">If for some reason your version of vim under Unix-like system has no support for clipboard, you can use a handy utility called xsel. Xsel lets you manipulate X selections (check man xsel for more info).
+To work around the lack of clipboard I use following mappings:
+</p>
+<pre>" Copy to X CLIPBOARD
+map &lt;leader&gt;cc&nbsp;:w&nbsp;!xsel -i -b&lt;CR&gt;
+map &lt;leader&gt;cp&nbsp;:w&nbsp;!xsel -i -p&lt;CR&gt;
+map &lt;leader&gt;cs&nbsp;:w&nbsp;!xsel -i -s&lt;CR&gt;
+" Paste from X CLIPBOARD
+map &lt;leader&gt;pp&nbsp;:r!xsel -p&lt;CR&gt;
+map &lt;leader&gt;ps&nbsp;:r!xsel -s&lt;CR&gt;
+map &lt;leader&gt;pb&nbsp;:r!xsel -b&lt;CR&gt;
+</pre>
+<p class="cye-lm-tag">So, to paste from X clipboard, you use&nbsp;:r!xsel -p|-s|-b depending which X clipboard you want to access. To copy, use <code>:w!xsel -i -p|-s|-b</code>.
+</p>
+<hr>
+<p class="cye-lm-tag">This was recently added, but there is no indication why it is useful or needed. I have moved it here for now because to my knowledge the normal clipboard access commands should work and are much more desireable.
+</p><p class="cye-lm-tag">--<a href="/wiki/User:Fritzophrenic" title="User:Fritzophrenic">Fritzophrenic</a> 17:30, November 8, 2010 (UTC)
+</p>
+<hr>
+<p class="cye-lm-tag">I am running ubuntu 10.04 with vim-gtk. The * register works as described for gvim but not the command line.
+vim --version does show the " +xterm_clipboard" option. This is version 7.2.
+</p>
+<dl><dd>I had a similar issue on Ubuntu 14.04. It turns out the default clipboard setting is <code>"autoselect,exclude:cons\|linux"</code> and I was changing it with <code>set clipboard+=unnamedplus</code>, which turned it into <code>"autoselect,exclude:cons\|linux,unnamedplus"</code>. However, according to the help page for <i>clipboard-exclude</i>, the exclude option must come last. Changing my code to <code>set clipboard^=unnamedplus</code> solved the problem by prepending the <i>unnamedplus</i> setting, rather than appending it.
+</dd><dd>BTW, I have Vim GNOME 7.4.52 from the Ubuntu repositories, and <code>clipboard=unnamed</code> uses the X clipboard, while <code>clipboard=unnamedplus</code> uses the (GNOME) System Clipboard.
+</dd><dd>--<a href="/wiki/User:LeahCim" title="User:LeahCim">LeahCim</a> (<a href="/wiki/User_talk:LeahCim" title="User talk:LeahCim">talk</a>) 02:01, September 1, 2014 (UTC)
+</dd></dl>
+<hr>
+<p class="cye-lm-tag">I have found using the <a rel="nofollow" class="external text" href="http://www.nongnu.org/autocutsel/">autocutsel</a> package on X11 in conjunction with set clipboard=unnamed provides a seamless experience.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Simple_workaround_for_X_clipboards">Simple workaround for X clipboards</span></h2>
+<p class="cye-lm-tag">There is a convenient workaround to create a few commands for pasting/copying selections into/out of various X11 clipboards with `xsel`.
+</p>
+<pre>:command -range Cz&nbsp;:silent&nbsp;:&lt;line1&gt;,&lt;line2&gt;w&nbsp;!xsel -i -b
+:command -range Cx&nbsp;:silent&nbsp;:&lt;line1&gt;,&lt;line2&gt;w&nbsp;!xsel -i -p
+:command -range Cv&nbsp;:silent&nbsp;:&lt;line1&gt;,&lt;line2&gt;w&nbsp;!xsel -i -s
+:cabbrev cv Cv
+:cabbrev cz Cz
+:cabbrev cx Cx
+
+:command -range Pz&nbsp;:silent&nbsp;:r&nbsp;!xsel -o -b
+:command -range Px&nbsp;:silent&nbsp;:r&nbsp;!xsel -o -p
+:command -range Pv&nbsp;:silent&nbsp;:r&nbsp;!xsel -o -s
+
+:cabbrev pz Pz
+:cabbrev px Px
+:cabbrev pv Pv
+</pre>
+<p class="cye-lm-tag">With this code blob dumped in your ~/.vimrc you can do the following
+</p>
+<pre>1. Select a blob of text in visual mode
+2. Step into command line with ':'
+3.
+  &nbsp;:`&lt;,`&gt;cz
+</pre>
+<p class="cye-lm-tag">and your selected text will be copied into one of X's 3 default clipboards.
+</p><p class="cye-lm-tag">there are 6 commands, 3 for pasting, 3 for copying, and each command represents a buffer.
+</p>
+<pre>z = "X11-Clipboard"
+x = "X11 Primary Selection"
+v = "X11 Secondary Selection"
+</pre>
+<h2><span class="mw-headline cye-lm-tag" id="DISPLAY_environment_variable_on_Linux_systems">DISPLAY environment variable on Linux systems</span></h2>
+<p class="cye-lm-tag">Make sure your DISPLAY environment variable is set appropriately - otherwise vim can not connect to your x-session to access the clipboard.
+</p><p class="cye-lm-tag">To check run:
+</p>
+<pre>echo $DISPLAY
+</pre>
+<p class="cye-lm-tag">which should output something like:
+</p>
+<pre>:0.0
+</pre>
+<hr>
+<h2><span class="mw-headline cye-lm-tag" id="Workaround_using_x11_minimum_packages_.28under_Linux.29">Workaround using x11 minimum packages (under Linux)</span></h2>
+<p class="cye-lm-tag">If nothing work and you would like to copy from vim (under xterm) to leafpad, you may use this add-on to your ~/.vimrc
+</p><p class="cye-lm-tag">Press F9, and it will copy to the x11 clipboard.
+</p>
+<pre>function Func2X11()
+:call system('xclip -selection c', @r)
+endfunction
+vnoremap &lt;F9&gt; "ry:call Func2X11()&lt;cr&gt;
+vnoremap &lt;m-c&gt; "ry:call Func2X11()&lt;cr&gt;
+vnoremap &lt;ESC-c&gt; "ry:call Func2X11()&lt;cr&gt;
+</pre>
+<p class="cye-lm-tag">I hope that it may help you.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Workarounds_for_xterm">Workarounds for xterm</span></h2>
+<p class="cye-lm-tag">If <code>:version</code> shows "<code>+xterm_clipboard</code>", but using the clipboard still does not work, try using other system tools as a workaround. For example, you can search for a clipboard.sh script which can be used like '<code>cat a.txt | clipboard</code>' to copy the contents of file a.txt to the system clipboard. When using kubuntu, the system clipboard is managed by 'Klipper', you can use 'Klipper' shortcut to paste anything to the system clipboard from anywhere because its shortcut has the highest precedence. --Changc11, October 10, 2013
+</p>
+<dl><dd>Has a case like this been discussed at the vim_use mailing list? If clipboard support is provided by Vim, and if the versions of Vim and the system are not excessively old, the clipboard should work. This idea is better as a comment until something more conclusive is known. <a href="/wiki/User:JohnBeckett" title="User:JohnBeckett">JohnBeckett</a> (<a href="/wiki/User_talk:JohnBeckett" title="User talk:JohnBeckett">talk</a>) 10:27, October 13, 2013 (UTC)
+</dd><dd>
+</dd></dl>
+</div>
+<br><hr>
+
+</body>
+</html>

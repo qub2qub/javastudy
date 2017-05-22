@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>SSL TLS</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    	table.code {
+		font-family: "Trebuchet MS",Tahoma,Arial;
+		font-size: 18px;
+		font-weight: bold;
+		border: 1px solid #000;
+		background-color: #999;
+		padding: 5px;
+	}
+    </style>
+</head>
+<body>
+<a href="https://blogs.msdn.microsoft.com/kaushal/2013/08/02/ssl-handshake-and-https-bindings-on-iis/">src</a>
+  <div class="entry-content single cye-lm-tag">
+		<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>Secure Socket Layer</strong> (<strong>SSL</strong>) also known as <strong>Transport Layer Security</strong> (<strong>TLS</strong>) is a cryptographic protocol which defines how 2 entities (client and server) communicate with each other securely. TLS is the successor of SSL. You can read more about it here: <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">http://en.wikipedia.org/wiki/Transport_Layer_Security</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">These are the following protocols which are most commonly used: </span></p>
+<ul>
+<li><span  class="cye-lm-tag"><strong>SSL 2.0 </strong></span></li>
+<li><span  class="cye-lm-tag"><strong>SSL 3.0 </strong></span></li>
+<li><span  class="cye-lm-tag"><strong>TLS 1.0 (SSL 3.1) </strong></span></li>
+<li><span  class="cye-lm-tag"><strong>TLS 1.1 (SSL 3.2) </strong></span></li>
+<li><span  class="cye-lm-tag"><strong>TLS 1.2 (SSL 3.3) </strong></span></li>
+</ul>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>SSL 2.0 </strong>had many security flaws which led to the development of its successor <strong>SSL 3.0</strong>. It is present only for backward compatibility. I have rarely seen anyone using this version and I would highly recommend against it. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">As we know TLS/SSL is an application layer protocol. Below is a diagram depicting the TCP/IP model: </span></p>
+<p style="text-align: center" class="cye-lm-tag"><img src="./pics/4336.080613_0416_SSLHandshak1.png" alt="" ></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">I am not going to discuss the <strong>SSL/TLS</strong> protocol in this post as it is beyond the scope of this topic. However I would be discussing <strong>SSL handshake</strong> in brief and relate it to <strong>IIS</strong>. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">The above diagram makes it clear that <strong>TLS/SSL</strong> runs on top of <strong>TCP/IP</strong> like any other application layer protocol. Before we delve into SSL handshake we need to know something about <strong>TCP handshake</strong> too. </span></p>
+<p class="cye-lm-tag"><span style="font-family: Segoe UI;font-size: 24pt" class="cye-lm-tag"><strong>TCP/IP Handshake </strong></span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Microsoft has published a support article explaining the 3-way <strong>TCP/IP handshake</strong>. Here is the link: <a href="http://support.microsoft.com/kb/172983">http://support.microsoft.com/kb/172983</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Below diagram should give you a gist of the TCP/IP handshake: </span></p>
+<p style="text-align: center" class="cye-lm-tag"><img src="./pics/2021.080613_0416_SSLHandshak2.png" alt=""></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">If we were to capture a network trace (or a TCP Dump) and look at the details available and analyze the details available; the <strong>IP Layer</strong> provides the <strong>TCP layer</strong> with <strong>IP Address</strong> of the <strong>client</strong> and <strong>server</strong>. The <strong>TCP layer</strong> contains the details about the <strong>source port</strong> and the <strong>destination port</strong>, <strong>TCP Flags</strong> and other details like <strong>checksum, Windows Size</strong> etc. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">When the user launches a browser and punches in the web address, let’s say <a href="https://www.kaushalz.com/">https://www.kaushalz.com</a>, the client and the server would perform the TCP/IP handshake as seen below </span></p>
+<p style="text-align: center" class="cye-lm-tag"><img src="./pics/5518.080613_0416_SSLHandshak3.png"  width="800" alt=""></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">So basically this is what is passed on from the <strong>TCP/IP layer</strong> to the application layer: </span></p>
+<ul>
+<li><span  class="cye-lm-tag">IP Address of the source and destination </span></li>
+<li><span  class="cye-lm-tag">Source Port and Destination Port </span></li>
+</ul>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">The host header is neither present in the IP or the TCP layer. This actually leads to a problem which was addressed via the introduction of <a href="http://en.wikipedia.org/wiki/Server_Name_Indication">SERVER NAME INDICATION</a> (a TLS Extension). </span></p>
+<p class="cye-lm-tag"><span style="color: #c00000;font-family: Segoe UI;font-size: 16pt" class="cye-lm-tag"><strong>Problem due to above Limitation </strong></span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Before I describe the problem we need to understand a little about the server side bindings. When routing a HTTP request to a website the server determines which process the request to be routed based on the <strong>IP</strong>, <strong>PORT</strong> &amp; the <strong>HOSTNAME</strong>. These 3 are always available to the server during a normal HTTP communication. So basically the combination of <strong>IP+PORT+HOSTNAME</strong> is used as a unique identity to route the site to a specific process. The server admin can have the same <strong>IP+PORT</strong> for all the HTTP websites and alter only the <strong>HOSTNAME</strong> and maintain the uniqueness throughout. Which also makes the server scalable. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">However in case of SSL the server has access to <strong>IP</strong> &amp; <strong>Port</strong> only. Since the <strong>HOSTNAME</strong> is not available, the server has to route the request to the process depending on <strong>IP+PORT</strong>. This limitation leaves the server handicapped, as it has to changes the design for websites running on HTTPS. Due to this, the uniqueness for the websites running on HTTPS is determined through combination of <strong>IP+PORT</strong>. In real world, having a separate IP for a website is not ideal due to hardware &amp; monetary limitations. Also changing the port number for all SSL bindings may not be ideal as changing the port number to anything other than the default SSL port would require the client to specifically put out the port number in the request. As a result, the server is not scalable for HTTPS sites. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">This was a protocol limitation and severely affected the scalability of the sites </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">This problem was addressed by introducing a <strong>TLS Extension</strong> called <strong>Server name Indication</strong>. The client sends the server the hostname it is requesting for as a part of the <strong>CLIENT HELLO</strong> in the form of <strong>TLS EXTENSIONS</strong>. You can read more about it here: <a href="http://tools.ietf.org/html/rfc3546"><strong>RFC 3546 (Section 3.1)</strong></a> </span></p>
+<p class="cye-lm-tag"><span style="font-family: Segoe UI;font-size: 24pt" class="cye-lm-tag"><strong>TLS/SSL Handshake </strong></span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Let’s consider a scenario where the client launches the browser and punches in <a href="https://www.kaushalz.com/">https://www.kaushalz.com</a>. </span></p>
+<ul style="margin-left: 39pt">
+<li><span  class="cye-lm-tag">Client will try to resolve the hostname to an IPAddress via <strong>DNS</strong>. </span></li>
+<li><span  class="cye-lm-tag">Once the client has the <strong>Destination IP</strong>, it will send a <strong>TCP SYN</strong> to the server. </span></li>
+<li><span  class="cye-lm-tag">The Server responds with <strong>ACK</strong> to this <strong>SYN</strong>. </span></li>
+<li><span  class="cye-lm-tag">The client responds with an <strong>ACK</strong> to the <strong>ACK</strong> it received from the server. Now a TCP connection has been established between the client and the server. The client will now forward the requests to the <strong>Destination IP</strong> on <strong>port 443</strong> (<strong>Default TLS/SSL port</strong>) </span></li>
+<li><span  class="cye-lm-tag">The control is now transferred to the <strong>SSL Protocol</strong> in the <strong>application layer</strong>. It has the IP &amp; the Port information handy from previous steps. However, it still has no clue whatsoever about the hostname. </span></li>
+<li>
+<div><span  class="cye-lm-tag">The client creates a TLS Packet called as <strong>CLIENT HELLO</strong>. This contains the following details: </span></div>
+<ul>
+<li><span  class="cye-lm-tag">SSL Protocol version </span></li>
+<li><span  class="cye-lm-tag">Session ID </span></li>
+<li><span  class="cye-lm-tag">List of Cipher Suites supported by the client. </span></li>
+<li><span  class="cye-lm-tag">List of CLIENT HELLO Extensions </span></li>
+</ul>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">The Client typically selects the most secure protocol version and sends it to the server. Below is a snippet from the <a href="http://tools.ietf.org/html/rfc3546"><strong>RFC 3546</strong></a>: </span></p></li>
+</ul>
+<div style="margin-left: 85pt">
+<table class="code" border="0" align="center">
+<colgroup>
+<col style=""></colgroup>
+<tbody valign="top">
+<tr>
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt">
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Blake-Wilson, et. al.&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Standards Track&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; [Page 4]<br>
+RFC 3546&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; TLS Extensions&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; June 2003</span></p>
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><br>
+2.1. Extended Client Hello</span></p>
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><br>
+Clients MAY request extended functionality from servers by sending the extended client hello message format in place of the client hello message format. The extended client hello message format is:</span></p>
+<p style="padding-left: 30px" class="cye-lm-tag"><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">struct {<br>
+</span></span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> ProtocolVersion client_version;</span><br>
+</span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Random random;<br>
+</span></span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">SessionID session_id;<br>
+</span></span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">CipherSuite cipher_suites&lt;2..2^16-1&gt;;<br>
+</span></span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">CompressionMethod compression_methods&lt;1..2^8-1&gt;;<br>
+</span></span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Extension client_hello_extension_list&lt;0..2^16-1&gt;;<br>
+} ClientHello;</span></span></p>
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Here the new “client_hello_extension_list” field contains a list of extensions. The actual “Extension” format is defined in Section 2.3.</span></p>
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">In the event that a client requests additional functionality using</span>&nbsp; <span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">the extended client hello, and this functionality is not supplied by the server, the client MAY abort the handshake.</span></p>
+<p style="text-align: justify" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Note that [TLS], Section 7.4.1.2, allows additional information to be added to the client hello message.&nbsp; Thus the use of the extended client hello defined above should not “break” existing TLS 1.0 servers.</span></p>
+<p style="text-align: justify" class="cye-lm-tag">&nbsp;<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">A server that supports the extensions mechanism MUST accept only client hello messages in either the original or extended ClientHello format, and (as for all other messages) MUST check that the amount of data in the message precisely matches one of these formats; if not <span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">then it MUST send a fatal “decode_error” alert.&nbsp; This overrides the “Forward compatibility note” in [TLS].</span><br>
+</span></p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="margin-left: 39pt;padding-left: 30px" class="cye-lm-tag">&nbsp;<span  class="cye-lm-tag">If you were to capture a network trace (or a TCP Dump) this is how the <strong>CLIENT HELLO</strong> would look like: </span></p>
+<div style="margin-left: 50pt">
+<table class="code" style="border-collapse: collapse;" border="0" align="center">
+<colgroup>
+<col style=""></colgroup>
+<tbody valign="top">
+<tr>
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Frame 310</strong>: 187 bytes on wire (1496 bits), 187 bytes captured (1496 bits) on interface 0</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Ethernet II</strong>, Src: WistronI_86:74:54 (3c:97:0e:86:74:54), Dst: Cisco_e5:44:00 (10:bd:18:e5:44:00)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Internet Protocol Version 4</strong>, Src: 10.171.71.21 (10.171.71.21), Dst: 10.168.3.213 (10.168.3.213)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Transmission Control Protocol</strong>, Src Port: 42079 (42079), Dst Port: http (80), Seq: 226, Ack: 116, Len: 133</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Secure Sockets Layer<br>
+</strong>&nbsp;&nbsp;&nbsp; TLSv1 Record Layer: Handshake Protocol: Client Hello</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Content Type: Handshake (22)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Version: TLS 1.0 (0x0301)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 128</span><br>
+<span style="font-size: small" class="cye-lm-tag"><strong><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong><span style="background-color: #ffff00" class="cye-lm-tag"><strong><span style="font-family: courier new,courier" class="cye-lm-tag"> Handshake Protocol: Client Hello</span></strong></span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handshake Type: Client Hello (1)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 124</span><br>
+<span style="font-size: small" class="cye-lm-tag"><strong><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong><span style="background-color: #ffff00" class="cye-lm-tag"><strong><span style="font-family: courier new,courier" class="cye-lm-tag"> Version: TLS 1.0 (0x0301)</span></strong></span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Random<br>
+</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gmt_unix_time: Aug&nbsp; 3, 2013 06:45:04.000000000 India Standard Time</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; random_bytes: 894966609a64a0b0ba0b4cd5adcc431aad77f0ff6108590e…</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Session ID Length: 0</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suites Length: 24</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="background-color: #ffff00" class="cye-lm-tag"> Cipher Suites (12 suites)</span><br>
+</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_RSA_WITH_AES_128_CBC_SHA (0x002f)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_RSA_WITH_AES_256_CBC_SHA (0x0035)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_RSA_WITH_RC4_128_SHA (0x0005)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_RSA_WITH_3DES_EDE_CBC_SHA (0x000a)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA (0xc013)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA (0xc014)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA (0xc009)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA (0xc00a)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_DHE_DSS_WITH_AES_128_CBC_SHA (0x0032)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_DHE_DSS_WITH_AES_256_CBC_SHA (0x0038)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA (0x0013)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cipher Suite: TLS_RSA_WITH_RC4_128_MD5 (0x0004)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Compression Methods</strong> Length: 1</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Compression Methods</strong> (1 method)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extensions</strong> Length: 59</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extension</strong>: renegotiation_info</span><br>
+<span style="font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;background-color: #ffff00" class="cye-lm-tag"> <strong>Extension</strong>: server_name</span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extension</strong>: status_request</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extension</strong>: elliptic_curves</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extension</strong>: ec_point_formats</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Extension</strong>: SessionTicket TLS</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="margin-left: 39pt" class="cye-lm-tag">
+</p><ul style="margin-left: 39pt">
+<li><span  class="cye-lm-tag">The client sends a <strong>CLIENT HELLO</strong> to the server on the IP &amp; Port it obtained during TCP handshake. </span></li>
+<li>
+<div><span  class="cye-lm-tag">For this scenario I will consider IIS 7.5 as the <strong>SERVER</strong> entity. Upon receiving the <strong>CLIENT HELLO</strong>, the server has access to the following information: </span></div>
+<ul>
+<li><span  class="cye-lm-tag">IP Address (<strong>10.168.3.213</strong>) </span></li>
+<li><span  class="cye-lm-tag">Port Number (<strong>443</strong>) </span></li>
+<li><span  class="cye-lm-tag">Protocol Version (<strong>TLS 1.0</strong>) </span></li>
+<li><span  class="cye-lm-tag">List of Cipher Suites </span></li>
+<li><span  class="cye-lm-tag">Session ID </span></li>
+<li><span  class="cye-lm-tag">List of <strong>CLIENT HELLO</strong> Extensions etc. </span></li>
+</ul>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">The Server will first check if it supports the above protocol version and if any of the cipher suites in the provided list. If not, the handshake fails there itself. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">The Server will now try to determine if there is an end point listening on the <strong>IP</strong> and <strong>PORT</strong>. If it finds an endpoint and if it is <strong>IIS</strong>, then the <strong>TCPIP.SYS</strong> driver moves the packet to the <strong>HTTP.SYS</strong> layer. </span></p>
+<ol>
+<li><span  class="cye-lm-tag"><strong>HTTP.SYS</strong> moves the request into the generic <strong>SSL Queue</strong>. </span></li>
+<li><span  class="cye-lm-tag">Until IIS 7.5 the SSL bindings were IP based i.e., IP+ Port and were associated with a certificate hash. </span></li>
+<li><span style="" class="cye-lm-tag"><span>The <strong>HTTP.SYS</strong> tries to determine the certificate has corresponding to this <strong>IP+Port</strong> combination. It does so by enumerating the following registry key: </span><span style="font-family: Courier New" class="cye-lm-tag"><strong>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\HTTP\Parameters\SslBindingInfo </strong></span></span></li>
+<li><span  class="cye-lm-tag">From the above, the certificate hash corresponding to the <strong>IP+PORT</strong> combination is determined. Now the <strong>HTTP.SYS</strong> calls the <strong>CRYPTO API’s</strong> by passing on the cert hash to retrieve certificate blob, which calls the certificate store, finds the certificate and sends it back to the <strong>HTTP.SYS</strong>. </span></li>
+</ol>
+</li>
+<li><span  class="cye-lm-tag">The Server responds to the client with <strong>SERVER HELLO</strong>. RFC 3546 defines the <a href="http://tools.ietf.org/html/rfc3546">format of the <strong>SERVER HELLO</strong></a>: </span></li>
+</ul>
+<div style="margin-left: 85pt">
+<table class="code" style="border-collapse: collapse;" border="0" align="center">
+<colgroup>
+<col style=""></colgroup>
+<tbody valign="top">
+<tr>
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Blake-Wilson, et. al.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Standards Track&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Page 5]</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">RFC 3546&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TLS Extensions&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; June 2003</span><p class="cye-lm-tag"></p>
+<p class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">2.2. Extended Server Hello</span></p>
+<p class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">The extended server hello message format MAY be sent in place of the server hello message when the client has requested extended functionality via the extended client hello message specified in Section 2.1.&nbsp; The extended server hello message format is:</span></p>
+<p class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> struct {</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> ProtocolVersion server_version;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> Random random;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> SessionID session_id;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> CipherSuite cipher_suite;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> CompressionMethod compression_method;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> Extension server_hello_extension_list&lt;0..2^16-1&gt;;</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;font-size: small;background-color: #ffff00" class="cye-lm-tag"> } ServerHello;</span></p>
+<p class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Here the new “server_hello_extension_list” field contains a list of extensions.&nbsp; The actual “Extension” format is defined in Section 2.3.</span></p>
+<p class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Note that the extended server hello message is only sent in response to an extended client hello message.&nbsp; This prevents the possibility that the extended server hello message could “break” existing TLS 1.0 clients. </span><br>
+</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="margin-left: 39pt;padding-left: 30px" class="cye-lm-tag"><span  class="cye-lm-tag">The Server typically responds back with the following details: </span></p>
+<ul style="margin-left: 75pt">
+<li><span  class="cye-lm-tag">SSL/TLS Protocol version. </span></li>
+<li><span  class="cye-lm-tag">One of the cipher suites from the list of cipher suites provided by client. (whichever is the most secure) </span></li>
+<li><span  class="cye-lm-tag">Certificate of the server (Without the private key of course) </span></li>
+<li><span  class="cye-lm-tag">List of <strong>SERVER HELLO</strong> Extensions. </span></li>
+<li><span  class="cye-lm-tag">(<span style="color: #70ad47" class="cye-lm-tag"><strong>OPTIONAL</strong></span>)If the web app associated with this binding requires a Client Certificate for authentication then it would request the client to send the certificate. Here the IIS Sever would send the client the distinguished names of the list of <strong>TRUSTED ROOT CA</strong> it supports. </span></li>
+</ul>
+<p style="margin-left: 39pt;padding-left: 30px" class="cye-lm-tag"><span  class="cye-lm-tag">Below is a snippet of the network trace:<br>
+</span></p>
+<div style="margin-left: 50pt">
+<table class="code" style="border-collapse: collapse;" border="0" align="center">
+<colgroup>
+<col style=""></colgroup>
+<tbody valign="top">
+<tr>
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Frame 320</strong>: 257 bytes on wire (2056 bits), 257 bytes captured (2056 bits) on interface 0</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Ethernet II</strong>, Src: Cisco_e5:44:00 (10:bd:18:e5:44:00), Dst: WistronI_86:74:54 (3c:97:0e:86:74:54)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Internet Protocol Version 4</strong>, Src: 10.168.3.213 (10.168.3.213), Dst: 10.171.71.21 (10.171.71.21)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Transmission Control Protocol</strong>, Src Port: http (80), Dst Port: 42079 (42079), Seq: 1576, Ack: 359, Len: 203</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">[2 Reassembled TCP Segments (1663 bytes): #319(1460), #320(203)]</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong>Secure Sockets Layer<br>
+</strong>&nbsp;&nbsp;&nbsp; <strong>TLSv1 Record Layer</strong>: Handshake Protocol: Multiple Handshake Messages</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Content Type: Handshake (22)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Version: TLS 1.0 (0x0301)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 1658</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="background-color: #ffff00" class="cye-lm-tag"> <strong>Handshake Protocol</strong>: </span><strong><span style="background-color: #ffff00" class="cye-lm-tag">Server Hello</span><br>
+</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handshake Type: Server Hello (2)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 81</span><br>
+<span style="font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;background-color: #ffff00" class="cye-lm-tag"> Version: TLS 1.0 (0x0301)</span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Random</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Session ID Length: 32</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Session ID: 8d0a0000efffe1ad6a82edc6d6a8967bd759cd0f3bdf70e9…</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><span style="background-color: #ffff00" class="cye-lm-tag">Cipher Suite: TLS_RSA_WITH_RC4_128_SHA (0x0005)</span><br>
+</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Compression Method: null (0)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extensions Length: 9</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extension: renegotiation_info</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extension: server_name</span><br>
+<span style="font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;background-color: #ffff00" class="cye-lm-tag"> <strong>Handshake Protocol</strong>: Certificate</span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handshake Type: Certificate (11)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 1565</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Certificates Length: 1562<br>
+</strong><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Certificates (1562 bytes)<br>
+</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Certificate Length: 1559</span><br>
+<span style="font-size: small" class="cye-lm-tag"><span style="font-family: courier new,courier" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="font-family: courier new,courier;background-color: #ffff00" class="cye-lm-tag"> <strong>Certificate</strong> (id-at-commonName=<strong>www.kaushalz.com</strong>,id-at-organizationalUnitName=Azure,id-at-organizationName=Microsoft,id-at-localityName=Bangalore,id-at-stateOrProvinceName=India,id-at-countryName=IN)</span></span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; signedCertificate</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; algorithmIdentifier (shaWithRSAEncryption)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Padding: 0</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; encrypted: bcd1c6d0a5e548eea94749e950d9ed8d7b73a79ac63306f0…</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Handshake Protocol</strong>: Server Hello Done</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handshake Type: Server Hello Done (14)</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length: 0</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="margin-left: 39pt" class="cye-lm-tag">
+</p><ul style="margin-left: 39pt">
+<li><span  class="cye-lm-tag">The Client uses the <strong>SERVER HELLO</strong> to perform <strong>SERVER AUTHENTICATION</strong>. This is described in detail here: <a href="http://support.microsoft.com/kb/257587">http://support.microsoft.com/kb/257587</a>.If the server cannot be authenticated, the user is warned and informed that an encrypted and authenticated connection cannot be established. If the server is successfully authenticated, the client proceeds to the next step. </span></li>
+</ul>
+<div style="margin-left: 150pt">
+<table style="border-collapse: collapse;background: none repeat scroll 0% 0% #f2f2f2;" border="0" align="center">
+<colgroup>
+<col></colgroup>
+<tbody valign="top">
+<tr>
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt" valign="middle"><span  class="cye-lm-tag"><strong>NOTE</strong>: If you captured a network trace for a SSL Handshake you could see the details until <strong>SERVER HELLO</strong>, after that the encryption begins and nothing would be available and would make sense as the packets are encrypted.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<ul style="margin-left: 39pt">
+<li><span  class="cye-lm-tag">The Client uses the data provided from the server to generate a <strong>pre-master secret</strong> for the session,<strong> <span style="background-color: yellow" class="cye-lm-tag">encrypts it with the server’s public key (obtained from the server’s certificate),</span></strong> and then sends the encrypted pre-master secret to the server. If the server had requested for <strong>CLIENT CERTIFICATE</strong>, then client also signs another piece of data that is unique to this handshake and known by both the client and server. In this case, the client sends both the signed data and the client’s own certificate to the server along with the encrypted pre-master secret. </span></li>
+<li><span  class="cye-lm-tag">If the server had requested for client authentication, the server attempts to authenticate the client. If the client cannot be authenticated, the session ends. If the client is successfully authenticated, the server uses its <strong>private key</strong> to decrypt the <strong>pre-master secret</strong>, and then performs a series of steps (which the client also performs, starting from the same pre-master secret) to <span style="background-color: yellow" class="cye-lm-tag">generate the <strong>master secret</strong></span>. </span></li>
+<li><span  class="cye-lm-tag">Both <span style="background-color: yellow" class="cye-lm-tag"><strong>the client and the server use the master secret to generate the session keys, which are symmetric keys</strong></span> used to encrypt and decrypt information exchanged during the SSL session and to verify its integrity (that is, to detect any changes in the data between the time it was sent and the time it is received over the SSL connection). </span></li>
+<li><span  class="cye-lm-tag">The <strong>CLIENT</strong> &amp; the <strong>SERVER</strong> send each other a message informing that future messages from them will be encrypted with the session key. It then sends a separate (encrypted) message indicating that its portion of the handshake is finished. </span></li>
+<li><span  class="cye-lm-tag">The SSL Handshake is done. The Client and the Server send each other messages which are encrypted/decrypted using the session keys generated in the previous step. </span></li>
+<li><span  class="cye-lm-tag">It is now that the Client sends the actual <strong>HTTP Request</strong> packet to the Server in the encrypted form. </span></li>
+<li><span  class="cye-lm-tag">The Server decrypts the request via the symmetric key and generates a response, encrypts it and sends it back to the client. </span></li>
+<li><span  class="cye-lm-tag">This continues normally for the entire session of secure communication. However, at any time either the client or the server may renegotiate the connection. In this case the process repeats again. </span></li>
+</ul>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Below is a diagrammatic representation of the <strong>SSL Handshake</strong>: </span></p>
+<p style="text-align: center" class="cye-lm-tag"><img class="" src="./pics/7608.080613_0416_SSLHandshak4.png" alt="" width="800"></p>
+<p class="cye-lm-tag"><span style="font-family: Segoe UI;font-size: 20pt" class="cye-lm-tag"><strong>Identifying problems during SSL Handshake </strong></span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Eventually, once the handshake completes and the data exchange has been done, either both or one of the entities will eventually close down the connection gracefully. If there was a problem during the SSL Handshake then you there would be an exception raised within the <strong>SSL Layer (SSL ALERT PROTOCOL)</strong>. These exceptions may or may not be fatal i.e. not all exceptions would cause the handshake to fail. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">As we know there we can see details only until <strong>SERVER HELLO</strong>. Anything beyond this point is not visible. However, in case of a SSL ALERT we would see some notification which can be viewed in the network traces. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">Servers also tend to propagate this information through some sort of server logging. On <strong>Windows</strong> we have <strong>SCHANNEL</strong> logging which throws a corresponding <strong>SCHANNEL</strong> event in the <strong>SYSTEM</strong> event logs. Watch out for these events. Below is a snippet of one such event: </span></p>
+<div style="">
+<table class="code" style="border-collapse: collapse;" border="0" align="center">
+<colgroup>
+<col style=""></colgroup>
+<tbody valign="top">
+<tr style="">
+<td style="padding-left: 9px;padding-right: 9px;border: solid 0.5pt"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Log Name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System<br>
+</span><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag"><strong><span style="background-color: #ffff00" class="cye-lm-tag">Source:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Schannel</span><br>
+</strong>Date:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;05-08-2013 20:16:02</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Event ID:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 36888</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Task Category: None</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Level:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Error</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Keywords:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">User:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SYSTEM</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Computer:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; My-Computer</span><br>
+<span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">Description:</span><p class="cye-lm-tag"></p>
+<p class="cye-lm-tag"><span style="color: #c00000;font-family: Consolas;;background-color: #ffff00" class="cye-lm-tag"><span style="font-family: courier new,courier;font-size: small" class="cye-lm-tag">The following fatal alert was generated: 40. The internal error state is 1205.</span><strong><br>
+</strong></span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="cye-lm-tag">&nbsp;</p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">However, do remember that not all the alerts that you see are fatal. Try to reproduce the error and confirm that this was the error message that was logged due to the problem you were facing. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">You could either use <a href="http://www.wireshark.org/download.html"><strong>WireShark</strong></a> or <a href="http://www.microsoft.com/en-us/download/details.aspx?id=4865"><strong>Network Monitor</strong></a><strong> (NETMON)</strong>. I using both depending on what scenario I am running into. </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag">That’s it for now folks, hopefully this would give you some idea on how SSL handshake works. Let me know if you have any queries/suggestions. </span></p>
+<p style="text-align: center" class="cye-lm-tag"><span style="font-family: Segoe UI;font-size: 24pt;text-decoration: underline" class="cye-lm-tag"><strong>MORE INFORMATION </strong></span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>TCP/IP Handshake</strong>: <a href="http://support.microsoft.com/kb/172983">http://support.microsoft.com/kb/172983</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>Description of SSL Handshake</strong>: <a href="http://support.microsoft.com/kb/257591">http://support.microsoft.com/kb/257591</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>Description of Server Authentication during SSL Handshake</strong>: <a href="http://support.microsoft.com/kb/257587">http://support.microsoft.com/kb/257587</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>SSL/TLS Alert protocol &amp; the alert codes</strong>: <a href="http://blogs.msdn.com/b/kaushal/archive/2012/10/06/ssl-tls-alert-protocol-amp-the-alert-codes.aspx">http://blogs.msdn.com/b/kaushal/archive/2012/10/06/ssl-tls-alert-protocol-amp-the-alert-codes.aspx</a> </span></p>
+<p class="cye-lm-tag"><span  class="cye-lm-tag"><strong>Server Name Indication</strong>: <a href="http://en.wikipedia.org/wiki/Server_Name_Indication">http://en.wikipedia.org/wiki/Server_Name_Indication</a> </span></p>
+	</div>
+  <br><hr>
+  <div class="content-article cye-lm-tag">
+    <div class="container">
+        <div class="row">
+            <header class="page-title-header">
+                <!-- ngIf: article.details.heading --><h1 class="page-title col-xl-20 col-md-18 ng-binding ng-scope" ng-if="article.details.heading" ng-bind-html="article.details.heading">Explanation of the Three-Way Handshake via TCP/IP</h1><!-- end ngIf: article.details.heading -->
+                <!-- ngIf: !article.details.heading -->
+                <div ng-hide="iframe" media-widget="" data-title="Explanation of the Three-Way Handshake via TCP/IP" class="ng-isolate-scope" aria-hidden="false"><div class="content-media row">
+</div></div>
+            </header>
+        </div>
+    </div>
+<div ng-include="getTemplateUrl()" class="ng-scope cye-lm-tag"><div content-section-list="article.details.body" class="ng-scope ng-isolate-scope cye-lm-tag"><!-- ngRepeat: section in contentSectionList track by $index --><!-- ngIf: !isString && hasContent() --><div ng-repeat="section in contentSectionList track by $index" ng-if="!isString &amp;&amp; hasContent()" class="ng-scope">
+    <div content-section="section" class="ng-isolate-scope"><!-- ngIf: typeof(contentSection) !== 'string' --><section class="section ng-scope" ng-if="typeof(contentSection) !== 'string'" applies-to-products="[]" ng-attr-id="{{contentSection.meta.id}}" ng-class="{'internal-content': isInternalSection() }" id="">
+    <!-- ngIf: isInternalSection() -->
+    <!-- ngIf: contentSection.title --><header class="section-header ng-scope" ng-if="contentSection.title">
+        <h3 class="section-title ng-binding" ng-bind-html="contentSection.title"> Summary</h3>
+        <!-- ngIf: contentSection.subtitle -->
+    </header><!-- end ngIf: contentSection.title -->
+    <!-- ngIf: contentSection.content && contentSection.content.length > 0 --><div class="container section-body ng-scope" ng-if="contentSection.content &amp;&amp; contentSection.content.length > 0">
+        <div class="row">
+            <!-- ngRepeat: content in contentSection.content track by $index --><div ng-class="getStyleClass()" ng-repeat="content in contentSection.content track by $index" class="ng-scope col-xs-24">
+                <div compile="content" class="ng-isolate-scope"><div class="ng-scope">This article is intended for audiences who are familiar with Transmission Control Protocol/Internet Protocol (TCP/IP) and discusses the process of the TCP three-way handshake that occurs between a client and server when initiating or terminating a TCP connection.<br><br><br>For additional information on TCP/IP, please see the following white paper available on the Microsoft anonymous ftp server:<br><div class="indent">   File Name: Tcpipimp2.doc<br>   Location : <a id="kb-link-1" href="ftp://ftp.microsoft.com/bussys/winnt/winnt-docs/papers/" target="_self">ftp://ftp.microsoft.com/bussys/winnt/winnt-docs/papers/</a> "Microsoft Windows NT 3.5/3.51/4.0: TCP/IP Implementation Details TCP/IP Protocol Stack and Services, Version 2.0"<br></div></div></div>
+            </div><!-- end ngRepeat: content in contentSection.content track by $index -->
+        </div>
+    </div><!-- end ngIf: contentSection.content && contentSection.content.length > 0 -->
+</section><!-- end ngIf: typeof(contentSection) !== 'string' --></div>
+</div><!-- end ngIf: !isString && hasContent() --><!-- end ngRepeat: section in contentSectionList track by $index --><!-- ngIf: !isString && hasContent() --><div ng-repeat="section in contentSectionList track by $index" ng-if="!isString &amp;&amp; hasContent()" class="ng-scope cye-lm-tag">
+    <div content-section="section" class="ng-isolate-scope cye-lm-tag"><!-- ngIf: typeof(contentSection) !== 'string' --><section class="section ng-scope cye-lm-tag" ng-if="typeof(contentSection) !== 'string'" applies-to-products="[]" ng-attr-id="{{contentSection.meta.id}}" ng-class="{'internal-content': isInternalSection() }" id="">
+    <!-- ngIf: isInternalSection() -->
+    <!-- ngIf: contentSection.title --><header class="section-header ng-scope" ng-if="contentSection.title">
+        <h3 class="section-title ng-binding" ng-bind-html="contentSection.title"> More Information</h3>
+        <!-- ngIf: contentSection.subtitle -->
+    </header><!-- end ngIf: contentSection.title -->
+    <!-- ngIf: contentSection.content && contentSection.content.length > 0 --><div class="container section-body ng-scope cye-lm-tag" ng-if="contentSection.content &amp;&amp; contentSection.content.length > 0">
+        <div class="row cye-lm-tag">
+            <!-- ngRepeat: content in contentSection.content track by $index --><div ng-class="getStyleClass()" ng-repeat="content in contentSection.content track by $index" class="ng-scope col-xs-24 cye-lm-tag">
+                <div compile="content" class="ng-isolate-scope cye-lm-tag"><div class="kb-moreinformation-section section ng-scope cye-lm-tag">The Transmission Control Protocol (TCP) level of the TCP/IP transport protocol is connection-oriented. Connection-oriented means that, before any data can be transmitted, a reliable connection must be obtained and acknowledged. TCP level data transmissions, connection establishment, and connection termination maintain specific control parameters that govern the entire process. The control bits are listed as follows:<br><br><div class="indent">   URG:  Urgent Pointer field significant<br>   ACK:  Acknowledgement field significant<br>   PSH:  Push Function<br>   RST:  Reset the connection<br>   SYN:  Synchronize sequence numbers<br>   FIN:  No more data from sender<br></div>There are two scenarios where a three-way handshake will take place:<br><br><ul class="sbody-free_list"><li>Establishing a connection (an active open)<br></li><li>Terminating a connection (an active close)<br></li></ul>The following sample information was obtained from a Network Monitor capture. Network Monitor is a protocol analyzer that can be obtained from Microsoft Systems Management Server.<br><br><h3 class="sbody-h3">Establishing a Connection</h3>The following sequence shows the process of a TCP connection being established:<br><br><br>Frame 1:<br><br><br>As you see in the first frame, the client, NTW3, sends a SYN segment (TCP ....S.). This is a request to the server to synchronize the sequence numbers. It specifies its initial sequence number (ISN), which is incremented by 1, 8221821+1=8221822, and that is sent to the server. To initialize a connection, the client and server must synchronize each other's sequence numbers. There is also an option for the Maximum Segment Size (MSS) to be set, which is defined by the length (len: 4). This option communicates the maximum segment size the sender wants to receive. The Acknowledgement field (ack: 0) is set to zero because this is the first part of the three-way handshake.<br><pre class="sbody-pre cye-lm-tag"><br>1    2.0785 NTW3 --&gt; BDC3 TCP ....S., len: 4, seq: 8221822-8221825, ack: 0,<br>win: 8192, src: 1037  dst:  139 (NBT Session)  NTW3 --&gt;  BDC3 IP<br><br>TCP: ....S., len: 4, seq: 8221822-8221825, ack: 0, win: 8192, src: 1037<br>dst:  139 (NBT Session)<br><br>   TCP: Source Port = 0x040D<br>   TCP: Destination Port = NETBIOS Session Service<br>   TCP: Sequence Number = 8221822 (0x7D747E)<br>   TCP: Acknowledgement Number = 0 (0x0)<br>   TCP: Data Offset = 24 (0x18)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x02 : ....S.<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...0.... = Acknowledgement field not significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......1. = Synchronize sequence numbers<br>      TCP: .......0 = No Fin<br><br>   TCP: Window = 8192 (0x2000)<br>   TCP: Checksum = 0xF213<br>   TCP: Urgent Pointer = 0 (0x0)<br>   TCP: Options<br><br>         TCP: Option Kind (Maximum Segment Size) = 2 (0x2)<br>         TCP: Option Length = 4 (0x4)<br>         TCP: Option Value = 1460 (0x5B4)<br><br>   TCP: Frame Padding<br><br>00000:  02 60 8C 9E 18 8B 02 60 8C 3B 85 C1 08 00 45 00   .`.....`.;....E.<br>00010:  00 2C 0D 01 40 00 80 06 E1 4B 83 6B 02 D6 83 6B   .,..@....K.k...k<br>00020:  02 D3 04 0D 00 8B 00 7D 74 7E 00 00 00 00 60 02   .......}t~....`.<br>00030:  20 00 F2 13 00 00 02 04 05 B4 20 20                .........<br> </pre>Frame 2:<br><br><br>In the second frame, the server, BDC3, sends an ACK and a SYN on this segment (TCP .A..S.). In this segment the server is acknowledging the request of the client for synchronization. At the same time, the server is also sending its request to the client for synchronization of its sequence numbers. There is one major difference in this segment. The server transmits an acknowledgement number (8221823) to the client. The acknowledgement is just proof to the client that the ACK is specific to the SYN the client initiated. The process of acknowledging the client's request allows the server to increment the client's sequence number by one and uses it as its acknowledgement number.<br><pre class="sbody-pre"><br>2   2.0786 BDC3 --&gt; NTW3  TCP .A..S., len: 4, seq: 1109645-1109648, ack:<br>8221823, win: 8760, src: 139 (NBT Session)  dst: 1037 BDC3 --&gt; NTW3  IP<br><br>TCP: .A..S., len:    4, seq:   1109645-1109648, ack:   8221823, win: 8760,<br>src:  139 (NBT Session)  dst: 1037<br><br>   TCP: Source Port = NETBIOS Session Service<br>   TCP: Destination Port = 0x040D<br>   TCP: Sequence Number = 1109645 (0x10EE8D)<br>   TCP: Acknowledgement Number = 8221823 (0x7D747F)<br>   TCP: Data Offset = 24 (0x18)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x12 : .A..S.<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......1. = Synchronize sequence numbers<br>      TCP: .......0 = No Fin<br><br>   TCP: Window = 8760 (0x2238)<br>   TCP: Checksum = 0x012D<br>   TCP: Urgent Pointer = 0 (0x0)<br>   TCP: Options<br><br>         TCP: Option Kind (Maximum Segment Size) = 2 (0x2)<br>         TCP: Option Length = 4 (0x4)<br>         TCP: Option Value = 1460 (0x5B4)<br><br>   TCP: Frame Padding<br><br>00000:  02 60 8C 3B 85 C1 02 60 8C 9E 18 8B 08 00 45 00   .`.;...`......E.<br>00010:  00 2C 5B 00 40 00 80 06 93 4C 83 6B 02 D3 83 6B   .,[.@....L.k...k<br>00020:  02 D6 00 8B 04 0D 00 10 EE 8D 00 7D 74 7F 60 12   ...........}t`.<br>00030:  22 38 01 2D 00 00 02 04 05 B4 20 20               "8.-......<br> </pre>Frame 3:<br><br><br>In the third frame, the client sends an ACK on this segment (TCP .A....). In this segment, the client is acknowledging the request from the server for synchronization. The client uses the same algorithm the server implemented in providing an acknowledgement number. The client's acknowledgment of the server's request for synchronization completes the process of establishing a reliable connection, thus the three-way handshake.<br><pre class="sbody-pre"><br>3   2.787 NTW3 --&gt; BDC3  TCP .A...., len: 0, seq: 8221823-8221823, ack:<br>1109646, win: 8760, src: 1037  dst:  139 (NBT Session)  NTW3 --&gt; BDC3  IP<br><br>TCP: .A...., len:    0, seq:   8221823-8221823, ack:   1109646, win: 8760,<br>src: 1037  dst:  139 (NBT Session)<br><br>   TCP: Source Port = 0x040D<br>   TCP: Destination Port = NETBIOS Session Service<br>   TCP: Sequence Number = 8221823 (0x7D747F)<br>   TCP: Acknowledgement Number = 1109646 (0x10EE8E)<br>   TCP: Data Offset = 20 (0x14)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x10 : .A....<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......0. = No Synchronize<br>      TCP: .......0 = No Fin<br><br>   TCP: Window = 8760 (0x2238)<br>   TCP: Checksum = 0x18EA<br>   TCP: Urgent Pointer = 0 (0x0)<br>   TCP: Frame Padding<br><br>00000:  02 60 8C 9E 18 8B 02 60 8C 3B 85 C1 08 00 45 00   .`.....`.;....E.<br>00010:  00 28 0E 01 40 00 80 06 E0 4F 83 6B 02 D6 83 6B   .(..@....O.k...k<br>00020:  02 D3 04 0D 00 8B 00 7D 74 7F 00 10 EE 8E 50 10   .......}t....P.<br>00030:  22 38 18 EA 00 00 20 20 20 20 20 20               "8....<br> </pre><h3 class="sbody-h3">Terminating a Connection</h3>Although the three-way handshake only requires three packets to be transmitted over our networked media, the termination of this reliable connection will necessitate the transmission of four packets. Because a TCP connection is full duplex (that is, data can be flowing in each direction independent of the other), each direction must be terminated independently.<br><br><br>Frame 4:<br><br><br>In this session of frames, you see the client sending a FIN that is accompanied by an ACK (TCP .A...F). This segment has two basic functions. First, when the FIN parameter is set, it will inform the server that it has no more data to send. Second, the ACK is essential in identifying the specific connection they have established.<br><pre class="sbody-pre"><br>4   16.0279 NTW3 --&gt; BDC3 TCP .A...F, len: 0, seq: 8221823-8221823,<br>ack:3462835714, win: 8760, src: 2337  dst: 139 (NBT Session)  NTW3 --&gt; BDC3<br>IP<br><br>TCP: .A...F, len:   0, seq: 8221823-8221823, ack:  1109646, win: 8760, src:<br>1037  dst:  139 (NBT Session)<br><br>   TCP: Source Port = 0x040D<br>   TCP: Destination Port = NETBIOS Session Service<br>   TCP: Sequence Number = 8221823 (0x7D747F)<br>   TCP: Acknowledgement Number = 1109646 (0x10EE8E)<br>   TCP: Data Offset = 20 (0x14)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x11 : .A...F<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......0. = No Synchronize<br>      TCP: .......1 = No more data from sender<br><br>   TCP: Window = 8760 (0x2238)<br>   TCP: Checksum = 0x236C<br>   TCP: Urgent Pointer = 0 (0x0)<br><br>00000:  00 20 AF 47 93 58 00 A0 C9 22 F5 39 08 00 45 00   . .G.X...".9..E.<br>00010:  00 28 9B F5 40 00 80 06 21 4A C0 5E DE 7B C0 5E   .(..@...!J.^.{.^<br>00020:  DE 57 09 21 05 48 0B 20 96 AC CE 66 AE 02 50 11   .W.!.H. ...f..P.<br>00030:  22 38 23 6C 00 00                                 "8#l..<br> </pre>Frame 5:<br><br><br>In this frame, you do not see anything special except for the server acknowledging the FIN that was transmitted from the client.<br><pre class="sbody-pre"><br>5    16.0281 BDC3 --&gt; NTW3 TCP .A...., len:    0, seq: 1109646-1109646,<br>ack: 8221824, win:28672, src: 139  dst: 2337 (NBT Session) BDC3 --&gt;  NTW3<br>IP<br><br>TCP: .A...., len:    0, seq: 1109646-1109646, ack: 8221824, win:28672, src:<br>139  dst: 2337 (NBT Session)<br><br>   TCP: Source Port = 0x040D<br>   TCP: Destination Port = NETBIOS Session Service<br>   TCP: Sequence Number = 1109646 (0x10EE8E)<br>   TCP: Acknowledgement Number = 8221824 (0x7D7480)<br>   TCP: Data Offset = 20 (0x14)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x10 : .A....<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......0. = No Synchronize<br>      TCP: .......0 = No Fin<br><br>   TCP: Window = 28672 (0x7000)<br>   TCP: Checksum = 0xD5A3<br>   TCP: Urgent Pointer = 0 (0x0)<br>   TCP: Frame Padding<br><br>00000:  00 A0 C9 22 F5 39 08 00 02 03 BA 84 08 00 45 00   ...".9........E.<br>00010:  00 28 D2 82 00 00 3F 06 6B BD C0 5E DE 57 C0 5E   .(....?.k..^.W.^<br>00020:  DE 7B 05 48 09 21 CE 66 AE 02 0B 20 96 AD 50 10   .{.H.!.f... ..P.<br>00030:  70 00 D5 A3 00 00 90 00 01 00 86 00               p...........<br> </pre>Frame 6:<br><br><br>After receiving the FIN from the client computer, the server will ACK. Even though TCP has established connections between the two computers, the connections are still independent of one another. Therefore, the server must also transmit a FIN (TCP .A...F) to the client.<br><pre class="sbody-pre"><br>6   17.0085 BDC3 --&gt; NTW3 TCP .A...F, len: 0, seq: 1109646-1109646, ack:<br>8221824, win:28672, src: 139 dst: 2337 (NBT Session) BDC3 --&gt;  NTW3   IP<br><br>TCP: .A...F, len:  0, seq: 1109646-1109646, ack: 8221824, win:28672, src:<br>139  dst: 2337 (NBT Session)<br><br>   TCP: Source Port = 0x0548<br>   TCP: Destination Port = 0x0921<br>   TCP: Sequence Number = 1109646 (0x10EE8E)<br>   TCP: Acknowledgement Number = 8221824 (0x7D7480)<br>   TCP: Data Offset = 20 (0x14)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x11 : .A...F<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......0. = No Synchronize<br>      TCP: .......1 = No more data from sender<br><br>   TCP: Window = 28672 (0x7000)<br>   TCP: Checksum = 0xD5A2<br>   TCP: Urgent Pointer = 0 (0x0)<br>   TCP: Frame Padding<br><br>00000:  00 A0 C9 22 F5 39 08 00 02 03 BA 84 08 00 45 00   ...".9........E.<br>00010:  00 28 D2 94 00 00 3F 06 6B AB C0 5E DE 57 C0 5E   .(....?.k..^.W.^<br>00020:  DE 7B 05 48 09 21 CE 66 AE 02 0B 20 96 AD 50 11   .{.H.!.f... ..P.<br>00030:  70 00 D5 A2 00 00 02 04 05 B4 86 00               p...........<br> </pre>Frame 7:<br><br><br>The client responds in the same format as the server, by ACKing the server's FIN and incrementing the sequence number by 1.<br><pre class="sbody-pre"><br>7   17.0085 NTW3 --&gt; BDC3 TCP .A...., len: 0, seq: 8221824-8221824, ack:<br>1109647, win: 8760, src: 2337  dst: 139 (NBT Session) NTW3 --&gt; BDC3 IP<br><br>TCP: .A...., len:    0, seq: 8221824-8221824, ack: 1109647, win: 8760, src:<br>2337  dst: 139   (NBT Session)<br><br>   TCP: Source Port = 0x0921<br>   TCP: Destination Port = 0x0548<br>   TCP: Sequence Number = 8221824 (0x7D7480)<br>   TCP: Acknowledgement Number = 1109647 (0x10EE8F)<br>   TCP: Data Offset = 20 (0x14)<br>   TCP: Reserved = 0 (0x0000)<br>   TCP: Flags = 0x10 : .A....<br><br>      TCP: ..0..... = No urgent data<br>      TCP: ...1.... = Acknowledgement field significant<br>      TCP: ....0... = No Push function<br>      TCP: .....0.. = No Reset<br>      TCP: ......0. = No Synchronize<br>      TCP: .......0 = No Fin<br><br>   TCP: Window = 8760 (0x2238)<br>   TCP: Checksum = 0x236B<br>   TCP: Urgent Pointer = 0 (0x0)<br><br>00000:  00 20 AF 47 93 58 00 A0 C9 22 F5 39 08 00 45 00   . .G.X...".9..E.<br>00010:  00 28 BA F5 40 00 80 06 02 4A C0 5E DE 7B C0 5E   .(..@....J.^.{.^<br>00020:  DE 57 09 21 05 48 0B 20 96 AD CE 66 AE 03 50 10   .W.!.H. ...f..P.<br>00030:  22 38 23 6B 00 00                                 "8#k..<br> </pre>The client ACKing the FIN notification from the server identifies a graceful close of a TCP connection.<br></div></div>
+            </div><!-- end ngRepeat: content in contentSection.content track by $index -->
+        </div>
+    </div><!-- end ngIf: contentSection.content && contentSection.content.length > 0 -->
+</section><!-- end ngIf: typeof(contentSection) !== 'string' --></div>
+</div><!-- end ngIf: !isString && hasContent() --><!-- end ngRepeat: section in contentSectionList track by $index --><!-- ngIf: !isString && hasContent() --><div ng-repeat="section in contentSectionList track by $index" ng-if="!isString &amp;&amp; hasContent()" class="ng-scope">
+    <div content-section="section" class="ng-isolate-scope"><!-- ngIf: typeof(contentSection) !== 'string' --><section class="section ng-scope" ng-if="typeof(contentSection) !== 'string'" applies-to-products="[]" ng-attr-id="{{contentSection.meta.id}}" ng-class="{'internal-content': isInternalSection() }" id="">
+    <!-- ngIf: isInternalSection() -->
+    <!-- ngIf: contentSection.title --><header class="section-header ng-scope" ng-if="contentSection.title">
+        <h3 class="section-title ng-binding" ng-bind-html="contentSection.title"> References</h3>
+        <!-- ngIf: contentSection.subtitle -->
+    </header><!-- end ngIf: contentSection.title -->
+    <!-- ngIf: contentSection.content && contentSection.content.length > 0 --><div class="container section-body ng-scope" ng-if="contentSection.content &amp;&amp; contentSection.content.length > 0">
+        <div class="row">
+            <!-- ngRepeat: content in contentSection.content track by $index --><div ng-class="getStyleClass()" ng-repeat="content in contentSection.content track by $index" class="ng-scope col-xs-24">
+                <div compile="content" class="ng-isolate-scope"><div class="kb-references-section section ng-scope">For additional information on ICMP:<br><div class="indent">   Please see the following article in the Microsoft Knowledge Base:<br><br><a id="kb-link-4" href="/EN-US/help/170292">170292 </a> Internet Control Message Protocol (ICMP) Basics<br></div>-or-<br><div class="indent">   Obtain RFC 793.<br></div>RFCs may be obtained through the Internet as follows:<br><br><br>Paper copies of all RFCs are available from the NIC, either individually or on a subscription basis (for more information contact NIC@NIC.DDN.MIL). Online copies are available through FTP or Kermit from NIC.DDN.MIL as rfc/rfc####.txt or rfc/rfc####.PS (#### is the RFC number without leading zeros).<br></div></div>
+            </div><!-- end ngRepeat: content in contentSection.content track by $index -->
+        </div>
+    </div><!-- end ngIf: contentSection.content && contentSection.content.length > 0 -->
+</section><!-- end ngIf: typeof(contentSection) !== 'string' --></div>
+</div><!-- end ngIf: !isString && hasContent() --><!-- end ngRepeat: section in contentSectionList track by $index -->
+<!-- ngIf: !isString --><div ng-if="!isString" class="ng-scope">
+    <div compile="contentSectionList" class="ng-isolate-scope"></div>
+</div><!-- end ngIf: !isString --></div>
+</div>
+
+</div>
+</body></html>
