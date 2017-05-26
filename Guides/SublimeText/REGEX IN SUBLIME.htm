@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>REGEX IN SUBLIME</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="https://codepen.io/jakealbaugh/post/regex-in-sublime-text">src</a>
+<h2>REGEX IN SUBLIME TEXT</h2>
+<section class="post-body cye-lm-tag">
+          <h1><a class="article-headline-link" href="#sublex-regime-0" id="sublex-regime-0">#</a>Sublex Regime?</h1>
+
+<p class="cye-lm-tag">If you are anything like me, obfuscated tools like regular expressions are absolutely terrifying. Over the past three years, I have gradually learned enough to be able to increase my speed as a developer. I hope the following can <em>at least</em> show you that regex is approachable and if we’re lucky, you can walk away with enough to immediately begin ‘regexting’.</p>
+
+<h2><a class="article-headline-link" href="#why-yet-another-thing-to-learn-1" id="why-yet-another-thing-to-learn-1">#</a>Why yet another thing to learn?</h2>
+
+<p class="cye-lm-tag">Because it can help you so damn much. I’ll give you an example. A little while back I was working on a massive codebase for an airline’s web application. The styles were all in LESS. At one point when the site was very small, the original developers started <code>:extend</code>-ing styles for pretty much everything. <code>:extend</code> can be very helpful, but it can get to a point where it bloats file size more than mixins if you gzip. Some dude on my team figured that out. This meant we needed to replace all instances of <code>:extend</code> that were typographic styles, but not ones that weren’t. To add to the problem, <code>:extend</code> in LESS is more complex than in Sass. Here’s an example of the various <code>:extend</code> scenarios I had to deal with:</p>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-tag cye-lm-tag">h1</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.heading-sans-1</span>) {}                <span class="cm-comment cye-lm-tag">// make mixin</span><br><span class="cm-tag cye-lm-tag">h5</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.heading-serif-12</span>) {}              <span class="cm-comment cye-lm-tag">// make mixin</span><br><span class="cm-qualifier cye-lm-tag">.class-name-1</span> <span class="cm-tag cye-lm-tag">p</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-serif-1</span>) {} <span class="cm-comment cye-lm-tag">// make mixin</span><br><span class="cm-qualifier cye-lm-tag">.whatever</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-2</span>),<br><span class="cm-qualifier cye-lm-tag">.whatnot</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-3</span>) {}         <span class="cm-comment cye-lm-tag">// make mixin</span><br><br><span class="cm-tag cye-lm-tag">div</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.card-1</span>) {}                       <span class="cm-comment cye-lm-tag">// don’t modify</span><br><span class="cm-tag cye-lm-tag">div</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.card-2</span>, <span class="cm-qualifier cye-lm-tag">.shadow-1</span>) {}            <span class="cm-comment cye-lm-tag">// don’t modify</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">As you can see, this was a pretty complicated task, especially since there were over 100 LESS files. Thankfully, the typographic extends were all following a general pattern. This allowed me to get at them. I tested over and over again until I boiled it down to two Find/Replace commands that would nearly completely fix everything. The act of making the replacements took less time than saving and closing all the files afterwards. If you want more on that solution, see the end of this post.</p>
+
+<p class="cye-lm-tag">This is why regex is amazing. Manually finding and replacing all those extends would have taken me at least an extra five or six hours of excruciating effort; and any manual slip up would translate into a tiny bug that no one would notice for a long time. If you can test your regex thoroughly, you can be confident that your edits worked and save time. Enough evangelism, let’s get into it.</p>
+
+<h2><a class="article-headline-link" href="#the-basics-2" id="the-basics-2">#</a>The basics.</h2>
+
+<p class="cye-lm-tag">In Sublime’s Find and replace, there is a regex toggle on the far left (next to the Case Sensitive button). This enables you to use regular expressions in your Find commands. You can write an expression, and Sublime will highlight matches in the same way any vanilla search works.</p>
+
+<p class="cye-lm-tag">In regex, there are a handful of symbols. I would be lying to you if I said I knew them all, or that you’ll need any of them. What I <em>will</em> do is give you a quick breakdown of the meat n’ potatoes you’ll use all the time.</p>
+
+<h3><a class="article-headline-link" href="#quantifiers-3" id="quantifiers-3">#</a>Quantifiers</h3>
+
+<p class="cye-lm-tag"><code>+</code> is a wildcard “quantifier”. It states “take whatever you just got, and repeat it one to infinite times.” Since regex can capture literal characters, if I were to write the expression <code>a+</code>, it would match any sequence of one to infinite <code>a</code>’s. </p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"aaabc"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: <span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">+</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">MAGIC</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"MAGICbc"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Notice how there is only one instance of <code>MAGIC</code>. Because of the <code>+</code>, the Find pattern includes the entire <code>a</code> sequence. Without the <code>+</code> we get a different result:</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"aaabc"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: <span class="cm-variable cye-lm-tag">a</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">MAGIC</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"MAGICMAGICMAGICbc"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Why didn’t we just say <code>aaa</code> in the original Find pattern? Great question. We could have, but it would have meant something entirely different. Our <code>a+</code> pattern is seeking out an <em>any-length</em> sequence of <code>a</code>’s. <code>aaa</code> would only match sequences of three. It all depends on the need. FWIW, you could also write <code>a{3}</code> and achieve the same result as <code>aaa</code>.</p>
+
+<h3><a class="article-headline-link" href="#capturing-groups-4" id="capturing-groups-4">#</a>Capturing Groups</h3>
+
+<p class="cye-lm-tag">Wrap anything in parens <code>()</code> and you will have created a “capture group”. <code>(a+)</code> would be the same as what we previously have been capturing (<code>a</code>, <code>aa</code>, <code>aaa</code>...). The parens by themselves do not do anything notable. </p>
+
+<p class="cye-lm-tag">Think of capture groups as storing a match as a variable. These groups are available to us in our Replace string. <code>$1</code> or <code>\1</code> would refer to the <em>first</em> set of parenthesis in our Find pattern. For example:</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc"</span><br></code>
+</pre></div>
+
+<div class="box cye-lm-tag"><pre class="has-code cye-lm-tag">  <code class="cm-s-default cye-lm-tag"><span class="cm-variable cye-lm-tag">finding</span>: (<span class="cm-variable cye-lm-tag">a</span>)<span class="cm-variable cye-lm-tag">bc</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MUFFIN</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"a MUFFIN"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">This removes the "bc", which is not in our capture group, and replaces it with a space and the word "MUFFIN". What if our string had actual parenthesis in it? We escape them each with a <code>\</code>:</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"(a)bc"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: \((<span class="cm-variable cye-lm-tag">a</span>)\)<span class="cm-variable cye-lm-tag">bc</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MUFFIN</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"a MUFFIN"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">What happened here is that the capture group is <em>inside</em> of the escaped parenthesis. If that was the other way around, we would get a different result:</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"(a)bc"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: (\(<span class="cm-variable cye-lm-tag">a</span>\))<span class="cm-variable cye-lm-tag">bc</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MUFFIN</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"(a) MUFFIN"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Here, our escaped parens are <em>inside</em> of the capture group, so they are included in the replacement text.</p>
+
+<h3><a class="article-headline-link" href="#finding-non-literal-values-5" id="finding-non-literal-values-5">#</a>Finding Non-literal values</h3>
+
+<p class="cye-lm-tag">Let’s say we want to match <em>any</em> sequence of letters, commonly known as a <em>word</em>. In this case, we need to refer to any letter, not just an <code>a</code>. For that, we can use a list, defined by wrapping <code>[]</code>. <code>a-z</code> is a quick way to refer to any lowercase letter.</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc abc"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: ([<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">z</span>]<span class="cm-operator cye-lm-tag">+</span>)<br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MONGOOSE</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc MONGOOSE abc MONGOOSE"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">If you are paying attention, you may be able to guess that <code>A-Z</code> will include uppercase and <code>0-9</code> or <code>\d</code> will include numbers.</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc aBc aB3"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: ([<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">zA</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">Z</span>\<span class="cm-variable cye-lm-tag">d</span>]<span class="cm-operator cye-lm-tag">+</span>)<br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MARTIAN</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc MARTIAN aBc MARTIAN aB3 MARTIAN"</span><br></code>
+</pre></div>
+
+<h3><a class="article-headline-link" href="#not-finding-things-6" id="not-finding-things-6">#</a>Not finding things</h3>
+
+<p class="cye-lm-tag">In some cases, <em>not</em> finding something can be quicker than <em>yes</em> finding a ton of things. You can preface a list with <code>^</code> to change the list’s meaning to be a collection of things you <em>don’t</em> want to find.</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc aBc aB3"</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: ([<span class="cm-operator cye-lm-tag">^</span> <span class="cm-string cye-lm-tag">"]+)</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> <span class="cm-variable cye-lm-tag">MOSES</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-string cye-lm-tag">"abc MOSES aBc MOSES aB3 MOSES"</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Don’t miss the invisible <code>space</code> character in our list. Believe it or not, it means <code>space</code>. It could also be written as <code>\s</code>. Also, note the <code>"</code> is also in our list since our string has surrounding quotes. Together, <code>([^ "]+)</code> reads “any sequence of non-space and non-quote characters”</p>
+
+<h2><a class="article-headline-link" href="#okay-okay-we-get-itgimme-something-practical-7" id="okay-okay-we-get-itgimme-something-practical-7">#</a>“Okay, okay, we get it...gimme something practical”</h2>
+
+<p class="cye-lm-tag">Simmer down, homeslice. Let’s say we have a ton of <code>dashed-class-names</code> in our HTML and CSS that we want to be underscores. Just Find <code>-</code> and Replace with <code>_</code>, right? No. What about CSS properties like <code>-webkit-transform-origin</code>? What about hyphened-words in our HTML text? We want to leave those alone. This is a perfect case for regex.</p>
+
+<h3><a class="article-headline-link" href="#css-8" id="css-8">#</a>CSS</h3>
+
+<p class="cye-lm-tag">In the CSS, we would want to start our match based on the <code>.</code> at the beginning of every class name then find everything up to the first <code>-</code>.</p>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-qualifier cye-lm-tag">.hello-world</span> {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: (\.[<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">zA</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">Z</span>\<span class="cm-variable cye-lm-tag">d_</span>]<span class="cm-operator cye-lm-tag">+</span>)<span class="cm-operator cye-lm-tag">-</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1_</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Let’s break the Find expression down: </p>
+
+<p class="cye-lm-tag">First comes <code>\.</code>. This is a single and <em>literal</em> <code>.</code>. It is escaped with the <code>\</code> because in regex, <code>.</code> refers to “any character except a new line”. In order to reference an <em>actual</em> period, we escape it.</p>
+
+<p class="cye-lm-tag">Then we capture a series of any valid classname characters <code>[a-zA-Z\d_]+</code>. This matches “any series of letters, numbers or underscores”. </p>
+
+<p class="cye-lm-tag">Finally, we close the group and cap it off with the <code>-</code> that we are looking to dispose of. It is outside the group because we want to remove it.</p>
+
+<p class="cye-lm-tag">The result:</p>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-qualifier cye-lm-tag">.hello_world</span> {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<p class="cye-lm-tag">This expression will only match one instance of dash in a class name, which means we have to run the Replace as many times as there hyphens in our <code>most-hyphened-class-name</code>: </p>
+
+<ul>
+<li>Once: <code>most_hyphened-class-name</code></li>
+<li>Twice: <code>most_hyphened_class-name</code></li>
+<li>Thrice: <code>most_hyphened_class_name</code></li>
+</ul>
+
+<p class="cye-lm-tag">In all honesty, running this Replace a handful of times with Sublime shortcuts is probably going to take much less time than writing a ridiculously complex (at least I think it would be) expression to do it all in one replace. Let me know if I’m wrong on that. I would love to see an “all in one” solution.</p>
+
+<h3><a class="article-headline-link" href="#gotcha-9" id="gotcha-9">#</a>Gotcha!</h3>
+
+<p class="cye-lm-tag">Wait, what about attribute selectors? Stop fussing. We’re getting there. We can get at attribute selectors (ie. <code>div[class="hello-world"]</code>) in the same expression as when we grab the HTML.</p>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello-world"</span>],<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>^=<span class="cm-string cye-lm-tag">"hello-world"</span>] {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-xml has-code">  <code class="html cm-s-default" data-lang="xml"><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello hello-world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello-world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br>  dashed-word-bruh<br><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cm-error cye-lm-tag">div</span><span class="cm-tag cm-bracket cm-error cye-lm-tag">&gt;</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: (<span class="cm-keyword cye-lm-tag">class</span>.<span class="cm-operator cye-lm-tag">+</span><span class="cm-string cye-lm-tag">"[a-zA-Z\d_ ]+)-</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1_</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Ok, let’s go through it. It isn’t as crazy as you think. </p>
+
+<p class="cye-lm-tag">First, we have <code>class.+"</code> this matches the literal word <code>class</code> then looks for any character using the “any char but newline” symbol (<code>.</code>). Then repeats one or more “any characters” using <code>+</code> before hitting a <code>"</code>. This is necessary because our CSS attribute selectors can have modifiers like <code>+=</code>, <code>^=</code>, <code>~=</code>, <code>*=</code> and so on. </p>
+
+<p class="cye-lm-tag">Next comes our <code>[a-zA-Z\d_ ]+</code> class name selector that is very similar to the one for standard CSS classes. The only difference is we add a space to the list because in the <code>class=""</code> context, you can have multiple space-separated classnames.</p>
+
+<p class="cye-lm-tag">Finally, we grab the <code>-</code> outside of the group to be removed by our Replace statement.</p>
+
+<p class="cye-lm-tag">The result is bonafide gold:</p>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello_world"</span>],<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>^=<span class="cm-string cye-lm-tag">"hello_world"</span>] {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-xml has-code">  <code class="html cm-s-default" data-lang="xml"><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello hello_world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello_world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br>  dashed-word-bruh<br><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cm-error cye-lm-tag">div</span><span class="cm-tag cm-bracket cm-error cye-lm-tag">&gt;</span><br></code>
+</pre></div>
+
+<h3><a class="article-headline-link" href="#combo-10" id="combo-10">#</a>Combo</h3>
+
+<p class="cye-lm-tag">Using a <code>|</code> pipe character as an <code>or</code> operator, we can actually combine both our CSS and HTML expressions:</p>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: (\.[<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">zA</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">Z</span>\<span class="cm-variable cye-lm-tag">d_</span>]<span class="cm-operator cye-lm-tag">+</span>)<span class="cm-operator cye-lm-tag">-|</span>(<span class="cm-keyword cye-lm-tag">class</span>.<span class="cm-operator cye-lm-tag">+</span><span class="cm-string cye-lm-tag">"[a-zA-Z\d_ ]+)-</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1$2_</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Our Replace needs to include the second group, even though it and the first are separated by the pipe. If a group is empty, the Replace number value is empty as well. You wont get an error or something for referring to an unmatched group.</p>
+
+<h2><a class="article-headline-link" href="#bringing-it-home-11" id="bringing-it-home-11">#</a>Bringing it home...</h2>
+
+<p class="cye-lm-tag">What if I told you you could go from underscored to camelCase as well? Using <code>\u</code>, it is possible!</p>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-qualifier cye-lm-tag">.hello_world</span>,<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello_world"</span>],<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>^=<span class="cm-string cye-lm-tag">"hello_world"</span>] {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-xml has-code">  <code class="html cm-s-default" data-lang="xml"><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello hello_world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello_world"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br>  dashed-word-bruh<br><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cm-error cye-lm-tag">div</span><span class="cm-tag cm-bracket cm-error cye-lm-tag">&gt;</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: (\.[<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">zA</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">Z</span>\<span class="cm-variable cye-lm-tag">d</span>]<span class="cm-operator cye-lm-tag">+</span>)<span class="cm-variable cye-lm-tag">_</span>([<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">zA</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">Z</span>\<span class="cm-variable cye-lm-tag">d</span>])<span class="cm-operator cye-lm-tag">|</span>(<span class="cm-keyword cye-lm-tag">class</span>.<span class="cm-operator cye-lm-tag">+</span><span class="cm-string cye-lm-tag">"[a-zA-Z\d ]+)_([a-zA-Z\d])</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1$3</span>\<span class="cm-variable cye-lm-tag">u$2$4</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-css has-code">  <code class="css cm-s-default" data-lang="css"><span class="cm-qualifier cye-lm-tag">.helloWorld</span>,<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"helloWorld"</span>],<br><span class="cm-builtin cye-lm-tag">#message</span>[<span class="cm-tag cye-lm-tag">class</span>^=<span class="cm-string cye-lm-tag">"helloWorld"</span>] {<br>  <span class="cm-meta cye-lm-tag">-webkit-</span><span class="cm-property cye-lm-tag">transform-origin</span>: <span class="cm-number cye-lm-tag">0%</span> <span class="cm-number cye-lm-tag">0%</span>;<br>}<br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-xml has-code">  <code class="html cm-s-default" data-lang="xml"><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"hello withAnother"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br><span class="cm-tag cm-bracket cye-lm-tag">&lt;</span><span class="cm-tag cye-lm-tag">div</span> <span class="cm-attribute cye-lm-tag">class</span>=<span class="cm-string cye-lm-tag">"helloWorld"</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cye-lm-tag">div</span><span class="cm-tag cm-bracket cye-lm-tag">&gt;</span><br>  dashed-word-bruh<br><span class="cm-tag cm-bracket cye-lm-tag">&lt;/</span><span class="cm-tag cm-error cye-lm-tag">div</span><span class="cm-tag cm-bracket cm-error cye-lm-tag">&gt;</span><br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Wowzer, Bowser! The only difference with our Find expression is that we add a <code>([a-zA-Z\d])</code> to the end after our <code>_</code>. This becomes our second or fourth capture group and represents the letter immediately following the <code>_</code>.</p>
+
+<p class="cye-lm-tag">In our replace, you’ll notice we have <code>\u</code> right before our third and sixth match. This means we will capitalize the next character. When there is no capture group two, it will uppercase the first letter of the fourth. Again, I will reiterate that you must run this multiple times in order to take care of class names with multiple underscores in them.</p>
+
+<p class="cye-lm-tag">Fancy, right?</p>
+
+<h2><a class="article-headline-link" href="#double-bonus-12" id="double-bonus-12">#</a>Double bonus</h2>
+
+<p class="cye-lm-tag">If you end up getting decent at regex in Sublime, you’ll find it can help a ton in your Javascript as well. <code>.match()</code> and <code>.replace()</code> are fantastic little methods and accept regular expressions.</p>
+
+<h2><a class="article-headline-link" href="#parting-advice-13" id="parting-advice-13">#</a>Parting advice</h2>
+
+<p class="cye-lm-tag">If you want to get better at or more acquainted with regex, all you need to do is stop being afraid of it. Know that you are capable and just go for it. The best way to learn regex is to find answers to real problems in your day to day work. Keep an eye out for repetitive tasks and ask yourself if you can break it down into a series of replacements. The answer is almost always “yes” if it is repetitive. Keep at it.</p>
+
+<p class="cye-lm-tag">I will put this out there, if you have a problem that you think can be solved with regex but don’t know how, put it in the comments and let’s have some <code>"asdffunasdf".replace(/asdf/g,"")</code>.</p>
+
+<h2><a class="article-headline-link" href="#research-14" id="research-14">#</a>Research</h2>
+
+<p class="cye-lm-tag">Here’s some awesome resources.</p>
+
+<ul>
+<li><a rel="noreferrer" href="https://regex101.com">regex101.com</a>: An awesome playground for regex. You can even save expressions not unlike CodePen.</li>
+<li><a rel="noreferrer" href="http://www.regular-expressions.info">regular-expressions.info</a>: A very resourceful site if you can get past the amazing styles...</li>
+<li><a rel="noreferrer" href="http://google.com">google.com</a>: An amazing and entirely <em>free</em> tool. Collects data from something called the information highway and answers your questions. Seriously, I have learned so much regex from this.</li>
+<li><a rel="noreferrer" href="https://regex.alf.nu">regex golf</a>: You read that right. It’s pretty fun. It does get insanely difficult.</li>
+<li><a rel="noreferrer" href="http://jakealbaugh.com/regex/">regex for the people</a>: A little collection (2 so far) of regular expressions with detailed explanations that I threw together. We’ll see if I keep it up, but hey it’s something.</li>
+</ul>
+
+<p class="cye-lm-tag">Keep going, it gets easier and you’ll be saving loads of time in no time.</p>
+
+<h1><a class="article-headline-link" href="#curious-15" id="curious-15">#</a>Curious?</h1>
+
+<p class="cye-lm-tag">Were you wondering if I’d show my LESS <code>:extend</code> solution? Ok fine.</p>
+
+<h2><a class="article-headline-link" href="#pass-1-16" id="pass-1-16">#</a>Pass 1</h2>
+
+<p class="cye-lm-tag">Flag down edge cases where comma-separated selectors each have their own <code>:extend</code>:</p>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-qualifier cye-lm-tag">.class-name-1</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>),<br><span class="cm-qualifier cye-lm-tag">.class-name-2</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-2</span>),<br><span class="cm-qualifier cye-lm-tag">.class-name-3</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-3</span>),<br><span class="cm-qualifier cye-lm-tag">.class-name-4</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>) { ... }<br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: ([<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">z</span>\.\<span class="cm-error cye-lm-tag">#][\#\.a-zA-Z0-9_\- ]*):extend\((\.(bodycopy|header)-[a-z\-]*-[0-9])*\)[ ]*\,</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> { <span class="cm-variable cye-lm-tag">$2</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span>\<span class="cm-variable cye-lm-tag">n</span><span class="cm-comment cye-lm-tag">/* @@@$1,@@@ */</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-qualifier cye-lm-tag">.class-name-1</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-comment cye-lm-tag">/* @@@.class-name-1,@@@ */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-2</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-2</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-comment cye-lm-tag">/* @@@.class-name-2,@@@ */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-3</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-3</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-comment cye-lm-tag">/* @@@.class-name-3,@@@ */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-4</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-4</span>) { ... }<br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Then I globally searched for <code>/* @@@</code>, and manually remade the comma-separated selector list while maintaining each one’s personalized mixin. There were only around four or five instances of that happening across the 100 or so files so it took little to no time at all. To be clear, the above code ended up looking like this:</p>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-qualifier cye-lm-tag">.class-name-1</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-2</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-2</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-3</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-3</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-4</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-4</span>; } <span class="cm-comment cye-lm-tag">/* :extend =&gt; mixin */</span><br><span class="cm-qualifier cye-lm-tag">.class-name-1</span>,<br><span class="cm-qualifier cye-lm-tag">.class-name-2</span>,<br><span class="cm-qualifier cye-lm-tag">.class-name-3</span>,<br><span class="cm-qualifier cye-lm-tag">.class-name-4</span> { ... }<br></code>
+</pre></div>
+
+<h2><a class="article-headline-link" href="#pass-2-17" id="pass-2-17">#</a>Pass 2</h2>
+
+<p class="cye-lm-tag">The actual replacement for the primary instances:</p>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-qualifier cye-lm-tag">.class-name-4</span>:<span class="cm-variable-3 cye-lm-tag">extend</span>(<span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>) { }<br></code>
+</pre></div>
+
+<div class="box"><pre class="has-code">  <code class=" cm-s-default"><span class="cm-variable cye-lm-tag">finding</span>: ([<span class="cm-variable cye-lm-tag">a</span><span class="cm-operator cye-lm-tag">-</span><span class="cm-variable cye-lm-tag">z</span>\.\<span class="cm-error cye-lm-tag">#][\#\.a-zA-Z0-9_\- ]*):extend\((\.(bodycopy|header)-[a-z\-]*-[0-9][0-9]?)*\)[ ]*\{</span><br><span class="cm-variable cye-lm-tag">replace</span>: <span class="cm-variable cye-lm-tag">$1</span> { <span class="cm-variable cye-lm-tag">$2</span>; <span class="cm-comment cye-lm-tag">/* extend =&gt; mixin */</span><br></code>
+</pre></div>
+
+<div class="box"><pre class="lang-text/x-less has-code">  <code class="less cm-s-default" data-lang="text/x-less"><span class="cm-qualifier cye-lm-tag">.class-name-4</span> { <span class="cm-qualifier cye-lm-tag">.bodycopy-sans-1</span>; <span class="cm-comment cye-lm-tag">/* extend =&gt; mixin */</span> }<br></code>
+</pre></div>
+
+<p class="cye-lm-tag">Feel free to hate on the organizational approach as it was a few years ago and I will not be offended; but I will point out that this saved us over 50kb and removed most of our 100-selector long declaration blocks which bogged down the inspector. Looking back, I can see ways to clean those expressions up, but hey. Let’s let dead dogs lie.</p>
+
+<p class="cye-lm-tag">Speaking of dead dogs (because apparently that’s the sort of topic I prefer my phrases to focus on), I am really tired. Hopefully this helped. Again, let me know in the comments if you have some crazy regex ish you want to tackle together!</p>
+
+<p class="cye-lm-tag"></p><hr>
+<small>I am Jake Albaugh and am going to write this bio in first person. These days, I write on CodePen because I care more about it and you than I do about <a rel="noreferrer" href="http://jakealbaugh.com">my personal site</a>. Read more articles via <a rel="noreferrer" href="http://codepen.io/jakealbaugh/blog/">my CodePen blog page</a>. View my work on <a rel="noreferrer" href="http://codepen.io/jakealbaugh/">my CodePen profile</a>. Or if you’re a hip millennial, “get at me” on my twitter <a rel="noreferrer" href="http://twitter.com/jake_albaugh">@jake_albaugh</a>.</small>
+
+
+        </section>
+<br><hr>
+<h2>Unstringify Integers and Floats</h2>
+<div class="gist-data">
+        <div class="js-gist-file-update-container js-task-list-container file-box">
+  <div id="file-regex-for-the-people-unstringify-integers-and-floats-md" class="file">
+    
+  <div id="readme" class="readme blob instapaper_body">
+    <article class="markdown-body entry-content" itemprop="text"><p>###Initial String
+["1", '123', "0.5", "10.5", "10.50", "  1  ", "1,000", ".5", "5.", "1.0.0", 1, "Windows 98"]
+###Desired String
+[1, 123, 0.5, 10.5, 10.50, 1, "1,000", ".5", "5.", "1.0.0", 1, "Windows 98"]
+###Goal: "Remove quotes surrounding valid integers or floats"
+####Find Pattern
+["'] *(\d+(.\d+)?) *["']</p>
+<ul>
+<li><code>["']</code> finds beginning of string (either <code>"</code> or <code>'</code>).
+<ul>
+<li><code>[]</code> wraps character class</li>
+<li>You can drop the <code>[]</code> wrapper and simplify to <code>"</code> or <code>'</code> if all your strings are quoted the same way.</li>
+</ul>
+</li>
+<li><code>*</code> (<code>space</code> + <code>*</code>) finds optional space(s) before your integer or float.
+<ul>
+<li><code>*</code>: "preceding token <strong>zero</strong> to <strong>infinite</strong> times"</li>
+</ul>
+</li>
+<li><code>(\d+(\.\d+)?)</code> (first capture group)
+<ul>
+<li><code>(</code> starts the first capture group. this group is represented by <code>$1</code> in the replace pattern.
+<ul>
+<li><code>\d+</code> requires that a digit starts this capture group. selects one to infinite digits until it hits a non digit.
+<ul>
+<li><code>\</code> <strong>escapes</strong> following character. <code>\d</code> = digit, <code>d</code> = literal "d"</li>
+<li><code>+</code> preceding token <strong>one</strong> to <strong>infinite</strong> times</li>
+<li>will not match <code>.5</code>, will match <code>0.5</code></li>
+</ul>
+</li>
+<li><code>(\.\d+)?</code> (second capture group)
+<ul>
+<li><code>(</code> starts a second capture group inside of the first group.
+<ul>
+<li><code>\.\d+</code> says if there is a decimal, it must be followed by at least one digit.
+<ul>
+<li><code>\.</code> = literal decimal point, <code>.</code> = "any character except a new line"</li>
+<li>will not match <code>5.</code>, will match <code>5.0</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>)?</code> closes the second capture group and makes it optional.
+<ul>
+<li>essentially, if there isn't a decimal this will be ignored.</li>
+<li>this group also mandates that there can only be one decimal if any.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>)</code> closes the first capture group</li>
+</ul>
+</li>
+<li><code>*</code> (<code></code> + <code>*</code>) finds optional space(s) after your integer or float.</li>
+<li><code>["']</code> finds end of string. should match the open string pattern.</li>
+</ul>
+<p>####Replace With
+$1</p>
+<ul>
+<li>replace with first capture group</li>
+</ul>
+<p>###Demo
+<a href="https://regex101.com/r/mP9mE5/2">regex101.com</a></p>
+</article>
+  </div>
+
+  </div>
+  
+</div>
+
+      </div>
+<pre>
+###Initial String
+    ["1", '123', "0.5", "10.5", "10.50", "  1  ", "1,000", ".5", "5.", "1.0.0", 1, "Windows 98"]
+###Desired String
+    [1, 123, 0.5, 10.5, 10.50, 1, "1,000", ".5", "5.", "1.0.0", 1, "Windows 98"]
+###Goal: "Remove quotes surrounding valid integers or floats"
+####Find Pattern
+    ["'] *(\d+(\.\d+)?) *["']
+- `["']` finds beginning of string (either `"` or `'`). 
+    - `[]` wraps character class
+    - You can drop the `[]` wrapper and simplify to `"` or `'` if all your strings are quoted the same way.
+- ` *` (`space` + `*`) finds optional space(s) before your integer or float.
+    - `*`: "preceding token **zero** to **infinite** times"
+- `(\d+(\.\d+)?)` (first capture group)
+    - `(` starts the first capture group. this group is represented by `$1` in the replace pattern.
+        - `\d+` requires that a digit starts this capture group. selects one to infinite digits until it hits a non digit.
+            - `\` **escapes** following character. `\d` = digit, `d` = literal "d"
+            - `+` preceding token **one** to **infinite** times
+            - will not match `.5`, will match `0.5`
+        - `(\.\d+)?` (second capture group)
+            - `(` starts a second capture group inside of the first group.
+                - `\.\d+` says if there is a decimal, it must be followed by at least one digit.
+                    - `\.` = literal decimal point, `.` = "any character except a new line"
+                    - will not match `5.`, will match `5.0`
+            - `)?` closes the second capture group and makes it optional. 
+                - essentially, if there isn't a decimal this will be ignored. 
+                - this group also mandates that there can only be one decimal if any.
+    - `)` closes the first capture group
+- ` *` (` ` + `*`) finds optional space(s) after your integer or float.
+- `["']` finds end of string. should match the open string pattern.
+
+####Replace With
+    $1
+- replace with first capture group
+
+###Demo
+[regex101.com](https://regex101.com/r/mP9mE5/2)
+</pre>
+<br><hr>
+<h2>Valid JSON to CoffeeScript Object</h2>
+<div class="gist-data">
+        <div class="js-gist-file-update-container js-task-list-container file-box">
+  <div id="file-regex-for-the-people-valid-json-to-coffeescript-object-md" class="file">
+    
+  <div id="readme" class="readme blob instapaper_body">
+    <article class="markdown-body entry-content" itemprop="text"><p>###Initial String
+{
+"user": {
+"username": "jakealbaugh",
+"email": "<a href="mailto:jake@example.com">jake@example.com</a>"
+},
+"number": 1
+}</p>
+<p>###Desired String
+user:
+username: "jakealbaugh"
+email: "<a href="mailto:jake@example.com">jake@example.com</a>"
+number: 1</p>
+<p>###Goal 1: "Remove quotes from keys"
+####Find Pattern
+"(.*)":</p>
+<ul>
+<li><code>"</code> finds beginning of JSON "key".
+<ul>
+<li><code>(</code> opens new capture group. contents represented by <code>$1</code> in replace.
+<ul>
+<li><code>.</code> any character except a new line</li>
+<li><code>*</code> preceding token <strong>zero</strong> to <strong>infinite</strong> times</li>
+</ul>
+</li>
+<li><code>)</code> closes capture group</li>
+</ul>
+</li>
+<li><code>"</code> closes key</li>
+<li><code>:</code> mandates that the key must be immediately followed by a literal colon.
+<ul>
+<li>prevents value strings from being replaced</li>
+</ul>
+</li>
+</ul>
+<p>####Replace With
+$1:</p>
+<ul>
+<li>replace with capture group and a literal colon</li>
+</ul>
+<p>###Goal 2: "Remove end-of-line commas"
+####Find Pattern
+,\n</p>
+<ul>
+<li><code>,</code> finds instance of a comma.</li>
+<li><code>\n</code> finds new line. mandates that the prior comma is at the end of the line
+<ul>
+<li>prevents commas in value strings from being replaced</li>
+<li><code>\</code>: <strong>escapes</strong> following character. <code>\n</code> = new line, <code>n</code> = literal "n"</li>
+</ul>
+</li>
+</ul>
+<p>####Replace With
+\n</p>
+<ul>
+<li>replace with a new line</li>
+</ul>
+<p>###Goal 3: "Remove brackets"
+####Find Pattern
+(.*)[{}]$</p>
+<ul>
+<li><code>(</code> opends a capture group
+<ul>
+<li><code>.</code> any character except new line</li>
+<li><code>*</code> preceeding token <strong>zero</strong> to <strong>infinite</strong> times</li>
+</ul>
+</li>
+<li><code>)</code> closes the capture group</li>
+<li><code>[</code> initiates new character class
+<ul>
+<li><code>{}</code> "literal <code>{</code> or literal <code>}</code>"</li>
+</ul>
+</li>
+<li><code>]</code> closes character class</li>
+<li><code>$</code> end of line.
+<ul>
+<li>since we removed commas in Goal 2, all <code>}</code> should be followed by an end of line.</li>
+</ul>
+</li>
+</ul>
+<p>####Replace With
+$1</p>
+<ul>
+<li>replace with capture group 1, or anything on the same line that came before the bracket</li>
+</ul>
+<p>###Goal 4: Remove excess new lines
+####Find Pattern
+\n *$</p>
+<ul>
+<li><code>\n</code> a new line</li>
+<li><code></code> a space</li>
+<li><code>*</code> preceeding token <strong>zero</strong> to <strong>infinite</strong> times (space)</li>
+<li><code>$</code> end of line</li>
+</ul>
+<p>####Replace With</p>
+<ul>
+<li>replace with nothing, removing the selection</li>
+</ul>
+</article>
+  </div>
+
+  </div>
+  
+</div>
+
+      </div>
+<pre>
+###Initial String
+    {
+      "user": {
+        "username": "jakealbaugh",
+        "email": "jake@example.com"
+      },
+      "number": 1
+    }
+    
+###Desired String
+    user:
+      username: "jakealbaugh"
+      email: "jake@example.com"
+    number: 1
+    
+###Goal 1: "Remove quotes from keys"
+####Find Pattern
+    "(.*)":
+- `"` finds beginning of JSON "key". 
+    - `(` opens new capture group. contents represented by `$1` in replace.
+        - `.` any character except a new line
+        - `*` preceding token **zero** to **infinite** times
+    - `)` closes capture group
+- `"` closes key
+- `:` mandates that the key must be immediately followed by a literal colon.
+    - prevents value strings from being replaced
+
+####Replace With
+    $1:
+- replace with capture group and a literal colon
+
+###Goal 2: "Remove end-of-line commas"
+####Find Pattern
+    ,\n
+- `,` finds instance of a comma. 
+- `\n` finds new line. mandates that the prior comma is at the end of the line
+    - prevents commas in value strings from being replaced
+    - `\`: **escapes** following character. `\n` = new line, `n` = literal "n"
+
+####Replace With
+    \n
+- replace with a new line
+
+###Goal 3: "Remove brackets"
+####Find Pattern
+    (.*)[{}]$
+- `(` opends a capture group
+    - `.` any character except new line
+    - `*` preceeding token **zero** to **infinite** times
+- `)` closes the capture group
+- `[` initiates new character class
+    - `{}` "literal `{` or literal `}`"
+- `]` closes character class
+- `$` end of line.
+    - since we removed commas in Goal 2, all `}` should be followed by an end of line.
+
+####Replace With
+    $1
+- replace with capture group 1, or anything on the same line that came before the bracket
+
+###Goal 4: Remove excess new lines
+####Find Pattern
+    \n *$
+- `\n` a new line
+- ` ` a space
+- `*` preceeding token **zero** to **infinite** times (space)
+- `$` end of line
+
+####Replace With
+- replace with nothing, removing the selection
+
+</pre>
+</body>
+</html>

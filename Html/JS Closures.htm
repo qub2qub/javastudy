@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JS Closures</title>
+<link rel="stylesheet" href="../Guides/grey.css">
+<style type="text/css">
+blockquote {
+border: 2px solid #920000;
+padding: 5px;
+}
+div.spoiler {
+border: 2px dotted black;
+}
+div.comment_body {
+border: 1px solid #920000;
+}
+</style>
+</head>
+<body>
+<a href="https://habrahabr.ru/post/178133/">src1</a>
+<a href="https://habrahabr.ru/post/38642/">src2</a>
+<h2>Замыкания, Прототипирование и Контекст</h2>
+<div class="content html_format js-mediator-article cye-lm-tag">
+<p>Зародившись как скриптовый язык в помощь веб-разработчикам, с дальнейшим развитием JavaScript стал мощным инструментом разработки клиентской части, обеспечивающий удобство и интерактивность страницы прямо в браузере у пользователя. </p><p>
+Из-за специфичности среды и целей, JavaScript отличается от обычных языков программирования, и имеет множество особенностей, не понимая которые, довольно сложно написать хороший кроссбраузерный код.</p><p>
+Думаю, что большинство программистов, писавших код на JavaScript больше пары дней, сталкивались с этими особенностями. Цель данного топика не открыть что-то новое, а попытаться описать эти особенности «на пальцах» и <i class="cye-lm-tag">«недостатки» сделать «преимуществами»</i>.</p><p>
+В данном топике будут рассматриваться:</p><p>
+<ol>
+<li>Замыкания</li>
+<li>Прототипирование</li>
+<li>Контекст выполнения</li>
+</ol><br>
+<a name="habracut"></a><br>
+<h5>Предисловие</h5><br>
+Мне, как автору, конечно же хочется описать все-все-все возможности, которыми богат JavaScript. Однако если я просто попытаюсь сделать это, статья растянется на огромное количество страниц, и многие начинающие разработчики просто не смогут запомнить всю информацию. Поэтому приводимые примеры могут кому-то показаться слишком простыми, а темы раскрытыми не до конца. Но, надеюсь, статья сумеет заинтересовать тех, кто ещё не сильно знаком с данными особенностями, а тем, кто уже знаком, — помочь понять, что на самом-то деле всё элементарно. </p><p>
+<h4>Замыкания, или «Эти необычные области видимости»</h4><br>
+<blockquote><i>«Архиполезная штука!» — этими двумя словами можно выразить <br>
+моё отношение к замыканиям и их реализации в JavaScript.</i></blockquote></p><p>
+Суть замыканий проста: <b class="cye-lm-tag">внутри функции можно использовать все пременные, которые доступны в том месте, где функция была объявлена</b>.</p><p>
+Хотя идея замыканий проста, на практике зачастую возникает много непонятных моментов по поведению в том или ином случае. Так что для начала вспомним основы объявления переменной, а именно – "<i>переменные в JavaScript объявляются с помощью ключевого слова var</i>":</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+alert(title);
+</code></pre></p><p>
+При запуске кода выведет текст "<i>Hello World</i>", как и ожидалось. Суть происходящего проста – создаётся глобальная переменная <i>title</i> со значением "<i>Hello World</i>", которое показывается пользователю с помощью <i>alert</i>-а. В данном примере, даже если мы опустим ключевое слово <i>var</i>, код всё равно сработает правильно из-за глобального контекста. Но об этом позже.</p><p>
+Теперь попробуем объявить ту же переменную, но уже внутри функции:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span> (<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+}
+alert(title);
+</code></pre></p><p>
+В результате запуска кода сгенерируется ошибка "<i>'title' is undefined</i>" — "<i>переменная 'title' не была объявлена</i>". Это происходит из-за механизма локальной области видимости переменных: <i>все переменные, объявленные внутри фукнции являются локальными и видны только внутри этой функции</i>. Или проще: если мы объявим какую-то переменную внутри функции, то вне этой функции доступа к этой переменной у нас не будет. </p><p>
+Для того, чтобы вывести надпись "<i>Hello World</i>", необходимо вызвать <i>alert</i> внутри вызываемой функции:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+alert(title);
+}
+example();
+</code></pre></p><p>
+Либо вернуть значение из функции:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+<span class="hljs-keyword cye-lm-tag">return</span> title;
+}
+alert(example());
+</code></pre></p><p>
+Думаю, что все эти примеры очевидны — подобное поведение реализовано практически во всех языках программирования. Так в чём же особенность замыканий в JavaScript, что так сильно отличает реализацию от других языков?</p><p>
+<i>Ключевое отличие в том, что в JavaScript-е функции можно объявлять внутри других функций, а сами функции в JavaScript являются объектами! </i>Благодаря этому с ними можно производить те же действия, что и с обычными объектами — проверять на существование, присваивать переменным, добавлять свойства, вызывать методы и возвращать объект функции как разультат выполнения другой функции!</p><p>
+Так как функция — это объект, то это значит, что механизм областей видимости переменных распространяется и на функции: функция, объявленная внутри другой функции, видна только там, где она была объявлена</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">B</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-string cye-lm-tag">"Hello World"</span>);
+}
+}
+B();
+</code></pre></p><p>
+Как и в примере с переменной, при запуске кода сгенерируется ошибка, что переменная <i>B</i> не была объявлена. Если же поместить вызов функции <i>B</i> сразу после объявления внутри функции <i>A</i>, и вызвать саму функцию <i>A</i> — получим заветное сообщение "<i>Hello World</i>"</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">B</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-string cye-lm-tag">"Hello World"</span>);
+}
+B();
+}
+A();
+</code></pre></p><p>
+Теперь приступим к описанию того, обо что спотыкаются большинство начинающих изучать JavaScript – определению того, откуда переменные берут свои значения. Как упоминалось выше, переменные нужно объявлять с помощью ключевого слова <i>var</i>:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'external'</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'internal'</span>;
+alert(title);
+}
+example();
+alert(title);
+</code></pre></p><p>
+В данном примере переменная <i>title</i> была объявлена дважды – первый раз глобально, а второй раз – внутри функции. Благодара тому, что внутри функции <i>example</i> переменная <i>title</i> была объявлена с помощью ключевого слова <i>var</i>, она становится локальной и никак не связана с переменной <i>title</i>, объявленной до функции. В результате выполнения кода вначале выведется "<i>internal</i>" (внутренняя переменная), а затем "<i>external</i>" (глобальная переменная). </p><p>
+Если убрать ключевое слово <i>var</i> из строки <i>var title = 'internal'</i>, то запустив код, в результате дважды получим сообщение "<i>internal</i>". Это происходит из-за того, что при вызове функции мы объявляли не локальную переменную <i>title</i>, а перезаписывали значение глобальной переменной!</p><p>
+Таким образом можно увидеть, что использование ключевого слова var делает переменную локальной, гарантируя отсутствие конфликтов с внешними переменными (<i>к примеру, в PHP все переменные внутри функции по умолчанию являются локальными; и для того, чтобы обратиться к глобальной переменной необходимо объявить её глобальной с помощью ключевого слова global</i>).</p><p>
+<div class="spoiler cye-lm-tag spoiler_open"><b class="spoiler_title cye-lm-tag">Скрытый текст</b><div class="spoiler_text cye-lm-tag" style="display: block;">Следует помнить, что все параметры функции автоматически являются локальными переменными:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag">title</span>)</span>{
+title = <span class="hljs-string cye-lm-tag">"changing external title"</span>;
+alert(title);
+}
+example(<span class="hljs-string cye-lm-tag">'abc'</span>);
+alert(title);
+</code></pre><br>
+При запуске кода сгенерируются сообщения "<i class="cye-lm-tag">changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции, хотя мы её и не объявляли с помощью var.</p><p>
+Сам процесс инициализации локальных переменных происходит до выполнения кода — для этого интерпретатор пробегается по коду функции и инициализирует (<i>не присваивая значений!</i>) все найденные локальные переменные:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+title = <span class="hljs-string cye-lm-tag">"changing external title"</span>;
+alert(title);
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
+}
+example();
+alert(title);
+</code></pre></p><p>
+Как и в предыдущем примере, при запуске кода сгенерируются сообщения "<i>changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции. </p><p>
+Если закомментировать строку <i>title = «changing external title»;</i>, то при первым сгенерированным сообщением станет "<i>undefined</i>" — локальная переменная <i>title</i> <b>уже</b> была инициализирована (существует), но значение (на момент вызова alert-а) не было присвоено.</p><p>
+Код:<br>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(title);
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
+}
+</code></pre><br>
+эквивалентен следующему:<br>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title;
+alert(title);
+title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
+}
+</code></pre></p><p>
+Таким образом становится понятно, что где бы не происходило объявлении переменной внутри функции, в момент вызова переменная уже будет проинициализированна. Также это значит, что повторное объявление не имеет смысла — интерпретатор просто проигнорирует объявлении переменной во второй раз.</p><p>
+</div></div></p><p>
+<h3>Итак, как же определить какая переменная используется в функции?</h6></p><p>
+Если при объявлении фукнции переменная не была объявлена локально с помощью ключевого слова <i>var</i>, переменная будет искаться в родительской функции. Если она не будет там найдена — поиск будет происходить дальше по цепочке функций-родителей до тех пор, пока интерпретатор не найдёт объявление переменной, либо не дойдёт до глобальной области видимости.</p><p>
+Если объявление переменной не будет найдено ни вверх по цепочке объявлений фукнции, ни в глобальной области видимости, существует два варианта развития:<br>
+<ol>
+<li>При попытке использовать (получить значение) переменной сгенерируется ошибка, что переменная не была объявлена</li>
+<li>При попытке присвоить переменной значение, переменная будет создана в глобальной области видимости, и ей присвоится значение.</li>
+</ol></p><p>
+<pre class="cye-lm-tag"><code class="javascript hljs cye-lm-tag"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+title = <span class="hljs-string cye-lm-tag">'internal'</span>;
+<span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">B</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(title);
+}
+}
+<span class="hljs-keyword cye-lm-tag">var</span> B = A();
+B();
+alert(title);
+</code></pre></p><p>
+Выполнив код, получим оба раза "<i>internal</i>". Присваивание значения переменной title внутри функции <i>A</i> создаёт глобальную переменную, которую можно использовать и вне функции. Следует иметь в виду, что присвоение значения переменной (а значит и создание глобальной переменной) происходит на этапе вызова функции <i>А</i>, так что попытка вызвать <i>alert(title)</i> до вызыва функции <i>A</i> сгенерирует ошибку.</p><p>
+<div class="spoiler cye-lm-tag spoiler_open"><b class="spoiler_title cye-lm-tag">Скрытый текст</b><div class="spoiler_text" style="display: block;">На самом деле механизм глобальных переменных немного сложнее, чем здесь описывается: при попытке назначить значение неинициализированной переменной, будет создана не глобальная переменная, а свойство объекта window (<i>который выступает в роли контейнера для всех глобальных переменных</i>). </p><p>
+Основное отличие от глобальных переменных (<i>объявленных с помощью var</i>) в том, что переменные нельзя удалить с помощью оператора <a href="http://javascript.ru/delete">delete</a>; в остальном же работа со свойствами объекта window идентична работе с глобальными переменными. </p><p>
+Подробнее <a href="http://dmitrysoshnikov.com/ecmascript/ru-chapter-2-variable-object/#o-peremennyih">тут</a>.</div></div></p><p>
+А теперь вернёмся обратно к теме замыканий в JavaScript.</p><p>
+По сравнению с большинством других языков программирования, JavaScript предоставляет более гибкий подход к работе с областями видимости переменных. И благодаря возможности сочетания локальной области видимости и динамического объявления функции внутри других функций, возникает механизм замыкания. </p><p>
+Как известно, все локальные переменные создаются заново при каждом новом вызове функции. Например, у нас есть функция <i>A</i>, внутри которой объявляется переменная <i>title</i>:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'internal'</span>;
+alert(title);
+}
+A();
+</code></pre></p><p>
+После того, как функция <i>A</i> будет выполнена, переменная <i>title</i> перестанет существовать и к ней никак нельзя получить доступ. Попытка как-либо обратиться к переменной вызовет ошибку, что переменная не была объявлена.</p><p>
+Теперь внутри функции <i>A</i> добавим объявлении функции, выводящую значение переменной <i>title</i>, а тажке функцию, которая это значение изменяет на переданное, и вернём эти функции:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">getTitle</span> (<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"default title"</span>;
+<span class="hljs-keyword cye-lm-tag">var</span> showTitle = <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(title);
+};
+<span class="hljs-keyword cye-lm-tag">var</span> setTitle = <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag">newTitle</span>)</span>{
+title = newTitle;
+};
+<span class="hljs-keyword cye-lm-tag">return</span> {
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: showTitle,
+<span class="hljs-string cye-lm-tag">"setTitle"</span>: setTitle
+};
+}
+<span class="hljs-keyword cye-lm-tag">var</span> t = getTitle();
+t.showTitle();
+t.setTitle(<span class="hljs-string cye-lm-tag">"Hello World"</span>);
+t.showTitle();
+</code></pre></p><p>
+До того, как запустить этот пример, попробуем рассмотреть логически поведение переменной <i>title</i>: при запуске функции <i>getTitle</i> переменная создаётся, а после окончания вызова – уничтожается. Однако при вызове функции <i>getTitle</i> возвращается объект с двумя динамически-объявленными функциями <i>showTitle</i> и <i>setTitle</i>, которые используют эту переменную. Что же произойдёт, если вызвать эти функции?</p><p>
+И теперь, запустив пример, можно увидеть, что вначале выведется "<i>default title</i>", а затем "<i>Hello World</i>". Таким образом переменная <i>title</i> продолжает существовать, хотя функция <i>getTitle</i> уже давно завершилась. При этом к данной переменной нет другого доступа, кроме как из вышеупомянутых функций <i>showTitle/setTitle</i>. Это и есть простой пример замыкания – переменная <i>title</i> «замкнулась» и стала видимой только для тех функций, которые имели к ней доступ во время своего объявления.</p><p>
+Если запустить функцию <i>getTitle</i> ещё раз, то можно увидеть, что переменная <i>title</i>, как и функции <i>showTitle/setTitle</i>, каждый раз создаются заново, и никак не связаны с предыдущими запусками:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> t1 = getTitle();
+t1.setTitle(<span class="hljs-string cye-lm-tag">"Hello World 1"</span>);
+<span class="hljs-keyword cye-lm-tag">var</span> t2 = getTitle();
+t2.setTitle(<span class="hljs-string cye-lm-tag">"Hello World 2"</span>);
+t1.showTitle();
+t2.showTitle();
+</code></pre></p><p>
+Запустив код (не забыв добавить выше код функции <i>getTitle</i>), будет сгенерировано два сообщения: "<i>Hello World 1</i>" и "<i>Hello World 2</i>" (<i>подобное поведение используется для эмуляции приватных переменных</i>).</p><p>
+<h3>Оставив теорию и простейшие примеры, и попытаемся понять какую выгоду можно извлечь из замыканий на практике: </h6></p><p>
+<b>Первое — это возможность не засорять глобальную область видимости. </b></p><p>
+Проблема конфликтов в глобальной области видимости очевидна. Простой пример: если на странице подключаются несколько javascript файлов, объявляющие функцию <i>showTitle</i>, то при вызове <i>showTitle</i> будет выполняться функция, объявленная последней. То же самое относится и к объявленным переменным. </p><p>
+Чтобы избежать подобной ситуации, необходимо либо каждую функцию/переменную называть уникальным именем, либо использовать замыкания. Извращаться и называть каждую функцию и переменную уникальным именем неудобно, и всё равно не гарантирует полной уникальности. С другой стороны механизм замыканий предоставляет полную свободу в именовании переменных и функций. Для этого достаточно весь код обернуть в анонимную функцию, выполняющуюся сразу после объявления:</p><p>
+<pre><code class="javascript hljs">(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-comment cye-lm-tag">/* объявление функций, переменных и выполнение кода */</span>
+})();
+</code></pre></p><p>
+В результате все объявленные переменные и функции не будут доступны в глобальной области видимости, а значит — не будет никаких конфликтов.</p><p>
+Что же делать, если всё же необходимо чтобы одна или две функции были доступны глобально? И тут всё довольно просто. Самый-самый глобальный объект, обеспечивающий глобальную область видимости — это объект <i>window</i>. Благодаря тому, что функция — это объект, её можно присвоить свойству <i>window</i>, чтобы та стала глобальной. Пример объявления глобальной функции из закрытой области видимости:</p><p>
+<pre><code class="javascript hljs">(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">showTitle</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(title);
+}
+<span class="hljs-built_in cye-lm-tag">window</span>.showSimpleTitle = showTitle;
+})();
+showSimpleTitle();
+</code></pre></p><p>
+В результате выполнения кода сгенерируется сообщение "<i>Hello World</i>" – локальная функция <i>showTitle</i> стала доступна глобально под именем <i>showSimpleTitle</i>, при этом использует «замкнутую» переменную <i>title</i>, недоступную вне нашей анонимной функции.</p><p>
+Т.к. мы всё обернули в анонимную функцию, которая сразу же выполняется, этой функции можно передать параметры, которые внутри этой функции будут доступны под локальными называниями. Пример с jQuery:</p><p>
+<pre><code class="javascript hljs">(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+$(<span class="hljs-string cye-lm-tag">'.hidden'</span>).hide();
+})();
+</code></pre></p><p>
+Вызовет ошибку, если глобальная переменная $ не является jQuery. А такое случается, если помимо jQuery используется другая библиотека, которая использует функцию $, к примеру, Prototype.JS. Решение «в лоб»:</p><p>
+<pre><code class="javascript hljs">(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> $ = jQuery;
+$(<span class="hljs-string cye-lm-tag">'.hidden'</span>).hide();
+})();
+</code></pre></p><p>
+Будет работать, и будет работать правильно. Но не очень красиво. Есть более красивое решение — объявить локальную переменную $ в виде аргумента функции, передав туда объект jQuery:</p><p>
+<pre><code class="javascript hljs">(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag">$</span>)</span>{
+<span class="hljs-comment cye-lm-tag">/* Код, использующий $ */</span>
+})(jQuery);
+</code></pre></p><p>
+Если вспомнить, что все аргументы функции по умолчанию являются локальными переменными, то становится ясно, что теперь внутри нашей анонимной функции $ никак не связан с глобальным объектом $, являясь ссылкой на объект jQuery. Для того, чтобы приём с анонимной функций стал понятнее, можно анонимную функцию сделать неанонимной – объявили функцию и сразу же её запустили:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">__run</span>(<span class="hljs-params cye-lm-tag">$</span>)</span>{
+<span class="hljs-comment cye-lm-tag">/* code */</span>
+}
+__run(jQuery);
+</code></pre></p><p>
+Ну, а если всё же понадобится вызвать глобальную функцию $, можно воспользоваться <i>window.$</i>.</p><p>
+<b>Второе — динамическое объявление функций, использующих замыкания.</b></p><p>
+При использовании событийной модели, часто возникают ситуации, когда нужно повесить одно и то же событие, но на разные элементы. Например, у нас есть 10 div-элементов, по клику на которые нужно вызывать <i>alert(N)</i>, где N — какой-либо уникальный номер элемента.</p><p>
+Простейшее решение c использованием замыкания:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">for</span>(<span class="hljs-keyword cye-lm-tag">var</span> counter=<span class="hljs-number cye-lm-tag">1</span>; counter &lt;=<span class="hljs-number cye-lm-tag">10</span>; counter++){
+$(<span class="hljs-string cye-lm-tag">'&lt;div&gt;'</span>).css({
+<span class="hljs-string cye-lm-tag">"border"</span>: <span class="hljs-string cye-lm-tag">"solid 1px blue"</span>,
+<span class="hljs-string cye-lm-tag">"height"</span>: <span class="hljs-string cye-lm-tag">"50px"</span>,
+<span class="hljs-string cye-lm-tag">"margin"</span>:  <span class="hljs-string cye-lm-tag">"10px"</span>,
+<span class="hljs-string cye-lm-tag">"text-align"</span>: <span class="hljs-string cye-lm-tag">"center"</span>,
+<span class="hljs-string cye-lm-tag">"width"</span>: <span class="hljs-string cye-lm-tag">"100px"</span>
+}).html(<span class="hljs-string cye-lm-tag">'&lt;h1&gt;'</span>+ counter +<span class="hljs-string cye-lm-tag">'&lt;/h1&gt;'</span>)
+.appendTo(<span class="hljs-string cye-lm-tag">'body'</span>)
+.click(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(counter);
+});
+}
+</code></pre></p><p>
+Однако выполнение данного кода приводит к «неожиданному» результату — все клики выводят одно и то же число — 11. Догадываетесь почему?</p><p>
+Ответ прост: значение переменной <i>counter</i> берётся в момент клика по элементу. А так как к тому времени значение переменной стало 11 (условие выхода из цикла), то и выводится соответственно число 11 для всех элементов.</p><p>
+Правильное решение — динамически генерировать функцию обработки клика отдельно для каждого элемента:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">for</span>(<span class="hljs-keyword cye-lm-tag">var</span> counter=<span class="hljs-number cye-lm-tag">1</span>; counter &lt;=<span class="hljs-number cye-lm-tag">10</span>; counter ++){
+$(<span class="hljs-string cye-lm-tag">'&lt;div&gt;'</span>).css({
+<span class="hljs-string cye-lm-tag">"border"</span>: <span class="hljs-string cye-lm-tag">"solid 1px blue"</span>,
+<span class="hljs-string cye-lm-tag">"height"</span>: <span class="hljs-string cye-lm-tag">"50px"</span>,
+<span class="hljs-string cye-lm-tag">"margin"</span>:  <span class="hljs-string cye-lm-tag">"10px"</span>,
+<span class="hljs-string cye-lm-tag">"text-align"</span>: <span class="hljs-string cye-lm-tag">"center"</span>,
+<span class="hljs-string cye-lm-tag">"width"</span>: <span class="hljs-string cye-lm-tag">"100px"</span>
+}).html(<span class="hljs-string cye-lm-tag">'&lt;h1&gt;'</span>+ counter +<span class="hljs-string cye-lm-tag">'&lt;/h1&gt;'</span>)
+.appendTo(<span class="hljs-string cye-lm-tag">'body'</span>)
+.click((<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag">iCounter</span>)</span>{
+<span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(iCounter);
+}
+})(counter));
+}
+</code></pre></p><p>
+В данном подходе мы используем анонимную функцию, которая принимает значение <i>counter</i> в виде параметра и возвращает динамическую функцию. Внутри анонимной функции <u>локальная</u> переменная <i>iCounter</i> содержит текущее значение <i>counter</i> на момент вызова функции. А так как при каждом вызове любой функции все локальные переменные объявляются заново (создаётся новое замыкание), то при вызове нашей анонимной функции каждый раз будет возращаться новая динамическая функция с уже «замкнутым» номером. </p><p>
+Если говорить проще, то запустив функцию второй (третий, четвёртый...) раз, все локальные переменные будут созданы в памяти заново и не будут иметь никакого отношения к переменным, созданным во время предыдущего вызова функции.</p><p>
+Сложно? Думаю, что с первого раза — да. Зато не нужно иметь кучу глобальных переменных, и делать проверки в функции «откуда же меня вызвали...». А с использованием jQuery.each, который по-умолчанию вызвает переданную функцию, код становится ещё проще и читабельнее:</p><p>
+<pre><code class="javascript hljs">$(<span class="hljs-string cye-lm-tag">'div.handle-click'</span>).each(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag">counter</span>)</span>{
+$(<span class="hljs-keyword cye-lm-tag">this</span>).click(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(counter);
+});
+});
+</code></pre></p><p>
+Благодаря замыканиям можно писать красивый, краткий и понятный код, называя переменные и функции так, как хочется; и быть уверенным, что данный код не будет конфликтовать с другими подключаемыми скриптами.</p><p>
+<div class="spoiler"><b class="spoiler_title">Скрытый текст</b><div class="spoiler_text">Механизм замыканий переменных реализуется с помощью внутреннего свойства функции <i>[[Scope]]</i> — данный объект инициируется во время объявления функции и содержит ссылки на переменные, объявленные в родительской функции. Благодаря этому, во время работы (вызова), функции доступны все «родительские» переменные. Собственно, объект [[Scope]] и является ключом к механизму замыканий. </p><p>
+Подробнее про механизм замыканий можно прочитать в статьях, доступных по ссылкам внизу топика.</div></div></p><p>
+<h4>Прототипирование или «Я хочу сделать объект класса»</h4><br>
+Про прототипирование в JavaScript написано много хороших статей. Поэтому постараюсь не повторять то, что уже написано, а просто опишу основу механизма прототипов.</p><p>
+В JavaScript-е есть понятие объекта, но нет понятия класса. <s>Из-за слабой типизации,</s> Весь JavaScript основан на объектах, поэтому почти все данные в JavaScript-е являются объектами, или могут быть использованы как объекты. А в качестве альтернативы классам есть возможность прототипирования — назначать объекту прототип со свойствами и методами «по умолчанию».</p><p>
+Работать с объектами в JavaScript очень просто — нужно всего лишь объявить объект и назначить ему свойства и методы:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> dog = {
+<span class="hljs-string cye-lm-tag">"name"</span>: <span class="hljs-string cye-lm-tag">"Rocky"</span>,
+<span class="hljs-string cye-lm-tag">"age"</span>: <span class="hljs-string cye-lm-tag">"5"</span>,
+<span class="hljs-string cye-lm-tag">"talk"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-string cye-lm-tag">'Name: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.name + <span class="hljs-string cye-lm-tag">', Age: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.age);
+}
+};
+</code></pre></p><p>
+Если у нас много объектов, то удобнее будет сделать отдельную функцию, возвращающую объект:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">getDog</span>(<span class="hljs-params cye-lm-tag">name, age</span>)</span>{
+<span class="hljs-keyword cye-lm-tag">return</span> {
+<span class="hljs-string cye-lm-tag">"name"</span>: name,
+<span class="hljs-string cye-lm-tag">"age"</span>: age,
+<span class="hljs-string cye-lm-tag">"talk"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-string cye-lm-tag">'Name: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.name + <span class="hljs-string cye-lm-tag">', Age: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.age);
+}
+};
+}
+<span class="hljs-keyword cye-lm-tag">var</span> rocky = getDog(<span class="hljs-string cye-lm-tag">'Rocky'</span>, <span class="hljs-number cye-lm-tag">5</span>);
+<span class="hljs-keyword cye-lm-tag">var</span> jerry = getDog(<span class="hljs-string cye-lm-tag">'Jerry'</span>, <span class="hljs-number cye-lm-tag">3</span>);
+</code></pre></p><p>
+То же самое можно сделать с использованием прототипов:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">Dog</span>(<span class="hljs-params cye-lm-tag">name, age</span>)</span>{
+<span class="hljs-keyword cye-lm-tag">this</span>[<span class="hljs-string cye-lm-tag">'name'</span>] = name;
+<span class="hljs-keyword cye-lm-tag">this</span>.age = age;
+}
+Dog.prototype = {
+<span class="hljs-string cye-lm-tag">"talk"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-string cye-lm-tag">'Name: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.name + <span class="hljs-string cye-lm-tag">', Age: '</span> + <span class="hljs-keyword cye-lm-tag">this</span>.age);
+}
+};
+<span class="hljs-keyword cye-lm-tag">var</span> rocky = <span class="hljs-keyword cye-lm-tag">new</span> Dog(<span class="hljs-string cye-lm-tag">'Rocky'</span>, <span class="hljs-number cye-lm-tag">5</span>);
+<span class="hljs-keyword cye-lm-tag">var</span> jerry = <span class="hljs-keyword cye-lm-tag">new</span> Dog(<span class="hljs-string cye-lm-tag">'Jerry'</span>, <span class="hljs-number cye-lm-tag">3</span>);
+</code></pre></p><p>
+Как упоминалось выше, прототип — это простой объект, который содержит свойства и методы «по умолчанию». Т.е. если у какого-либо объекта попытаться получить свойство или вызвать функцию, которой у объекта нет, то JavaScript интерпретатор, прежде чем сгенерировать ошибку, попытается найти это свойство/функцию в объекте-прототипе и, если оно будет найдено, будет использоваться свойство/функция из прототипа.</p><p>
+<div class="spoiler"><b class="spoiler_title">Скрытый текст</b><div class="spoiler_text">Думаю, следует выделить, что свойства из прототипа используются только для чтения/выполнения, т.к. доступ к ним происходит только при попытке получить значение/выполнить функцию, в случае, если исходное свойство не найдено у самого объекта. </p><p>
+Если попытаться присвоить объекту какое-либо свойство (имеющееся в прототипе, но не имеющееся в объекте), то свойство будет создано именно у объекта, а не изменено в прототипе.</div></div></p><p>
+JavaScript очень гибкий язык. Поэтому, по большему счёту, всё, что можно сделать с помощью прототипов, можно сделать и без прототипов. Однако использование прототипов даёт более гибкие возможности с изменением и наследованием, а также синтаксис, более близкий к ООП. Для тех, кому интересно, в конце статьи есть ссылки на статьи с более подробным описанием механизма и возможностей для реализации собственных классов.</p><p>
+<h3>И небольшой наглядный пример расширения возможностей существующих объектов с помощью прототипов</h6><br>
+Необходимо получить название дня недели от какой-либо даты, но встроенный объект Date содержит только метод getDay, возвращающий числовое представление дня недели от 0 до 6: от воскресенья до субботы.</p><p>
+Можно сделать так:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">getDayName</span>(<span class="hljs-params cye-lm-tag">date</span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> days = [<span class="hljs-string cye-lm-tag">'Sunday'</span>,<span class="hljs-string cye-lm-tag">'Monday'</span>,<span class="hljs-string cye-lm-tag">'Tuesday'</span>,<span class="hljs-string cye-lm-tag">'Wednesday'</span>,<span class="hljs-string cye-lm-tag">'Thursday'</span>,<span class="hljs-string cye-lm-tag">'Friday'</span>,<span class="hljs-string cye-lm-tag">'Saturday'</span>];
+<span class="hljs-keyword cye-lm-tag">return</span> days[date.getDay()];
+}
+<span class="hljs-keyword cye-lm-tag">var</span> today = <span class="hljs-keyword cye-lm-tag">new</span> <span class="hljs-built_in cye-lm-tag">Date</span>();
+alert(getDayName(today));
+</code></pre></p><p>
+Или использовать прототипирование и расширить встроенный объект даты:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-built_in cye-lm-tag">Date</span>.prototype.getDayName = <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> days = [<span class="hljs-string cye-lm-tag">'Sunday'</span>,<span class="hljs-string cye-lm-tag">'Monday'</span>,<span class="hljs-string cye-lm-tag">'Tuesday'</span>,<span class="hljs-string cye-lm-tag">'Wednesday'</span>,<span class="hljs-string cye-lm-tag">'Thursday'</span>,<span class="hljs-string cye-lm-tag">'Friday'</span>,<span class="hljs-string cye-lm-tag">'Saturday'</span>];
+<span class="hljs-keyword cye-lm-tag">return</span> days[<span class="hljs-keyword cye-lm-tag">this</span>.getDay()];
+}
+<span class="hljs-keyword cye-lm-tag">var</span> today = <span class="hljs-keyword cye-lm-tag">new</span> <span class="hljs-built_in cye-lm-tag">Date</span>();
+alert(today.getDayName());
+</code></pre></p><p>
+Думаю, что второй способ более элегантен и не засоряет область видимости «лишней» функцией. С другой стороны есть мнение, что расширение встроенных объектов — плохой тон, если над кодом работает несколько человек. Так что с этим следует быть осторожнее.</p><p>
+<h4>Контекст выполнения или «Этот загадочный this»</h4><br>
+Переходя на JavaScript с других языков программирования, где используется ООП, довольно сложно понять, что же в JavaScript означает объект this. Если попытаться объяснить просто, то this — это ссылка на объект, для которого вызывается функция. Например:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> exampleObject = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Example Title"</span>,
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+};
+exampleObject.showTitle();
+</code></pre></p><p>
+Из примера видно, что при вызове <i>exampleObject.showTitle()</i> функция вызывается как метод объекта, и внутри функции <i>this</i> ссылается на объект <i>exampleObject</i>, вызвавший функцию. Сами по себе функции никак не привязаны к объекту и существуют отдельно. Привязка контекста происходит непосредственно во время вызова функции:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">showTitle</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+<span class="hljs-keyword cye-lm-tag">var</span> objectA = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Title A"</span>,
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: showTitle
+};
+<span class="hljs-keyword cye-lm-tag">var</span> objectB = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Title B"</span>,
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: showTitle
+};
+objectA.showTitle();
+objectB.showTitle();
+</code></pre></p><p>
+В данном примере наглядно показывается, что при вызове <i>objectA.showTitle()</i>, <i>this</i> ссылается на <i>objectA</i>, а при вызове <i>objectB.showTitle()</i> — на objectB. Сама функция <i>showTitle</i> существует отдельно и просто присваивается объектам как свойство во время создания.</p><p>
+<b>Если при вызове функции она (функция) не ссылается ни на один объект, то <i>this</i> внутри функции будет ссылаться на глобальный объект <i>window</i></b>. Т.е. если просто вызвать <i>showTitle()</i>, то будет сгенерирована ошибка, что переменная <i>title</i> не объявлена; однако если объявить глобальную переменную <i>title</i>, то функция выведет значение этой переменной:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Global Title"</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">showTitle</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+showTitle();
+</code></pre></p><p>
+<div class="spoiler"><b class="spoiler_title">Скрытый текст</b><div class="spoiler_text">Данное поведение изменено в режиме <a href="http://habrahabr.ru/post/118666/">Strict Mode</a>: <b>Если функцию запустить без контекста, то <i>this</i> внутри функции не будет ссылаться на <i>window</i>, поэтому обращение к <i>this</i> сгенерирует ошибку.</b></div></div></p><p>
+Чтобы продемонстрировать, что контекст функции определяется именно во время вызова, приведу пример, где функция изначально существует только как метод объекта:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Global Title"</span>;
+<span class="hljs-keyword cye-lm-tag">var</span> exampleObject = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Example Title"</span>,
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+};
+<span class="hljs-keyword cye-lm-tag">var</span> showTitle = exampleObject.showTitle; <span class="hljs-comment cye-lm-tag">// вначале забираем ссылку на функцию</span>
+showTitle(); <span class="hljs-comment cye-lm-tag">// а тут вызываем функцию без ссылки на объект</span>
+</code></pre></p><p>
+В результате выполнения выведется сообщение "<i>Global Title</i>", означающее, что во время вызова функции <i>this</i> указывает на глобальный объект <i>window</i>, а не на объект <i>exampleObject</i>. Это происходит из-за того, что в строке <i>var showTitle = exampleObject.showTitle</i> мы получаем ссылку только функцию, и при вызове <i>showTitle()</i> нет ссылки на исходный объект <i>exampleObject</i>, отчего <i>this</i> начинает ссылаться на объект <i>window</i>.</p><p>
+Упрощая: <b>если функция вызвана как свойство объекта, то <i>this</i> будет ссылаться на этот объект. Если вызывающего объекта нет, <i>this</i> будет ссылаться на глобальный объект <i>window</i></b>.</p><p>
+Пример частой ошибки:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> exampleObject = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Example Title"</span>,
+<span class="hljs-string cye-lm-tag">"showTitle"</span>: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+};
+jQuery(<span class="hljs-string cye-lm-tag">'#exampleDiv'</span>).click(exampleObject.showTitle);
+</code></pre></p><p>
+При клике на DIV с id "<i>exampleDiv</i>" вместо ожидаемого "<i>Example Title</i>", выведется пустая строка или значение атрибута «title» DIV-а. Это происходит из-за того, что на событие клика мы отдаём функцию, но не отдаём объект; и, в итоге, функция запускается без привязки к исходному объекту exampleObject (<i>для удобства, jQuery запускает функции-обработчики в контексте самого элемента, что и приводит к подобному результату</i>). Чтобы запустить функцию, привязанную к объекту, нужно вызывать функцию с ссылкой на объект:</p><p>
+<pre><code class="javascript hljs">jQuery(<span class="hljs-string cye-lm-tag">'#exampleDiv'</span>).click(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+exampleObject.showTitle();
+});
+</code></pre></p><p>
+Чтобы избежать подобного «неуклюжего» объявления, средствами самого JavaScript можно привязать функцию к контексту с помощью <a href="http://learn.javascript.ru/bind">bind</a>:</p><p>
+<pre><code class="javascript hljs">jQuery(<span class="hljs-string cye-lm-tag">'#exampleDiv'</span>).click(exampleObject.showTitle.bind(exampleObject));
+</code></pre></p><p>
+Однако <s>всеми любимый</s> ИЕ до 9 версии не поддерживает данную возможность. Поэтому большинство JS библиотек самостоятельно реализуют данную возможность тем или иным способом. Например, в jQuery это proxy:</p><p>
+<pre><code class="javascript hljs">jQuery(<span class="hljs-string cye-lm-tag">'#exampleDiv'</span>).click(jQuery.proxy(exampleObject.showTitle, exampleObject));
+<span class="hljs-comment cye-lm-tag">// или так:</span>
+jQuery(<span class="hljs-string cye-lm-tag">'#exampleDiv'</span>).click(jQuery.proxy(exampleObject, <span class="hljs-string cye-lm-tag">"showTitle"</span>)); 
+</code></pre></p><p>
+Суть подхода довольна проста — при вызове jQuery.proxy возвращается анонимная функция, которая с помощью замыканий вызывает исходную функцию в контексте переданного объекта.</p><p>
+По факту, JavaScript может запустить любую функцию в любом контексте. И даже не придётся присваивать функцию объекту. Для этого в JavaScript-е предусмотрено два способа — <i>apply</i> и <i>call</i>:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">showTitle</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(<span class="hljs-keyword cye-lm-tag">this</span>.title);
+}
+<span class="hljs-keyword cye-lm-tag">var</span> objectA = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Title A"</span>,
+};
+<span class="hljs-keyword cye-lm-tag">var</span> objectB = {
+<span class="hljs-string cye-lm-tag">"title"</span>: <span class="hljs-string cye-lm-tag">"Title B"</span>,
+};
+showTitle.apply(objectA);
+showTitle.call(objectA);
+</code></pre></p><p>
+Без использования параметров функции, обе работают одинаково — функции <i>apply</i> и <i>call</i> отличаются лишь способом передачи параметров при вызове:</p><p>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag">A, B, C</span>)</span>{
+<span class="hljs-comment cye-lm-tag">/* code */</span>
+}
+example.apply(context, [A, B, C]);
+example.call(context, A, B, C);
+</code></pre></p><p>
+Более развернутую информацию по затронутым темам можно прочитать тут:<br>
+<ul>
+<li><a href="http://javascript.ru/basic/closure">Замыкания </a></li>
+<li><a href="http://habrahabr.ru/post/38642/">Замыкания в JavaScript</a></li>
+<li><a href="http://habrahabr.ru/post/125306/">Замыкания и объекты JavaScript. Переизобретаем интерпретатор</a></li>
+<li><a href="http://dmitrysoshnikov.com/ecmascript/ru-chapter-4-scope-chain/">Тонкости ECMA-262-3. Часть 4. Цепь областей видимости.</a></li>
+<li><a href="http://learn.javascript.ru/classes">«Классы» в JavaScript</a></li>
+<li><a href="http://habrahabr.ru/post/171731/">Прототипы JavaScript — программистам на C/C++/C#/Java</a></li>
+<li><a href="http://habrahabr.ru/post/48542/">Работа с объектами в JavaScript: теория и практика</a></li>
+<li><a href="http://learn.javascript.ru/this">Контекст this в деталях</a></li>
+<li><a href="http://learn.javascript.ru/bind">Привязка функции к объекту и карринг: «bind/bindLate» </a></li>
+<li><a href="http://habrahabr.ru/post/149516/">Ключевое слово this в javascript — учимся определять контекст на практике</a></li>
+</ul></div>
+<br><hr>
+<h2>Замыкания в JavaScript</h2>
+<div class="content html_format js-mediator-article cye-lm-tag">Если вы используете JavaScript, но при этом так до конца и не разобрались, что же это за чудная штука такая — <a href="http://ru.wikipedia.org/wiki/Замыкание_(программирование)">замыкания</a>, и зачем она нужна — эта статья для вас.</p><p>
+<a name="habracut"></a>Как известно, в JavaScript областью видимости локальных переменных (объявляемых словом var) является тело функции, внутри которой они определены.</p><p>
+Если вы объявляете функцию внутри другой функции, первая(внутренняя) получает доступ к переменным и аргументам последней(внешней):<br>
+<blockquote><font color="black"><font color="#0000ff">function</font> outerFn(myArg) {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">var</font> myVar;<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">function</font> innerFn() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008000">//имеет доступ к myVar и myArg</font><br>
+&nbsp;&nbsp;&nbsp;}<br>
+}</font></blockquote>При этом, такие переменные <i>продолжают существовать и остаются доступными внутренней функцией</i> даже после того, как внешняя функция, в которой они определены, была исполнена. </p><p>
+Рассмотрим пример — функцию, возвращающую кол-во собственных вызовов:<br>
+<blockquote><font color="black"><font color="#0000ff">function</font> createCounter() {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">var</font> numberOfCalls = 0;<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> ++numberOfCalls;<br>
+&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+<font color="#0000ff">var</font> fn = createCounter();<br>
+fn(); <font color="#008000">//1</font><br>
+fn(); <font color="#008000">//2</font><br>
+fn(); <font color="#008000">//3</font></font></blockquote>В данном примере функция, возвращаемая createCounter, использует переменную numberOfCalls, которая сохраняет нужное значение между ее вызовами (вместо того, чтобы сразу прекратить своё существование с возвратом createCounter).</p><p>
+Именно за эти свойства такие «вложенные» функции в JavaScript называют <i>замыканиями</i> (термином, пришедшим из функциональных языков программирования) — они «замыкают» на себя переменные и аргументы функции, внутри которой определены.</p><p>
+<h4>Применение замыканий</h4><br>
+Упростим немножко пример выше — уберём необходимость отдельно вызывать функцию createCounter, сделав ее аномимной и вызвав сразу же после ее объявления:<br>
+<blockquote><font color="black"><font color="#0000ff">var</font> fn = (<font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">var</font> numberOfCalls = 0;<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font>&nbsp;<font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> ++ numberOfCalls;<br>
+&nbsp;&nbsp;&nbsp;}<br>
+})();</font></blockquote>Такая конструкция позволила нам привязать к функции данные, сохраняющиеся между ее вызовами — это одно из применений замыканий. Иными словами, с помощью них мы можем создавать функции, имеющие своё изменяемое состояние.</p><p>
+Другое хорошее применение замыканий — создание функций, в свою очередь тоже создающих функции — то, что некоторые назвали бы приёмом т.н. метапрограммирования. Например:<br>
+<blockquote><font color="#000"><font color="#0000ff">var</font> createHelloFunction = <font color="#0000ff">function</font>(name) {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(<font color="#A31515">'Hello, '</font> + name);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+<font color="#0000ff">var</font> sayHelloHabrahabr = createHelloFunction(<font color="#A31515">'Habrahabr'</font>);<br>
+sayHelloHabrahabr(); <font color="#008000">//alerts «Hello, Habrahabr»</font></font></blockquote>Благодаря замыканию <i>возвращаемая функция </i>«запоминает» параметры, переданные <i>функции создающей</i>, что нам и нужно для подобного рода вещей.</p><p>
+Похожая ситуация возникает, когда мы внутреннюю функцию не возвращаем, а вешаем на какое-либо событие — поскольку событие возникает уже после того, как исполнилась функция, замыкание опять же помогает не потерять переданные при создании обработчика данные.</p><p>
+Рассмотрим чуть более сложный пример — метод, привязывающий функцию к определённому контексту (т.е. объекту, на который в ней будет указывать слово this).<br>
+<blockquote><font color="black">Function.prototype.bind = <font color="#0000ff">function</font>(context) {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">var</font> fn = <font color="#0000ff">this</font>;<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> fn.apply(context, arguments);<br>
+&nbsp;&nbsp;&nbsp;};<br>
+}<br>
+<font color="#0000ff">var</font> HelloPage = {<br>
+&nbsp;&nbsp;&nbsp;name: <font color="#A31515">'Habrahabr'</font>,<br>
+&nbsp;&nbsp;&nbsp;init: <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(<font color="#A31515">'Hello, '</font> + <font color="#0000ff">this</font>.name);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+<font color="#008000">//window.onload = HelloPage.init; //алертнул бы undefined, т.к. this указывало бы на window</font><br>
+window.onload = HelloPage.init.bind(HelloPage); <font color="#008000">//вот теперь всё работает</font></font></blockquote>В этом примере с помощью замыканий функция, вощвращаемая bind'ом, запоминает в себе начальную функцию и присваиваемый ей контекст.</p><p>
+Следующее, принципиально иное применение замыканий — защита данных (инкапсуляция). Рассмотрим следующую конструкцию:<br>
+<blockquote><font color="black">(<font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;…<br>
+})();</font></blockquote>Очевидно, внутри замыкания мы имеем доступ ко всем внешним данным, но при этом оно имеет и собственные. Благодаря этому мы можем окружать части кода подобной конструкцией с целью закрыть попавшие внутрь локальные переменные от доступа снаружи. (Один из примеров ее использования вы можете увидеть в исходном коде библиотеки jQuery, которая окружает замыканием весь свой код, чтобы не выводить за его пределы нужные только ей переменные).</p><p>
+Есть, правда, одна связанная с таким применением ловушка — внутри замыкания теряется значение слова this за его пределами. Решается она следующим образом:<br>
+<blockquote><font color="black">(<font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;<font color="#008000">//вышестоящее this сохранится</font><br>
+}).call(<font color="#0000ff">this</font>);</font></blockquote><br>
+Рассмотрим еще один приём из той же серии. Повсеместно популяризовали его разработчики фреймворка Yahoo UI, назвав его «Module Pattern» и написав о нём <a href="http://yuiblog.com/blog/2007/06/12/module-pattern/">целую статью в официальном блоге</a>.</p><p>
+Пускай у нас есть объект (<a href="http://ru.wikipedia.org/wiki/Синглтон">синглтон</a>), содержащий какие-либо методы и свойства:<br>
+<blockquote><font color="black"><font color="#0000ff">var</font> MyModule = {<br>
+&nbsp;&nbsp;&nbsp;name: <font color="#A31515">'Habrahabr'</font>,<br>
+&nbsp;&nbsp;&nbsp;sayPreved: <font color="#0000ff">function</font>(name) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(<font color="#A31515">'PREVED '</font> + name.toUpperCase())<br>
+&nbsp;&nbsp;&nbsp;},&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;sayPrevedToHabrahabr: <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000ff">this</font>.sayPreved(<font color="#0000ff">this</font>.name);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+}<br>
+MyModule.sayPrevedToHabrahabr();<br>
+</font></blockquote>С помощью замыкания мы можем сделать методы и свойства, которые вне объекта не используютя, приватными (т.е. доступными только ему):<br>
+<blockquote><font color="black"><font color="#0000ff">var</font> MyModule = (<font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">var</font> name = <font color="#A31515">'Habrahabr'</font>;<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">function</font> sayPreved() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(<font color="#A31515">'PREVED '</font> + name.toUpperCase());<br>
+&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;<font color="#0000ff">return</font> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sayPrevedToHabrahabr: <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sayPreved(name);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;}<br>
+})();<br>
+MyModule.sayPrevedToHabrahabr(); <font color="#008000">//alerts «PREVED Habrahabr»</font><br>
+</font></blockquote><br>
+Напоследок хочу описать распространённую ошибку, которая многих вгоняет в ступор в случае незнания того, как работают замыкания. </p><p>
+Пускай у нас есть массив ссылок, и наша задача — сделать так, чтобы при клике на каждую выводился алертом ее порядковый номер. Первое решение, что приходит в голову, выглядит так:<br>
+<blockquote><font color="black"><font color="#0000ff">for</font> (<font color="#0000ff">var</font> i = 0; i &lt; links.length; i++) {<br>
+&nbsp;&nbsp;&nbsp;links[i].onclick = <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(i);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+}</font></blockquote>На деле же оказывается, что при клике на любую ссылку выводится одно и то же число — значение links.length. Почему так происходит? В связи с замыканием объявленная вспомогательная переменная i продолжает существовать, при чём и в тот момент, когда мы кликаем по ссылке. Поскольку к тому времени цикл уже прошёл, i остаётся равным кол-ву ссылок — это значение мы и видим при кликах.</p><p>
+Решается эта проблема следующим образом:<br>
+<blockquote><font color="black"><font color="#0000ff">for</font> (<font color="#0000ff">var</font> i = 0; i &lt; links.length; i++) {<br>
+&nbsp;&nbsp;&nbsp;(<font color="#0000ff">function</font>(i) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;links[i].onclick = <font color="#0000ff">function</font>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alert(i);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;})(i);<br>
+}</font></blockquote>Здесь с помощью еще одного замыкания мы «затеняем» (<u>shadowing</u>) переменную i, создавая ее копию в его локальной области видимости на каждом шаге цикла. Благодаря этому всё теперь работает как задумывалось.</p><p>
+Вот и всё. Эта статья, конечно, не претендует на звание исчерпывающей, но кому-нибудь, надеюсь, всё-таки поможет разобраться. Спасибо за внимание!</div></p>
+<br><hr>
+<div class="comments_list " id="comments">
+<h2 class="title ">
+Комментарии (<span id="comments_count" class="cye-lm-tag">85</span>)
+</h2>
+<ul id="comments-list">
+<li><div class="message html_format ">
+Большое спасибо за статью. Небольшой совет: console.log() намного удобнее чем alert для отладки.
+</div>
+<ul class="reply_comments" id="reply_comments_6214247">
+<li>
+<div class="message html_format ">
+Надо же, кто-то ещё не спит :)<br>
+<br>
+Рад, что кому-то статья пригодится. А алерт — это для наглядности. Большинство примеров рассчитаны на то, что их даже не придётся вбивать в браузер — их поведение и так понятно. Да и для начинающих, имхо, легче понять с алертом, чем с логом в консоли.
+</div>
+<ul class="reply_comments" id="reply_comments_6214397">
+<li>
+<div class="message html_format ">
+Меня алерт бесил с самого начала, когда показали console.log был очень рад. 
+</div>
+<ul class="reply_comments" id="reply_comments_6214443">
+<li>
+<div class="message html_format ">
+Особенно удобно дебажить console.log'ом в IE6-7.
+</div>
+<ul class="reply_comments" id="reply_comments_6214477">
+<li>
+<div class="message html_format ">
+Месье знает толк в извращениях.
+</div>
+<ul class="reply_comments" id="reply_comments_6214517">
+<li>
+<div class="message html_format ">
+Так ведь сарказм, нет? ))
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format bad bad1">
+<blockquote>А алерт — это для наглядности.</blockquote><br>
+Извините, но у меня в JavaScript алерта нет — интерпретатор ругается:<br>
+<br>
+<pre>$ node
+&gt; alert('Hi')
+ReferenceError: alert is not defined
+at repl:1:2
+at REPLServer.self.eval (repl.js:110:21)
+at Interface.&lt;anonymous&gt; (repl.js:239:12)
+at Interface.EventEmitter.emit (events.js:95:17)
+at Interface._onLine (readline.js:202:10)
+at Interface._line (readline.js:531:8)
+at Interface._ttyWrite (readline.js:754:14)
+at ReadStream.onkeypress (readline.js:99:10)
+at ReadStream.EventEmitter.emit (events.js:98:17)
+at emitKey (readline.js:1089:12)
+&gt; 
+</pre>
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+<blockquote>Из-за слабой типизации, почти все данные в JavaScript-е являются объектами.</blockquote>Вот это сурово!<br>
+Например, в Haskell нет объектов (в ООП-понимании этого слова), у него какая типизация?<br>
+В Java почти все, за исключением int, byte и boolean является объектом (могу быть не точен, поправьте) — потомком, если не ошибаюсь, <code>object</code> — какая в ней типизация?
+</div>
+<ul class="reply_comments" id="reply_comments_6214391">
+<li>
+<div class="message html_format ">
+А вообще статья неплохая, полезная.
+</div></li>
+<li><div class="message html_format bad bad4">
+В данном случае я имею в виду, что в отличие от других языков программировния, в JavaScript объектами являются не только сами объекты, но и строки, массивы и функции (насколько я знаком с другими языками — в них не так). Само понятие типизации — определение типа данных, коих может быть довольно много.<br>
+<br>
+JavaScript же со своей стороны, может осуществлять приведение типов для сравнения или использования, что делает его слаботипизированным. В выражении var t = 5; переменная t в зависимости от способа использования может быть трактована как булев тип, как строка, как число, а при необходимости, выступить и как объект. Вот это я имел в виду, говоря о слабой типизации. Если не прав, поправьте.
+</div>
+<ul class="reply_comments" id="reply_comments_6214435">
+<li>
+<div class="message html_format ">
+В js 5 типов примитивов, объектами они <b>не</b> являются. Null и undefined к объектам не приводятся. При обращении к свойствам строк, чисел и булевых, они оборачивается во временный объект, который, после операций над ним, удаляется. Не вводите людей в заблуждение, а то потом путают, что передается по ссылке, а что по значению.
+</div>
+<ul class="reply_comments" id="reply_comments_6214463">
+<li>
+<div class="message html_format ">
+а какой пятый?
+</div>
+<ul class="reply_comments" id="reply_comments_6214479">
+<li>
+<div class="message html_format ">
+Number, string, boolean, null, undefined.
+</div>
+<ul class="reply_comments" id="reply_comments_6214485">
+<li>
+<div class="message html_format ">
+Ах да, string. Передается по ссылке, но является immutable, и посему причисляется к примитивам. Спасибо!
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Можете подробнее на примере пояснить про «оборачивание в объект»? Или дайте, пожалуйста, ссылку.
+</div>
+<ul class="reply_comments" id="reply_comments_6215169">
+<li>
+<div class="message html_format ">
+<pre><code class="javascript hljs"><span class="hljs-comment cye-lm-tag">// строка-примитив  </span>
+<span class="hljs-keyword cye-lm-tag">var</span> str1=<span class="hljs-string cye-lm-tag">'string'</span>;
+<span class="hljs-built_in cye-lm-tag">console</span>.log(<span class="hljs-keyword cye-lm-tag">typeof</span> str1); <span class="hljs-comment cye-lm-tag">// string</span>
+<span class="hljs-comment cye-lm-tag">// строка-объект</span>
+<span class="hljs-keyword cye-lm-tag">var</span> str2=<span class="hljs-keyword cye-lm-tag">new</span> <span class="hljs-built_in cye-lm-tag">String</span>(<span class="hljs-string cye-lm-tag">'string'</span>);
+<span class="hljs-built_in cye-lm-tag">console</span>.log(<span class="hljs-keyword cye-lm-tag">typeof</span> str2); <span class="hljs-comment cye-lm-tag">// object</span>
+<span class="hljs-comment cye-lm-tag">// создаем временный объект, аналогичный str2, его свойству q присваиваем 1</span>
+str1.q=<span class="hljs-number cye-lm-tag">1</span>;
+<span class="hljs-comment cye-lm-tag">// тут продолжаем работать с примитивом - у него нет этого свойства</span>
+<span class="hljs-built_in cye-lm-tag">console</span>.log(str1.q); <span class="hljs-comment cye-lm-tag">// undefined</span>
+<span class="hljs-comment cye-lm-tag">// str2 - объект, соответственно никакая обертка не создается и работаем с его свойствами</span>
+str2.q=<span class="hljs-number cye-lm-tag">1</span>;
+<span class="hljs-built_in cye-lm-tag">console</span>.log(str2.q); <span class="hljs-comment cye-lm-tag">// 1</span>
+<span class="hljs-built_in cye-lm-tag">String</span>.prototype.met=<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{<span class="hljs-built_in cye-lm-tag">console</span>.log(<span class="hljs-keyword cye-lm-tag">typeof</span>(<span class="hljs-keyword cye-lm-tag">this</span>))}
+<span class="hljs-built_in cye-lm-tag">console</span>.log(<span class="hljs-keyword cye-lm-tag">typeof</span> <span class="hljs-string cye-lm-tag">'string'</span>); <span class="hljs-comment cye-lm-tag">// string</span>
+<span class="hljs-comment cye-lm-tag">// внутри методов контекстом будет этот временный объект</span>
+<span class="hljs-string cye-lm-tag">'string'</span>.met(); <span class="hljs-comment cye-lm-tag">// object</span>
+</code></pre>
+</div>
+<ul class="reply_comments" id="reply_comments_6215249">
+<li>
+<div class="message html_format ">
+Спасибо
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Не могу так сходу вспомнить ни одного ООП-языка, в котором функции, массивы и строки не являлись бы объектами (ну, кроме PHP (и отчасти Ruby — методы не являются там объектами, только блоки)). То, что некоторые сущности автоматически боксятся в объекты говорит не о слабой типизации, а о… не знаю, автоматическом боксинге/анбоксинге?)<br>
+<br>
+Моя мысль была в том, что степень того, насколько язык пронизан идеями ООП (являются ли все встроенные типы объектами, например) и степень «силы» его типизации не связаны <i>никак</i>. Да, JS слабо-типизированный язык; и да, в нем функции являются объектами. <br>
+В контекста вашей статьи вторая часть высказывания — важная и полезная мысль, но слабая типизация тут не при чем.
+</div>
+<ul class="reply_comments" id="reply_comments_6214475">
+<li>
+<div class="message html_format ">
+В Ruby методы являются объектами. Просто <code>obj.f</code> — вызов метода, а <code>obj.method(:f)</code> — объект.
+</div>
+<ul class="reply_comments" id="reply_comments_6214543">
+<li>
+<div class="message html_format ">
+А, вот как. Спасибо.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+В C++ функции — это не объекты. По факту, там даже методы (в том числе виртуальные) — обычные функции, но со скрытым параметром this.
+</div>
+<ul class="reply_comments" id="reply_comments_6214607">
+<li>
+<div class="message html_format ">
+Не силен в этом семействе, к своему стыду… но мне казалось, что в C или С++ можно передать ссылку на функцию, нет?
+</div>
+<ul class="reply_comments" id="reply_comments_6214615">
+<li>
+<div class="message html_format ">
+В C и C++ можно было взять указатель на функцию, это не делает функцию объектом, с одинаковым успехом можно написать:<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">int</span> <span class="hljs-title cye-lm-tag">f</span><span class="hljs-params cye-lm-tag">()</span> </span>{
+<span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-number cye-lm-tag">123</span>;
+}
+<span class="hljs-comment cye-lm-tag">/* будет работать */</span>
+<span class="hljs-keyword cye-lm-tag">int</span> (*ptr)() = f;
+(*ptr)();
+<span class="hljs-comment cye-lm-tag">/* допустимо, но никто не гарантирует, что это будет работать на конкретной машине */</span>
+<span class="hljs-keyword cye-lm-tag">int</span> (*ptr)() = (<span class="hljs-keyword cye-lm-tag">int</span> (*)()) <span class="hljs-number cye-lm-tag">0xfe017c24</span>h;
+(*ptr)();
+</code></pre><br>
+<br>
+В C++11 появились лямбды.<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-keyword cye-lm-tag">bool</span> c = <span class="hljs-literal cye-lm-tag">true</span>;
+<span class="hljs-built_in cye-lm-tag">std</span>::function&lt;<span class="hljs-keyword cye-lm-tag">bool</span>(<span class="hljs-keyword cye-lm-tag">int</span>, <span class="hljs-keyword cye-lm-tag">int</span>)&gt; f = [&amp;] (<span class="hljs-keyword cye-lm-tag">int</span> a, <span class="hljs-keyword cye-lm-tag">int</span> b) -&gt; <span class="hljs-keyword cye-lm-tag">bool</span> {
+<span class="hljs-keyword cye-lm-tag">return</span> c ? a &lt; b : a &gt; b;
+}
+<span class="hljs-comment cye-lm-tag">/* ... */</span>
+c = <span class="hljs-literal cye-lm-tag">true</span>;
+f(<span class="hljs-number cye-lm-tag">5</span>, <span class="hljs-number cye-lm-tag">3</span>); <span class="hljs-comment cye-lm-tag">// false</span>
+c = <span class="hljs-literal cye-lm-tag">false</span>;
+f(<span class="hljs-number cye-lm-tag">5</span>, <span class="hljs-number cye-lm-tag">3</span>); <span class="hljs-comment cye-lm-tag">// true</span>
+</code></pre><br>
+<br>
+Здесь уже никто не мешает взять ссылку, так как это полноценный объект, но стоит учесть, что это не настоящая функция, а синтаксический сахар для создания функтора, то есть код практически эквивалентен следующему:<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-keyword cye-lm-tag">struct</span> __my_functor{
+<span class="hljs-keyword cye-lm-tag">bool</span>&amp; c;
+__my_functor(<span class="hljs-keyword cye-lm-tag">bool</span> &amp;c): c(c) {}
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">bool</span> <span class="hljs-title cye-lm-tag">operator</span><span class="hljs-params cye-lm-tag">()</span> <span class="hljs-params cye-lm-tag">(<span class="hljs-keyword cye-lm-tag">int</span> a, <span class="hljs-keyword cye-lm-tag">int</span> b)</span> </span>{ <span class="hljs-keyword cye-lm-tag">return</span> c ? a &lt; b : a &gt; b; }
+};
+<span class="hljs-comment cye-lm-tag">/* ... */</span>
+<span class="hljs-keyword cye-lm-tag">bool</span> c = <span class="hljs-literal cye-lm-tag">true</span>;
+__<span class="hljs-function cye-lm-tag">my_functor <span class="hljs-title cye-lm-tag">f</span><span class="hljs-params cye-lm-tag">(c)</span></span>;
+<span class="hljs-comment cye-lm-tag">/* ... */</span>
+c = <span class="hljs-literal cye-lm-tag">true</span>;
+f(<span class="hljs-number cye-lm-tag">5</span>, <span class="hljs-number cye-lm-tag">3</span>); <span class="hljs-comment cye-lm-tag">// false</span>
+c = <span class="hljs-literal cye-lm-tag">false</span>;
+f(<span class="hljs-number cye-lm-tag">5</span>, <span class="hljs-number cye-lm-tag">3</span>); <span class="hljs-comment cye-lm-tag">// true</span>
+</code></pre><br>
+<br>
+То есть в C++, благодаря перегрузке операторов, объект может прикинуться функцией, но функция не является объектом.
+</div>
+<ul class="reply_comments" id="reply_comments_6214631">
+<li>
+<div class="message html_format ">
+Спасибо, узнал новое. <br>
+<br>
+Я к тому, что в java нельзя сделать даже близкого, максимум, что можно сделать — создавать анонимный инстанс анонимного класса.
+</div>
+<ul class="reply_comments" id="reply_comments_6214635">
+<li>
+<div class="message html_format ">
+На самом деле, после C++ во многих языках не хватает переопределения операторов — может пригодиться как в простых случаях вроде операций с матрицами, так и вот в подобной магии с функторами (одна из вещей, что раздражают меня в java — нельзя создать простой callback, приходится городить анонимные классы с именованными методами).
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Кстати, с массивами в C++ не все так просто. С одной стороны, это просто последовательно расположенные в памяти данные, как это было в C, с другой, если точно известен размер массива в данном контексте, то доступны итераторы по этому массиву (по крайней мере в C++11).<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">f</span><span class="hljs-params cye-lm-tag">(<span class="hljs-keyword cye-lm-tag">int</span> [] <span class="hljs-built_in cye-lm-tag">array</span>, size_t size)</span></span>;
+<span class="hljs-comment cye-lm-tag">/* ... */</span>
+<span class="hljs-keyword cye-lm-tag">int</span> <span class="hljs-built_in cye-lm-tag">array</span>[<span class="hljs-number cye-lm-tag">5</span>];
+<span class="hljs-comment cye-lm-tag">/* тут доступны begin() и end() */</span>
+<span class="hljs-keyword cye-lm-tag">for</span> (<span class="hljs-keyword cye-lm-tag">int</span> a : <span class="hljs-built_in cye-lm-tag">array</span>) {
+<span class="hljs-built_in cye-lm-tag">std</span>::<span class="hljs-built_in cye-lm-tag">cout</span> &lt;&lt; <span class="hljs-built_in cye-lm-tag">array</span> &lt;&lt; <span class="hljs-built_in cye-lm-tag">std</span>::<span class="hljs-built_in cye-lm-tag">endl</span>;
+}
+f(<span class="hljs-built_in cye-lm-tag">array</span>, 5);
+/* ... */
+<span class="hljs-keyword cye-lm-tag">void</span> f(<span class="hljs-keyword cye-lm-tag">int</span> [] <span class="hljs-built_in cye-lm-tag">array</span>, <span class="hljs-keyword cye-lm-tag">size_t</span> size) {
+/* а тут уже нет */
+<span class="hljs-keyword cye-lm-tag">for</span> (<span class="hljs-keyword cye-lm-tag">int</span> i = 0; i &lt; size; ++i) {
+<span class="hljs-built_in cye-lm-tag">std</span>::<span class="hljs-built_in cye-lm-tag">cout</span> &lt;&lt; <span class="hljs-built_in cye-lm-tag">array</span>[i] &lt;&lt; <span class="hljs-built_in cye-lm-tag">std</span>::<span class="hljs-built_in cye-lm-tag">endl</span>;
+}
+}
+</code></pre>
+</div>
+<ul class="reply_comments" id="reply_comments_6214651">
+<li>
+<div class="message html_format ">
+Вру. в C++11 появился шаблонный класс array, который не хранит размер массива, но использует значение аргумента шаблона.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Код с явно записанным функтором функтором эквивалентен <br>
+<code>auto f = [&amp;] (int a, int b) -&gt; bool {
+return c ? a &lt; b : a &gt; b;</code><br>
+, а не <br>
+<code>std::function&lt;bool(int, int)&gt; f = [&amp;] (int a, int b) -&gt; bool</code><br>
+Если появляется std::function, возникает дополнительный полиморфизм, который стоит производительности (лишний malloc+косвенность для захвата замыкания вместо простой структуры на стеке с auto/вручную записанным функтором)
+</div></li>
+<li><div class="message html_format ">
+Функтор это функциональный объект или же прямой аналог функции в js. С ними тоже можно что угодно делать. даже складывать, если оператор опишешь.
+</div>
+<ul class="reply_comments" id="reply_comments_6215889">
+<li>
+<div class="message html_format ">
+У функтора несколько разных пониманий. Функторы в C++, Prolog и Haskell — совершенно разные вещи.<br>
+<br>
+Отличие функциональных объектов в JS от C++ в том, что в C++ объект может вести себя как функция, если определен <code>operator()</code>, а в JS любая определенная пользователем функция является объектом.
+</div>
+<ul class="reply_comments" id="reply_comments_6217429">
+<li>
+<div class="message html_format ">
+Требования производительности и совместимости с Си, функциональные объекты не так то просто заинлайнить.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+А чем обьект, прикинувшийся функцией, отличается от функции в понимании js? Правильнее называть это дело не функторами, а функциональными объектами.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Да, про C++ я не подумал. Исключительный случай — низкоуровневый ООП-язык. Конечно, объектами в нем являются только инстансы классов.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Строки, массивы и т.д. являются объектами далеко не только в JS, как верно заметили выше.<br>
+<blockquote> может осуществлять приведение типов для сравнения или использования </blockquote><br>
+как мне кажется немного не точная формулировка: JS делает слаботипизированным то, что он может производить приведение типов неявно. например мы можем сделать так:<br>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> a = <span class="hljs-number cye-lm-tag">5</span>;
+<span class="hljs-keyword cye-lm-tag">if</span> (a) {
+<span class="hljs-comment cye-lm-tag">// do something</span>
+}
+</code></pre><br>
+тут при проверке условия происходит неявное приведение переменной a к булеву (если a == 0 или undefined или null то вернётся false). В строготипизированных языках такой фокус не прокатит: оператору if должно бередаваться только булево значание<br>
+<br>
+Вот ещё пример слабой типизации:<br>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> a = <span class="hljs-number cye-lm-tag">5</span>;
+a = <span class="hljs-string cye-lm-tag">'String'</span>
+</code></pre><br>
+мы не задаём явного типа переменной a, и как следствие можем в любой момент присвоить ей значение люого типа.<br>
+<br>
+а ваше утверждение, что если всё являтся объектами, то язык слаботипизирован, является в корне неверным
+</div>
+<ul class="reply_comments" id="reply_comments_6214497">
+<li>
+<div class="message html_format ">
+Мне не нравится, что мы тут все трактуем сильную и слабую типизацию (ключевое слово «трактуем»), потому что есть <a href="http://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BF%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F">вполне определенные термины</a>.<br>
+<br>
+Но последняя фраза вашего комента — это тютелька в тютельку то, что я хотел выразить изначально:)
+</div></li>
+<li><div class="message html_format ">
+Неявное приведение типов, кстати говоря, есть и в Haskell — можно сложить вещественное и целое, например (с точки зрения Haskell это разные типы). Но это строго типизированный язык, просто операция (функция, вообще говоря) сложения определена и для пары R+N и для N+R и т.д. Тем не менее, не получится просто так передать в функцию, которая принимает строку, целое число (нужно определить функцию с таким же именем, но с другими аргумантами).<br>
+<br>
+В данном контексте слабая типизация JS — это возможность в рантайме поменять тип значения переменной.
+</div>
+<ul class="reply_comments" id="reply_comments_6214561">
+<li>
+<div class="message html_format ">
+я не являюсь знатоком большого числа языков программирования, к сожалению, и про такой нюанс в Haskel`е не знал(хотя чего реха таить, я с ним и не знаком. ну разве что название знаю) Если честно, вообще как-то не задумывался что в строготипизированном языке могут быть неявные приведения, так что спасибо, что развеяли моё заблуждение
+</div>
+<ul class="reply_comments" id="reply_comments_6214587">
+<li>
+<div class="message html_format ">
+Я тоже не особо знаток, просто полистал «Learn you a Haskell for a great good». Интересно же, на чем люди пишут и почему:)
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Стоп, в Haskel же нет перегрузки функций! Потому и значения разных типов складывать нельзя, никак.<br>
+<br>
+Возможно, вас обмануло наличие полиморфных констант в Haskell — число «5» может быть, в зависимости от контекста, целым, вещественным, дробным или даже комплексным. Но стоит зафиксировать его тип — и сложение не сработает.<br>
+<br>
+<pre><code class="haskell hljs"><span class="hljs-number cye-lm-tag">2</span> + <span class="hljs-number cye-lm-tag">2.0</span>  <span class="hljs-comment cye-lm-tag">-- Сложение двух вещественных чисел, результат = 4.0</span>
+(<span class="hljs-number cye-lm-tag">2</span> :: <span class="hljs-type cye-lm-tag">Integer</span>) + <span class="hljs-number cye-lm-tag">2.0</span> <span class="hljs-comment cye-lm-tag">-- Ошибка компиляции, функция (+) требует одинакового типа операндов</span>
+<span class="hljs-title cye-lm-tag">let</span> a = <span class="hljs-number cye-lm-tag">2</span> <span class="hljs-comment cye-lm-tag">-- Именованная константа a имеет тип Integer</span>
+<span class="hljs-title cye-lm-tag">a</span> + <span class="hljs-number cye-lm-tag">2.0</span> <span class="hljs-comment cye-lm-tag">-- И снова ошибка компиляции</span>
+<span class="hljs-title cye-lm-tag">let</span> b :: <span class="hljs-type cye-lm-tag">Num</span> x =&gt; x; b = <span class="hljs-number cye-lm-tag">2</span> <span class="hljs-comment cye-lm-tag">-- Именованная константа b является полиморфной</span>
+<span class="hljs-title cye-lm-tag">b</span> + <span class="hljs-number cye-lm-tag">2.0</span> <span class="hljs-comment cye-lm-tag">-- Работает, результат = 4.0</span>
+<span class="hljs-title cye-lm-tag">let</span> c = <span class="hljs-number cye-lm-tag">2</span> <span class="hljs-keyword cye-lm-tag">in</span> c + <span class="hljs-number cye-lm-tag">2.0</span> <span class="hljs-comment cye-lm-tag">-- Механизм вывода типа справился, с имеет тип Double, результат 4.0</span>
+</code></pre>
+</div>
+<ul class="reply_comments" id="reply_comments_6215619">
+<li>
+<div class="message html_format ">
+<blockquote>Стоп, в Haskel же нет перегрузки функций! Потому и значения разных типов складывать нельзя, никак.</blockquote><br>
+Можно, никто не запрещает спрятать прелюдию и определить свой плюс на multiparam тайпклассе.
+</div>
+<ul class="reply_comments" id="reply_comments_6215745">
+<li>
+<div class="message html_format ">
+Но это будет уже другой плюс, тут же обсуждалась встроенная функция.<br>
+<br>
+PS вы меня покритиковали только затем, чтобы написать ниже ровным счетом то же самое?<br>
+<blockquote>а дальше вывод типов поработает и приведет все к одному типу, на котором определен + (который всегда принимает 2 одинаковых типа, он не может быть определен для разных типов <i>никак</i>)</blockquote>
+</div>
+<ul class="reply_comments" id="reply_comments_6215755">
+<li>
+<div class="message html_format ">
+Плюс не является встроенным, это часть стандартной библиотеки, точнее — тайпкласса Num в модуле Prelude. Язык не запрещает не подключать Prelude к модулю.<br>
+Встроенными примитивами являются функции, которые используются в инстансах Num для Int, Integer и прочих (ctrl-f instance Num Int в <a href="http://www.haskell.org/ghc/docs/6.12.2/html/libraries/base-4.2.0.1/src/GHC-Num.html">www.haskell.org/ghc/docs/6.12.2/html/libraries/base-4.2.0.1/src/GHC-Num.html</a>)<br>
+<br>
+Я не критиковал, а уточнил. У себя не стал это писать, чтобы не дублировать коммент.
+</div>
+<ul class="reply_comments" id="reply_comments_6217069">
+<li>
+<div class="message html_format ">
+Стандартная библиотека — часть языка.<br>
+<br>
+PS <a href="#comment_6217079">http://habrahabr.ru/post/178133/#comment_6217079</a> — добавил для симметрии
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Честно считал, что перегрузка функций там есть. С чем-то перепутал.<br>
+Спасибо.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Не определено там это.<br>
+В хаскеле литерал «5» является синтаксическим сахаром для «fromInteger 5», а «5.0» — «fromRational 5.0». Отсюда они имеют тип:<br>
+fromInteger 5 :: (Num a) =&gt; a<br>
+fromRational 5.0 :: (Fractional a) =&gt; a<br>
+<br>
+То есть «5 + 5.0» будет на самом деле «fromInteger 5 + fromRational 5.0», а дальше вывод типов поработает и приведет все к одному типу, на котором определен + (который всегда принимает 2 одинаковых типа, он не может быть определен для разных типов никак)
+</div>
+<ul class="reply_comments" id="reply_comments_6215733">
+<li>
+<div class="message html_format ">
+Ясно, спасибо.
+</div></li>
+<li><div class="message html_format ">
+<blockquote>а дальше вывод типов поработает и приведет все к одному типу, на котором определен + (который всегда принимает 2 одинаковых типа, он не может быть определен для разных типов никак)</blockquote>Почему никак? Никто не запрещает спрятать прелюдию и определить свой плюс на multiparam тайпклассе.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Пожалуй, оставлю <a href="https://www.destroyallsoftware.com/talks/wat">это</a> здесь.
+</div>
+<ul class="reply_comments" id="reply_comments_6214637">
+<li>
+<div class="message html_format ">
+Да, сей прекрасный, хоть и донельзя избитый ролик отлично иллюстрирует.
+</div></li>
+<li><div class="message html_format ">
+Классный ролик, спасибо за ссылку.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Я долго осознавал, что такое замыкание в JS. Мне долго пытались это вдолбить разные статьи, книги, советы. Пока один хороший человек не ткнул меня в такое понятие как Scope. И только осознав, что такое scope, до меня дошло, что же такое замыкание. Почему здесь про это нет ни слова?
+</div>
+<ul class="reply_comments" id="reply_comments_6215233">
+<li>
+<div class="message html_format bad bad2">
+Цель данной статьи не показать внутренние механизмы работы, а попытаться «на пальцах» объяснить как это работает. Тем более, что про Scope отлично описывается в статьях, чьи ссылки находится внизу топика; если быть точнее — в статье по первой же ссылке.
+</div></li>
+<li><div class="message html_format ">
+Аналогично. Когда я узнал, что scope&nbsp;— это всего-навсего объект, а переменные «внутри» него&nbsp;— это его свойства, оказалось, что в прототипах и в скопах используется по сути один и тот же механизм, делегация.<br>
+<br>
+<code>object → [[proto]] → [[proto]] → [[proto]] → null</code><br>
+<code>[[scope]] → [[scope]] → [[scope]] → window → null</code><br>
+<br>
+А «магическая» конструкция <code>with()</code> всего-то навсего добавляет в эту цепь произвольный объект. И тогда js стал для меня из непредсказуемой штуки красивым и изящным языком.
+</div>
+<ul class="reply_comments" id="reply_comments_6215365">
+<li>
+<div class="message html_format ">
+Ну, у прототипов и вложенных областей видимости есть принципиальное различие — операция присваивания значения свойству никогда не изменит значение свойства, найденного в прототипе. В то же время операция присваивания значения переменной всегда меняет ту переменную, где она была найдена.<br>
+<br>
+И вторая неточность: вместо window лучше бы написать [[global]], поскольку глобальный объект не обязан быть окном. Особенно заметен данный факт, если делать расширения для браузеров.
+</div>
+<ul class="reply_comments" id="reply_comments_6215651">
+<li>
+<div class="message html_format ">
+Подразумевалось, что при разрешении имен идентификаторов в обоих случаях используется делегация (или проще — обход цепочек [[scope]] или [[proto]]). А про различие правильно подмечено.
+</div></li>
+<li><div class="message html_format ">
+Уточнения хорошие. Да, согласен, разница между scope chain и proto chain есть. Но не такая уж она прям и принципиальная.<br>
+<br>
+А насчет [[global]] — незачем новичков пугать лишний раз. Я надеюсь, что разработчики расширений для браузеров или скриптов на node уже знают js достаточно хорошо, и им мой коммент вообще без надобности.<br>
+<br>
+Главное, имхо, уточнениями не запутать все окончательно, а то ещё выйдет, что и «операция присваивания значения свойству никогда не изменит значение свойства, найденного в прототипе» — не совем-то и правда. <div class="spoiler"><b class="spoiler_title">Скрытый текст</b><div class="spoiler_text"><pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> o = <span class="hljs-built_in cye-lm-tag">Object</span>.create(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> stashedProtoval;
+<span class="hljs-keyword cye-lm-tag">return</span> <span class="hljs-built_in cye-lm-tag">Object</span>.create({}, {protoval:{
+get: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{ <span class="hljs-keyword cye-lm-tag">return</span> stashedProtoval; },
+set: <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag">v</span>)</span>{ stashedProtoval = v; },
+configurable: <span class="hljs-literal cye-lm-tag">true</span>,
+enumerable: <span class="hljs-literal cye-lm-tag">true</span>
+}});
+}());
+o.protoval; <span class="hljs-comment cye-lm-tag">// undefined</span>
+o.protoval = <span class="hljs-number cye-lm-tag">42</span>;
+o.protoval; <span class="hljs-comment cye-lm-tag">// 42</span>
+o.hasOwnProperty(<span class="hljs-string cye-lm-tag">'protoval'</span>); <span class="hljs-comment cye-lm-tag">// false</span></code></pre></div></div>
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Я так же считаю, что только благодаря пониманию Scope можно понять замыкания. По сути, замыкания и есть сама функция и это свойство Scope. Очень прекрасно все это описано на сайте <a href="http://dmitrysoshnikov.com/ecmascript/ru-chapter-4-scope-chain/">Дмитрия Сошникова</a>. Добавьте эту ссылку в топик. <br>
+А статья, в целом, хорошая. 
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+почти все данные в JavaScript-е являются объектами, или могут быть использованы как объекты<br>
+лучше было бы так: «почти все данные в JavaScript-е являются голыми бабами, или могут быть использованы как голые бабы.» Эх, не было фантазии у разработчиков ECMA 262((
+</div>
+<ul class="reply_comments" id="reply_comments_6215305">
+<li>
+<div class="message html_format ">
+Это скорее претензия ко мне, как к автору, в том, что не могу правильно сформулировать мысль — пытался сформулировать по разному много раз; то, что получилось, и есть результат.<br>
+<br>
+А про голых баб занятно. Только, думаю, что эту статью будут читать не только парни — думаю, они бы проголосовали не за «баб», а за «мужиков». И чтобы не выбирать между двух зол, пусть останутся объекты.
+</div>
+<ul class="reply_comments" id="reply_comments_6215367">
+<li>
+<div class="message html_format ">
+ну давай тогда будут объекты-мужики(объекты, массивы) и объекты-бабы(функции). А голые они потому что у них все свойства паблик!
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Тому, кто&nbsp;считает, что&nbsp;почти все данные в&nbsp;джаваскриптах могут&nbsp;быть использованы как&nbsp;голые бабы, наверняка необходима помощь квалифицированного сексопатолога&nbsp;— да&nbsp;поскорее, пока не&nbsp;случилось непоправимое.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+<blockquote>В данном примере переменная title была объявлена дважды – первый раз глобально, а второй раз – внутри функции. Благодара тому, что внутри функции example переменная title была объявлена с помощью ключевого слова var, она становится локальной и никак не связана с переменной title, объявленной до функции. В результате выполнения кода вначале выведется «internal» (внутренняя переменная), а затем «external» (глобальная переменная).</blockquote><br>
+<br>
+Тут стоит добавить что переменная в функции может быть так же объявлена в качестве параметра и тоже будет искаться в родительской функции. Более того, если повторно объявить с помощью var переменную с таким же именем, то новой переменной создано не будет.<br>
+<br>
+Пример:<br>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> o = { x: <span class="hljs-number cye-lm-tag">1</span> };
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">addY</span>(<span class="hljs-params cye-lm-tag">obj</span>) </span>{
+obj.y = <span class="hljs-number cye-lm-tag">2</span>;
+}
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">addZ</span>(<span class="hljs-params cye-lm-tag">obj</span>) </span>{
+<span class="hljs-comment cye-lm-tag">//повторно объявим obj</span>
+<span class="hljs-keyword cye-lm-tag">var</span> obj;
+obj.z = <span class="hljs-number cye-lm-tag">3</span>;
+}
+addY(o);
+<span class="hljs-built_in cye-lm-tag">console</span>.log(o); <span class="hljs-comment cye-lm-tag">// =&gt; { x: 1, y: 2 }</span>
+addZ(o);
+<span class="hljs-built_in cye-lm-tag">console</span>.log(o); <span class="hljs-comment cye-lm-tag">// =&gt; { x: 1, y: 2, z: 3 }</span>
+</code></pre>
+</div>
+<ul class="reply_comments" id="reply_comments_6215805">
+<li>
+<div class="message html_format ">
+Полезное уточнение. Добавил как скрытый текст.
+</div>
+</li>
+</ul>
+</li>
+<li>
+<div class="message html_format bad bad3">
+Хорошая статья для начинающих, но печалит, что ничего не сказано про <i>Strict Mode</i> и <b>let</b>.<br>
+Например:<br>
+&gt; Второе — динамическое объявление функций, использующих замыкания.<br>
+можно переписать так (работает в FF и Chrome):<br>
+<br>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>) </span>{<span class="hljs-string cye-lm-tag">"use strict"</span>;
+<span class="hljs-keyword cye-lm-tag">for</span>(<span class="hljs-keyword cye-lm-tag">let</span> counter=<span class="hljs-number cye-lm-tag">1</span>; counter &lt;=<span class="hljs-number cye-lm-tag">10</span>; counter++){
+<span class="hljs-keyword cye-lm-tag">let</span> _counter = counter;
+$(<span class="hljs-string cye-lm-tag">'&lt;div&gt;'</span>).css({
+<span class="hljs-comment cye-lm-tag">//...</span>
+}).html(<span class="hljs-string cye-lm-tag">'&lt;h1&gt;'</span>+ counter +<span class="hljs-string cye-lm-tag">'&lt;/h1&gt;'</span>)
+.appendTo(<span class="hljs-string cye-lm-tag">'body'</span>)
+.click(<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(_counter);
+});
+}
+}.call(<span class="hljs-literal cye-lm-tag">null</span>)
+</code></pre><br>
+<br>
+строку <code>let _counter = counter;</code> можно было бы опустить, если бы <a href="https://code.google.com/p/v8/issues/detail?id=2560">браузеры релизовали let по спецификации</a>
+</div>
+<ul class="reply_comments" id="reply_comments_6216113">
+<li>
+<div class="message html_format ">
+в моем хроме let не работает, да и это только будущее языка.
+</div>
+<ul class="reply_comments" id="reply_comments_6216129">
+<li>
+<div class="message html_format ">
+Во первых, <b>let</b> можно <a href="https://github.com/olov/defs">использовать</a> <a href="https://github.com/google/traceur-compiler">уже сейчас</a><br>
+Во вторых, javascript это уже давно не только язык интернет страниц. Если вы пишете код под Node.js или FireFox OS, то можете использовать конструкцию <b>let</b> без препроцессоров и это существенно упростит/ускорит ваш код.
+</div>
+<ul class="reply_comments" id="reply_comments_6216829">
+<li>
+<div class="message html_format ">
+И вы уверены, что это должны знать те, кто еще не знает что такое замыкание или прототип?) А по поводу this в strict mode — соглашусь.
+</div>
+<ul class="reply_comments" id="reply_comments_6216867">
+<li>
+<div class="message html_format ">
+У меня товарищ-робототехник начал изучение javascript именно с Node.js, для написания <a href="https://github.com/voodootikigod/node-arduino">сервера управления Arduino</a>.<br>
+<br>
+И моё личное мнение: изучать сейчас javascript без (хотя бы поверхностного) ознакомления с <i>Strict Mode</i> и <b>let</b>, такая же ошибка, как начать изучать javascript с jQuery.
+</div>
+<ul class="reply_comments" id="reply_comments_6216945">
+<li>
+<div class="message html_format ">
+Вы и ваш товарищ молодцы, и что дальше?:) И я <s>javascript</s>ECMAScript учил на ноде и по спецификации. И в текущей принятой версии спецификации ни слова о let и const. Да, это нужно знать, это нужно учить на будущее — но уже после того, как выучил js на базовом уровне — уже явно после того, как разобрался с тем, что написано в статье. А вот strict mode в текущей версии спецификации присутствует, но к теме статьи относится только одно — при вызове функции не в контексте объекта, контекст не переопределяется на глобальный объект.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Вы абсолютно правильно поняли — статья ориентирована на начинающих. Поэтому я старался не выходить за пределы тем, упомянутых в начале топика. Да и это описание занимет более 10 страниц ворда, что довольно много для одной статьи.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Мне кажется, что правильное решение будет таким:<br>
+<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">for</span>(<span class="hljs-keyword cye-lm-tag">var</span> counter=<span class="hljs-number cye-lm-tag">1</span>; counter &lt;=<span class="hljs-number cye-lm-tag">10</span>; counter ++){
+$(<span class="hljs-string cye-lm-tag">'&lt;div&gt;'</span>).css({
+<span class="hljs-string cye-lm-tag">"border"</span>: <span class="hljs-string cye-lm-tag">"solid 1px blue"</span>,
+<span class="hljs-string cye-lm-tag">"height"</span>: <span class="hljs-string cye-lm-tag">"50px"</span>,
+<span class="hljs-string cye-lm-tag">"margin"</span>:  <span class="hljs-string cye-lm-tag">"10px"</span>,
+<span class="hljs-string cye-lm-tag">"text-align"</span>: <span class="hljs-string cye-lm-tag">"center"</span>,
+<span class="hljs-string cye-lm-tag">"width"</span>: <span class="hljs-string cye-lm-tag">"100px"</span>
+}).html(<span class="hljs-string cye-lm-tag">'&lt;h1&gt;'</span>+ counter +<span class="hljs-string cye-lm-tag">'&lt;/h1&gt;'</span>)
+.appendTo(<span class="hljs-string cye-lm-tag">'body'</span>)
+.click(<span class="hljs-built_in cye-lm-tag">window</span>.alert.bind(<span class="hljs-built_in cye-lm-tag">window</span>, counter));
+}
+</code></pre>
+</div>
+<ul class="reply_comments" id="reply_comments_6216409">
+<li>
+<div class="message html_format ">
+для того, чтобы просто вывести номер — пойдёт, т.к. суть та же — замыкание номера. Однако цель примера — не вывести алерт, а показать, что внутри функции можно получить текущий номер с помощью замыкания. <br>
+<br>
+Ещё следует быть осторожным с bind-ом, т.к. он не не совсем кроссбраузерный.
+</div>
+<ul class="reply_comments" id="reply_comments_6216613">
+<li>
+<div class="message html_format ">
+Проблема кроссбраузерности bind'а (да и других функций из ES5) решается <a href="https://github.com/kriskowal/es5-shim">очень просто</a>
+</div></li>
+<li><div class="message html_format ">
+Самая печаль, это то, что обычное замыкание работает намного быстрее чем .bind()
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Минусую топик только за <br>
+<blockquote>При попытке присвоить переменной значение, переменная будет создана в глобальной области видимости, и ей присвоится значение.</blockquote><br>
+<br>
+В конце статьи есть ссылки на статьи Дмитрия Сошникова. Жаль что вы не читали (читали невнимательно) <a href="http://dmitrysoshnikov.com/ecmascript/ru-chapter-2-variable-object/">вот эту</a>. В ней наглядно объясняется разница между глобальной переменной и свойством глобального объекта. Эта разница на первый взгляд совершенно несущественна, но на самом деле весьма значительна.
+</div>
+<ul class="reply_comments" id="reply_comments_6217821">
+<li>
+<div class="message html_format ">
+Спасибо за объяснение причины минусования топика.
+</div>
+<ul class="reply_comments" id="reply_comments_6217941">
+<li>
+<div class="message html_format ">
+Не за что. Вы бы статейку прочитали хотя бы в части «объявления переменных без var» и поправили свою, что бы людей в заблуждение не вводить.
+</div>
+<ul class="reply_comments" id="reply_comments_6219681">
+<li>
+<div class="message html_format ">
+Прочитал до того, как ответить Вам на комментарий. Ваше замечание полезно, но выходит за рамки уровня целевой аудитории, для которого написана эта статья. К сожалению, многих вещей пришлось коснуться лишь поверхностно и не в подробностях, чтобы не слишком усложнять статью. Приводя ваше же высказывание:<br>
+<br>
+<blockquote>Я думаю этот вопрос все же лучше рассмотреть отдельно, потому что если рассматривать их в одном топике, топик будет слишком сложным.</blockquote>
+</div>
+<ul class="reply_comments" id="reply_comments_6219879">
+<li>
+<div class="message html_format ">
+Тогда хотя бы исправьте фразу, которая может ввести читателей в заблуждение.
+</div>
+<ul class="reply_comments" id="reply_comments_6221001">
+<li>
+<div class="message html_format ">
+Добавил ниже спойлер с сылками, где объясняется разница в объявлении глобальной переменной от присвоения значения несуществующей. Саму фразу исправлять не стал, т.к. имхо, разница не столь уж значительная.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Мне кажется, статьи, в которых рассказывается про прототипирование, контекст и замыкания в JS, появляются на хабре примерно раз в два месяца. И там обязательно одни и те же комментарии. Например, подобные моему. Сансара.
+</div></li>
+<li><div class="message html_format ">
+Я не понял. Вы пишите:<br>
+<br>
+<blockquote>Если убрать ключевое слово var из строки var title = 'internal', то запустив код, в результате дважды получим сообщение «internal». Это происходит из-за того, что при вызове функции мы объявляли не локальную переменную title, а перезаписывали значение глобальной переменной!</blockquote><br>
+<br>
+Потом далее приводите пример:<br>
+<br>
+<blockquote>var title = «external title»;<br>
+function example(){<br>
+title = «changing external title»;<br>
+alert(title);<br>
+…<br>
+example();<br>
+<br>
+Если закомментировать строку title = «changing external title»;, то при первым сгенерированным сообщением станет «undefined» — локальная переменная title уже была инициализирована (существует), но значение (на момент вызова alert-а) не было присвоено.</blockquote><br>
+<br>
+<b>Вопрос.</b> Почему в этом примере переменная title толи не вида внутри функции, то ли еще не проинициализирована, хотя это делается в первой же строке программы? <br>
+</div>
+<ul class="reply_comments" id="reply_comments_6222971">
+<li>
+<div class="message html_format ">
+В этом фрагменте автор имел ввиду что функция example принимает аргумент title (то есть функция должна быть объявлена как function example(title)). Это становится очевидно, если посмотреть предыдущий фрагмент кода. Если аргументы вернуть то все становится на свои места — функция была вызвана без аргументов, поэтому и <br>
+<br>
+<blockquote>первым сгенерированным сообщением станет «undefined»</blockquote>
+</div></li>
+<li><div class="message html_format ">
+Во втором примере объясняется момент с инициализацией переменных внутри функции. Надеюсь, Вы уже уловили разницу между локальными и глобальными переменными. <br>
+<br>
+Так вот, локальные переменные создаются не тогда, когда Вы их видите в коде, а в тот момент, когда создаётся функция. Т.е. даже если переменная будет объявлена в конце, она будет создана до того, как вызовется функция. А вот значение присваивается там, где Вы и видите в коде. Что и показывает второй пример.<br>
+<br>
+Существует разница между «переменная не существует» и «переменная с пустым значением (undefined)»
+</div>
+<ul class="reply_comments" id="reply_comments_6223793">
+<li>
+<div class="message html_format ">
+Возможно более понятным будет показать на примере:<br>
+<br>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+alert(title);
+<span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
+}
+</code></pre><br>
+<br>
+Из-за того, что <b>все</b> локальные переменные объявляются <b>до</b> вызова функции, то предыдущий код эквивалентен:<br>
+<br>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+<span class="hljs-keyword cye-lm-tag">var</span> title;
+alert(title);
+title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
+}
+</code></pre><br>
+<br>
+отсюда и сообщение «undefined» — переменная есть, а вот значения — нет.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<br><hr>
+<ul id="comments-list2">
+<li><div class="message html_format ">
+Да, спасибо. Пользовался этим и даже не знал как оно называется. А вот создание тру-приватных свойств очень даже интересно и познавательно.
+</div>
+<ul class="reply_comments" id="reply_comments_918907">
+<li>
+<div class="message html_format ">
+Это не совсем тру-приватные свойства, но очень близко к ним.
+</div></li>
+<li><div class="message html_format ">
+Обширная статья — побольше бы таких<br>
+Только приватные переменные можно достать следующим образом:<br>
+<br>
+var MyModule = (function() {<br>
+var field = 'Habrahabr';<br>
+return {<br>
+sayPrevedToHabrahabr: function() {<br>
+alert(field);<br>
+}<br>
+}<br>
+})();<br>
+MyModule.sayPrevedToHabrahabr(); //alerts «PREVED Habrahabr»<br>
+// получение псевдо-приватного поля<br>
+var private_var;<br>
+eval('private_var=field', MyModule.sayPrevedToHabrahabr);<br>
+alert(private_var);
+</div>
+<ul class="reply_comments" id="reply_comments_919930">
+<li>
+<div class="message html_format ">
+Конечно, но в данном случае приватные переменные используются скорее для удобства программистов, которые будут поддерживать этот код, чем для секьюрити, поэтому это не так уж существенно.
+</div>
+<ul class="reply_comments" id="reply_comments_919953">
+<li>
+<div class="message html_format ">
+И да это (т.е. eval(code, scope)) работает далеко не во всех браузерах (насколько знаю только в Firefox/gecko).
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Думаю еще будут полезными ссылки на статью Мартина Фаулера о замыканиях вообще (на англ.) <a href="http://martinfowler.com/bliki/Closure.html">martinfowler.com/bliki/Closure.html</a> и Нила Гафтера об истории возникновения замыканий (тоже на англ.) <a href="http://gafter.blogspot.com/2007/01/definition-of-closures.html">gafter.blogspot.com/2007/01/definition-of-closures.html</a> <br>
+Кстати, узнав впервые что такое замыкания я наконец-то понял зачем в Java нужны inner classes. <br>
+<br>
+За статью спасибо, кроме самих замыканий интересно было узнать и про управление доступом в Javascript. На досуге почитаем поподробнее, занятная тема вообще
+</div>
+<ul class="reply_comments" id="reply_comments_918925">
+<li>
+<div class="message html_format ">
+У Котерова статья была хорошая, для тех у кого трудно с английским.<br>
+<br>
+</div>
+<ul class="reply_comments" id="reply_comments_919884">
+<li>
+<div class="message html_format bad bad5">
+<a href="http://dklab.ru/chicken/nablas/39.html">dklab.ru/chicken/nablas/39.html</a><br>
+<br>
+какието аццкие хоткеи тут, случайно отправил.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+хорошая статья, спасибо
+</div></li>
+<li><div class="message html_format ">
+Скоро ещё выйдет книга в которой все эти вещи будут описаны «Secrets of the JavaScript Ninja» John Resig<br>
+Вот примеры нескольких глав из книги:<br>
+How closures work — ajaxian.com/downloads/books/javascriptninja/JavaScriptNinja_ch3_Article1.pdf<br>
+Using (function(){})() — ajaxian.com/downloads/books/javascriptninja/JavaScriptNinja_ch3_Article2.pdf<br>
+Class-Like Code — ajaxian.com/downloads/books/javascriptninja/JavaScriptNinja_ch5_Article2.pdf
+</div>
+<ul class="reply_comments" id="reply_comments_919113">
+<li>
+<div class="message html_format ">
+Да-да, я тоже жду этой книги с нетерпением. :)
+</div>
+<ul class="reply_comments" id="reply_comments_919958">
+<li>
+<div class="message html_format ">
+3 года ждем…
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Замыкания — одно из самых сложных для понимания вещей, особенно для начинающих.<br>
+Спасибо за хороший материал с объяснениями.<br>
+<br>
+4 абзац, видимо опечатка — «остаются доступными внутренней функцией функции»
+</div>
+<ul class="reply_comments" id="reply_comments_919138">
+<li>
+<div class="message html_format ">
+Прошу прощения, хабр съел тэг strike, имелось ввиду вместо «функцией» -&gt; «функции»
+</div></li>
+<li><div class="message html_format ">
+Думаю, тут подходят оба варианта — быть доступным чем-либо или чему-либо.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Очень хорошая статья.<br>
+Хотелось бы добавить, что иногда замыкания могут послужить причиной мемори-ликов. Например в коде:<br>
+<br>
+<pre>function createHelloFunction = function(name) {
+var myBigObject = createSomeBigObject();
+return function() {
+alert('Hello, ' + name);
+}
+}
+var sayHelloHabrahabr = createHelloFunction('Habrahabr');
+</pre><br>
+<br>
+Хотя и <code>myBigObject</code> в возвращаемой функции не используется, ссылка на него остаётся (по крайней мере покуда жив <code>sayHelloHabrahabr</code>). <br>
+Вот более живой пример:<br>
+<br>
+<pre>function attach()
+{
+var element = document.getElementById("my-element");
+element.attachEvent("onclick", function(){ alert("Clicked: " + element.innerHTML); });
+}
+</pre><br>
+<br>
+Как с этим бороться можно почитать <a href="http://laurens.vd.oever.nl/weblog/items2005/closures/">тут на английском</a>.
+</div>
+<ul class="reply_comments" id="reply_comments_919147">
+<li>
+<div class="message html_format ">
+Спасибо, дельное замечание.<br>
+<br>
+Благодаря этому комментарию вдруг вспомнил о том, что хотел упомянуть про еще одну распространённую ошибку, связанную с замыканиями — добавил в конце статьи.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format bad bad5">
+Язык JS к сожалению хренова описан.<br>
+Что в нем есть замыкания( точнее что их тама можно написать ) я узнал только год назад, а что они есть в php так и всего пару месяцев как.<br>
+<br>
+А вот годика 3 назад я познакомился в замыканиями в lua. <br>
+Это была жесть. Мы сидели всем офисом и медитировали.<br>
+На выходе часто получался код которые <strong>непонятно как, но работает</strong><br>
+Потом привыкли, выучили страшные слова типа лямда-функция, узнали что <em>«клошуре»</em> это не <em>«калоша»</em> а «замыкание» ( уж не знаю почему 5 человек год даже не пытались перевести термин на русский)<br>
+Но всеже не спешим использовать замыкания и другие фокусы повсеместно.<br>
+— Приходят на работу люди сразу после института и начинаются «тупняк»<br>
+Не учат этой уличной магии в институте.<br>
+<em>В указаных примерах магии особо нет, но если постараться ее можно придумать. Так вот — лучше не придумывайте. Морда проше — и люди потянутся</em><br>
+А изучившим магию бууста замыкания уже… поздно, человек уже сам замкнулся, не мыт, не брит… работает программист! отойдите! и не подкармивайте! <br>
+это опасно, может привязаться
+</div>
+<ul class="reply_comments" id="reply_comments_919168">
+<li>
+<div class="message html_format ">
+Сударь! Я ваш фанат! Ржем всей комнатой :)
+</div></li>
+<li><div class="message html_format ">
+Это не уличная магия, а благородное лямбда-исчисление.
+</div></li>
+<li><div class="message html_format ">
+&gt;а что они есть в php так и всего пару месяцев как.<br>
+а в php их пару месяцев назад и небыло :)
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+читал раньше здесь: <br>
+javascript.ru/tutorial/basic/closure#prostoie-opisaniie
+</div></li>
+<li><div class="message html_format bad bad2">
+Если честно, мне кажется что автор несколько… перемудрил, что-ли. Если человек без достаточного опыта посмотрит на статью, то он просто — напросто может испугаться яваскрипта, заплакать и убежать. И тогда не исключено, что страна, да и весь мир, может потерять потенциального гениального программиста.<br>
+<br>
+Короче, к чему я это: если это статья расчитана не только на опытных разработчиков, но и на относительно начинающих, постарайтесь приводить более простые в понимании примеры. <br>
+<br>
+ИМХО неплохая статья для понимания смысла замыканий в JS лежит вот здесь — <a href="http://javascript.ru/tutorial/basic/closure">javascript.ru/tutorial/basic/closure</a>
+</div>
+<ul class="reply_comments" id="reply_comments_919214">
+<li>
+<div class="message html_format ">
+Не знаю, не знаю… Я например JS всего месяца 4 изучаю и то от случая к случаю, однако статья меня совсем не напугала, а наоборот очень заинтересовала. Лично для меня она приоткрывает настоящий JS, а не просто средство для выпадающих менюшек и прочих украшательств.
+</div>
+<ul class="reply_comments" id="reply_comments_919234">
+<li>
+<div class="message html_format ">
+Речь про то, что человек может начинать вообще изучение программирования (школьные годя чудесные не берем) с JS. Были же у многих цепочки такого рода: HTML -&gt; JS -&gt; PHP/Perl/ASP и т.д.<br>
+В таком случае эта статья его напугать может. ИМХО статья такого рода намного ценнее, если она пригодна наиболее широкой массе читателей, а не только тем, кто достиг относительно неплохого уровня. 
+</div>
+<ul class="reply_comments" id="reply_comments_919246">
+<li>
+<div class="message html_format ">
+наверное Вы правы. Меня, как начавшего изучение программирования с Паскаля, такие вещи в JS не могут не радовать)))
+</div>
+<ul class="reply_comments" id="reply_comments_919258">
+<li>
+<div class="message html_format ">
+Я начинал с Бэйсика, так что в общем и целом мне тоже статья понравилась. Но более простое изложение не сделало бы её хуже, а просто расширило бы круг читателей.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+О! Прошу прощения, только сейчас заметил, что линк уже был дан постом выше.
+</div></li>
+<li><div class="message html_format ">
+Да, по этой ссылке — тоже хорошая статья. <br>
+<br>
+Мне просто хотелось написать более-менее исчерпывающую и практичную статью по данному предмету, чтобы дать человеку возможность разобраться в нём основательно, узнав не только про то, что это такое и как выглядит, но и про то, как именно это используют в современной веб-разработке.
+</div>
+<ul class="reply_comments" id="reply_comments_919328">
+<li>
+<div class="message html_format ">
+Я и не отрицаю, что статья у Вас получилась, на мой взгляд, хорошая. Просто высказал своё мнение относительно подачи материала.
+</div>
+<ul class="reply_comments" id="reply_comments_919336">
+<li>
+<div class="message html_format ">
+Спасибо. :) Я честно пытался выдумать более простые примеры и объяснения, но получилось как есть.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+все-таки не<br>
+function createHelloFunction = function(name) {<br>
+а<br>
+var createHelloFunction = function(name) {…<br>
+<br>
+Ну и для сохранений между вызовами проще использовать func_name.attr типа<br>
+<br>
+function countIt(reset) {<br>
+if (reset ||! countIt.cnt) countIt.cnt = 0;<br>
+return countIt.cnt++;<br>
+}
+</div>
+<ul class="reply_comments" id="reply_comments_919229">
+<li>
+<div class="message html_format bad bad3">
+Замыкания все-таки удобней<br>
+function countlt(reset) {<br>
+var cnt = 0;<br>
+countlt = function(reset) {<br>
+if (reset) cnt = 0;<br>
+return cnt++;<br>
+};<br>
+return countlt(reset);<br>
+}
+</div>
+<ul class="reply_comments" id="reply_comments_919253">
+<li>
+<div class="message html_format ">
+и чем это удобней? Кода больше — смысл тот же. Опять же про утечки думать надо.<br>
+Замыкания очень приятная штука, но все ж не надо их вставлять там, где они не нужны.
+</div>
+<ul class="reply_comments" id="reply_comments_919263">
+<li>
+<div class="message html_format ">
+Какие утечки? Если вы переменную будете хранить в свойстве, а не внутри функции, она меньше места от этого занимать не будет. Плюс недоступность переменной извне (для эстетов).
+</div>
+<ul class="reply_comments" id="reply_comments_919273">
+<li>
+<div class="message html_format ">
+я храню переменную, а вы — переменную И функцию.<br>
+вот тут уже написали <a href="http://habrahabr.ru/blogs/webdev/38642/#comment_919147">habrahabr.ru/blogs/webdev/38642/#comment_919147</a>
+</div>
+<ul class="reply_comments" id="reply_comments_919288">
+<li>
+<div class="message html_format ">
+Ну во-первых, не функцию, а ее скоп. Во-вторых, где же тут утечка? Утечка — это когда в памяти лежит что-то, что не используется, в моем примере все используется. Ну и в-третьих, пример слишком простой, чтобы о нем спорить.<br>
+<br>
+Данный подход полезен, когда в функции нужно выполнять кучу условий, параметры которых не меняются в течение работы скрипта (обеспечение кроссбраузерности, например). Вот здесь <a href="http://script.shabunc.org/?p=33">script.shabunc.org/? p=33</a> хорошо описано.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Поправил, спасибо.<br>
+<br>
+Насчёт сохранения — ну это дело вкуса, кому что больше нравится. Мне скажем не нравится такой подход во-первых потому, что аттрибут можно легко подменить — переменные замыкания лучше изолированы от внешнего воздействия, а во-вторых потому, что для независимости от имени функции в вашем случае приходится писать arguments.callee.attr везде, а это куда менее красиво, чем просто attr в случае замыкания.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+В который раз замечаю что javascript не так прост, как кажется на первый взгляд. Спасибо.
+</div>
+<ul class="reply_comments" id="reply_comments_919235">
+<li>
+<div class="message html_format ">
+а он прост. Но это не мешает ему быть мощным инструментом.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Хорошо )
+</div></li>
+<li><div class="message html_format ">
+Спасибо большое, занес в избранное :)
+</div></li>
+<li><div class="message html_format bad bad3">
+Понравилось, спасибо.<br>
+Добавил в избранное.
+</div></li>
+<li><div class="message html_format ">
+Замыкания в Си :)<br>
+lists.cs.uiuc.edu/pipermail/cfe-dev/2008-August/002670.html
+</div></li>
+<li><div class="message html_format bad bad5">
+Javascript вскоре станет полноценным объектно-ориентированным языком. Здорово!
+</div>
+<ul class="reply_comments" id="reply_comments_919510">
+<li>
+<div class="message html_format ">
+не станет, пока! Новая версия стандарта придерживается той же идеологии. ECMAScript драфт 4, который ООП-style, не приняли. Недавно весь инет гудел по этому поводу. 
+</div>
+<ul class="reply_comments" id="reply_comments_920313">
+<li>
+<div class="message html_format ">
+Ну вообще-то разработчики ECMAScript Harmony пока что не решили этот вопрос до конца — вполне возможно, что там будут фичи на уровне языка для классической модели ООП, просто в упрощенном варианте.<br>
+Вот здесь об этом можно почитать: <a href="http://ejohn.org/blog/ecmascript-harmony/">ejohn.org/blog/ecmascript-harmony/</a>
+</div>
+<ul class="reply_comments" id="reply_comments_920605">
+<li>
+<div class="message html_format ">
+я ж и не говорил, что до конца. Факт в том, что новая версия стандарта принята, и в этой версии идеология таже.
+</div>
+<ul class="reply_comments" id="reply_comments_920679">
+<li>
+<div class="message html_format ">
+Нет, вы утверждали, что JavaScript не станет полноценным ООП-языком из-за того, что отбросили ECMAScript 4. Я же говорю, что данное утверждение неверно, поскольку ECMAScript 3.1 еще в разработке и вполне может получить такие возможности — этот вариант там активно рассматривается.
+</div>
+<ul class="reply_comments" id="reply_comments_920735">
+<li>
+<div class="message html_format ">
+у меня инфа, что новый стандарт утвержден 
+</div>
+<ul class="reply_comments" id="reply_comments_921099">
+<li>
+<div class="message html_format ">
+Вы что, смеетесь?<br>
+Перечитайте внимательно, пожалуйста, текст по вышеприведенной ссылке.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+en.wikipedia.org/wiki/Prototype-based_programming<br>
+Далее покупаем книжки «Structure and Interpretation of Computer Programs» и «Concepts, Techniques, and Models of Computer Programming», укладываем мысли в порядок и не обращаем внимания на «программистов» без образования…
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Боже, упаси!
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Возник вопрос. Зачем яваскриптовый интерпритатор сохраняет и не очищает память от неиспользуемых объектов? (либо я не правильно понимаю)<br>
+<br>
+Рассмотрим простой синтетический пример<br>
+<br>
+function createFunction = function() {<br>
+// много очень тяжелых объектов, которые много памяти съедают<br>
+var obj1 = new Obj1();<br>
+var obj2 = new Obj2();<br>
+var obj3 = new Obj3();<br>
+// Возвращаемое значение<br>
+return function(){<br>
+alert('Я простая функция, и не использую никакие внутренние объекты');<br>
+}<br>
+}<br>
+<br>
+// использование<br>
+var func = createFunction();<br>
+<br>
+В этом случае хранятся все объекты, которые созданы внутри. Зачем так сделано? Ведь они не используются в самой функции. По сути создается некая сущность, результатом работы которой является простая функция. Интерпритатор это хорошо знает. Для каких целей хранить все остальное в памяти? <br>
+<br>
+Либо, если можно, приведите пример того, как можно воспользоваться внутренними объектами извне? Не уже ли это сделано для того, чтобы дать возможность менять прототип функции и объектная модель при этом не портилась? То есть, чтобы можно было добавить или переобпределить эту самую функцию?… вот, хотелось бы увидеть наглядный пример
+</div>
+<ul class="reply_comments" id="reply_comments_919525">
+<li>
+<div class="message html_format ">
+для подстраховки от таких штук:<br>
+<br>
+return function(){<br>
+var str= 'alert(obj1)';<br>
+eval( str );<br>
+}<br>
+<br>
+</div></li>
+<li><div class="message html_format ">
+Если «я простая функция и не использую никакие внутренние объекты», то зачем мне быть внутри? Значит место моё тоже должно быть простым — снаружи… ну, или внутри функции, не насыщенной так сильно переменным и т.д.
+</div></li>
+<li><div class="message html_format ">
+Предполагаю, что garbage collection в современных браузерах достаточно умна, чтобы делать объекты доступными для чистки, если на них в коде не осталось ссылок из замыканий. Но вообще на практике это не так существенно, потому что ситуации, когда замыкание не использует объектов выше, достаточно редкие. А если всё-таки возникают, лишние переменные можно опять же окружить замыканием и вне его они не попадут:<br>
+<br>
+(function() {<br>
+var obj1 = new Obj1();<br>
+var obj2 = new Obj2();<br>
+var obj3 = new Obj3();<br>
+})();<br>
+return function…<br>
+<br>
+Извне внутренними объектами не нужно пользоваться, они используются внутри функции при формирования результата вызова. Насчёт примера — не совсем понял, какой вам нужен пример кроме тех, что показаны в статье, объясните, пожалуйста.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format bad bad4">
+(for var i = 0; i &lt; links.length; i++) {<br>
+//(function(i) {<br>
+var k= i;<br>
+links[k].onclick = function() {<br>
+alert(k);<br>
+}<br>
+//})(i);<br>
+}<br>
+<br>
+не надо делать двойных замыканий ;-)
+</div>
+<ul class="reply_comments" id="reply_comments_919545">
+<li>
+<div class="message html_format ">
+а вы пробовали этот код исполнять? хехе :)
+</div></li>
+<li><div class="message html_format ">
+Замыкания «не помнят» конкретного значения, поэтому введение переменной 'k' не имеет большого смысла, значение нужно «сохранять» или обернув функцией (как в примере), или другими способами…
+</div>
+<ul class="reply_comments" id="reply_comments_920080">
+<li>
+<div class="message html_format ">
+не, моя ошибка тут заключалась в том, что я думал, буд-то тело цикла имеет собственный скоп, как в любом нормальном яп…
+</div>
+<ul class="reply_comments" id="reply_comments_921408">
+<li>
+<div class="message html_format ">
+Иначе я бы этой проблемы не упоминал :)<br>
+Собственный скоуп в JS только у функций.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+&gt; (for var i = 0; i &lt; links.length; i++)<br>
+<br>
+Lisp || JS —?<br>
+<br>
+%)
+</div>
+<ul class="reply_comments" id="reply_comments_919579">
+<li>
+<div class="message html_format ">
+Упс, поправил, спасибо. :)
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format bad bad5">
+Во вступительном посте:<br>
+<blockquote><i>… js — функциональный язык программирования (не путать с процедурным). Не совсем, конечно, чистый функциональный язык, но основные моменты присутствуют.</i></blockquote><br>
+<br>
+Что курил автор?
+</div>
+<ul class="reply_comments" id="reply_comments_921621">
+<li>
+<div class="message html_format ">
+Ряд свойств. Этого недостаточно, чтобы с ходу в лоб называть язык функциональным )
+</div></li>
+<li><div class="message html_format ">
+В таком случае язык называют мультипарадигмальным :)<br>
+<a href="http://ru.wikipedia.org/wiki/Мультипарадигмальный_язык_программирования">ru.wikipedia.org/wiki/Мультипарадигмальный язык программирования</a> — там JS причисляют три парадигмы: императивную, функциональную и ОО.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Хорошая статья, спасибо! добавлю в избранное и сохраню в копилочку ))
+</div></li>
+<li><div class="message html_format ">
+Доступ к переменным не локальной области видимости требует больших затрат… не увлекайтесь замыканиями без надобности… хотя на простеньких задачах, коих большинство это неважно.<br>
+Кстати прятать код с локальными переменными и обьектами можно не только в анонимной функции<br>
+<br>
+(function(){<br>
+//ваш спрятанный код<br>
+}();<br>
+<br>
+но и в анонимном конструкторе обьекта два байта короче :-) и читается легче<br>
+<br>
+new function(){<br>
+//ваш спрятанный код<br>
+};<br>
+<br>
+точку с запятой не забывайте иначе при сжатии кода могут быть проблемы.
+</div>
+<ul class="reply_comments" id="reply_comments_920870">
+<li>
+<div class="message html_format ">
+&gt;Доступ к переменным не локальной области видимости требует больших затрат<br>
+<br>
+Буду рад увидеть ссылку на подтверждающие это бенчмарки. :)
+</div>
+<ul class="reply_comments" id="reply_comments_920950">
+<li>
+<div class="message html_format ">
+<a href="http://dev.opera.com/articles/view/efficient-javascript/?page=2#avoidglobal">dev.opera.com/articles/view/efficient-javascript/? page=2#avoidglobal</a><br>
+web.archive.org/web/20071206145017/http://www.jorendorff.com/articles/javascript/speed-test.html<br>
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+&gt; Следующее, принципиально иное применение замыканий — защита данных.<br>
+Это называется инкапсуляция.<br>
+<br>
+Спасибо за хорошую статью!<br>
+</div></li>
+<li><div class="message html_format ">
+Про новые фичи JS 1.7 можно вообще много всего написать, но я хотел сосредоточиться на наиболее практичных моментах.
+</div></li>
+<li><div class="message html_format ">
+А какие именно, не подскажете?
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Спасибо за статью очень интересно.<br>
+Как Вам такая комбинация?<br>
+<br>
+function some() {<br>
+........var self = arguments.callee;<br>
+........if(!self.clk) {//Инициализация выполняется только один раз<br>
+................self.clk = function() {alert(this.i)}<br>
+........}<br>
+........for (var i = 0; i &lt; links.length; i++) {<br>
+................links[i].onclick = self.clk.bind({i:i})<br>
+........} <br>
+}<br>
+<br>
+функция self.clk опеределяется один раз для всех<br>
+Как думаете, будет ли выигрыш в производительности при таком подходе? <br>
+</div>
+<ul class="reply_comments" id="reply_comments_1116973">
+<li>
+<div class="message html_format ">
+Будет. В принципе многие применения замыканий можно заменить использованием arguments.callee, но я считаю этот подход куда менее изящным. :)
+</div>
+<ul class="reply_comments" id="reply_comments_1117084">
+<li>
+<div class="message html_format ">
+Тем более, что 5-я редакция ECMAScript запрещает использование <code>arguments.callee()</code> в строгом (<code>strict</code>) режиме.
+</div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><div class="message html_format ">
+<blockquote><pre>var MyModule = (function() {
+var name = 'Habrahabr';
+function sayPreved() {
+alert('PREVED ' + name.toUpperCase());
+}
+return {
+sayPrevedToHabrahabr: function() {
+sayPreved(name);// [ 8 ]
+}
+}
+})();
+MyModule.sayPrevedToHabrahabr();</pre></blockquote><br>
+В 8-й строке (я ее пометил комментом [ 8 ]) вызов ф-ии sayPreved() делается с параметром name.<br>
+Это смысловая опечатка или нет (если необходимо, то зачем)? (у меня сработало и с вызовом без параметра)
+</div>
+<ul class="reply_comments" id="reply_comments_1495644">
+<li>
+<div class="message html_format ">
+Вы правы, случайно ошибся. :) Там в функции sayPreved нужно добавить аргумент name. Хотя оно и так и так работает — я просто хотел продемонстрировать, что из sayPrevedToHabrahabr доступны и ф-я, и переменная.
+</div></li>
+</ul>
+</li>
+<li><div class="message html_format ">
+Спасибо! Очень полезно!
+</div></li>
+<li><div class="message html_format ">
+За статью спасибо) Просто и понятно.
+</div></li>
+<li><div class="message html_format ">
+Очень хорошая статья — только она смогла боле-менее упорядочить в голове весь бардак, сгенерированный просмотром исходников jQuery.
+</div></li>
+<li><div class="message html_format ">
+Кто-нибудь, подскажите, пожалуйста, я не очень понимаю,<b> зачем использовать замыкание для инкапсуляции</b>:<br>
+Решил проверить, что пример с <b>sayPrevedToHabrahabr </b> действительно помогает инкапсулировать методы и свойства MyModule.<br>
+Для этого создал функцию:<br>
+<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">MyModule</span>(<span class="hljs-params cye-lm-tag"></span>) </span>{
+<span class="hljs-keyword cye-lm-tag">var</span> name = <span class="hljs-string cye-lm-tag">'Habrahabr'</span>;
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">sayPreved</span>(<span class="hljs-params cye-lm-tag"></span>) </span>{
+alert(<span class="hljs-string cye-lm-tag">'PREVED '</span> + name.toUpperCase());
+}
+<span class="hljs-keyword cye-lm-tag">this</span>.sayPrevedToHabrahabr = <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span>(<span class="hljs-params cye-lm-tag"></span>) </span>{
+sayPreved(name);
+};
+};
+</code></pre><br>
+<br>
+Далее создал объект <pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> myModule = <span class="hljs-keyword cye-lm-tag">new</span> MyModule();
+</code></pre><br>
+и попробовал обратиться к его локальным переменным и методам:<br>
+<pre><code class="javascript hljs"><span class="hljs-built_in cye-lm-tag">document</span>.writeln(myModule.name); <span class="hljs-comment cye-lm-tag">// undefined</span>
+<span class="hljs-built_in cye-lm-tag">document</span>.writeln(myModule.sayPreved()); <span class="hljs-comment cye-lm-tag">// Uncaught TypeError: undefined is not a function on line 15</span>
+</code></pre><br>
+<br>
+Может быть, локальная функция создалась в глобальной области видимости?<br>
+попробовал sayPreved(), но это так же падает с ошибкой.<br>
+<br>
+Зачем же в таком случае использовать замыкания для инкапсуляции данных, если последние и так недоступны из вне?<br>
+</div></li>
+</ul>
+</div>
+</body>
+</html>

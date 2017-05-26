@@ -152,4 +152,32 @@ To https://github.com/schacon/simplegit
 If the local branch is called "localBranch" and you want to push to branch called "anotherBranch" on the remote called "remoteName", then do the following:
 
 git push remoteName localBranch:anotherBranch
-git push -f origin US17104_ExpiryDate_Format_Error:dev-zefirki
+git push -f origin US5432_Fix_Error:devbr-name
+
+---------------------------
+>>>> лучше всего при первом комите пушить такой командой:
+git push -u origin my_branch
+>>>> (^^^ см выше команду) the first time that you push that branch. You only need to do it once, and that sets up the association between your branch and the one at origin in the same way as git branch --set-upstream does.
+
+>>>> set upstream @DEPRECATED
+git branch --set-upstream my_branch origin/my_branch
+
+>>>> Или проще, когда надо добавить трэк для текущей ветки:
+>>>> if you're on the branch "my_branch":
+git branch --set-upstream-to origin/my_branch
+>>>> or with the short option:
+git branch -u origin/my_branch
+
+***************** ИТОГО: You can set upstream simpler in two ways.  ******
+1)First when you create the branch:
+git branch -u origin/my-branch
+
+2)or after you have created a branch, you can use this command.
+git push -u origin/my-branch
+
+3) You can also branch, check out and set upstream in a single command:
+git checkout -b my-branch -t origin/my-branch
+
+4) My personally preference is to do this in a two-step command:
+git checkout -b my-branch
+git push -u origin/my-branch
