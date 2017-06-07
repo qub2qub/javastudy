@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+</head>
+<body>
+<h1 class="page-title">Java 8 Nashorn Tutorial</h1>
+<div class="post">
+    <p>Learn all about the Nashorn Javascript Engine with easily 
+understood code examples. The Nashorn Javascript Engine is part of Java 
+SE 8 and competes with other standalone engines like <a href="https://code.google.com/p/v8/">Google V8</a> (the engine that powers Google Chrome and <a href="http://nodejs.org/">Node.js</a>). Nashorn extends Javas capabilities by running dynamic javascript code natively on the JVM.</p>
+
+<p>In the next ~15 minutes you learn how to evaluate javascript on the 
+JVM dynamically during runtime. The most recent Nashorn language 
+features are demonstrated with small code examples. You learn how to 
+call javascript functions from java code and vice versa. At the end 
+you're ready to integrate dynamic scripts in your daily java business.</p>
+
+<p><em><strong>UPDATE</strong> - I'm currently working on a JavaScript 
+implementation of the Java 8 Streams API for the browser. If I've drawn 
+your interest check out <a href="https://github.com/winterbe/streamjs">Stream.js on GitHub</a>. Your Feedback is highly appreciated.</em></p>
+
+<h3>Using Nashorn</h3>
+
+<p>The Nashorn javascript engine can either be used programmatically from java programs or by utilizing the command line tool <code>jjs</code>, which is located in <code>$JAVA_HOME/bin</code>. If you plan to work with <code>jjs</code> you might want to put a symbolic link for simple access:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> /usr/bin
+<span class="nv">$ </span>ln -s <span class="nv">$JAVA_HOME</span>/bin/jjs jjs
+<span class="nv">$ </span>jjs
+jjs&gt; print<span class="o">(</span><span class="s1">'Hello World'</span><span class="o">)</span><span class="p">;</span>
+</code></pre></div>
+<p>This tutorial focuses on using nashorn from java code, so let's skip <code>jjs</code> for now. A simple HelloWorld in java code looks like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ScriptEngine</span> <span class="n">engine</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ScriptEngineManager</span><span class="o">().</span><span class="na">getEngineByName</span><span class="o">(</span><span class="s">"nashorn"</span><span class="o">);</span>
+<span class="n">engine</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"print('Hello World!');"</span><span class="o">);</span>
+</code></pre></div>
+<p>In order to evaluate javascript code from java, you first create a nashorn script engine by utilizing the <code>javax.script</code> package already known from <a href="https://developer.mozilla.org/en-US/docs/Rhino">Rhino</a> (Javas legacy js engine from Mozilla).</p>
+
+<p>Javascript code can either be evaluated directly by passing 
+javascript code as a string as shown above. Or you can pass a file 
+reader pointing to your .js script file:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ScriptEngine</span> <span class="n">engine</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ScriptEngineManager</span><span class="o">().</span><span class="na">getEngineByName</span><span class="o">(</span><span class="s">"nashorn"</span><span class="o">);</span>
+<span class="n">engine</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="k">new</span> <span class="nf">FileReader</span><span class="o">(</span><span class="s">"script.js"</span><span class="o">));</span>
+</code></pre></div>
+<p>Nashorn javascript is based on <a href="http://es5.github.io/">ECMAScript 5.1</a> but future versions of nashorn will include support for ECMAScript 6:</p>
+
+<blockquote>
+<p>The current strategy for Nashorn is to follow the ECMAScript 
+specification. When we release with JDK 8 we will be aligned with 
+ECMAScript 5.1. The follow up major release of Nashorn will align with <a href="http://wiki.ecmascript.org/doku.php?id=harmony:specification_drafts">ECMAScript Edition 6</a>.</p>
+</blockquote>
+
+<p>Nashorn defines a lot of language and API extensions to the 
+ECMAScript standard. But first let's take a look at how the 
+communication between java and javascript code works.</p>
+
+<h3>Invoking Javascript Functions from Java</h3>
+
+<p>Nashorn supports the invocation of javascript functions defined in 
+your script files directly from java code. You can pass java objects as 
+function arguments and return data back from the function to the calling
+ java method.</p>
+
+<p>The following javascript functions will later be called from the java side:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">fun1</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">print</span><span class="p">(</span><span class="s1">'Hi there from Javascript, '</span> <span class="o">+</span> <span class="nx">name</span><span class="p">);</span>
+    <span class="k">return</span> <span class="s2">"greetings from javascript"</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">fun2</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">object</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">print</span><span class="p">(</span><span class="s2">"JS Class Definition: "</span> <span class="o">+</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">toString</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">object</span><span class="p">));</span>
+<span class="p">};</span>
+</code></pre></div>
+<p>In order to call a function you first have to cast the script engine to <code>Invocable</code>. The Invocable interface is implemented by the <code>NashornScriptEngine</code> implementation and defines a method <code>invokeFunction</code> to call a javascript function for a given name.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ScriptEngine</span> <span class="n">engine</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ScriptEngineManager</span><span class="o">().</span><span class="na">getEngineByName</span><span class="o">(</span><span class="s">"nashorn"</span><span class="o">);</span>
+<span class="n">engine</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="k">new</span> <span class="nf">FileReader</span><span class="o">(</span><span class="s">"script.js"</span><span class="o">));</span>
+
+<span class="n">Invocable</span> <span class="n">invocable</span> <span class="o">=</span> <span class="o">(</span><span class="n">Invocable</span><span class="o">)</span> <span class="n">engine</span><span class="o">;</span>
+
+<span class="n">Object</span> <span class="n">result</span> <span class="o">=</span> <span class="n">invocable</span><span class="o">.</span><span class="na">invokeFunction</span><span class="o">(</span><span class="s">"fun1"</span><span class="o">,</span> <span class="s">"Peter Parker"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">result</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+
+<span class="c1">// Hi there from Javascript, Peter Parker</span>
+<span class="c1">// greetings from javascript</span>
+<span class="c1">// class java.lang.String</span>
+</code></pre></div>
+<p>Executing the code results in three lines written to the console. Calling the function <code>print</code> pipes the result to <code>System.out</code>, so we see the javascript message first.</p>
+
+<p>Now let's call the second function by passing arbitrary java objects:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">invocable</span><span class="o">.</span><span class="na">invokeFunction</span><span class="o">(</span><span class="s">"fun2"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Date</span><span class="o">());</span>
+<span class="c1">// [object java.util.Date]</span>
+
+<span class="n">invocable</span><span class="o">.</span><span class="na">invokeFunction</span><span class="o">(</span><span class="s">"fun2"</span><span class="o">,</span> <span class="n">LocalDateTime</span><span class="o">.</span><span class="na">now</span><span class="o">());</span>
+<span class="c1">// [object java.time.LocalDateTime]</span>
+
+<span class="n">invocable</span><span class="o">.</span><span class="na">invokeFunction</span><span class="o">(</span><span class="s">"fun2"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Person</span><span class="o">());</span>
+<span class="c1">// [object com.winterbe.java8.Person]</span>
+</code></pre></div>
+<p>Java objects can be passed without loosing any type information on 
+the javascript side. Since the script runs natively on the JVM we can 
+utilize the full power of the Java API or external libraries on nashorn.</p>
+
+<h3>Invoking Java Methods from Javascript</h3>
+
+<p>Invoking java methods from javascript is quite easy. We first define a static java method:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">static</span> <span class="n">String</span> <span class="nf">fun1</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"Hi there from Java, %s"</span><span class="o">,</span> <span class="n">name</span><span class="o">);</span>
+    <span class="k">return</span> <span class="s">"greetings from java"</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Java classes can be referenced from javascript via the <code>Java.type</code>
+ API extension. It's similar to importing classes in java code. As soon 
+as the java type is defined we naturally call the static method <code>fun1()</code> and print the result to <code>sout</code>. Since the method is static, we don't have to create an instance first.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">MyJavaClass</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'my.package.MyJavaClass'</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun1</span><span class="p">(</span><span class="s1">'John Doe'</span><span class="p">);</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+
+<span class="c1">// Hi there from Java, John Doe</span>
+<span class="c1">// greetings from java</span>
+</code></pre></div>
+<p>How does Nashorn handle type conversion when calling java methods 
+with native javascript types? Let's find out with a simple example.</p>
+
+<p>The following java method simply prints the actual class type of the method parameter:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">static</span> <span class="kt">void</span> <span class="nf">fun2</span><span class="o">(</span><span class="n">Object</span> <span class="n">object</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">object</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>To understand how type conversations are handled under the hood, we call this method with different javascript types:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="mi">123</span><span class="p">);</span>
+<span class="c1">// class java.lang.Integer</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="mf">49.99</span><span class="p">);</span>
+<span class="c1">// class java.lang.Double</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="c1">// class java.lang.Boolean</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="s2">"hi there"</span><span class="p">)</span>
+<span class="c1">// class java.lang.String</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="k">new</span> <span class="nb">Number</span><span class="p">(</span><span class="mi">23</span><span class="p">));</span>
+<span class="c1">// class jdk.nashorn.internal.objects.NativeNumber</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">());</span>
+<span class="c1">// class jdk.nashorn.internal.objects.NativeDate</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">(</span><span class="k">new</span> <span class="nb">RegExp</span><span class="p">());</span>
+<span class="c1">// class jdk.nashorn.internal.objects.NativeRegExp</span>
+
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun2</span><span class="p">({</span><span class="nx">foo</span><span class="o">:</span> <span class="s1">'bar'</span><span class="p">});</span>
+<span class="c1">// class jdk.nashorn.internal.scripts.JO4</span>
+</code></pre></div>
+<p>Primitive javascript types are converted to the appropriate java 
+wrapper class. Instead native javascript objects are represented by 
+internal adapter classes. Please keep in mind that classes from <code>jdk.nashorn.internal</code> are subject to change, so you shouldn't program against those classes in client-code:</p>
+
+<blockquote>
+<p><a href="https://twitter.com/wickund/status/451322409661259776">Anything marked internal will likely change out from underneath you.</a></p>
+</blockquote>
+
+<h3>ScriptObjectMirror</h3>
+
+<p>When passing native javascript objects to java you can utilize the class <code>ScriptObjectMirror</code>
+  which is actually a java representation of the underlying javascript 
+object. ScriptObjectMirror implements the map interface and resides 
+inside the package <code>jdk.nashorn.api</code>. Classes from this package are intended to be used in client-code.</p>
+
+<p>The next sample changes the parameter type from <code>Object</code> to <code>ScriptObjectMirror</code> so we can extract some infos from the passed javascript object:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">static</span> <span class="kt">void</span> <span class="nf">fun3</span><span class="o">(</span><span class="n">ScriptObjectMirror</span> <span class="n">mirror</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">mirror</span><span class="o">.</span><span class="na">getClassName</span><span class="o">()</span> <span class="o">+</span> <span class="s">": "</span> <span class="o">+</span>
+        <span class="n">Arrays</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="n">mirror</span><span class="o">.</span><span class="na">getOwnKeys</span><span class="o">(</span><span class="kc">true</span><span class="o">)));</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>When passing an object hash to this method, the properties are accessible on the java side:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun3</span><span class="p">({</span>
+    <span class="nx">foo</span><span class="o">:</span> <span class="s1">'bar'</span><span class="p">,</span>
+    <span class="nx">bar</span><span class="o">:</span> <span class="s1">'foo'</span>
+<span class="p">});</span>
+
+<span class="c1">// Object: [foo, bar]</span>
+</code></pre></div>
+<p>We can also call member functions on javascript object from java. Let's first define a javascript type Person with properties <code>firstName</code> and <code>lastName</code> and method <code>getFullName</code>.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">function</span> <span class="nx">Person</span><span class="p">(</span><span class="nx">firstName</span><span class="p">,</span> <span class="nx">lastName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">firstName</span> <span class="o">=</span> <span class="nx">firstName</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">lastName</span> <span class="o">=</span> <span class="nx">lastName</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">getFullName</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">firstName</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">lastName</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>The javascript method <code>getFullName</code> can be called on the ScriptObjectMirror via <code>callMember()</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">static</span> <span class="kt">void</span> <span class="nf">fun4</span><span class="o">(</span><span class="n">ScriptObjectMirror</span> <span class="n">person</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Full Name is: "</span> <span class="o">+</span> <span class="n">person</span><span class="o">.</span><span class="na">callMember</span><span class="o">(</span><span class="s">"getFullName"</span><span class="o">));</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>When passing a new person to the java method, we see the desired result on the console:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">person1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">(</span><span class="s2">"Peter"</span><span class="p">,</span> <span class="s2">"Parker"</span><span class="p">);</span>
+<span class="nx">MyJavaClass</span><span class="p">.</span><span class="nx">fun4</span><span class="p">(</span><span class="nx">person1</span><span class="p">);</span>
+
+<span class="c1">// Full Name is: Peter Parker</span>
+</code></pre></div>
+<h3>Language Extensions</h3>
+
+<p>Nashorn defines various language and API extensions to the ECMAScript standard. Let's head right into the most recent features:</p>
+
+<h4>Typed Arrays</h4>
+
+<p>Native javascript arrays are untyped. Nashorn enables you to use typed java arrays in javascript:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">IntArray</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s2">"int[]"</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">array</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IntArray</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+<span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+<span class="nx">array</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+<span class="nx">array</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="nx">array</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="nx">array</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="k">try</span> <span class="p">{</span>
+    <span class="nx">array</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">23</span><span class="p">;</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">print</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>  <span class="c1">// Array index out of range: 5</span>
+<span class="p">}</span>
+
+<span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"17"</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>  <span class="c1">// 17</span>
+
+<span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"wrong type"</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>  <span class="c1">// 0</span>
+
+<span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"17.3"</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>  <span class="c1">// 17</span>
+</code></pre></div>
+<p>The <code>int[]</code> array behaves like a real java int array. But 
+additionally Nashorn performs implicit type conversions under the hood 
+when we're trying to add non-integer values to the array. Strings will 
+be auto-converted to int which is quite handy.</p>
+
+<h4>Collections and For Each</h4>
+
+<p>Instead of messing around with arrays we can use any java collection. First define the java type via <code>Java.type</code>, then create new instances on demand.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">ArrayList</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'java.util.ArrayList'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">list</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ArrayList</span><span class="p">();</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">'a'</span><span class="p">);</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">'b'</span><span class="p">);</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">'c'</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="nx">each</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">el</span> <span class="k">in</span> <span class="nx">list</span><span class="p">)</span> <span class="nx">print</span><span class="p">(</span><span class="nx">el</span><span class="p">);</span>  <span class="c1">// a, b, c</span>
+</code></pre></div>
+<p>In order to iterate over collections and arrays Nashorn introduces the <code>for each</code> statement. It works just like the foreach loop in java.</p>
+
+<p>Here's another collection foreach example, utilizing <code>HashMap</code>:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">java</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">HashMap</span><span class="p">();</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">put</span><span class="p">(</span><span class="s1">'foo'</span><span class="p">,</span> <span class="s1">'val1'</span><span class="p">);</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">put</span><span class="p">(</span><span class="s1">'bar'</span><span class="p">,</span> <span class="s1">'val2'</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="nx">each</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">e</span> <span class="k">in</span> <span class="nx">map</span><span class="p">.</span><span class="nx">keySet</span><span class="p">())</span> <span class="nx">print</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>  <span class="c1">// foo, bar</span>
+
+<span class="k">for</span> <span class="nx">each</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">e</span> <span class="k">in</span> <span class="nx">map</span><span class="p">.</span><span class="nx">values</span><span class="p">())</span> <span class="nx">print</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>  <span class="c1">// val1, val2</span>
+</code></pre></div>
+<h4>Lambda expressions and Streams</h4>
+
+<p>Everyone loves lambdas and streams - so does Nashorn! Although 
+ECMAScript 5.1 lacks the compact arrow syntax from the Java 8 lambda 
+expressions, we can use function literals where ever lambda expressions 
+are accepted.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">list2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">java</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">ArrayList</span><span class="p">();</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"ddd2"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"aaa2"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"bbb1"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"aaa1"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"bbb3"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"ccc"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"bbb2"</span><span class="p">);</span>
+<span class="nx">list2</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"ddd1"</span><span class="p">);</span>
+
+<span class="nx">list2</span>
+    <span class="p">.</span><span class="nx">stream</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">el</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">el</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">"aaa"</span><span class="p">);</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="nx">sorted</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">el</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">print</span><span class="p">(</span><span class="nx">el</span><span class="p">);</span>
+    <span class="p">});</span>
+    <span class="c1">// aaa1, aaa2</span>
+</code></pre></div>
+<h4>Extending classes</h4>
+
+<p>Java types can simply be extended with the <code>Java.extend</code> extension. As you can see in the next example, you can even create multi-threaded code in your scripts:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">Runnable</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'java.lang.Runnable'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">Printer</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">Runnable</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">run</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">print</span><span class="p">(</span><span class="s1">'printed from a separate thread'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">Thread</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'java.lang.Thread'</span><span class="p">);</span>
+<span class="k">new</span> <span class="nx">Thread</span><span class="p">(</span><span class="k">new</span> <span class="nx">Printer</span><span class="p">()).</span><span class="nx">start</span><span class="p">();</span>
+
+<span class="k">new</span> <span class="nx">Thread</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">print</span><span class="p">(</span><span class="s1">'printed from another thread'</span><span class="p">);</span>
+<span class="p">}).</span><span class="nx">start</span><span class="p">();</span>
+
+<span class="c1">// printed from a separate thread</span>
+<span class="c1">// printed from another thread</span>
+</code></pre></div>
+<h4>Parameter overloading</h4>
+
+<p>Methods and functions can either be called with the point notation or with the square braces notation.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">System</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'java.lang.System'</span><span class="p">);</span>
+<span class="nx">System</span><span class="p">.</span><span class="nx">out</span><span class="p">.</span><span class="nx">println</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>              <span class="c1">// 10</span>
+<span class="nx">System</span><span class="p">.</span><span class="nx">out</span><span class="p">[</span><span class="s2">"println"</span><span class="p">](</span><span class="mf">11.0</span><span class="p">);</span>         <span class="c1">// 11.0</span>
+<span class="nx">System</span><span class="p">.</span><span class="nx">out</span><span class="p">[</span><span class="s2">"println(double)"</span><span class="p">](</span><span class="mi">12</span><span class="p">);</span>   <span class="c1">// 12.0</span>
+</code></pre></div>
+<p>Passing the optional parameter type <code>println(double)</code> when calling a method with overloaded parameters determines the exact method to be called.</p>
+
+<h4>Java Beans</h4>
+
+<p>Instead of explicitly working with getters and setters you can just 
+use simple property names both for getting or setting values from a java
+ bean.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nb">Date</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'java.util.Date'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">date</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">();</span>
+<span class="nx">date</span><span class="p">.</span><span class="nx">year</span> <span class="o">+=</span> <span class="mi">1900</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">date</span><span class="p">.</span><span class="nx">year</span><span class="p">);</span>  <span class="c1">// 2014</span>
+</code></pre></div>
+<h4>Function Literals</h4>
+
+<p>For simple one line functions we can skip the curly braces:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">function</span> <span class="nx">sqr</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="nx">x</span> <span class="o">*</span> <span class="nx">x</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">sqr</span><span class="p">(</span><span class="mi">3</span><span class="p">));</span>    <span class="c1">// 9</span>
+</code></pre></div>
+<h4>Binding properties</h4>
+
+<p>Properties from two different objects can be bound together:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">o1</span> <span class="o">=</span> <span class="p">{};</span>
+<span class="kd">var</span> <span class="nx">o2</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">foo</span><span class="o">:</span> <span class="s1">'bar'</span><span class="p">};</span>
+
+<span class="nb">Object</span><span class="p">.</span><span class="nx">bindProperties</span><span class="p">(</span><span class="nx">o1</span><span class="p">,</span> <span class="nx">o2</span><span class="p">);</span>
+
+<span class="nx">print</span><span class="p">(</span><span class="nx">o1</span><span class="p">.</span><span class="nx">foo</span><span class="p">);</span>    <span class="c1">// bar</span>
+<span class="nx">o1</span><span class="p">.</span><span class="nx">foo</span> <span class="o">=</span> <span class="s1">'BAM'</span><span class="p">;</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">o2</span><span class="p">.</span><span class="nx">foo</span><span class="p">);</span>    <span class="c1">// BAM</span>
+</code></pre></div>
+<h4>Trimming strings</h4>
+
+<p>I like my strings trimmed.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">print</span><span class="p">(</span><span class="s2">"   hehe"</span><span class="p">.</span><span class="nx">trimLeft</span><span class="p">());</span>            <span class="c1">// hehe</span>
+<span class="nx">print</span><span class="p">(</span><span class="s2">"hehe    "</span><span class="p">.</span><span class="nx">trimRight</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"he"</span><span class="p">);</span>   <span class="c1">// hehehe</span>
+</code></pre></div>
+<h4>Whereis</h4>
+
+<p>In case you forget where you are:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">print</span><span class="p">(</span><span class="nx">__FILE__</span><span class="p">,</span> <span class="nx">__LINE__</span><span class="p">,</span> <span class="nx">__DIR__</span><span class="p">);</span>
+</code></pre></div>
+<h4>Import Scopes</h4>
+
+<p>Sometimes it's useful to import many java packages at once. We can use the class <code>JavaImporter</code> to be used in conjunction with the <code>with</code> statement. All class files from the imported packages are accessible within the local scope of the <code>with</code> statement:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">imports</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">JavaImporter</span><span class="p">(</span><span class="nx">java</span><span class="p">.</span><span class="nx">io</span><span class="p">,</span> <span class="nx">java</span><span class="p">.</span><span class="nx">lang</span><span class="p">);</span>
+<span class="kd">with</span> <span class="p">(</span><span class="nx">imports</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">file</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">File</span><span class="p">(</span><span class="nx">__FILE__</span><span class="p">);</span>
+    <span class="nx">System</span><span class="p">.</span><span class="nx">out</span><span class="p">.</span><span class="nx">println</span><span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">getAbsolutePath</span><span class="p">());</span>
+    <span class="c1">// /path/to/my/script.js</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4>Convert arrays</h4>
+
+<p>Some packages like <code>java.util</code> can be accessed directly without utilizing <code>Java.type</code> or <code>JavaImporter</code>:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">list</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">java</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">ArrayList</span><span class="p">();</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"s1"</span><span class="p">);</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"s2"</span><span class="p">);</span>
+<span class="nx">list</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s2">"s3"</span><span class="p">);</span>
+</code></pre></div>
+<p>This code converts the java list to a native javascript array:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">jsArray</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">from</span><span class="p">(</span><span class="nx">list</span><span class="p">);</span>
+<span class="nx">print</span><span class="p">(</span><span class="nx">jsArray</span><span class="p">);</span>                                  <span class="c1">// s1,s2,s3</span>
+<span class="nx">print</span><span class="p">(</span><span class="nb">Object</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">toString</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">jsArray</span><span class="p">));</span>  <span class="c1">// [object Array]</span>
+</code></pre></div>
+<p>And the other way around:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">javaArray</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">to</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="s2">"int[]"</span><span class="p">);</span>
+</code></pre></div>
+<h4>Calling Super</h4>
+
+<p>Accessing overridden members in javascript is traditionally awkward because javas <code>super</code> keyword doesn't exist in ECMAScript. Luckily nashorn goes to the rescue.</p>
+
+<p>First we define a super type in java code:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">SuperRunner</span> <span class="kd">implements</span> <span class="n">Runnable</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"super run"</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Next we override <code>SuperRunner</code> from javascript. Pay attention to the extended nashorn syntax when creating a new <code>Runner</code> instance: The syntax of overriding members is borrowed from javas anonymous objects.</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">SuperRunner</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="s1">'com.winterbe.java8.SuperRunner'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">Runner</span> <span class="o">=</span> <span class="nx">Java</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">SuperRunner</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">runner</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Runner</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">run</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">Java</span><span class="p">.</span><span class="kr">super</span><span class="p">(</span><span class="nx">runner</span><span class="p">).</span><span class="nx">run</span><span class="p">();</span>
+        <span class="nx">print</span><span class="p">(</span><span class="s1">'on my run'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="nx">runner</span><span class="p">.</span><span class="nx">run</span><span class="p">();</span>
+
+<span class="c1">// super run</span>
+<span class="c1">// on my run</span>
+</code></pre></div>
+<p>We call the overridden method <code>SuperRunner.run()</code> by utilizing the <code>Java.super</code> extension.</p>
+
+<h4>Loading scripts</h4>
+
+<p>Evaluating additional script files from javascript is quite easy. We can load both local or remote scripts with the <code>load</code> function.</p>
+
+<p>I'm using <a href="http://underscorejs.org/">Underscore.js</a> a lot for my web front-ends, so let's reuse Underscore in Nashorn:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">load</span><span class="p">(</span><span class="s1">'http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">odds</span> <span class="o">=</span> <span class="nx">_</span><span class="p">.</span><span class="nx">filter</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">num</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">num</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">});</span>
+
+<span class="nx">print</span><span class="p">(</span><span class="nx">odds</span><span class="p">);</span>  <span class="c1">// 1, 3, 5</span>
+</code></pre></div>
+<p>The external script will be evaluated in the same javascript context,
+ so we can access the underscore variable directly. Keep in mind that 
+loading scripts can potentially break your own code when variable names 
+are overlapping each other.</p>
+
+<p>This problem can be bypassed by loading script files into a new global context:</p>
+<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">loadWithNewGlobal</span><span class="p">(</span><span class="s1">'script.js'</span><span class="p">);</span>
+</code></pre></div>
+<h3>Command-line scripts</h3>
+
+<p>If you're interested in writing command-line (shell) scripts with Java, give <a href="https://github.com/winterbe/nake">Nake</a> a try. Nake is a simplified Make for Java 8 Nashorn. You define tasks in a project-specific <code>Nakefile</code>, then run those tasks by typing <code>nake -- myTask</code>
+ into the command line. Tasks are written in javascript and run in 
+Nashorns scripting mode, so you can utilize the full power of your 
+terminal as well as the JDK8 API and any java library.</p>
+
+<p>For Java Developers writing command-line scripts is easy as never before...</p>
+
+<h3>That's it</h3>
+
+<p>I hope this guide was helpful to you and you enjoyed our journey to 
+the Nashorn Javascript Engine. For further information about Nashorn 
+read <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/scripting/nashorn/">here</a>,  <a href="http://www.oracle.com/technetwork/articles/java/jf14-nashorn-2126515.html">here</a> and <a href="https://wiki.openjdk.java.net/display/Nashorn/Nashorn+extensions">here</a>. A guide to coding shell scripts with Nashorn can be found <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/scripting/nashorn/shell.html#sthref24">here</a>.</p>
+
+<p>I recently published a <a href="http://winterbe.com/posts/2014/04/07/using-backbonejs-with-nashorn/">follow up article</a>
+ about how to use Backbone.js models with the Nashorn Javascript Engine.
+ If you want to learn more about Java 8 feel free to read my <a href="http://winterbe.com/posts/2014/03/16/java-8-tutorial/">Java 8 Tutorial</a> and my <a href="http://winterbe.com/posts/2014/07/31/java8-stream-tutorial-examples/">Java 8 Stream Tutorial</a>.</p>
+
+<p>The runnable source code from this Nashorn tutorial is <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a>. Feel free to <a href="https://github.com/winterbe/java8-tutorial/fork">fork the repository</a> or send me your feedback via <a href="https://twitter.com/winterbe_">Twitter</a>.</p>
+
+<p>Keep on coding!</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>J8Tut Examples</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+</head>
+<body>
+<h1 class="page-title">Java 8 API by Example: Strings, Numbers, Math and Files</h1>
+<div class="post">
+    <p>Plenty of tutorials and articles cover the most important changes in Java 8 like <a href="/posts/2014/03/16/java-8-tutorial/">lambda expressions</a> and <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">functional streams</a>. But furthermore many existing classes have been enhanced in the <a href="/posts/2014/03/29/jdk8-api-explorer/">JDK 8 API</a> with useful features and methods.</p>
+
+<p>This article covers some of those smaller changes in the Java 8 API - each described with easily understood code samples. Let's take a deeper look into Strings, Numbers, Math and Files.</p>
+
+<h3>Slicing Strings</h3>
+
+<p>Two new methods are available on the String class: <code>join</code> and <code>chars</code>. The first method joins any number of strings into a single string with the given delimiter:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="s">":"</span><span class="o">,</span> <span class="s">"foobar"</span><span class="o">,</span> <span class="s">"foo"</span><span class="o">,</span> <span class="s">"bar"</span><span class="o">);</span>
+<span class="c1">// =&gt; foobar:foo:bar</span>
+</code></pre></div>
+<p>The second method <code>chars</code> creates a stream for all characters of the string, so you can use stream operations upon those characters:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="s">"foobar:foo:bar"</span>
+    <span class="o">.</span><span class="na">chars</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">distinct</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">mapToObj</span><span class="o">(</span><span class="n">c</span> <span class="o">-&gt;</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">((</span><span class="kt">char</span><span class="o">)</span><span class="n">c</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">());</span>
+<span class="c1">// =&gt; :abfor</span>
+</code></pre></div>
+<p>Not only strings but also regex patterns now benefit from streams. Instead of splitting strings into streams for each character we can split strings for any pattern and create a stream to work upon as shown in this example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Pattern</span><span class="o">.</span><span class="na">compile</span><span class="o">(</span><span class="s">":"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">splitAsStream</span><span class="o">(</span><span class="s">"foobar:foo:bar"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="s">"bar"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">(</span><span class="s">":"</span><span class="o">));</span>
+<span class="c1">// =&gt; bar:foobar</span>
+</code></pre></div>
+<p>Additionally regex patterns can be converted into predicates. Those predicates can for example be used to filter a stream of strings:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Pattern</span> <span class="n">pattern</span> <span class="o">=</span> <span class="n">Pattern</span><span class="o">.</span><span class="na">compile</span><span class="o">(</span><span class="s">".*@gmail\\.com"</span><span class="o">);</span>
+<span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"bob@gmail.com"</span><span class="o">,</span> <span class="s">"alice@hotmail.com"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">pattern</span><span class="o">.</span><span class="na">asPredicate</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">count</span><span class="o">();</span>
+<span class="c1">// =&gt; 1</span>
+</code></pre></div>
+<p>The above pattern accepts any string which ends with <code>@gmail.com</code> and is then used as a Java 8 <code>Predicate</code> to filter a stream of email addresses.</p>
+
+<h3>Crunching Numbers</h3>
+
+<p>Java 8 adds additional support for working with unsigned numbers. Numbers in Java had always been signed. Let's look at <code>Integer</code> for example:</p>
+
+<p>An <code>int</code> represents a maximum of 2³² binary digits. Numbers in Java are per default signed, so the last binary digit represents the sign (0 = positive, 1 = negative). Thus the maximum positive signed <code>int</code> is 2³¹ - 1 starting with the decimal zero.</p>
+
+<p>You can access this value via <code>Integer.MAX_VALUE</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>      <span class="c1">// 2147483647</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">+</span> <span class="mi">1</span><span class="o">);</span>  <span class="c1">// -2147483648</span>
+</code></pre></div>
+<p>Java 8 adds support for parsing unsigned ints. Let's see how this works:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kt">long</span> <span class="n">maxUnsignedInt</span> <span class="o">=</span> <span class="o">(</span><span class="mi">1l</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="o">)</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span>
+<span class="n">String</span> <span class="n">string</span> <span class="o">=</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">maxUnsignedInt</span><span class="o">);</span>
+<span class="kt">int</span> <span class="n">unsignedInt</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">parseUnsignedInt</span><span class="o">(</span><span class="n">string</span><span class="o">,</span> <span class="mi">10</span><span class="o">);</span>
+<span class="n">String</span> <span class="n">string2</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">toUnsignedString</span><span class="o">(</span><span class="n">unsignedInt</span><span class="o">,</span> <span class="mi">10</span><span class="o">);</span>
+</code></pre></div>
+<p>As you can see it's now possible to parse the maximum possible unsigned number 2³² - 1 into an integer. And you can also convert this number back into a string representing the unsigned number.</p>
+
+<p>This wasn't possible before with <code>parseInt</code> as this example demonstrates:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">{</span>
+    <span class="n">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">string</span><span class="o">,</span> <span class="mi">10</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">catch</span> <span class="o">(</span><span class="n">NumberFormatException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"could not parse signed int of "</span> <span class="o">+</span> <span class="n">maxUnsignedInt</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The number is not parseable as a signed int because it exceeds the maximum of 2³¹ - 1.</p>
+
+<h3>Do the Math</h3>
+
+<p>The utility class <code>Math</code> has been enhanced by a couple of new methods for handling number overflows. What does that mean? We've already seen that all number types have a maximum value. So what happens when the result of an arithmetic operation doesn't fit into its size?</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>      <span class="c1">// 2147483647</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">+</span> <span class="mi">1</span><span class="o">);</span>  <span class="c1">// -2147483648</span>
+</code></pre></div>
+<p>As you can see a so called <strong>integer overflow</strong> happens which is normally not the desired behavior.</p>
+
+<p>Java 8 adds support for strict math to handle this problem. <code>Math</code> has been extended by a couple of methods who all ends with <code>exact</code>, e.g. <code>addExact</code>. Those methods handle overflows properly by throwing an <code>ArithmeticException</code> when the result of the operation doesn't fit into the number type:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">{</span>
+    <span class="n">Math</span><span class="o">.</span><span class="na">addExact</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">,</span> <span class="mi">1</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">catch</span> <span class="o">(</span><span class="n">ArithmeticException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+    <span class="c1">// =&gt; integer overflow</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The same exception might be thrown when trying to convert longs to int via <code>toIntExact</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">{</span>
+    <span class="n">Math</span><span class="o">.</span><span class="na">toIntExact</span><span class="o">(</span><span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">catch</span> <span class="o">(</span><span class="n">ArithmeticException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+    <span class="c1">// =&gt; integer overflow</span>
+<span class="o">}</span>
+</code></pre></div>
+<h3>Working with Files</h3>
+
+<p>The utility class <code>Files</code> was first introduced in Java 7 as part of Java NIO. The JDK 8 API adds a couple of additional methods which enables us to use functional streams with files. Let's deep-dive into a couple of code samples.</p>
+
+<h4>Listing files</h4>
+
+<p>The method <code>Files.list</code> streams all paths for a given directory, so we can use stream operations like <code>filter</code> and <code>sorted</code> upon the contents of the file system.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">(</span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">Path</span><span class="o">&gt;</span> <span class="n">stream</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">list</span><span class="o">(</span><span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">""</span><span class="o">)))</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">joined</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">String</span><span class="o">::</span><span class="n">valueOf</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">path</span> <span class="o">-&gt;</span> <span class="o">!</span><span class="n">path</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"."</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">(</span><span class="s">"; "</span><span class="o">));</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"List: "</span> <span class="o">+</span> <span class="n">joined</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The above example lists all files for the current working directory, then maps each path to it's string representation. The result is then filtered, sorted and finally joined into a string. If you're not yet familiar with functional streams you should read my <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">Java 8 Stream Tutorial</a>.</p>
+
+<p>You might have noticed that the creation of the stream is wrapped into a try/with statement. Streams implement <code>AutoCloseable</code> and in this case we really have to close the stream explicitly since it's backed by IO operations.</p>
+
+<blockquote>
+<p>The returned stream encapsulates a DirectoryStream. If timely disposal of file system resources is required, the try-with-resources construct should be used to ensure that the stream's close method is invoked after the stream operations are completed.</p>
+</blockquote>
+
+<h4>Finding files</h4>
+
+<p>The next example demonstrates how to find files in a directory or it's sub-directories.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Path</span> <span class="n">start</span> <span class="o">=</span> <span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">""</span><span class="o">);</span>
+<span class="kt">int</span> <span class="n">maxDepth</span> <span class="o">=</span> <span class="mi">5</span><span class="o">;</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">Path</span><span class="o">&gt;</span> <span class="n">stream</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">find</span><span class="o">(</span><span class="n">start</span><span class="o">,</span> <span class="n">maxDepth</span><span class="o">,</span> <span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="n">attr</span><span class="o">)</span> <span class="o">-&gt;</span>
+        <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">path</span><span class="o">).</span><span class="na">endsWith</span><span class="o">(</span><span class="s">".js"</span><span class="o">)))</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">joined</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">String</span><span class="o">::</span><span class="n">valueOf</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">(</span><span class="s">"; "</span><span class="o">));</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Found: "</span> <span class="o">+</span> <span class="n">joined</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The method <code>find</code> accepts three arguments: The directory path <code>start</code> is the initial starting point and <code>maxDepth</code> defines the maximum folder depth to be searched. The third argument is a matching predicate and defines the search logic. In the above example we search for all JavaScript files (filename ends with .js).</p>
+
+<p>We can achieve the same behavior by utilizing the method <code>Files.walk</code>. Instead of passing a search predicate this method just walks over any file.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Path</span> <span class="n">start</span> <span class="o">=</span> <span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">""</span><span class="o">);</span>
+<span class="kt">int</span> <span class="n">maxDepth</span> <span class="o">=</span> <span class="mi">5</span><span class="o">;</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">Path</span><span class="o">&gt;</span> <span class="n">stream</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">walk</span><span class="o">(</span><span class="n">start</span><span class="o">,</span> <span class="n">maxDepth</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">joined</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">String</span><span class="o">::</span><span class="n">valueOf</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">path</span> <span class="o">-&gt;</span> <span class="n">path</span><span class="o">.</span><span class="na">endsWith</span><span class="o">(</span><span class="s">".js"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">(</span><span class="s">"; "</span><span class="o">));</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"walk(): "</span> <span class="o">+</span> <span class="n">joined</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>In this example we use the stream operation <code>filter</code> to achieve the same behavior as in the previous example.</p>
+
+<h4>Reading and writing files</h4>
+
+<p>Reading text files into memory and writing strings into a text file in Java 8 is finally a simple task. No messing around with readers and writers. The method <code>Files.readAllLines</code> reads all lines of a given file into a list of strings. You can simply modify this list and write the lines into another file via <code>Files.write</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">lines</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">readAllLines</span><span class="o">(</span><span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/nashorn1.js"</span><span class="o">));</span>
+<span class="n">lines</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"print('foobar');"</span><span class="o">);</span>
+<span class="n">Files</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/nashorn1-modified.js"</span><span class="o">),</span> <span class="n">lines</span><span class="o">);</span>
+</code></pre></div>
+<p>Please keep in mind that those methods are not very memory-efficient because the whole file will be read into memory. The larger the file the more heap-size will be used.</p>
+
+<p>As an memory-efficient alternative you could use the method <code>Files.lines</code>. Instead of reading all lines into memory at once, this method reads and streams each line one by one via functional streams.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">(</span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">stream</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">lines</span><span class="o">(</span><span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/nashorn1.js"</span><span class="o">)))</span> <span class="o">{</span>
+    <span class="n">stream</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">line</span> <span class="o">-&gt;</span> <span class="n">line</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="s">"print"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">String</span><span class="o">::</span><span class="n">trim</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>If you need more fine-grained control you can instead construct a new buffered reader:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/nashorn1.js"</span><span class="o">);</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">BufferedReader</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">newBufferedReader</span><span class="o">(</span><span class="n">path</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">reader</span><span class="o">.</span><span class="na">readLine</span><span class="o">());</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Or in case you want to write to a file simply construct a buffered writer instead:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/output.js"</span><span class="o">);</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">BufferedWriter</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">newBufferedWriter</span><span class="o">(</span><span class="n">path</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">writer</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="s">"print('Hello World');"</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Buffered readers also have access to functional streams. The method <code>lines</code> construct a functional stream upon all lines denoted by the buffered reader:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="n">Paths</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"res/nashorn1.js"</span><span class="o">);</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">BufferedReader</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">Files</span><span class="o">.</span><span class="na">newBufferedReader</span><span class="o">(</span><span class="n">path</span><span class="o">))</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">countPrints</span> <span class="o">=</span> <span class="n">reader</span>
+        <span class="o">.</span><span class="na">lines</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">line</span> <span class="o">-&gt;</span> <span class="n">line</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="s">"print"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">count</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">countPrints</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>So as you can see Java 8 provides three simple ways to read the lines of a text file, making text file handling quite convenient.</p>
+
+<p>Unfortunately you have to close functional file streams explicitly with try/with statements which makes the code samples still kinda cluttered. I would have expected that functional streams auto-close when calling a terminal operation like <code>count</code> or <code>collect</code> since you cannot call terminal operations twice on the same stream anyway.</p>
+
+<p>I hope you've enjoyed this article. All code samples are <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a> along with plenty of other code snippets from all the <a href="/java/">Java 8 articles</a> of my blog. If this post was kinda useful to you feel free to <a href="https://github.com/winterbe/java8-tutorial">star</a> the repo and <a href="https://twitter.com/winterbe_">follow me</a> on Twitter.</p>
+
+<p>Keep on coding!</p>
+<br><hr>
+<h1 class="page-title">Avoiding Null Checks in Java 8</h1>
+<div class="post">
+    <p>How to prevent the famous <code>NullPointerException</code> in Java? This is one of the key questions every Java beginner will ask sooner or later. But also intermediate and expert programmers get around this error every now and then. It's by far the most prevalent kind of error in Java and many other programming languages as well.</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Tony_Hoare">Tony Hoare</a>, the inventor of the null reference apologized in 2009 and denotes this kind of errors as his <strong>billion-dollar mistake</strong>.</p>
+
+<blockquote>
+<p>I call it my billion-dollar mistake. It was the invention of the null reference in 1965. At that time, I was designing the first comprehensive type system for references in an object oriented language (ALGOL W). My goal was to ensure that all use of references should be absolutely safe, with checking performed automatically by the compiler. But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement. This has led to innumerable errors, vulnerabilities, and system crashes, which have probably caused a billion dollars of pain and damage in the last forty years.</p>
+</blockquote>
+
+<p>Anyways, we have to deal with it. So what can we do to prevent NullPointerExceptions at all? Well, the obvious answer is to add null checks all around the place. Since null checks are kinda cumbersome and painful many languages add special syntax for handling null checks via <a href="http://en.wikipedia.org/wiki/Null_coalescing_operator">null coalescing operators</a> - also known as <em>elvis operator</em> in languages like <a href="http://groovy-lang.org/operators.html#_elvis_operator">Groovy</a> or <a href="http://kotlinlang.org/docs/reference/null-safety.html">Kotlin</a>.</p>
+
+<p>Unfortunately Java doesn't provide such a syntactic sugar. But luckily things get better in Java Version 8. This post describes a couple of techniques how to prevent writing needless null checks by utilizing new features of Java 8 like lambda expressions.</p>
+
+<h3>Improving Null Safety in Java 8</h3>
+
+<p>I've already shown in <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">another post</a> how we can utilize the <code>Optional</code> type of Java 8 to prevent null checks. Here's the example code from the original post.</p>
+
+<p>Assuming we have a hierarchical class structure like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">class</span> <span class="nc">Outer</span> <span class="o">{</span>
+    <span class="n">Nested</span> <span class="n">nested</span><span class="o">;</span>
+    <span class="n">Nested</span> <span class="nf">getNested</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">nested</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="kd">class</span> <span class="nc">Nested</span> <span class="o">{</span>
+    <span class="n">Inner</span> <span class="n">inner</span><span class="o">;</span>
+    <span class="n">Inner</span> <span class="nf">getInner</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">inner</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="kd">class</span> <span class="nc">Inner</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">foo</span><span class="o">;</span>
+    <span class="n">String</span> <span class="nf">getFoo</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">foo</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Resolving a deep nested path in this structure can be kinda awkward. We have to write a bunch of null checks to make sure not to raise a <code>NullPointerException</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Outer</span> <span class="n">outer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
+<span class="k">if</span> <span class="o">(</span><span class="n">outer</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">outer</span><span class="o">.</span><span class="na">nested</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">outer</span><span class="o">.</span><span class="na">nested</span><span class="o">.</span><span class="na">inner</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">outer</span><span class="o">.</span><span class="na">nested</span><span class="o">.</span><span class="na">inner</span><span class="o">.</span><span class="na">foo</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>We can get rid of all those null checks by utilizing the Java 8 <code>Optional</code> type. The method <code>map</code> accepts a lambda expression of type <code>Function</code> and automatically wraps each function result into an <code>Optional</code>. That enables us to pipe multiple <code>map</code> operations in a row. Null checks are automatically handled under the hood.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Optional</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="k">new</span> <span class="n">Outer</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">Outer</span><span class="o">::</span><span class="n">getNested</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">Nested</span><span class="o">::</span><span class="n">getInner</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">Inner</span><span class="o">::</span><span class="n">getFoo</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div>
+<p>An alternative way to achieve the same behavior is by utilizing a supplier function to resolve the nested path:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Outer</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
+<span class="n">resolve</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="n">obj</span><span class="o">.</span><span class="na">getNested</span><span class="o">().</span><span class="na">getInner</span><span class="o">().</span><span class="na">getFoo</span><span class="o">());</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div>
+<p>Calling <code>obj.getNested().getInner().getFoo())</code> might throw a <code>NullPointerException</code>. In this case the exception will be caught and the method returns <code>Optional.empty()</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">public</span> <span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Optional</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">resolve</span><span class="o">(</span><span class="n">Supplier</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">resolver</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">T</span> <span class="n">result</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="o">.</span><span class="na">ofNullable</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">catch</span> <span class="o">(</span><span class="n">NullPointerException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Optional</span><span class="o">.</span><span class="na">empty</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Please keep in mind that both solutions are probably not as performant as traditional null checks. In most cases that shouldn't be much of an issue.</p>
+
+<p>As usual the above code samples are <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a>.</p>
+
+<p>Happy coding!</p>
+
+<blockquote>
+<p>UPDATE: I've updated the code samples thanks to a hint from <a href="http://www.reddit.com/user/Zukhramm">Zukhramm</a> on Reddit.</p>
+</blockquote>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>J8Tut Benjamin Winterberg</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+</head>
+<body>
+<div class="post">
+    <blockquote>
+<p><a href="https://twitter.com/mreinhold/status/429603588525281280">“Java is still not dead—and people are starting to figure that out.”</a></p>
+</blockquote>
+
+<p>Welcome to my introduction to <a href="https://jdk8.java.net/">Java 8</a>.
+ This tutorial guides you step by step through all new language 
+features. Backed by short and simple code samples you'll learn how to 
+use default interface methods, lambda expressions, method references and
+ repeatable annotations. At the end of the article you'll be familiar 
+with the most recent <a href="http://download.java.net/jdk8/docs/api/">API</a> changes like streams, functional interfaces, map extensions and the new Date API.</p>
+
+<p>No walls of text - just a bunch of commented code snippets. Enjoy!</p>
+
+<h3>Default Methods for Interfaces</h3>
+
+<p>Java 8 enables us to add non-abstract method implementations to interfaces by utilizing the <code>default</code> keyword. This feature is also known as <strong>Extension Methods</strong>. Here is our first example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">interface</span> <span class="nc">Formula</span> <span class="o">{</span>
+    <span class="kt">double</span> <span class="nf">calculate</span><span class="o">(</span><span class="kt">int</span> <span class="n">a</span><span class="o">);</span>
+
+    <span class="k">default</span> <span class="kt">double</span> <span class="nf">sqrt</span><span class="o">(</span><span class="kt">int</span> <span class="n">a</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Math</span><span class="o">.</span><span class="na">sqrt</span><span class="o">(</span><span class="n">a</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Besides the abstract method <code>calculate</code> the interface <code>Formula</code> also defines the default method <code>sqrt</code>. Concrete classes only have to implement the abstract method <code>calculate</code>. The default method <code>sqrt</code> can be used out of the box.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Formula</span> <span class="n">formula</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Formula</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">double</span> <span class="nf">calculate</span><span class="o">(</span><span class="kt">int</span> <span class="n">a</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">sqrt</span><span class="o">(</span><span class="n">a</span> <span class="o">*</span> <span class="mi">100</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+
+<span class="n">formula</span><span class="o">.</span><span class="na">calculate</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>     <span class="c1">// 100.0</span>
+<span class="n">formula</span><span class="o">.</span><span class="na">sqrt</span><span class="o">(</span><span class="mi">16</span><span class="o">);</span>           <span class="c1">// 4.0</span>
+</code></pre></div>
+<p>The formula is implemented as an anonymous object. The code is quite verbose: 6 lines of code for such a simple calucation of <code>sqrt(a * 100)</code>. As we'll see in the next section, there's a much nicer way of implementing single method objects in Java 8.</p>
+
+<h3>Lambda expressions</h3>
+
+<p>Let's start with a simple example of how to sort a list of strings in prior versions of Java:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">names</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"peter"</span><span class="o">,</span> <span class="s">"anna"</span><span class="o">,</span> <span class="s">"mike"</span><span class="o">,</span> <span class="s">"xenia"</span><span class="o">);</span>
+
+<span class="n">Collections</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="k">new</span> <span class="n">Comparator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">compare</span><span class="o">(</span><span class="n">String</span> <span class="n">a</span><span class="o">,</span> <span class="n">String</span> <span class="n">b</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">a</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+</code></pre></div>
+<p>The static utility method <code>Collections.sort</code> accepts a 
+list and a comparator in order to sort the elements of the given list. 
+You often find yourself creating anonymous comparators and pass them to 
+the sort method.</p>
+
+<p>Instead of creating anonymous objects all day long, Java 8 comes with a much shorter syntax, <strong>lambda expressions</strong>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Collections</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="o">(</span><span class="n">String</span> <span class="n">a</span><span class="o">,</span> <span class="n">String</span> <span class="n">b</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">a</span><span class="o">);</span>
+<span class="o">});</span>
+</code></pre></div>
+<p>As you can see the code is much shorter and easier to read. But it gets even shorter:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Collections</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="o">(</span><span class="n">String</span> <span class="n">a</span><span class="o">,</span> <span class="n">String</span> <span class="n">b</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">b</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">a</span><span class="o">));</span>
+</code></pre></div>
+<p>For one line method bodies you can skip both the braces <code>{}</code> and the <code>return</code> keyword. But it gets even more shorter:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Collections</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">names</span><span class="o">,</span> <span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">b</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">a</span><span class="o">));</span>
+</code></pre></div>
+<p>The java compiler is aware of the parameter types so you can skip 
+them as well. Let's dive deeper into how lambda expressions can be used 
+in the wild.</p>
+
+<h3>Functional Interfaces</h3>
+
+<p>How does lambda expressions fit into Javas type system? Each lambda 
+corresponds to a given type, specified by an interface. A so called <em>functional interface</em> must contain <strong>exactly one abstract method</strong>
+ declaration. Each lambda expression of that type will be matched to 
+this abstract method. Since default methods are not abstract you're free
+ to add default methods to your functional interface.</p>
+
+<p>We can use arbitrary interfaces as lambda expressions as long as the 
+interface only contains one abstract method. To ensure that your 
+interface meet the requirements, you should add the <code>@FunctionalInterface</code>
+ annotation. The compiler is aware of this annotation and throws a 
+compiler error as soon as you try to add a second abstract method 
+declaration to the interface.</p>
+
+<p>Example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@FunctionalInterface</span>
+<span class="kd">interface</span> <span class="nc">Converter</span><span class="o">&lt;</span><span class="n">F</span><span class="o">,</span> <span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="n">T</span> <span class="nf">convert</span><span class="o">(</span><span class="n">F</span> <span class="n">from</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Converter</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">converter</span> <span class="o">=</span> <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Integer</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span><span class="o">);</span>
+<span class="n">Integer</span> <span class="n">converted</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="s">"123"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">converted</span><span class="o">);</span>    <span class="c1">// 123</span>
+</code></pre></div>
+<p>Keep in mind that the code is also valid if the <code>@FunctionalInterface</code> annotation would be ommited.</p>
+
+<h3>Method and Constructor References</h3>
+
+<p>The above example code can be further simplified by utilizing static method references:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Converter</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">converter</span> <span class="o">=</span> <span class="nl">Integer:</span><span class="o">:</span><span class="n">valueOf</span><span class="o">;</span>
+<span class="n">Integer</span> <span class="n">converted</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="s">"123"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">converted</span><span class="o">);</span>   <span class="c1">// 123</span>
+</code></pre></div>
+<p>Java 8 enables you to pass references of methods or constructors via the <code>::</code> keyword. The above example shows how to reference a static method. But we can also reference object methods:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">Something</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="nf">startsWith</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">charAt</span><span class="o">(</span><span class="mi">0</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Something</span> <span class="n">something</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Something</span><span class="o">();</span>
+<span class="n">Converter</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">converter</span> <span class="o">=</span> <span class="nl">something:</span><span class="o">:</span><span class="n">startsWith</span><span class="o">;</span>
+<span class="n">String</span> <span class="n">converted</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="s">"Java"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">converted</span><span class="o">);</span>    <span class="c1">// "J"</span>
+</code></pre></div>
+<p>Let's see how the <code>::</code> keyword works for constructors. First we define an example bean with different constructors:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">Person</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">firstName</span><span class="o">;</span>
+    <span class="n">String</span> <span class="n">lastName</span><span class="o">;</span>
+
+    <span class="n">Person</span><span class="o">()</span> <span class="o">{}</span>
+
+    <span class="n">Person</span><span class="o">(</span><span class="n">String</span> <span class="n">firstName</span><span class="o">,</span> <span class="n">String</span> <span class="n">lastName</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">firstName</span> <span class="o">=</span> <span class="n">firstName</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">lastName</span> <span class="o">=</span> <span class="n">lastName</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Next we specify a person factory interface to be used for creating new persons:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">interface</span> <span class="nc">PersonFactory</span><span class="o">&lt;</span><span class="n">P</span> <span class="kd">extends</span> <span class="n">Person</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="n">P</span> <span class="nf">create</span><span class="o">(</span><span class="n">String</span> <span class="n">firstName</span><span class="o">,</span> <span class="n">String</span> <span class="n">lastName</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Instead of implementing the factory manually, we glue everything together via constructor references:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">PersonFactory</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">personFactory</span> <span class="o">=</span> <span class="nl">Person:</span><span class="o">:</span><span class="k">new</span><span class="o">;</span>
+<span class="n">Person</span> <span class="n">person</span> <span class="o">=</span> <span class="n">personFactory</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">"Peter"</span><span class="o">,</span> <span class="s">"Parker"</span><span class="o">);</span>
+</code></pre></div>
+<p>We create a reference to the Person constructor via <code>Person::new</code>. The Java compiler automatically chooses the right constructor by matching the signature of <code>PersonFactory.create</code>.</p>
+
+<h3>Lambda Scopes</h3>
+
+<p>Accessing outer scope variables from lambda expressions is very 
+similar to anonymous objects. You can access final variables from the 
+local outer scope as well as instance fields and static variables.</p>
+
+<h4>Accessing local variables</h4>
+
+<p>We can read final local variables from the outer scope of lambda expressions:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">final</span> <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+<span class="n">Converter</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">stringConverter</span> <span class="o">=</span>
+        <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span> <span class="o">+</span> <span class="n">num</span><span class="o">);</span>
+
+<span class="n">stringConverter</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>     <span class="c1">// 3</span>
+</code></pre></div>
+<p>But different to anonymous objects the variable <code>num</code> does not have to be declared final. This code is also valid:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+<span class="n">Converter</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">stringConverter</span> <span class="o">=</span>
+        <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span> <span class="o">+</span> <span class="n">num</span><span class="o">);</span>
+
+<span class="n">stringConverter</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>     <span class="c1">// 3</span>
+</code></pre></div>
+<p>However <code>num</code> must be implicitly final for the code to compile. The following code does <strong>not</strong> compile:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+<span class="n">Converter</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">stringConverter</span> <span class="o">=</span>
+        <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span> <span class="o">+</span> <span class="n">num</span><span class="o">);</span>
+<span class="n">num</span> <span class="o">=</span> <span class="mi">3</span><span class="o">;</span>
+</code></pre></div>
+<p>Writing to <code>num</code> from within the lambda expression is also prohibited.</p>
+
+<h4>Accessing fields and static variables</h4>
+
+<p>In constrast to local variables we have both read and write access to
+ instance fields and static variables from within lambda expressions. 
+This behaviour is well known from anonymous objects.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">Lambda4</span> <span class="o">{</span>
+    <span class="kd">static</span> <span class="kt">int</span> <span class="n">outerStaticNum</span><span class="o">;</span>
+    <span class="kt">int</span> <span class="n">outerNum</span><span class="o">;</span>
+
+    <span class="kt">void</span> <span class="nf">testScopes</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">Converter</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">stringConverter1</span> <span class="o">=</span> <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">outerNum</span> <span class="o">=</span> <span class="mi">23</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span><span class="o">);</span>
+        <span class="o">};</span>
+
+        <span class="n">Converter</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">stringConverter2</span> <span class="o">=</span> <span class="o">(</span><span class="n">from</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">outerStaticNum</span> <span class="o">=</span> <span class="mi">72</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">from</span><span class="o">);</span>
+        <span class="o">};</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<h4>Accessing Default Interface Methods</h4>
+
+<p>Remember the formula example from the first section? Interface <code>Formula</code> defines a default method <code>sqrt</code> which can be accessed from each formula instance including anonymous objects. This does not work with lambda expressions.</p>
+
+<p>Default methods <strong>cannot</strong> be accessed from within lambda expressions. The following code does not compile:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Formula</span> <span class="n">formula</span> <span class="o">=</span> <span class="o">(</span><span class="n">a</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">sqrt</span><span class="o">(</span> <span class="n">a</span> <span class="o">*</span> <span class="mi">100</span><span class="o">);</span>
+</code></pre></div>
+<h3>Built-in Functional Interfaces</h3>
+
+<p>The JDK 1.8 API contains many built-in functional interfaces. Some of them are well known from older versions of Java like <code>Comparator</code> or <code>Runnable</code>. Those existing interfaces are extended to enable Lambda support via the <code>@FunctionalInterface</code> annotation.</p>
+
+<p>But the Java 8 API is also full of new functional interfaces to make 
+your life easier. Some of those new interfaces are well known from the <a href="https://code.google.com/p/guava-libraries/">Google Guava</a>
+ library. Even if you're familiar with this library you should keep a 
+close eye on how those interfaces are extended by some useful method 
+extensions.</p>
+
+<h4>Predicates</h4>
+
+<p>Predicates are boolean-valued functions of one argument. The 
+interface contains various default methods for composing predicates to 
+complex logical terms (and, or, negate)</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Predicate</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">predicate</span> <span class="o">=</span> <span class="o">(</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">;</span>
+
+<span class="n">predicate</span><span class="o">.</span><span class="na">test</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span>              <span class="c1">// true</span>
+<span class="n">predicate</span><span class="o">.</span><span class="na">negate</span><span class="o">().</span><span class="na">test</span><span class="o">(</span><span class="s">"foo"</span><span class="o">);</span>     <span class="c1">// false</span>
+
+<span class="n">Predicate</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">nonNull</span> <span class="o">=</span> <span class="nl">Objects:</span><span class="o">:</span><span class="n">nonNull</span><span class="o">;</span>
+<span class="n">Predicate</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">isNull</span> <span class="o">=</span> <span class="nl">Objects:</span><span class="o">:</span><span class="n">isNull</span><span class="o">;</span>
+
+<span class="n">Predicate</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">isEmpty</span> <span class="o">=</span> <span class="nl">String:</span><span class="o">:</span><span class="n">isEmpty</span><span class="o">;</span>
+<span class="n">Predicate</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">isNotEmpty</span> <span class="o">=</span> <span class="n">isEmpty</span><span class="o">.</span><span class="na">negate</span><span class="o">();</span>
+</code></pre></div>
+<h4>Functions</h4>
+
+<p>Functions accept one argument and produce a result. Default methods 
+can be used to chain multiple functions together (compose, andThen).</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">toInteger</span> <span class="o">=</span> <span class="nl">Integer:</span><span class="o">:</span><span class="n">valueOf</span><span class="o">;</span>
+<span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">backToString</span> <span class="o">=</span> <span class="n">toInteger</span><span class="o">.</span><span class="na">andThen</span><span class="o">(</span><span class="nl">String:</span><span class="o">:</span><span class="n">valueOf</span><span class="o">);</span>
+
+<span class="n">backToString</span><span class="o">.</span><span class="na">apply</span><span class="o">(</span><span class="s">"123"</span><span class="o">);</span>     <span class="c1">// "123"</span>
+</code></pre></div>
+<h4>Suppliers</h4>
+
+<p>Suppliers produce a result of a given generic type. Unlike Functions, Suppliers don't accept arguments.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Supplier</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">personSupplier</span> <span class="o">=</span> <span class="nl">Person:</span><span class="o">:</span><span class="k">new</span><span class="o">;</span>
+<span class="n">personSupplier</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>   <span class="c1">// new Person</span>
+</code></pre></div>
+<h4>Consumers</h4>
+
+<p>Consumers represents operations to be performed on a single input argument.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Consumer</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">greeter</span> <span class="o">=</span> <span class="o">(</span><span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Hello, "</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="na">firstName</span><span class="o">);</span>
+<span class="n">greeter</span><span class="o">.</span><span class="na">accept</span><span class="o">(</span><span class="k">new</span> <span class="nf">Person</span><span class="o">(</span><span class="s">"Luke"</span><span class="o">,</span> <span class="s">"Skywalker"</span><span class="o">));</span>
+</code></pre></div>
+<h4>Comparators</h4>
+
+<p>Comparators are well known from older versions of Java. Java 8 adds various default methods to the interface.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Comparator</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">comparator</span> <span class="o">=</span> <span class="o">(</span><span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">p1</span><span class="o">.</span><span class="na">firstName</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">p2</span><span class="o">.</span><span class="na">firstName</span><span class="o">);</span>
+
+<span class="n">Person</span> <span class="n">p1</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Person</span><span class="o">(</span><span class="s">"John"</span><span class="o">,</span> <span class="s">"Doe"</span><span class="o">);</span>
+<span class="n">Person</span> <span class="n">p2</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Person</span><span class="o">(</span><span class="s">"Alice"</span><span class="o">,</span> <span class="s">"Wonderland"</span><span class="o">);</span>
+
+<span class="n">comparator</span><span class="o">.</span><span class="na">compare</span><span class="o">(</span><span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">);</span>             <span class="c1">// &gt; 0</span>
+<span class="n">comparator</span><span class="o">.</span><span class="na">reversed</span><span class="o">().</span><span class="na">compare</span><span class="o">(</span><span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">);</span>  <span class="c1">// &lt; 0</span>
+</code></pre></div>
+<h4>Optionals</h4>
+
+<p>Optionals are not functional interfaces, instead it's a nifty utility to prevent <code>NullPointerException</code>. It's an important concept for the next section, so let's have a quick look at how Optionals work.</p>
+
+<p>Optional is a simple container for a value which may be null or 
+non-null. Think of a method which may return a non-null result but 
+sometimes return nothing. Instead of returning <code>null</code> you return an <code>Optional</code> in Java 8.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Optional</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">optional</span> <span class="o">=</span> <span class="n">Optional</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"bam"</span><span class="o">);</span>
+
+<span class="n">optional</span><span class="o">.</span><span class="na">isPresent</span><span class="o">();</span>           <span class="c1">// true</span>
+<span class="n">optional</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>                 <span class="c1">// "bam"</span>
+<span class="n">optional</span><span class="o">.</span><span class="na">orElse</span><span class="o">(</span><span class="s">"fallback"</span><span class="o">);</span>    <span class="c1">// "bam"</span>
+
+<span class="n">optional</span><span class="o">.</span><span class="na">ifPresent</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">charAt</span><span class="o">(</span><span class="mi">0</span><span class="o">)));</span>     <span class="c1">// "b"</span>
+</code></pre></div>
+<h3>Streams</h3>
+
+<p>A <code>java.util.Stream</code> represents a sequence of elements on which one or more operations can be performed. Stream operations are either <em>intermediate</em> or <em>terminal</em>.
+ While terminal operations return a result of a certain type, 
+intermediate operations return the stream itself so you can chain 
+multiple method calls in a row. Streams are created on a source, e.g. a <code>java.util.Collection</code> like lists or sets (maps are not supported). Stream operations can either be executed sequential or parallel.</p>
+
+<p>Let's first look how sequential streams work. First we create a sample source in form of a list of strings:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">stringCollection</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"ddd2"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"aaa2"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"bbb1"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"aaa1"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"bbb3"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"ccc"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"bbb2"</span><span class="o">);</span>
+<span class="n">stringCollection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="s">"ddd1"</span><span class="o">);</span>
+</code></pre></div>
+<p>Collections in Java 8 are extended so you can simply create streams either by calling <code>Collection.stream()</code> or <code>Collection.parallelStream()</code>. The following sections explain the most common stream operations.</p>
+
+<h4>Filter</h4>
+
+<p>Filter accepts a predicate to filter all elements of the stream. This operation is <em>intermediate</em> which enables us to call another stream operation (<code>forEach</code>)
+ on the result. ForEach accepts a consumer to be executed for each 
+element in the filtered stream. ForEach is a terminal operation. It's <code>void</code>, so we cannot call another stream operation.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stringCollection</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// "aaa2", "aaa1"</span>
+</code></pre></div>
+<h4>Sorted</h4>
+
+<p>Sorted is an <em>intermediate</em> operation which returns a sorted view of the stream. The elements are sorted in natural order unless you pass a custom <code>Comparator</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stringCollection</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// "aaa1", "aaa2"</span>
+</code></pre></div>
+<p>Keep in mind that <code>sorted</code> does only create a sorted view of the stream without manipulating the ordering of the backed collection. The ordering of <code>stringCollection</code> is untouched:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">stringCollection</span><span class="o">);</span>
+<span class="c1">// ddd2, aaa2, bbb1, aaa1, bbb3, ccc, bbb2, ddd1</span>
+</code></pre></div>
+<h4>Map</h4>
+
+<p>The <em>intermediate</em> operation <code>map</code> converts each 
+element into another object via the given function. The following 
+example converts each string into an upper-cased string. But you can 
+also use <code>map</code> to transform each object into another type. 
+The generic type of the resulting stream depends on the generic type of 
+the function you pass to <code>map</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stringCollection</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="nl">String:</span><span class="o">:</span><span class="n">toUpperCase</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">((</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">b</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">a</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// "DDD2", "DDD1", "CCC", "BBB3", "BBB2", "AAA2", "AAA1"</span>
+</code></pre></div>
+<h4>Match</h4>
+
+<p>Various matching operations can be used to check whether a certain predicate matches the stream. All of those operations are <em>terminal</em> and return a boolean result.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">boolean</span> <span class="n">anyStartsWithA</span> <span class="o">=</span>
+    <span class="n">stringCollection</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">anyMatch</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">anyStartsWithA</span><span class="o">);</span>      <span class="c1">// true</span>
+
+<span class="kt">boolean</span> <span class="n">allStartsWithA</span> <span class="o">=</span>
+    <span class="n">stringCollection</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">allMatch</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">allStartsWithA</span><span class="o">);</span>      <span class="c1">// false</span>
+
+<span class="kt">boolean</span> <span class="n">noneStartsWithZ</span> <span class="o">=</span>
+    <span class="n">stringCollection</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">noneMatch</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"z"</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">noneStartsWithZ</span><span class="o">);</span>      <span class="c1">// true</span>
+</code></pre></div>
+<h4>Count</h4>
+
+<p>Count is a <em>terminal</em> operation returning the number of elements in the stream as a <code>long</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">long</span> <span class="n">startsWithB</span> <span class="o">=</span>
+    <span class="n">stringCollection</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">((</span><span class="n">s</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"b"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">count</span><span class="o">();</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">startsWithB</span><span class="o">);</span>    <span class="c1">// 3</span>
+</code></pre></div>
+<h4>Reduce</h4>
+
+<p>This <em>terminal</em> operation performs a reduction on the elements of the stream with the given function. The result is an <code>Optional</code> holding the reduced value.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Optional</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">reduced</span> <span class="o">=</span>
+    <span class="n">stringCollection</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">reduce</span><span class="o">((</span><span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">s1</span> <span class="o">+</span> <span class="s">"#"</span> <span class="o">+</span> <span class="n">s2</span><span class="o">);</span>
+
+<span class="n">reduced</span><span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+<span class="c1">// "aaa1#aaa2#bbb1#bbb2#bbb3#ccc#ddd1#ddd2"</span>
+</code></pre></div>
+<h3>Parallel Streams</h3>
+
+<p>As mentioned above streams can be either sequential or parallel. 
+Operations on sequential streams are performed on a single thread while 
+operations on parallel streams are performed concurrent on multiple 
+threads.</p>
+
+<p>The following example demonstrates how easy it is to increase the performance by using parallel streams.</p>
+
+<p>First we create a large list of unique elements:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="mi">1000000</span><span class="o">;</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">values</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;(</span><span class="n">max</span><span class="o">);</span>
+<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">max</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+    <span class="n">UUID</span> <span class="n">uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="o">.</span><span class="na">randomUUID</span><span class="o">();</span>
+    <span class="n">values</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">uuid</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Now we measure the time it takes to sort a stream of this collection.</p>
+
+<h4>Sequential Sort</h4>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">long</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+
+<span class="kt">long</span> <span class="n">count</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">sorted</span><span class="o">().</span><span class="na">count</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">count</span><span class="o">);</span>
+
+<span class="kt">long</span> <span class="n">t1</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+
+<span class="kt">long</span> <span class="n">millis</span> <span class="o">=</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">.</span><span class="na">toMillis</span><span class="o">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"sequential sort took: %d ms"</span><span class="o">,</span> <span class="n">millis</span><span class="o">));</span>
+
+<span class="c1">// sequential sort took: 899 ms</span>
+</code></pre></div>
+<h4>Parallel Sort</h4>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kt">long</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+
+<span class="kt">long</span> <span class="n">count</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="na">parallelStream</span><span class="o">().</span><span class="na">sorted</span><span class="o">().</span><span class="na">count</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">count</span><span class="o">);</span>
+
+<span class="kt">long</span> <span class="n">t1</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+
+<span class="kt">long</span> <span class="n">millis</span> <span class="o">=</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">.</span><span class="na">toMillis</span><span class="o">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"parallel sort took: %d ms"</span><span class="o">,</span> <span class="n">millis</span><span class="o">));</span>
+
+<span class="c1">// parallel sort took: 472 ms</span>
+</code></pre></div>
+<p>As you can see both code snippets are almost identical but the 
+parallel sort is roughly 50% faster. All you have to do is change <code>stream()</code> to <code>parallelStream()</code>.</p>
+
+<h3>Map</h3>
+
+<p>As already mentioned maps don't support streams. Instead maps now support various new and useful methods for doing common tasks.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+
+<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+    <span class="n">map</span><span class="o">.</span><span class="na">putIfAbsent</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="s">"val"</span> <span class="o">+</span> <span class="n">i</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">id</span><span class="o">,</span> <span class="n">val</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">val</span><span class="o">));</span>
+</code></pre></div>
+<p>The above code should be self-explaining: <code>putIfAbsent</code> prevents us from writing additional if null checks; <code>forEach</code> accepts a consumer to perform operations for each value of the map.</p>
+
+<p>This example shows how to compute code on the map by utilizing functions:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">map</span><span class="o">.</span><span class="na">computeIfPresent</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="o">(</span><span class="n">num</span><span class="o">,</span> <span class="n">val</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">val</span> <span class="o">+</span> <span class="n">num</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>             <span class="c1">// val33</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">computeIfPresent</span><span class="o">(</span><span class="mi">9</span><span class="o">,</span> <span class="o">(</span><span class="n">num</span><span class="o">,</span> <span class="n">val</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="kc">null</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="mi">9</span><span class="o">);</span>     <span class="c1">// false</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">computeIfAbsent</span><span class="o">(</span><span class="mi">23</span><span class="o">,</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="s">"val"</span> <span class="o">+</span> <span class="n">num</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="mi">23</span><span class="o">);</span>    <span class="c1">// true</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">computeIfAbsent</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="s">"bam"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>             <span class="c1">// val33</span>
+</code></pre></div>
+<p>Next, we learn how to remove entries for a a given key, only if it's currently mapped to a given value:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">map</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="s">"val3"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>             <span class="c1">// val33</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="s">"val33"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>             <span class="c1">// null</span>
+</code></pre></div>
+<p>Another helpful method:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">map</span><span class="o">.</span><span class="na">getOrDefault</span><span class="o">(</span><span class="mi">42</span><span class="o">,</span> <span class="s">"not found"</span><span class="o">);</span>  <span class="c1">// not found</span>
+</code></pre></div>
+<p>Merging entries of a map is quite easy:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="mi">9</span><span class="o">,</span> <span class="s">"val9"</span><span class="o">,</span> <span class="o">(</span><span class="n">value</span><span class="o">,</span> <span class="n">newValue</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">value</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">newValue</span><span class="o">));</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">9</span><span class="o">);</span>             <span class="c1">// val9</span>
+
+<span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="mi">9</span><span class="o">,</span> <span class="s">"concat"</span><span class="o">,</span> <span class="o">(</span><span class="n">value</span><span class="o">,</span> <span class="n">newValue</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">value</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">newValue</span><span class="o">));</span>
+<span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">9</span><span class="o">);</span>             <span class="c1">// val9concat</span>
+</code></pre></div>
+<p>Merge either put the key/value into the map if no entry for the key 
+exists, or the merging function will be called to change the existing 
+value.</p>
+
+<p><em><strong>UPDATE</strong> - I'm currently working on a JavaScript 
+implementation of the Java 8 Streams API for the browser. If I've drawn 
+your interest check out <a href="https://github.com/winterbe/streamjs">Stream.js on GitHub</a>. Your Feedback is highly appreciated.</em></p>
+
+<h3>Date API</h3>
+
+<p>Java 8 contains a brand new date and time API under the package <code>java.time</code>. The new Date API is comparable with the <a href="http://www.joda.org/joda-time/">Joda-Time</a> library, however it's <a href="http://blog.joda.org/2009/11/why-jsr-310-isn-joda-time_4941.html">not the same</a>. The following examples cover the most important parts of this new API.</p>
+
+<h4>Clock</h4>
+
+<p>Clock provides access to the current date and time. Clocks are aware of a timezone and may be used instead of <code>System.currentTimeMillis()</code> to retrieve the current milliseconds. Such an instantaneous point on the time-line is also represented by the class <code>Instant</code>. Instants can be used to create legacy <code>java.util.Date</code> objects.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Clock</span> <span class="n">clock</span> <span class="o">=</span> <span class="n">Clock</span><span class="o">.</span><span class="na">systemDefaultZone</span><span class="o">();</span>
+<span class="kt">long</span> <span class="n">millis</span> <span class="o">=</span> <span class="n">clock</span><span class="o">.</span><span class="na">millis</span><span class="o">();</span>
+
+<span class="n">Instant</span> <span class="n">instant</span> <span class="o">=</span> <span class="n">clock</span><span class="o">.</span><span class="na">instant</span><span class="o">();</span>
+<span class="n">Date</span> <span class="n">legacyDate</span> <span class="o">=</span> <span class="n">Date</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">instant</span><span class="o">);</span>   <span class="c1">// legacy java.util.Date</span>
+</code></pre></div>
+<h4>Timezones</h4>
+
+<p>Timezones are represented by a <code>ZoneId</code>. They can easily 
+be accessed via static factory methods. Timezones define the offsets 
+which are important to convert between instants and local dates and 
+times.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">ZoneId</span><span class="o">.</span><span class="na">getAvailableZoneIds</span><span class="o">());</span>
+<span class="c1">// prints all available timezone ids</span>
+
+<span class="n">ZoneId</span> <span class="n">zone1</span> <span class="o">=</span> <span class="n">ZoneId</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"Europe/Berlin"</span><span class="o">);</span>
+<span class="n">ZoneId</span> <span class="n">zone2</span> <span class="o">=</span> <span class="n">ZoneId</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"Brazil/East"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">zone1</span><span class="o">.</span><span class="na">getRules</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">zone2</span><span class="o">.</span><span class="na">getRules</span><span class="o">());</span>
+
+<span class="c1">// ZoneRules[currentStandardOffset=+01:00]</span>
+<span class="c1">// ZoneRules[currentStandardOffset=-03:00]</span>
+</code></pre></div>
+<h4>LocalTime</h4>
+
+<p>LocalTime represents a time without a timezone, e.g. 10pm or 
+17:30:15. The following example creates two local times for the 
+timezones defined above. Then we compare both times and calculate the 
+difference in hours and minutes between both times.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalTime</span> <span class="n">now1</span> <span class="o">=</span> <span class="n">LocalTime</span><span class="o">.</span><span class="na">now</span><span class="o">(</span><span class="n">zone1</span><span class="o">);</span>
+<span class="n">LocalTime</span> <span class="n">now2</span> <span class="o">=</span> <span class="n">LocalTime</span><span class="o">.</span><span class="na">now</span><span class="o">(</span><span class="n">zone2</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">now1</span><span class="o">.</span><span class="na">isBefore</span><span class="o">(</span><span class="n">now2</span><span class="o">));</span>  <span class="c1">// false</span>
+
+<span class="kt">long</span> <span class="n">hoursBetween</span> <span class="o">=</span> <span class="n">ChronoUnit</span><span class="o">.</span><span class="na">HOURS</span><span class="o">.</span><span class="na">between</span><span class="o">(</span><span class="n">now1</span><span class="o">,</span> <span class="n">now2</span><span class="o">);</span>
+<span class="kt">long</span> <span class="n">minutesBetween</span> <span class="o">=</span> <span class="n">ChronoUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">.</span><span class="na">between</span><span class="o">(</span><span class="n">now1</span><span class="o">,</span> <span class="n">now2</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">hoursBetween</span><span class="o">);</span>       <span class="c1">// -3</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">minutesBetween</span><span class="o">);</span>     <span class="c1">// -239</span>
+</code></pre></div>
+<p>LocalTime comes with various factory method to simplify the creation of new instances, including parsing of time strings.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalTime</span> <span class="n">late</span> <span class="o">=</span> <span class="n">LocalTime</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="mi">23</span><span class="o">,</span> <span class="mi">59</span><span class="o">,</span> <span class="mi">59</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">late</span><span class="o">);</span>       <span class="c1">// 23:59:59</span>
+
+<span class="n">DateTimeFormatter</span> <span class="n">germanFormatter</span> <span class="o">=</span>
+    <span class="n">DateTimeFormatter</span>
+        <span class="o">.</span><span class="na">ofLocalizedTime</span><span class="o">(</span><span class="n">FormatStyle</span><span class="o">.</span><span class="na">SHORT</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">withLocale</span><span class="o">(</span><span class="n">Locale</span><span class="o">.</span><span class="na">GERMAN</span><span class="o">);</span>
+
+<span class="n">LocalTime</span> <span class="n">leetTime</span> <span class="o">=</span> <span class="n">LocalTime</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="s">"13:37"</span><span class="o">,</span> <span class="n">germanFormatter</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">leetTime</span><span class="o">);</span>   <span class="c1">// 13:37</span>
+</code></pre></div>
+<h4>LocalDate</h4>
+
+<p>LocalDate represents a distinct date, e.g. 2014-03-11. It's immutable
+ and works exactly analog to LocalTime. The sample demonstrates how to 
+calculate new dates by adding or substracting days, months or years. 
+Keep in mind that each manipulation returns a new instance.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalDate</span> <span class="n">today</span> <span class="o">=</span> <span class="n">LocalDate</span><span class="o">.</span><span class="na">now</span><span class="o">();</span>
+<span class="n">LocalDate</span> <span class="n">tomorrow</span> <span class="o">=</span> <span class="n">today</span><span class="o">.</span><span class="na">plus</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">ChronoUnit</span><span class="o">.</span><span class="na">DAYS</span><span class="o">);</span>
+<span class="n">LocalDate</span> <span class="n">yesterday</span> <span class="o">=</span> <span class="n">tomorrow</span><span class="o">.</span><span class="na">minusDays</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">LocalDate</span> <span class="n">independenceDay</span> <span class="o">=</span> <span class="n">LocalDate</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="mi">2014</span><span class="o">,</span> <span class="n">Month</span><span class="o">.</span><span class="na">JULY</span><span class="o">,</span> <span class="mi">4</span><span class="o">);</span>
+<span class="n">DayOfWeek</span> <span class="n">dayOfWeek</span> <span class="o">=</span> <span class="n">independenceDay</span><span class="o">.</span><span class="na">getDayOfWeek</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">dayOfWeek</span><span class="o">);</span>    <span class="c1">// FRIDAY</span>
+</code></pre></div>
+<p>Parsing a LocalDate from a string is just as simple as parsing a LocalTime:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DateTimeFormatter</span> <span class="n">germanFormatter</span> <span class="o">=</span>
+    <span class="n">DateTimeFormatter</span>
+        <span class="o">.</span><span class="na">ofLocalizedDate</span><span class="o">(</span><span class="n">FormatStyle</span><span class="o">.</span><span class="na">MEDIUM</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">withLocale</span><span class="o">(</span><span class="n">Locale</span><span class="o">.</span><span class="na">GERMAN</span><span class="o">);</span>
+
+<span class="n">LocalDate</span> <span class="n">xmas</span> <span class="o">=</span> <span class="n">LocalDate</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="s">"24.12.2014"</span><span class="o">,</span> <span class="n">germanFormatter</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">xmas</span><span class="o">);</span>   <span class="c1">// 2014-12-24</span>
+</code></pre></div>
+<h4>LocalDateTime</h4>
+
+<p>LocalDateTime represents a date-time. It combines date and time as seen in the above sections into one instance. <code>LocalDateTime</code>
+ is immutable and works similar to LocalTime and LocalDate. We can 
+utilize methods for retrieving certain fields from a date-time:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalDateTime</span> <span class="n">sylvester</span> <span class="o">=</span> <span class="n">LocalDateTime</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="mi">2014</span><span class="o">,</span> <span class="n">Month</span><span class="o">.</span><span class="na">DECEMBER</span><span class="o">,</span> <span class="mi">31</span><span class="o">,</span> <span class="mi">23</span><span class="o">,</span> <span class="mi">59</span><span class="o">,</span> <span class="mi">59</span><span class="o">);</span>
+
+<span class="n">DayOfWeek</span> <span class="n">dayOfWeek</span> <span class="o">=</span> <span class="n">sylvester</span><span class="o">.</span><span class="na">getDayOfWeek</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">dayOfWeek</span><span class="o">);</span>      <span class="c1">// WEDNESDAY</span>
+
+<span class="n">Month</span> <span class="n">month</span> <span class="o">=</span> <span class="n">sylvester</span><span class="o">.</span><span class="na">getMonth</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">month</span><span class="o">);</span>          <span class="c1">// DECEMBER</span>
+
+<span class="kt">long</span> <span class="n">minuteOfDay</span> <span class="o">=</span> <span class="n">sylvester</span><span class="o">.</span><span class="na">getLong</span><span class="o">(</span><span class="n">ChronoField</span><span class="o">.</span><span class="na">MINUTE_OF_DAY</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">minuteOfDay</span><span class="o">);</span>    <span class="c1">// 1439</span>
+</code></pre></div>
+<p>With the additional information of a timezone it can be converted to 
+an instant. Instants can easily be converted to legacy dates of type <code>java.util.Date</code>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Instant</span> <span class="n">instant</span> <span class="o">=</span> <span class="n">sylvester</span>
+        <span class="o">.</span><span class="na">atZone</span><span class="o">(</span><span class="n">ZoneId</span><span class="o">.</span><span class="na">systemDefault</span><span class="o">())</span>
+        <span class="o">.</span><span class="na">toInstant</span><span class="o">();</span>
+
+<span class="n">Date</span> <span class="n">legacyDate</span> <span class="o">=</span> <span class="n">Date</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">instant</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">legacyDate</span><span class="o">);</span>     <span class="c1">// Wed Dec 31 23:59:59 CET 2014</span>
+</code></pre></div>
+<p>Formatting date-times works just like formatting dates or times. 
+Instead of using pre-defined formats we can create formatters from 
+custom patterns.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DateTimeFormatter</span> <span class="n">formatter</span> <span class="o">=</span>
+    <span class="n">DateTimeFormatter</span>
+        <span class="o">.</span><span class="na">ofPattern</span><span class="o">(</span><span class="s">"MMM dd, yyyy - HH:mm"</span><span class="o">);</span>
+
+<span class="n">LocalDateTime</span> <span class="n">parsed</span> <span class="o">=</span> <span class="n">LocalDateTime</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="s">"Nov 03, 2014 - 07:13"</span><span class="o">,</span> <span class="n">formatter</span><span class="o">);</span>
+<span class="n">String</span> <span class="n">string</span> <span class="o">=</span> <span class="n">formatter</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">parsed</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">string</span><span class="o">);</span>     <span class="c1">// Nov 03, 2014 - 07:13</span>
+</code></pre></div>
+<p>Unlike <code>java.text.NumberFormat</code> the new <code>DateTimeFormatter</code> is immutable and <strong>thread-safe</strong>.</p>
+
+<p>For details on the pattern syntax read <a href="http://download.java.net/jdk8/docs/api/java/time/format/DateTimeFormatter.html">here</a>.</p>
+
+<h3>Annotations</h3>
+
+<p>Annotations in Java 8 are repeatable. Let's dive directly into an example to figure that out.</p>
+
+<p>First, we define a wrapper annotation which holds an array of the actual annotations:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@interface</span> <span class="n">Hints</span> <span class="o">{</span>
+    <span class="n">Hint</span><span class="o">[]</span> <span class="nf">value</span><span class="o">();</span>
+<span class="o">}</span>
+
+<span class="nd">@Repeatable</span><span class="o">(</span><span class="n">Hints</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+<span class="nd">@interface</span> <span class="n">Hint</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="nf">value</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Java 8 enables us to use multiple annotations of the same type by declaring the annotation <code>@Repeatable</code>.</p>
+
+<h5>Variant 1: Using the container annotation (old school)</h5>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Hints</span><span class="o">({</span><span class="nd">@Hint</span><span class="o">(</span><span class="s">"hint1"</span><span class="o">),</span> <span class="nd">@Hint</span><span class="o">(</span><span class="s">"hint2"</span><span class="o">)})</span>
+<span class="kd">class</span> <span class="nc">Person</span> <span class="o">{}</span>
+</code></pre></div>
+<h5>Variant 2: Using repeatable annotations (new school)</h5>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Hint</span><span class="o">(</span><span class="s">"hint1"</span><span class="o">)</span>
+<span class="nd">@Hint</span><span class="o">(</span><span class="s">"hint2"</span><span class="o">)</span>
+<span class="kd">class</span> <span class="nc">Person</span> <span class="o">{}</span>
+</code></pre></div>
+<p>Using variant 2 the java compiler implicitly sets up the <code>@Hints</code> annotation under the hood. That's important for reading annotation informations via reflection.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Hint</span> <span class="n">hint</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">Hint</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">hint</span><span class="o">);</span>                   <span class="c1">// null</span>
+
+<span class="n">Hints</span> <span class="n">hints1</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">Hints</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">hints1</span><span class="o">.</span><span class="na">value</span><span class="o">().</span><span class="na">length</span><span class="o">);</span>  <span class="c1">// 2</span>
+
+<span class="n">Hint</span><span class="o">[]</span> <span class="n">hints2</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getAnnotationsByType</span><span class="o">(</span><span class="n">Hint</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">hints2</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>          <span class="c1">// 2</span>
+</code></pre></div>
+<p>Although we never declared the <code>@Hints</code> annotation on the <code>Person</code> class, it's still readable via <code>getAnnotation(Hints.class)</code>. However, the more convenient method is <code>getAnnotationsByType</code> which grants direct access to all annotated <code>@Hint</code> annotations.</p>
+
+<p>Furthermore the usage of annotations in Java 8 is expanded to two new targets:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Target</span><span class="o">({</span><span class="n">ElementType</span><span class="o">.</span><span class="na">TYPE_PARAMETER</span><span class="o">,</span> <span class="n">ElementType</span><span class="o">.</span><span class="na">TYPE_USE</span><span class="o">})</span>
+<span class="nd">@interface</span> <span class="n">MyAnnotation</span> <span class="o">{}</span>
+</code></pre></div>
+<h3>That's it</h3>
+
+<p>My programming guide to Java 8 ends here. If you want to learn more 
+about all the new classes and features of the JDK 8 API, just read my <a href="http://winterbe.com/posts/2014/03/29/jdk8-api-explorer/">follow up article</a>. It helps you figuring out all the new classes and hidden gems of JDK 8, like <code>Arrays.parallelSort</code>, <code>StampedLock</code> and <code>CompletableFuture</code> - just to name a few.</p>
+
+<p>I recently published an in-depth <a href="http://winterbe.com/posts/2014/07/31/java8-stream-tutorial-examples/">Java 8 Stream Tutorial</a> and a <a href="http://winterbe.com/posts/2014/04/05/java8-nashorn-tutorial/">Java 8 Nashorn Tutorial</a>. The Nashorn Javascript Engine enables you to run javascript code natively on the JVM. You may also want to have a look at <a href="https://github.com/winterbe/streamjs">Stream.js</a> - a JavaScript implementation of the Java 8 Streams API.</p>
+
+<p>I hope this guide was helpful to you and you enjoyed reading it. The full source code of the tutorial samples is <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a>. Feel free to <a href="https://github.com/winterbe/java8-tutorial/fork">fork the repository</a> or send me your feedback via <a href="https://twitter.com/winterbe_">Twitter</a>.</p>
+
+<br><hr>
+<h1 class="page-title">Java 8 Stream Tutorial</h1>
+<div class="post">
+    <p>This example-driven tutorial gives an in-depth overview about Java 8 streams. When I first read about the <code>Stream</code> API, I was confused about the name since it sounds similar to <code>InputStream</code> and <code>OutputStream</code> from Java I/O. But Java 8 streams are a completely different thing. Streams are <a href="http://en.wikipedia.org/wiki/Monad_%28functional_programming%29">Monads</a>, thus playing a big part in bringing <em>functional programming</em> to Java:</p>
+
+<blockquote>
+<p>In functional programming, a monad is a structure that represents computations defined as sequences of steps. A type with a monad structure defines what it means to chain operations, or nest functions of that type together.</p>
+</blockquote>
+
+<p>This guide teaches you how to work with Java 8 streams and how to use the different kind of available stream operations. You'll learn about the processing order and how the ordering of stream operations affect runtime performance. The more powerful stream operations <code>reduce</code>, <code>collect</code> and <code>flatMap</code> are covered in detail. The tutorial ends with an in-depth look at parallel streams.</p>
+
+<p>If you're not yet familiar with Java 8 lambda expressions, functional interfaces and method references, you probably want to read my <a href="http://winterbe.com/posts/2014/03/16/java-8-tutorial/">Java 8 Tutorial</a> first before starting with this tutorial.</p>
+
+<p><em><strong>UPDATE</strong> - I'm currently working on a JavaScript implementation of the Java 8 Streams API for the browser. If I've drawn your interest check out <a href="https://github.com/winterbe/streamjs">Stream.js on GitHub</a>. Your Feedback is highly appreciated.</em></p>
+
+<h3>How streams work</h3>
+
+<p>A stream represents a sequence of elements and supports different kind of operations to perform computations upon those elements:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">myList</span> <span class="o">=</span>
+    <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"c2"</span><span class="o">,</span> <span class="s">"c1"</span><span class="o">);</span>
+
+<span class="n">myList</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"c"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">String</span><span class="o">::</span><span class="n">toUpperCase</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// C1</span>
+<span class="c1">// C2</span>
+</code></pre></div>
+<p>Stream operations are either intermediate or terminal. Intermediate operations return a stream so we can chain multiple intermediate operations without using semicolons. Terminal operations are either void or return a non-stream result. In the above example <code>filter</code>, <code>map</code> and <code>sorted</code> are intermediate operations whereas <code>forEach</code> is a terminal operation. For a full list of all available stream operations see the <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">Stream Javadoc</a>. Such a chain of stream operations as seen in the example above is also known as <em>operation pipeline</em>.</p>
+
+<p>Most stream operations accept some kind of lambda expression parameter, a functional interface specifying the exact behavior of the operation. Most of those operations must be both <em>non-interfering</em> and <em>stateless</em>. What does that mean?</p>
+
+<p>A function is <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#NonInterference">non-interfering</a> when it does not modify the underlying data source of the stream, e.g. in the above example no lambda expression does modify <code>myList</code> by adding or removing elements from the collection.</p>
+
+<p>A function is <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#Statelessness">stateless</a> when the execution of the operation is deterministic, e.g. in the above example no lambda expression depends on any mutable variables or states from the outer scope which might change during execution.</p>
+
+<h3>Different kind of streams</h3>
+
+<p>Streams can be created from various data sources, especially collections. Lists and Sets support new methods <code>stream()</code> and <code>parallelStream()</code> to either create a sequential or a parallel stream. Parallel streams are capable of operating on multiple threads and will be covered in a later section of this tutorial. We focus on sequential streams for now:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"a3"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">findFirst</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>  <span class="c1">// a1</span>
+</code></pre></div>
+<p>Calling the method <code>stream()</code> on a list of objects returns a regular object stream. But we don't have to create collections in order to work with streams as we see in the next code sample:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"a3"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">findFirst</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>  <span class="c1">// a1</span>
+</code></pre></div>
+<p>Just use <code>Stream.of()</code> to create a stream from a bunch of object references.</p>
+
+<p>Besides regular object streams Java 8 ships with special kinds of streams for working with the primitive data types <code>int</code>, <code>long</code> and <code>double</code>. As you might have guessed it's <code>IntStream</code>, <code>LongStream</code> and <code>DoubleStream</code>.</p>
+
+<p>IntStreams can replace the regular for-loop utilizing <code>IntStream.range()</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// 1</span>
+<span class="c1">// 2</span>
+<span class="c1">// 3</span>
+</code></pre></div>
+<p>All those primitive streams work just like regular object streams with the following differences: Primitive streams use specialized lambda expressions, e.g. <code>IntFunction</code> instead of <code>Function</code> or <code>IntPredicate</code> instead of <code>Predicate</code>. And primitive streams support the additional terminal aggregate operations <code>sum()</code> and <code>average()</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Arrays</span><span class="o">.</span><span class="na">stream</span><span class="o">(</span><span class="k">new</span> <span class="kt">int</span><span class="o">[]</span> <span class="o">{</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">n</span> <span class="o">-&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">average</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>  <span class="c1">// 5.0</span>
+</code></pre></div>
+<p>Sometimes it's useful to transform a regular object stream to a primitive stream or vice versa. For that purpose object streams support the special mapping operations <code>mapToInt()</code>, <code>mapToLong()</code> and <code>mapToDouble</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"a3"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">substring</span><span class="o">(</span><span class="mi">1</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">mapToInt</span><span class="o">(</span><span class="n">Integer</span><span class="o">::</span><span class="n">parseInt</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">max</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>  <span class="c1">// 3</span>
+</code></pre></div>
+<p>Primitive streams can be transformed to object streams via <code>mapToObj()</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">mapToObj</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="s">"a"</span> <span class="o">+</span> <span class="n">i</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// a1</span>
+<span class="c1">// a2</span>
+<span class="c1">// a3</span>
+</code></pre></div>
+<p>Here's a combined example: the stream of doubles is first mapped to an int stream and than mapped to an object stream of strings:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="mf">1.0</span><span class="o">,</span> <span class="mf">2.0</span><span class="o">,</span> <span class="mf">3.0</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">mapToInt</span><span class="o">(</span><span class="n">Double</span><span class="o">::</span><span class="n">intValue</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">mapToObj</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="s">"a"</span> <span class="o">+</span> <span class="n">i</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="c1">// a1</span>
+<span class="c1">// a2</span>
+<span class="c1">// a3</span>
+</code></pre></div>
+<h3>Processing Order</h3>
+
+<p>Now that we've learned how to create and work with different kinds of streams, let's dive deeper into how stream operations are processed under the hood.</p>
+
+<p>An important characteristic of intermediate operations is laziness. Look at this sample where a terminal operation is missing:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">});</span>
+</code></pre></div>
+<p>When executing this code snippet, nothing is printed to the console. That is because intermediate operations will only be executed when a terminal operation is present.</p>
+
+<p>Let's extend the above example by the terminal operation <code>forEach</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"forEach: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">));</span>
+</code></pre></div>
+<p>Executing this code snippet results in the desired output on the console:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>filter:  d2
+forEach: d2
+filter:  a2
+forEach: a2
+filter:  b1
+forEach: b1
+filter:  b3
+forEach: b3
+filter:  c
+forEach: c
+</code></pre></div>
+<p>The order of the result might be surprising. A naive approach would be to execute the operations horizontally one after another on all elements of the stream. But instead each element moves along the chain vertically. The first string "d2" passes <code>filter</code> then <code>forEach</code>, only then the second string "a2" is processed.</p>
+
+<p>This behavior can reduce the actual number of operations performed on each element, as we see in the next example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"map: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"anyMatch: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"A"</span><span class="o">);</span>
+    <span class="o">});</span>
+
+<span class="c1">// map:      d2</span>
+<span class="c1">// anyMatch: D2</span>
+<span class="c1">// map:      a2</span>
+<span class="c1">// anyMatch: A2</span>
+</code></pre></div>
+<p>The operation <code>anyMatch</code> returns <code>true</code> as soon as the predicate applies to the given input element. This is true for the second element passed "A2". Due to the vertical execution of the stream chain, <code>map</code> has only to be executed twice in this case. So instead of mapping all elements of the stream, <code>map</code> will be called as few as possible.</p>
+
+<h4>Why order matters</h4>
+
+<p>The next example consists of two intermediate operations <code>map</code> and <code>filter</code> and the terminal operation <code>forEach</code>. Let's once again inspect how those operations are being executed:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"map: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"A"</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"forEach: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">));</span>
+
+<span class="c1">// map:     d2</span>
+<span class="c1">// filter:  D2</span>
+<span class="c1">// map:     a2</span>
+<span class="c1">// filter:  A2</span>
+<span class="c1">// forEach: A2</span>
+<span class="c1">// map:     b1</span>
+<span class="c1">// filter:  B1</span>
+<span class="c1">// map:     b3</span>
+<span class="c1">// filter:  B3</span>
+<span class="c1">// map:     c</span>
+<span class="c1">// filter:  C</span>
+</code></pre></div>
+<p>As you might have guessed both <code>map</code> and <code>filter</code> are called five times for every string in the underlying collection whereas <code>forEach</code> is only called once.</p>
+
+<p>We can greatly reduce the actual number of executions if we change the order of the operations, moving <code>filter</code> to the beginning of the chain:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"map: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"forEach: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">));</span>
+
+<span class="c1">// filter:  d2</span>
+<span class="c1">// filter:  a2</span>
+<span class="c1">// map:     a2</span>
+<span class="c1">// forEach: A2</span>
+<span class="c1">// filter:  b1</span>
+<span class="c1">// filter:  b3</span>
+<span class="c1">// filter:  c</span>
+</code></pre></div>
+<p>Now, <code>map</code> is only called once so the operation pipeline performs much faster for larger numbers of input elements. Keep that in mind when composing complex method chains.</p>
+
+<p>Let's extend the above example by an additional operation, <code>sorted</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">((</span><span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"sort: %s; %s\n"</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s1</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">s2</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"map: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"forEach: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">));</span>
+</code></pre></div>
+<p>Sorting is a special kind of intermediate operation. It's a so called <em>stateful operation</em> since in order to sort a collection of elements you have to maintain state during ordering.</p>
+
+<p>Executing this example results in the following console output:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>sort:    a2; d2
+sort:    b1; a2
+sort:    b1; d2
+sort:    b1; a2
+sort:    b3; b1
+sort:    b3; d2
+sort:    c; b3
+sort:    c; d2
+filter:  a2
+map:     a2
+forEach: A2
+filter:  b1
+filter:  b3
+filter:  c
+filter:  d2
+</code></pre></div>
+<p>First, the sort operation is executed on the entire input collection. In other words <code>sorted</code> is executed horizontally. So in this case <code>sorted</code> is called eight times for multiple combinations on every element in the input collection.</p>
+
+<p>Once again we can optimize the performance by reordering the chain:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"filter: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">((</span><span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"sort: %s; %s\n"</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s1</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">s2</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"map: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"forEach: "</span> <span class="o">+</span> <span class="n">s</span><span class="o">));</span>
+
+<span class="c1">// filter:  d2</span>
+<span class="c1">// filter:  a2</span>
+<span class="c1">// filter:  b1</span>
+<span class="c1">// filter:  b3</span>
+<span class="c1">// filter:  c</span>
+<span class="c1">// map:     a2</span>
+<span class="c1">// forEach: A2</span>
+</code></pre></div>
+<p>In this example <code>sorted</code> is never been called because <code>filter</code> reduces the input collection to just one element. So the performance is greatly increased for larger input collections.</p>
+
+<h3>Reusing Streams</h3>
+
+<p>Java 8 streams cannot be reused. As soon as you call any terminal operation the stream is closed:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">stream</span> <span class="o">=</span>
+    <span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">));</span>
+
+<span class="n">stream</span><span class="o">.</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="kc">true</span><span class="o">);</span>    <span class="c1">// ok</span>
+<span class="n">stream</span><span class="o">.</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="kc">true</span><span class="o">);</span>   <span class="c1">// exception</span>
+</code></pre></div>
+<p>Calling <code>noneMatch</code> after <code>anyMatch</code> on the same stream results in the following exception:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>java.lang.IllegalStateException: stream has already been operated upon or closed
+    at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:229)
+    at java.util.stream.ReferencePipeline.noneMatch(ReferencePipeline.java:459)
+    at com.winterbe.java8.Streams5.test7(Streams5.java:38)
+    at com.winterbe.java8.Streams5.main(Streams5.java:28)
+</code></pre></div>
+<p>To overcome this limitation we have to to create a new stream chain for every terminal operation we want to execute, e.g. we could create a stream supplier to construct a new stream with all intermediate operations already set up:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Supplier</span><span class="o">&lt;</span><span class="n">Stream</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">streamSupplier</span> <span class="o">=</span>
+    <span class="o">()</span> <span class="o">-&gt;</span> <span class="n">Stream</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"d2"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"b3"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"a"</span><span class="o">));</span>
+
+<span class="n">streamSupplier</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="kc">true</span><span class="o">);</span>   <span class="c1">// ok</span>
+<span class="n">streamSupplier</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="kc">true</span><span class="o">);</span>  <span class="c1">// ok</span>
+</code></pre></div>
+<p>Each call to <code>get()</code> constructs a new stream on which we are save to call the desired terminal operation.</p>
+
+<h3>Advanced Operations</h3>
+
+<p>Streams support plenty of different operations. We've already learned about the most important operations like <code>filter</code> or <code>map</code>. I leave it up to you to discover all other available operations (see <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">Stream Javadoc</a>). Instead let's dive deeper into the more complex operations <code>collect</code>, <code>flatMap</code> and <code>reduce</code>.</p>
+
+<p>Most code samples from this section use the following list of persons for demonstration purposes:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">class</span> <span class="nc">Person</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+    <span class="kt">int</span> <span class="n">age</span><span class="o">;</span>
+
+    <span class="n">Person</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="kt">int</span> <span class="n">age</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">age</span> <span class="o">=</span> <span class="n">age</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">persons</span> <span class="o">=</span>
+    <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+        <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Max"</span><span class="o">,</span> <span class="mi">18</span><span class="o">),</span>
+        <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Peter"</span><span class="o">,</span> <span class="mi">23</span><span class="o">),</span>
+        <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Pamela"</span><span class="o">,</span> <span class="mi">23</span><span class="o">),</span>
+        <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"David"</span><span class="o">,</span> <span class="mi">12</span><span class="o">));</span>
+</code></pre></div>
+<h4>Collect</h4>
+
+<p>Collect is an extremely useful terminal operation to transform the elements of the stream into a different kind of result, e.g. a <code>List</code>, <code>Set</code> or <code>Map</code>. Collect accepts a <code>Collector</code> which consists of four different operations: a <em>supplier</em>, an <em>accumulator</em>, a <em>combiner</em> and a <em>finisher</em>. This sounds super complicated at first, but the good part is Java 8 supports various built-in collectors via the <code>Collectors</code> class. So for the most common operations you don't have to implement a collector yourself.</p>
+
+<p>Let's start with a very common usecase:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">List</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">filtered</span> <span class="o">=</span>
+    <span class="n">persons</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">name</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"P"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">toList</span><span class="o">());</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">filtered</span><span class="o">);</span>    <span class="c1">// [Peter, Pamela]</span>
+</code></pre></div>
+<p>As you can see it's very simple to construct a list from the elements of a stream. Need a set instead of list - just use <code>Collectors.toSet()</code>.</p>
+
+<p>The next example groups all persons by age:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;&gt;</span> <span class="n">personsByAge</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">groupingBy</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">));</span>
+
+<span class="n">personsByAge</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">age</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"age %s: %s\n"</span><span class="o">,</span> <span class="n">age</span><span class="o">,</span> <span class="n">p</span><span class="o">));</span>
+
+<span class="c1">// age 18: [Max]</span>
+<span class="c1">// age 23: [Peter, Pamela]</span>
+<span class="c1">// age 12: [David]</span>
+</code></pre></div>
+<p>Collectors are extremely versatile. You can also create aggregations on the elements of the stream, e.g. determining the average age of all persons:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Double</span> <span class="n">averageAge</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">averagingInt</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">averageAge</span><span class="o">);</span>     <span class="c1">// 19.0</span>
+</code></pre></div>
+<p>If you're interested in more comprehensive statistics, the summarizing collectors return a special built-in summary statistics object. So we can simply determine <em>min</em>, <em>max</em> and arithmetic <em>average</em> age of the persons as well as the <em>sum</em> and <em>count</em>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">IntSummaryStatistics</span> <span class="n">ageSummary</span> <span class="o">=</span>
+    <span class="n">persons</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summarizingInt</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">ageSummary</span><span class="o">);</span>
+<span class="c1">// IntSummaryStatistics{count=4, sum=76, min=12, average=19.000000, max=23}</span>
+</code></pre></div>
+<p>The next example joins all persons into a single string:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">phrase</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span> <span class="o">&gt;=</span> <span class="mi">18</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">name</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">joining</span><span class="o">(</span><span class="s">" and "</span><span class="o">,</span> <span class="s">"In Germany "</span><span class="o">,</span> <span class="s">" are of legal age."</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">phrase</span><span class="o">);</span>
+<span class="c1">// In Germany Max and Peter and Pamela are of legal age.</span>
+</code></pre></div>
+<p>The join collector accepts a delimiter as well as an optional prefix and suffix.</p>
+
+<p>In order to transform the stream elements into a map, we have to specify how both the keys and the values should be mapped. Keep in mind that the mapped keys must be unique, otherwise an <code>IllegalStateException</code> is thrown. You can optionally pass a merge function as an additional parameter to bypass the exception:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">toMap</span><span class="o">(</span>
+        <span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">,</span>
+        <span class="n">p</span> <span class="o">-&gt;</span> <span class="n">p</span><span class="o">.</span><span class="na">name</span><span class="o">,</span>
+        <span class="o">(</span><span class="n">name1</span><span class="o">,</span> <span class="n">name2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">name1</span> <span class="o">+</span> <span class="s">";"</span> <span class="o">+</span> <span class="n">name2</span><span class="o">));</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">);</span>
+<span class="c1">// {18=Max, 23=Peter;Pamela, 12=David}</span>
+</code></pre></div>
+<p>Now that we know some of the most powerful built-in collectors, let's try to build our own special collector. We want to transform all persons of the stream into a single string consisting of all names in upper letters separated by the <code>|</code> pipe character. In order to achieve this we create a new collector via <code>Collector.of()</code>. We have to pass the four ingredients of a collector: a <em>supplier</em>, an <em>accumulator</em>, a <em>combiner</em> and a <em>finisher</em>.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Collector</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">,</span> <span class="n">StringJoiner</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">personNameCollector</span> <span class="o">=</span>
+    <span class="n">Collector</span><span class="o">.</span><span class="na">of</span><span class="o">(</span>
+        <span class="o">()</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">StringJoiner</span><span class="o">(</span><span class="s">" | "</span><span class="o">),</span>          <span class="c1">// supplier</span>
+        <span class="o">(</span><span class="n">j</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">j</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">name</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">()),</span>  <span class="c1">// accumulator</span>
+        <span class="o">(</span><span class="n">j1</span><span class="o">,</span> <span class="n">j2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">j1</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="n">j2</span><span class="o">),</span>               <span class="c1">// combiner</span>
+        <span class="n">StringJoiner</span><span class="o">::</span><span class="n">toString</span><span class="o">);</span>                <span class="c1">// finisher</span>
+
+<span class="n">String</span> <span class="n">names</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">personNameCollector</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">names</span><span class="o">);</span>  <span class="c1">// MAX | PETER | PAMELA | DAVID</span>
+</code></pre></div>
+<p>Since strings in Java are immutable, we need a helper class like <code>StringJoiner</code> to let the collector construct our string. The supplier initially constructs such a StringJoiner with the appropriate delimiter. The accumulator is used to add each persons upper-cased name to the StringJoiner. The combiner knows how to merge two StringJoiners into one. In the last step the finisher constructs the desired String from the StringJoiner.</p>
+
+<h4>FlatMap</h4>
+
+<p>We've already learned how to transform the objects of a stream into another type of objects by utilizing the <code>map</code> operation. Map is kinda limited because every object can only be mapped to exactly one other object. But what if we want to transform one object into multiple others or none at all? This is where <code>flatMap</code> comes to the rescue.</p>
+
+<p>FlatMap transforms each element of the stream into a stream of other objects. So each object will be transformed into zero, one or multiple other objects backed by streams. The contents of those streams will then be placed into the returned stream of the <code>flatMap</code> operation.</p>
+
+<p>Before we see <code>flatMap</code> in action we need an appropriate type hierarchy:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">class</span> <span class="nc">Foo</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span> <span class="n">bars</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+
+    <span class="n">Foo</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">Bar</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+
+    <span class="n">Bar</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Next, we utilize our knowledge about streams to instantiate a couple of objects:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">List</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span> <span class="n">foos</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+
+<span class="c1">// create foos</span>
+<span class="n">IntStream</span>
+    <span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">foos</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Foo</span><span class="o">(</span><span class="s">"Foo"</span> <span class="o">+</span> <span class="n">i</span><span class="o">)));</span>
+
+<span class="c1">// create bars</span>
+<span class="n">foos</span><span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">f</span> <span class="o">-&gt;</span>
+    <span class="n">IntStream</span>
+        <span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">f</span><span class="o">.</span><span class="na">bars</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Bar</span><span class="o">(</span><span class="s">"Bar"</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">" &lt;- "</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="na">name</span><span class="o">))));</span>
+</code></pre></div>
+<p>Now we have a list of three foos each consisting of three bars.</p>
+
+<p>FlatMap accepts a function which has to return a stream of objects. So in order to resolve the bar objects of each foo, we just pass the appropriate function:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">foos</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">f</span> <span class="o">-&gt;</span> <span class="n">f</span><span class="o">.</span><span class="na">bars</span><span class="o">.</span><span class="na">stream</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">b</span><span class="o">.</span><span class="na">name</span><span class="o">));</span>
+
+<span class="c1">// Bar1 &lt;- Foo1</span>
+<span class="c1">// Bar2 &lt;- Foo1</span>
+<span class="c1">// Bar3 &lt;- Foo1</span>
+<span class="c1">// Bar1 &lt;- Foo2</span>
+<span class="c1">// Bar2 &lt;- Foo2</span>
+<span class="c1">// Bar3 &lt;- Foo2</span>
+<span class="c1">// Bar1 &lt;- Foo3</span>
+<span class="c1">// Bar2 &lt;- Foo3</span>
+<span class="c1">// Bar3 &lt;- Foo3</span>
+</code></pre></div>
+<p>As you can see, we've successfully transformed the stream of three foo objects into a stream of nine bar objects.</p>
+
+<p>Finally, the above code example can be simplified into a single pipeline of stream operations:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">mapToObj</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Foo</span><span class="o">(</span><span class="s">"Foo"</span> <span class="o">+</span> <span class="n">i</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">peek</span><span class="o">(</span><span class="n">f</span> <span class="o">-&gt;</span> <span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">4</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">mapToObj</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Bar</span><span class="o">(</span><span class="s">"Bar"</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">" &lt;- "</span> <span class="n">f</span><span class="o">.</span><span class="na">name</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">f</span><span class="o">.</span><span class="na">bars</span><span class="o">::</span><span class="n">add</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">f</span> <span class="o">-&gt;</span> <span class="n">f</span><span class="o">.</span><span class="na">bars</span><span class="o">.</span><span class="na">stream</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">b</span><span class="o">.</span><span class="na">name</span><span class="o">));</span>
+</code></pre></div>
+<p>FlatMap is also available for the <code>Optional</code> class introduced in Java 8. Optionals <code>flatMap</code> operation returns an optional object of another type. So it can be utilized to prevent nasty <code>null</code> checks.</p>
+
+<p>Think of a highly hierarchical structure like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">class</span> <span class="nc">Outer</span> <span class="o">{</span>
+    <span class="n">Nested</span> <span class="n">nested</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">Nested</span> <span class="o">{</span>
+    <span class="n">Inner</span> <span class="n">inner</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">Inner</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">foo</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>In order to resolve the inner string <code>foo</code> of an outer instance you have to add multiple null checks to prevent possible NullPointerExceptions:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Outer</span> <span class="n">outer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Outer</span><span class="o">();</span>
+<span class="k">if</span> <span class="o">(</span><span class="n">outer</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">outer</span><span class="o">.</span><span class="na">nested</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">outer</span><span class="o">.</span><span class="na">nested</span><span class="o">.</span><span class="na">inner</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">outer</span><span class="o">.</span><span class="na">nested</span><span class="o">.</span><span class="na">inner</span><span class="o">.</span><span class="na">foo</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The same behavior can be obtained by utilizing optionals <code>flatMap</code> operation:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Optional</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="k">new</span> <span class="n">Outer</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">o</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="o">.</span><span class="na">ofNullable</span><span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">nested</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">n</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="o">.</span><span class="na">ofNullable</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">inner</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="o">.</span><span class="na">ofNullable</span><span class="o">(</span><span class="n">i</span><span class="o">.</span><span class="na">foo</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div>
+<p>Each call to <code>flatMap</code> returns an <code>Optional</code> wrapping the desired object if present or <code>null</code> if absent.</p>
+
+<h4>Reduce</h4>
+
+<p>The reduction operation combines all elements of the stream into a single result. Java 8 supports three different kind of <code>reduce</code> methods. The first one reduces a stream of elements to exactly one element of the stream. Let's see how we can use this method to determine the oldest person:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">reduce</span><span class="o">((</span><span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">p1</span><span class="o">.</span><span class="na">age</span> <span class="o">&gt;</span> <span class="n">p2</span><span class="o">.</span><span class="na">age</span> <span class="o">?</span> <span class="n">p1</span> <span class="o">:</span> <span class="n">p2</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">ifPresent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>    <span class="c1">// Pamela</span>
+</code></pre></div>
+<p>The <code>reduce</code> method accepts a <code>BinaryOperator</code> accumulator function. That's actually a <code>BiFunction</code> where both operands share the same type, in that case <code>Person</code>. BiFunctions are like <code>Function</code> but accept two arguments. The example function compares both persons ages in order to return the person with the maximum age.</p>
+
+<p>The second <code>reduce</code> method accepts both an identity value and a <code>BinaryOperator</code> accumulator. This method can be utilized to construct a new Person with the aggregated names and ages from all other persons in the stream:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Person</span> <span class="n">result</span> <span class="o">=</span>
+    <span class="n">persons</span>
+        <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">""</span><span class="o">,</span> <span class="mi">0</span><span class="o">),</span> <span class="o">(</span><span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">p1</span><span class="o">.</span><span class="na">age</span> <span class="o">+=</span> <span class="n">p2</span><span class="o">.</span><span class="na">age</span><span class="o">;</span>
+            <span class="n">p1</span><span class="o">.</span><span class="na">name</span> <span class="o">+=</span> <span class="n">p2</span><span class="o">.</span><span class="na">name</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">p1</span><span class="o">;</span>
+        <span class="o">});</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"name=%s; age=%s"</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">name</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">age</span><span class="o">);</span>
+<span class="c1">// name=MaxPeterPamelaDavid; age=76</span>
+</code></pre></div>
+<p>The third <code>reduce</code> method accepts three parameters: an identity value, a <code>BiFunction</code> accumulator and a combiner function of type <code>BinaryOperator</code>. Since the identity values type is not restricted to the <code>Person</code> type, we can utilize this reduction to determine the sum of ages from all persons:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Integer</span> <span class="n">ageSum</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="o">(</span><span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">sum</span> <span class="o">+=</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">,</span> <span class="o">(</span><span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">sum1</span> <span class="o">+</span> <span class="n">sum2</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">ageSum</span><span class="o">);</span>  <span class="c1">// 76</span>
+</code></pre></div>
+<p>As you can see the result is <em>76</em>, but what's happening exactly under the hood? Let's extend the above code by some debug output:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Integer</span> <span class="n">ageSum</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span>
+        <span class="o">(</span><span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"accumulator: sum=%s; person=%s\n"</span><span class="o">,</span> <span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">sum</span> <span class="o">+=</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">;</span>
+        <span class="o">},</span>
+        <span class="o">(</span><span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"combiner: sum1=%s; sum2=%s\n"</span><span class="o">,</span> <span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">sum1</span> <span class="o">+</span> <span class="n">sum2</span><span class="o">;</span>
+        <span class="o">});</span>
+
+<span class="c1">// accumulator: sum=0; person=Max</span>
+<span class="c1">// accumulator: sum=18; person=Peter</span>
+<span class="c1">// accumulator: sum=41; person=Pamela</span>
+<span class="c1">// accumulator: sum=64; person=David</span>
+</code></pre></div>
+<p>As you can see the accumulator function does all the work. It first get called with the initial identity value <em>0</em> and the first person <em>Max</em>. In the next three steps <code>sum</code> continually increases by the age of the last steps person up to a total age of <em>76</em>.</p>
+
+<p>Wait wat? The combiner never gets called? Executing the same stream in parallel will lift the secret:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Integer</span> <span class="n">ageSum</span> <span class="o">=</span> <span class="n">persons</span>
+    <span class="o">.</span><span class="na">parallelStream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span>
+        <span class="o">(</span><span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"accumulator: sum=%s; person=%s\n"</span><span class="o">,</span> <span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">sum</span> <span class="o">+=</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">;</span>
+        <span class="o">},</span>
+        <span class="o">(</span><span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"combiner: sum1=%s; sum2=%s\n"</span><span class="o">,</span> <span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">sum1</span> <span class="o">+</span> <span class="n">sum2</span><span class="o">;</span>
+        <span class="o">});</span>
+
+<span class="c1">// accumulator: sum=0; person=Pamela</span>
+<span class="c1">// accumulator: sum=0; person=David</span>
+<span class="c1">// accumulator: sum=0; person=Max</span>
+<span class="c1">// accumulator: sum=0; person=Peter</span>
+<span class="c1">// combiner: sum1=18; sum2=23</span>
+<span class="c1">// combiner: sum1=23; sum2=12</span>
+<span class="c1">// combiner: sum1=41; sum2=35</span>
+</code></pre></div>
+<p>Executing this stream in parallel results in an entirely different execution behavior. Now the combiner is actually called. Since the accumulator is called in parallel, the combiner is needed to sum up the separate accumulated values.</p>
+
+<p>Let's dive deeper into parallel streams in the next chapter.</p>
+
+<h3>Parallel Streams</h3>
+
+<p>Streams can be executed in parallel to increase runtime performance on large amount of input elements. Parallel streams use a common <code>ForkJoinPool</code> available via the static <code>ForkJoinPool.commonPool()</code> method. The size of the underlying thread-pool uses up to five threads - depending on the amount of available physical CPU cores:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ForkJoinPool</span> <span class="n">commonPool</span> <span class="o">=</span> <span class="n">ForkJoinPool</span><span class="o">.</span><span class="na">commonPool</span><span class="o">();</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">commonPool</span><span class="o">.</span><span class="na">getParallelism</span><span class="o">());</span>    <span class="c1">// 3</span>
+</code></pre></div>
+<p>On my machine the common pool is initialized with a parallelism of 3 per default. This value can be decreased or increased by setting the following JVM parameter:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>-Djava.util.concurrent.ForkJoinPool.common.parallelism=5
+</code></pre></div>
+<p>Collections support the method <code>parallelStream()</code> to create a parallel stream of elements. Alternatively you can call the intermediate method <code>parallel()</code> on a given stream to convert a sequential stream to a parallel counterpart.</p>
+
+<p>In order to understate the parallel execution behavior of a parallel stream the next example prints information about the current thread to <code>sout</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"c2"</span><span class="o">,</span> <span class="s">"c1"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">parallelStream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"filter: %s [%s]\n"</span><span class="o">,</span>
+            <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"map: %s [%s]\n"</span><span class="o">,</span>
+            <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"forEach: %s [%s]\n"</span><span class="o">,</span>
+        <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">()));</span>
+</code></pre></div>
+<p>By investigating the debug output we should get a better understanding which threads are actually used to execute the stream operations:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>filter:  b1 [main]
+filter:  a2 [ForkJoinPool.commonPool-worker-1]
+map:     a2 [ForkJoinPool.commonPool-worker-1]
+filter:  c2 [ForkJoinPool.commonPool-worker-3]
+map:     c2 [ForkJoinPool.commonPool-worker-3]
+filter:  c1 [ForkJoinPool.commonPool-worker-2]
+map:     c1 [ForkJoinPool.commonPool-worker-2]
+forEach: C2 [ForkJoinPool.commonPool-worker-3]
+forEach: A2 [ForkJoinPool.commonPool-worker-1]
+map:     b1 [main]
+forEach: B1 [main]
+filter:  a1 [ForkJoinPool.commonPool-worker-3]
+map:     a1 [ForkJoinPool.commonPool-worker-3]
+forEach: A1 [ForkJoinPool.commonPool-worker-3]
+forEach: C1 [ForkJoinPool.commonPool-worker-2]
+</code></pre></div>
+<p>As you can see the parallel stream utilizes all available threads from the common <code>ForkJoinPool</code> for executing the stream operations. The output may differ in consecutive runs because the behavior which particular thread is actually used is non-deterministic.</p>
+
+<p>Let's extend the example by an additional stream operation, <code>sort</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"a1"</span><span class="o">,</span> <span class="s">"a2"</span><span class="o">,</span> <span class="s">"b1"</span><span class="o">,</span> <span class="s">"c2"</span><span class="o">,</span> <span class="s">"c1"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">parallelStream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"filter: %s [%s]\n"</span><span class="o">,</span>
+            <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"map: %s [%s]\n"</span><span class="o">,</span>
+            <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="na">toUpperCase</span><span class="o">();</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">sorted</span><span class="o">((</span><span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"sort: %s &lt;&gt; %s [%s]\n"</span><span class="o">,</span>
+            <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="n">s1</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">s2</span><span class="o">);</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"forEach: %s [%s]\n"</span><span class="o">,</span>
+        <span class="n">s</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">()));</span>
+</code></pre></div>
+<p>The result may look strange at first:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>filter:  c2 [ForkJoinPool.commonPool-worker-3]
+filter:  c1 [ForkJoinPool.commonPool-worker-2]
+map:     c1 [ForkJoinPool.commonPool-worker-2]
+filter:  a2 [ForkJoinPool.commonPool-worker-1]
+map:     a2 [ForkJoinPool.commonPool-worker-1]
+filter:  b1 [main]
+map:     b1 [main]
+filter:  a1 [ForkJoinPool.commonPool-worker-2]
+map:     a1 [ForkJoinPool.commonPool-worker-2]
+map:     c2 [ForkJoinPool.commonPool-worker-3]
+sort:    A2 &lt;&gt; A1 [main]
+sort:    B1 &lt;&gt; A2 [main]
+sort:    C2 &lt;&gt; B1 [main]
+sort:    C1 &lt;&gt; C2 [main]
+sort:    C1 &lt;&gt; B1 [main]
+sort:    C1 &lt;&gt; C2 [main]
+forEach: A1 [ForkJoinPool.commonPool-worker-1]
+forEach: C2 [ForkJoinPool.commonPool-worker-3]
+forEach: B1 [main]
+forEach: A2 [ForkJoinPool.commonPool-worker-2]
+forEach: C1 [ForkJoinPool.commonPool-worker-1]
+</code></pre></div>
+<p>It seems that <code>sort</code> is executed sequentially on the main thread only. Actually, <code>sort</code> on a parallel stream uses the new Java 8 method <code>Arrays.parallelSort()</code> under the hood. As stated in <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Arrays.html#parallelSort-T:A-">Javadoc</a> this method decides on the length of the array if sorting will be performed sequentially or in parallel:</p>
+
+<blockquote>
+<p>If the length of the specified array is less than the minimum granularity, then it is sorted using the appropriate Arrays.sort method.</p>
+</blockquote>
+
+<p>Coming back to the <code>reduce</code> example from the last section. We already found out that the combiner function is only called in parallel but not in sequential streams. Let's see which threads are actually involved:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">List</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span> <span class="n">persons</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+    <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Max"</span><span class="o">,</span> <span class="mi">18</span><span class="o">),</span>
+    <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Peter"</span><span class="o">,</span> <span class="mi">23</span><span class="o">),</span>
+    <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"Pamela"</span><span class="o">,</span> <span class="mi">23</span><span class="o">),</span>
+    <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s">"David"</span><span class="o">,</span> <span class="mi">12</span><span class="o">));</span>
+
+<span class="n">persons</span>
+    <span class="o">.</span><span class="na">parallelStream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span>
+        <span class="o">(</span><span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"accumulator: sum=%s; person=%s [%s]\n"</span><span class="o">,</span>
+                <span class="n">sum</span><span class="o">,</span> <span class="n">p</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+            <span class="k">return</span> <span class="n">sum</span> <span class="o">+=</span> <span class="n">p</span><span class="o">.</span><span class="na">age</span><span class="o">;</span>
+        <span class="o">},</span>
+        <span class="o">(</span><span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"combiner: sum1=%s; sum2=%s [%s]\n"</span><span class="o">,</span>
+                <span class="n">sum1</span><span class="o">,</span> <span class="n">sum2</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+            <span class="k">return</span> <span class="n">sum1</span> <span class="o">+</span> <span class="n">sum2</span><span class="o">;</span>
+        <span class="o">});</span>
+</code></pre></div>
+<p>The console output reveals that both the <em>accumulator</em> and the <em>combiner</em> functions are executed in parallel on all available threads:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>accumulator: sum=0; person=Pamela; [main]
+accumulator: sum=0; person=Max;    [ForkJoinPool.commonPool-worker-3]
+accumulator: sum=0; person=David;  [ForkJoinPool.commonPool-worker-2]
+accumulator: sum=0; person=Peter;  [ForkJoinPool.commonPool-worker-1]
+combiner:    sum1=18; sum2=23;     [ForkJoinPool.commonPool-worker-1]
+combiner:    sum1=23; sum2=12;     [ForkJoinPool.commonPool-worker-2]
+combiner:    sum1=41; sum2=35;     [ForkJoinPool.commonPool-worker-2]
+</code></pre></div>
+<p>In summary, it can be stated that parallel streams can bring be a nice performance boost to streams with a large amount of input elements. But keep in mind that some parallel stream operations like <code>reduce</code> and <code>collect</code> need additional computations (combine operations) which isn't needed when executed sequentially.</p>
+
+<p>Furthermore we've learned that all parallel stream operations share the same JVM-wide common <code>ForkJoinPool</code>. So you probably want to avoid implementing slow blocking stream operations since that could potentially slow down other parts of your application which rely heavily on parallel streams.</p>
+
+<h3>That's it</h3>
+
+<p>My programming guide to Java 8 streams ends here. If you're interested in learning more about Java 8 streams, I recommend to you the <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#NonInterference">Stream Javadoc</a> package documentation. If you want to learn more about the underlying mechanisms, you probably want to read Martin Fowlers article about <a href="http://martinfowler.com/articles/collection-pipeline/">Collection Pipelines</a>.</p>
+
+<p>If you're interested in JavaScript as well, you may want to have a look at <a href="https://github.com/winterbe/streamjs">Stream.js</a> - a JavaScript implementation of the Java 8 Streams API. You may also wanna read my <a href="/posts/2014/03/16/java-8-tutorial/">Java 8 Tutorial</a> and my <a href="/posts/2014/04/05/java8-nashorn-tutorial/">Java 8 Nashorn Tutorial</a>.</p>
+
+<p>Hopefully this tutorial was helpful to you and you've enjoyed reading it. The full source code of the tutorial samples is <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a>. Feel free to <a href="https://github.com/winterbe/java8-tutorial/fork">fork the repository</a> or send me your feedback via <a href="https://twitter.com/winterbe_">Twitter</a>.</p>
+
+<p>Happy coding!</p>
+
+</div>
+</div>
+</body>
+</html>

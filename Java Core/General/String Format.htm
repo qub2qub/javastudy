@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>String Format</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="https://dzone.com/articles/java-string-format-examples">src</a>
+<h2></h2>
+<div class="content-html cye-lm-tag" dz-code-container="" itemprop="articleBody">
+<h2>String Formatting</h2> 
+<p pid="34" class="cye-lm-tag">Most common way of formatting a string in java is using <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html#format-java.lang.String-java.lang.Object...-" rel="nofollow"><em>String.format()</em></a>. If there were a “java sprintf” then this would be it.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span> <span class="cm-variable cye-lm-tag">output</span> <span class="cm-operator cye-lm-tag">=</span> <span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"%s = %d"</span>, <span class="cm-string cye-lm-tag">"joe"</span>, <span class="cm-number cye-lm-tag">35</span>);</span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="35" class="cye-lm-tag">For formatted console output, you can use <em><a href="https://docs.oracle.com/javase/8/docs/api/java/io/PrintStream.html#printf-java.lang.String-java.lang.Object...-" rel="nofollow" target="_blank">printf()</a></em> or the <em><a href="https://docs.oracle.com/javase/8/docs/api/java/io/PrintStream.html#format-java.lang.String-java.lang.Object...-" rel="nofollow" target="_blank">format()</a></em> method of <em><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#out" rel="nofollow" target="_blank">System.out</a></em> and <em><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#err" rel="nofollow" target="_blank">System.err</a></em> PrintStreams.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable cye-lm-tag">System</span>.<span class="cm-variable cye-lm-tag">out</span>.<span class="cm-variable cye-lm-tag">printf</span>(<span class="cm-string cye-lm-tag">"My name is: %s%n"</span>, <span class="cm-string cye-lm-tag">"joe"</span>);</span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="36" class="cye-lm-tag">Create a <em><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html" rel="nofollow" target="_blank">Formatter&nbsp;</a></em>and link it to a <em><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/StringBuilder.html" rel="nofollow" target="_blank">StringBuilder</a></em>.&nbsp;Output formatted using the <em><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#format-java.lang.String-java.lang.Object...-" rel="nofollow" target="_blank">format()</a></em> method will be appended to the <em>StringBuilder</em>.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">StringBuilder</span> <span class="cm-variable cye-lm-tag">sbuf</span> <span class="cm-operator cye-lm-tag">=</span> <span class="cm-keyword cye-lm-tag">new</span> <span class="cm-variable-3 cye-lm-tag">StringBuilder</span>();</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="2"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable cye-lm-tag">Formatter</span> <span class="cm-variable cye-lm-tag">fmt</span> <span class="cm-operator cye-lm-tag">=</span> <span class="cm-keyword cye-lm-tag">new</span> <span class="cm-variable cye-lm-tag">Formatter</span>(<span class="cm-variable cye-lm-tag">sbuf</span>);</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="3"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable cye-lm-tag">fmt</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"PI = %f%n"</span>, <span class="cm-variable cye-lm-tag">Math</span>.<span class="cm-variable cye-lm-tag">PI</span>);</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="4"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable cye-lm-tag">System</span>.<span class="cm-variable cye-lm-tag">out</span>.<span class="cm-variable cye-lm-tag">print</span>(<span class="cm-variable cye-lm-tag">sbuf</span>.<span class="cm-variable cye-lm-tag">toString</span>());</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="5"></div></div><pre><span  class="cye-lm-tag"><span class="cm-comment cye-lm-tag">// you can continue to append data to sbuf here.</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<h2>Format Specifiers</h2> 
+<p pid="37" class="cye-lm-tag">Here is a quick reference to&nbsp;all the&nbsp;conversion specifiers supported.</p> 
+<table> 
+ <thead> 
+  <tr> 
+   <td>Specifier</td> 
+   <td>Applies to</td> 
+   <td>Output</td> 
+  </tr> 
+ </thead> 
+ <tbody> 
+  <tr> 
+   <td>%a</td> 
+   <td>floating point (except&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/math/BigDecimal.html" rel="nofollow"><em>BigDecimal</em></a>)</td> 
+   <td>Hex output of floating point number</td> 
+  </tr> 
+  <tr> 
+   <td>%b</td> 
+   <td>Any type</td> 
+   <td>“true” if non-null, “false” if null</td> 
+  </tr> 
+  <tr> 
+   <td>%c</td> 
+   <td>character</td> 
+   <td>Unicode character</td> 
+  </tr> 
+  <tr> 
+   <td>%d</td> 
+   <td>integer (incl. byte, short, int, long, bigint)</td> 
+   <td>Decimal Integer</td> 
+  </tr> 
+  <tr> 
+   <td>%e</td> 
+   <td>floating point</td> 
+   <td>decimal number in scientific notation</td> 
+  </tr> 
+  <tr> 
+   <td>%f</td> 
+   <td>floating point</td> 
+   <td>decimal number</td> 
+  </tr> 
+  <tr> 
+   <td>%g</td> 
+   <td>floating point</td> 
+   <td>decimal number, possibly in scientific notation depending on the precision and value.</td> 
+  </tr> 
+  <tr> 
+   <td>%h</td> 
+   <td>any type</td> 
+   <td>Hex String of value from hashCode() method.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%n</td> 
+   <td>none</td> 
+   <td>Platform-specific line separator.</td> 
+  </tr> 
+  <tr> 
+   <td>%o</td> 
+   <td>integer (incl. byte, short, int, long, bigint)</td> 
+   <td>Octal number</td> 
+  </tr> 
+  <tr> 
+   <td>%s</td> 
+   <td>any type</td> 
+   <td>String value</td> 
+  </tr> 
+  <tr> 
+   <td>%t</td> 
+   <td>Date/Time (incl. long, Calendar, Date and TemporalAccessor)</td> 
+   <td>%t is the prefix for Date/Time conversions. More formatting flags are needed after this. See Date/Time conversion below.</td> 
+  </tr> 
+  <tr> 
+   <td>%x</td> 
+   <td>integer (incl. byte, short, int, long, bigint)</td> 
+   <td><p class="cye-lm-tag">Hex string.</p></td> 
+  </tr> 
+ </tbody> 
+</table> 
+<h3>Date and Time Formatting</h3> 
+<p pid="39" class="cye-lm-tag">Note: Using the formatting characters with “%T” instead of “%t” in the table below makes the output uppercase.</p> 
+<table> 
+ <thead> 
+  <tr> 
+   <td width="15%">&nbsp;Flag</td> 
+   <td>Notes</td> 
+  </tr> 
+ </thead> 
+ <tbody> 
+  <tr> 
+   <td>&nbsp;%tA</td> 
+   <td>Full name of the day of the week, e.g. “<code>Sunday</code>“, “<code>Monday</code>“</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%ta</td> 
+   <td>Abbreviated name of the week day e.g. “<code>Sun</code>“, “<code>Mon</code>“, etc.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%tB</td> 
+   <td>Full name of the month e.g. “<code>January</code>“, “<code>February</code>“, etc.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%tb</td> 
+   <td>Abbreviated month name e.g. “<code>Jan</code>“, “<code>Feb</code>“, etc.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%tC</td> 
+   <td>Century part of year formatted with two digits e.g. “00” through “99”.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%tc</td> 
+   <td>Date and time formatted with “<code>%ta %tb %td %tT %tZ %tY</code>” e.g. “<code>Fri Feb 17 07:45:42 PST 2017</code>“</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%tD</td> 
+   <td>Date formatted as “<code>%tm/%td/%ty</code>“</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%td</td> 
+   <td>Day of the month formatted with two digits. e.g. “<code>01</code>” to “<code>31</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>&nbsp;%te</td> 
+   <td>Day of the month formatted without a leading 0 e.g. “1” to “31”.</td> 
+  </tr> 
+  <tr> 
+   <td>%tF</td> 
+   <td>ISO 8601 formatted date with “<code>%tY-%tm-%td</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tH</td> 
+   <td>Hour of the day for the 24-hour clock e.g. “<code>00</code>” to “<code>23</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%th</td> 
+   <td>Same as %tb.</td> 
+  </tr> 
+  <tr> 
+   <td>%tI</td> 
+   <td>Hour of the day for the 12-hour clock e.g. “<code>01</code>” – “<code>12</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tj</td> 
+   <td>Day of the year formatted with leading 0s e.g. “<code>001</code>” to “<code>366</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tk</td> 
+   <td>Hour of the day for the 24 hour clock without a leading 0 e.g. “<code>0</code>” to “<code>23</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tl</td> 
+   <td>Hour of the day for the 12-hour click without a leading 0 e.g. “<code>1</code>” to “<code>12</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tM</td> 
+   <td>Minute within the hour formatted a leading 0 e.g. “<code>00</code>” to “<code>59</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tm</td> 
+   <td>Month formatted with a leading 0 e.g. “<code>01</code>” to “<code>12</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tN</td> 
+   <td>Nanosecond formatted with 9 digits and leading 0s e.g. “000000000” to “999999999”.</td> 
+  </tr> 
+  <tr> 
+   <td>%tp</td> 
+   <td>Locale specific “am” or “pm” marker.</td> 
+  </tr> 
+  <tr> 
+   <td>%tQ</td> 
+   <td>Milliseconds since epoch Jan 1 , 1970 00:00:00 UTC.</td> 
+  </tr> 
+  <tr> 
+   <td>%tR</td> 
+   <td>Time formatted as 24-hours e.g. “<code>%tH:%tM</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tr</td> 
+   <td>Time formatted as 12-hours e.g. “<code>%tI:%tM:%tS %Tp</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tS</td> 
+   <td>Seconds within the minute formatted with 2 digits e.g. “00” to “60”. “60” is required to support leap seconds.</td> 
+  </tr> 
+  <tr> 
+   <td>%ts</td> 
+   <td>Seconds since the epoch Jan 1, 1970 00:00:00 UTC.</td> 
+  </tr> 
+  <tr> 
+   <td>%tT</td> 
+   <td>Time formatted as 24-hours e.g. “<code>%tH:%tM:%tS</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tY</td> 
+   <td>Year formatted with 4 digits e.g. “<code>0000</code>” to “<code>9999</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%ty</td> 
+   <td>Year formatted with 2 digits e.g. “<code>00</code>” to “<code>99</code>“.</td> 
+  </tr> 
+  <tr> 
+   <td>%tZ</td> 
+   <td>Time zone abbreviation. e.g. “<code>UTC</code>“, “<code>PST</code>“, etc.</td> 
+  </tr> 
+  <tr> 
+   <td>%tz</td> 
+   <td><p class="cye-lm-tag">Time Zone Offset from GMT e.g. “</p><code>-0800</code><p class="cye-lm-tag">“.</p></td> 
+  </tr> 
+ </tbody> 
+</table> 
+<h2>Argument Index</h2> 
+<p pid="79" class="cye-lm-tag">An argument index is specified as a number ending with a “<code>$</code>” after the “<code>%</code>” and selects the specified argument in the argument list.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"%2$s"</span>, <span class="cm-number cye-lm-tag">32</span>, <span class="cm-string cye-lm-tag">"Hello"</span>); <span class="cm-comment cye-lm-tag">// prints: "Hello"</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+<h2>Formatting an Integer</h2> 
+<p pid="80" class="cye-lm-tag">With the <code>%d</code> format specifier, you can use an argument of all integral types including byte, short, int, long and BigInteger.</p> 
+<p pid="81" class="cye-lm-tag">Default formatting:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"%d"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints 93</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="82" class="cye-lm-tag">Specifying a width:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%20d|"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: |                  93|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="83" class="cye-lm-tag">Left-justifying within the specified width:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%-20d|"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: |93                  |</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="84" class="cye-lm-tag">Pad with zeros:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%020d|"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: |00000000000000000093|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="85" class="cye-lm-tag">Print positive numbers with a “+”:</p> 
+<p pid="86" class="cye-lm-tag"><em> (Negative numbers always have the “-” included):</em></p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%+20d|', 93); // prints: |                 +93|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="87" class="cye-lm-tag">A&nbsp;space before positive numbers.</p> 
+<p pid="88" class="cye-lm-tag">A “-” is included for negative numbers as per normal.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|% d|"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: | 93| String.format("|% d|", -36); // prints: |-36|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="89" class="cye-lm-tag">Use locale-specific thousands separator:</p> 
+<p pid="90" class="cye-lm-tag">For the US locale, it is “,”:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%,d|"</span>, <span class="cm-number cye-lm-tag">10000000</span>); <span class="cm-comment cye-lm-tag">// prints: |10,000,000|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="91" class="cye-lm-tag">Enclose negative numbers within parentheses (“()”) and skip the "-":</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%(d|"</span>, <span class="cm-operator cye-lm-tag">-</span><span class="cm-number cye-lm-tag">36</span>); <span class="cm-comment cye-lm-tag">// prints: |(36)|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="92" class="cye-lm-tag">Octal output:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%o|"</span>), <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: 135</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="93" class="cye-lm-tag">Hex output:</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%x|"</span>, <span class="cm-number cye-lm-tag">93</span>); <span class="cm-comment cye-lm-tag">// prints: 5d</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="94" class="cye-lm-tag">Alternate representation for octal and hex output:</p> 
+<p pid="95" class="cye-lm-tag">Prints octal numbers with a leading “<code>0</code>” and hex numbers with leading “<code>0x</code>“.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%#o|"</span>, <span class="cm-number cye-lm-tag">93</span>);</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="2"></div></div><pre><span  class="cye-lm-tag"><span class="cm-comment cye-lm-tag">// prints: 0135</span></span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="3"></div></div><pre><span  class="cye-lm-tag"></span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="4"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%#x|"</span>, <span class="cm-number cye-lm-tag">93</span>);</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="5"></div></div><pre><span  class="cye-lm-tag"><span class="cm-comment cye-lm-tag">// prints: 0x5d</span></span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="6"></div></div><pre><span  class="cye-lm-tag"></span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="7"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%#X|"</span>, <span class="cm-number cye-lm-tag">93</span>);</span></pre></div><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="8"></div></div><pre><span  class="cye-lm-tag"><span class="cm-comment cye-lm-tag">// prints: 0X5D</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<h2>String and Character Conversion</h2> 
+<p pid="96" class="cye-lm-tag">Default formatting:</p> 
+<p pid="97" class="cye-lm-tag">Prints the whole string.</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%s|"</span>, <span class="cm-string cye-lm-tag">"Hello World"</span>); <span class="cm-comment cye-lm-tag">// prints: "Hello World"</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="98" class="cye-lm-tag">Specify Field Length</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%30s|"</span>, <span class="cm-string cye-lm-tag">"Hello World"</span>); <span class="cm-comment cye-lm-tag">// prints: | Hello World|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="99" class="cye-lm-tag">Left Justify Text</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%-30s|"</span>, <span class="cm-string cye-lm-tag">"Hello World"</span>); <span class="cm-comment cye-lm-tag">// prints: |Hello World |</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="100" class="cye-lm-tag">Specify Maximum Number of Characters</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%.5s|"</span>, <span class="cm-string cye-lm-tag">"Hello World"</span>); <span class="cm-comment cye-lm-tag">// prints: |Hello|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<p pid="101" class="cye-lm-tag">Field Width and Maximum Number of Characters</p> 
+<div class="CodeMirror cm-s-default"><div class="CodeMirror-scroll"><div class="CodeMirror-sizer" ><div ><div class="CodeMirror-lines"><div ><div class="CodeMirror-code"><div ><div class="CodeMirror-gutter-wrapper" ><div class="CodeMirror-linenumber CodeMirror-gutter-elt"  data-line-number="1"></div></div><pre><span  class="cye-lm-tag"><span class="cm-variable-3 cye-lm-tag">String</span>.<span class="cm-variable cye-lm-tag">format</span>(<span class="cm-string cye-lm-tag">"|%30.5s|"</span>, <span class="cm-string cye-lm-tag">"Hello World"</span>); <span class="cm-operator cye-lm-tag">|</span> <span class="cm-variable cye-lm-tag">Hello</span><span class="cm-operator cye-lm-tag">|</span></span></pre></div></div></div></div></div></div><div class="CodeMirror-gutters" ><div class="CodeMirror-gutter CodeMirror-linenumbers" ></div></div></div></div> 
+
+<h2>Summary</h2> 
+<p pid="102" class="cye-lm-tag">This guide explained String formatting in Java. We covered the supported format specifiers. Both numeric and string formatting support a variety of flags for alternative formats.</p>
+                </div>
+<br><hr>
+</body>
+</html>

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>J8Tut Concurrency</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+</head>
+<body>
+<h1> Threads and Executors </h1>
+<div class="post">
+    <p>Welcome to the first part of my Java 8 Concurrency tutorial. This guide teaches you <a href="http://en.wikipedia.org/wiki/Concurrent_computing">concurrent programming</a> in Java 8 with easily understood code examples. It's the first part out of a series of tutorials covering the Java Concurrency API. In the next 15 min you learn how to execute code in parallel via threads, tasks and executor services.</p>
+
+<ul>
+<li>Part 1: Threads and Executors</li>
+<li>Part 2: <a href="/posts/2015/04/30/java8-concurrency-tutorial-synchronized-locks-examples/">Synchronization and Locks</a></li>
+<li>Part 3: <a href="/posts/2015/05/22/java8-concurrency-tutorial-atomic-concurrent-map-examples/">Atomic Variables and ConcurrentMap</a></li>
+</ul>
+
+<p>The <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html">Concurrency API</a> was first introduced with the release of Java 5 and then progressively enhanced with every new Java release. The majority of concepts shown in this article also work in older versions of Java. However my code samples focus on Java 8 and make heavy use of lambda expressions and other new features. If you're not yet familiar with lambdas I recommend reading my <a href="/posts/2014/03/16/java-8-tutorial/">Java 8 Tutorial</a> first.</p>
+
+<h3>Threads and Runnables</h3>
+
+<p>All modern operating systems support concurrency both via <a href="http://en.wikipedia.org/wiki/Process_(computing)">processes</a> and <a href="http://en.wikipedia.org/wiki/Thread_%28computing%29">threads</a>. Processes are instances of programs which typically run independent to each other, e.g. if you start a java program the operating system spawns a new process which runs in parallel to other programs. Inside those processes we can utilize threads to execute code concurrently, so we can make the most out of the available cores of the CPU.</p>
+
+<p>Java supports <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html">Threads</a> since JDK 1.0. Before starting a new thread you have to specify the code to be executed by this thread, often called the <em>task</em>. This is done by implementing <code>Runnable</code> - a functional interface defining a single void no-args method <code>run()</code> as demonstrated in the following example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">threadName</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Hello "</span> <span class="o">+</span> <span class="n">threadName</span><span class="o">);</span>
+<span class="o">};</span>
+
+<span class="n">task</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
+
+<span class="n">Thread</span> <span class="n">thread</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Thread</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+<span class="n">thread</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Done!"</span><span class="o">);</span>
+</code></pre></div>
+<p>Since <code>Runnable</code> is a functional interface we can utilize Java 8 lambda expressions to print the current threads name to the console. First we execute the runnable directly on the main thread before starting a new thread.</p>
+
+<p>The result on the console might look like this:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Hello main
+Hello Thread-0
+Done!
+</code></pre></div>
+<p>Or that:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Hello main
+Done!
+Hello Thread-0
+</code></pre></div>
+<p>Due to concurrent execution we cannot predict if the runnable will be invoked before or after printing 'done'. The order is non-deterministic, thus making concurrent programming a complex task in larger applications.</p>
+
+<p>Threads can be put to sleep for a certain duration. This is quite handy to simulate long running tasks in the subsequent code samples of this article:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Runnable</span> <span class="n">runnable</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Foo "</span> <span class="o">+</span> <span class="n">name</span><span class="o">);</span>
+        <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Bar "</span> <span class="o">+</span> <span class="n">name</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+
+<span class="n">Thread</span> <span class="n">thread</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Thread</span><span class="o">(</span><span class="n">runnable</span><span class="o">);</span>
+<span class="n">thread</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+</code></pre></div>
+<p>When you run the above code you'll notice the one second delay between the first and the second print statement. <code>TimeUnit</code> is a useful enum for working with units of time. Alternatively you can achieve the same by calling <code>Thread.sleep(1000)</code>.</p>
+
+<p>Working with the <code>Thread</code> class can be very tedious and error-prone. Due to that reason the <strong>Concurrency API</strong> has been introduced back in 2004 with the release of Java 5. The API is located in package <code>java.util.concurrent</code> and contains many useful classes for handling concurrent programming. Since that time the Concurrency API has been enhanced with every new Java release and even Java 8 provides new classes and methods for dealing with concurrency.</p>
+
+<p>Now let's take a deeper look at one of the most important parts of the Concurrency API - the executor services.</p>
+
+<h3>Executors</h3>
+
+<p>The Concurrency API introduces the concept of an <code>ExecutorService</code> as a higher level replacement for working with threads directly. Executors are capable of running asynchronous tasks and typically manage a pool of threads, so we don't have to create new threads manually. All threads of the internal pool will be reused under the hood for revenant tasks, so we can run as many concurrent tasks as we want throughout the life-cycle of our application with a single executor service.</p>
+
+<p>This is how the first thread-example looks like using executors:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">();</span>
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">threadName</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Hello "</span> <span class="o">+</span> <span class="n">threadName</span><span class="o">);</span>
+<span class="o">});</span>
+
+<span class="c1">// =&gt; Hello pool-1-thread-1</span>
+</code></pre></div>
+<p>The class <code>Executors</code> provides convenient factory methods for creating different kinds of executor services. In this sample we use an executor with a thread pool of size one.</p>
+
+<p>The result looks similar to the above sample but when running the code you'll notice an important difference: the java process never stops! Executors have to be stopped explicitly - otherwise they keep listening for new tasks.</p>
+
+<p>An <code>ExecutorService</code> provides two methods for that purpose: <code>shutdown()</code> waits for currently running tasks to finish while <code>shutdownNow()</code> interrupts all running tasks and shut the executor down immediately.</p>
+
+<p>This is the preferred way how I typically shutdown executors:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="k">try</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"attempt to shutdown executor"</span><span class="o">);</span>
+    <span class="n">executor</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+    <span class="n">executor</span><span class="o">.</span><span class="na">awaitTermination</span><span class="o">(</span><span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"tasks interrupted"</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">finally</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">executor</span><span class="o">.</span><span class="na">isTerminated</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"cancel non-finished tasks"</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="n">executor</span><span class="o">.</span><span class="na">shutdownNow</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"shutdown finished"</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>The executor shuts down softly by waiting a certain amount of time for termination of currently running tasks. After a maximum of five seconds the executor finally shuts down by interrupting all running tasks.</p>
+
+<h4>Callables and Futures</h4>
+
+<p>In addition to <code>Runnable</code> executors support another kind of task named <code>Callable</code>. Callables are functional interfaces just like runnables but instead of being <code>void</code> they return a value.</p>
+
+<p>This lambda expression defines a callable returning an integer after sleeping for one second:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="k">return</span> <span class="mi">123</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">"task interrupted"</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+</code></pre></div>
+<p>Callables can be submitted to executor services just like runnables. But what about the callables result? Since <code>submit()</code> doesn't wait until the task completes, the executor service cannot return the result of the callable directly. Instead the executor returns a special result of type <code>Future</code> which can be used to retrieve the actual result at a later point in time.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+<span class="n">Future</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"future done? "</span> <span class="o">+</span> <span class="n">future</span><span class="o">.</span><span class="na">isDone</span><span class="o">());</span>
+
+<span class="n">Integer</span> <span class="n">result</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"future done? "</span> <span class="o">+</span> <span class="n">future</span><span class="o">.</span><span class="na">isDone</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">print</span><span class="o">(</span><span class="s">"result: "</span> <span class="o">+</span> <span class="n">result</span><span class="o">);</span>
+</code></pre></div>
+<p>After submitting the callable to the executor we first check if the future has already been finished execution via <code>isDone()</code>. I'm pretty sure this isn't the case since the above callable sleeps for one second before returning the integer.</p>
+
+<p>Calling the method <code>get()</code> blocks the current thread and waits until the callable completes before returning the actual result <code>123</code>. Now the future is finally done and we see the following result on the console:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>future done? false
+future done? true
+result: 123
+</code></pre></div>
+<p>Futures are tightly coupled to the underlying executor service. Keep in mind that every non-terminated future will throw exceptions if you shutdown the executor:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">executor</span><span class="o">.</span><span class="na">shutdownNow</span><span class="o">();</span>
+<span class="n">future</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</code></pre></div>
+<p>You might have noticed that the creation of the executor slightly differs from the previous example. We use <code>newFixedThreadPool(1)</code> to create an executor service backed by a thread-pool of size one. This is equivalent to <code>newSingleThreadExecutor()</code> but we could later increase the pool size by simply passing a value larger than one.</p>
+
+<h4>Timeouts</h4>
+
+<p>Any call to <code>future.get()</code> will block and wait until the underlying callable has been terminated. In the worst case a callable runs forever - thus making your application unresponsive. You can simply counteract those scenarios by passing a timeout:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+
+<span class="n">Future</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+        <span class="k">return</span> <span class="mi">123</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">"task interrupted"</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">future</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+</code></pre></div>
+<p>Executing the above code results in a <code>TimeoutException</code>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Exception in thread "main" java.util.concurrent.TimeoutException
+    at java.util.concurrent.FutureTask.get(FutureTask.java:205)
+</code></pre></div>
+<p>You might already have guessed why this exception is thrown: We specified a maximum wait time of one second but the callable actually needs two seconds before returning the result.</p>
+
+<h4>InvokeAll</h4>
+
+<p>Executors support batch submitting of multiple callables at once via <code>invokeAll()</code>. This method accepts a collection of callables and returns a list of futures.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newWorkStealingPool</span><span class="o">();</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">callables</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+        <span class="o">()</span> <span class="o">-&gt;</span> <span class="s">"task1"</span><span class="o">,</span>
+        <span class="o">()</span> <span class="o">-&gt;</span> <span class="s">"task2"</span><span class="o">,</span>
+        <span class="o">()</span> <span class="o">-&gt;</span> <span class="s">"task3"</span><span class="o">);</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">invokeAll</span><span class="o">(</span><span class="n">callables</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">future</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">future</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div>
+<p>In this example we utilize Java 8 functional streams in order to process all futures returned by the invocation of <code>invokeAll</code>. We first map each future to its return value and then print each value to the console. If you're not yet familiar with streams read my <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">Java 8 Stream Tutorial</a>.</p>
+
+<h4>InvokeAny</h4>
+
+<p>Another way of batch-submitting callables is the method <code>invokeAny()</code> which works slightly different to <code>invokeAll()</code>. Instead of returning future objects this method blocks until the first callable terminates and returns the result of that callable.</p>
+
+<p>In order to test this behavior we use this helper method to simulate callables with different durations. The method returns a callable that sleeps for a certain amount of time until returning the given result:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">callable</span><span class="o">(</span><span class="n">String</span> <span class="n">result</span><span class="o">,</span> <span class="kt">long</span> <span class="n">sleepSeconds</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">sleepSeconds</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+    <span class="o">};</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>We use this method to create a bunch of callables with different durations from one to three seconds. Submitting those callables to an executor via <code>invokeAny()</code> returns the string result of the fastest callable - in that case task2:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newWorkStealingPool</span><span class="o">();</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">callables</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+    <span class="n">callable</span><span class="o">(</span><span class="s">"task1"</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span>
+    <span class="n">callable</span><span class="o">(</span><span class="s">"task2"</span><span class="o">,</span> <span class="mi">1</span><span class="o">),</span>
+    <span class="n">callable</span><span class="o">(</span><span class="s">"task3"</span><span class="o">,</span> <span class="mi">3</span><span class="o">));</span>
+
+<span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="na">invokeAny</span><span class="o">(</span><span class="n">callables</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+
+<span class="c1">// =&gt; task2</span>
+</code></pre></div>
+<p>The above example uses yet another type of executor created via <code>newWorkStealingPool()</code>. This factory method is part of Java 8 and returns an executor of type <code>ForkJoinPool</code> which works slightly different than normal executors. Instead of using a fixed size thread-pool <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html">ForkJoinPools</a> are created for a given parallelism size which per default is the number of available cores of the hosts CPU.</p>
+
+<p>ForkJoinPools exist since Java 7 and will be covered in detail in a later tutorial of this series. Let's finish this tutorial by taking a deeper look at scheduled executors.</p>
+
+<h3>Scheduled Executors</h3>
+
+<p>We've already learned how to submit and run tasks once on an executor. In order to periodically run common tasks multiple times, we can utilize scheduled thread pools.</p>
+
+<p>A <code>ScheduledExecutorService</code> is capable of scheduling tasks to run either periodically or once after a certain amount of time has elapsed.</p>
+
+<p>This code sample schedules a task to run after an initial delay of three seconds has passed:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ScheduledExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newScheduledThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+
+<span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Scheduling: "</span> <span class="o">+</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">());</span>
+<span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="na">schedule</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+
+<span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1337</span><span class="o">);</span>
+
+<span class="kt">long</span> <span class="n">remainingDelay</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"Remaining Delay: %sms"</span><span class="o">,</span> <span class="n">remainingDelay</span><span class="o">);</span>
+</code></pre></div>
+<p>Scheduling a task produces a specialized future of type <code>ScheduledFuture</code> which - in addition to <code>Future</code> - provides the method <code>getDelay()</code> to retrieve the remaining delay. After this delay has elapsed the task will be executed concurrently.</p>
+
+<p>In order to schedule tasks to be executed periodically, executors provide the two methods <code>scheduleAtFixedRate()</code> and <code>scheduleWithFixedDelay()</code>. The first method is capable of executing tasks with a fixed time rate, e.g. once every second as demonstrated in this example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ScheduledExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newScheduledThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+
+<span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Scheduling: "</span> <span class="o">+</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">());</span>
+
+<span class="kt">int</span> <span class="n">initialDelay</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+<span class="kt">int</span> <span class="n">period</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+<span class="n">executor</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">initialDelay</span><span class="o">,</span> <span class="n">period</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+</code></pre></div>
+<p>Additionally this method accepts an initial delay which describes the leading wait time before the task will be executed for the first time.</p>
+
+<p>Please keep in mind that <code>scheduleAtFixedRate()</code> doesn't take into account the actual duration of the task. So if you specify a period of one second but the task needs 2 seconds to be executed then the thread pool will working to capacity very soon.</p>
+
+<p>In that case you should consider using <code>scheduleWithFixedDelay()</code> instead. This method works just like the counterpart described above. The difference is that the wait time period applies between the end of a task and the start of the next task. For example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ScheduledExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newScheduledThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+
+<span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Scheduling: "</span> <span class="o">+</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">());</span>
+    <span class="o">}</span>
+    <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">err</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"task interrupted"</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">scheduleWithFixedDelay</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+</code></pre></div>
+<p>This example schedules a task with a fixed delay of one second between the end of an execution and the start of the next execution. The initial delay is zero and the tasks duration is two seconds. So we end up with an execution interval of 0s, 3s, 6s, 9s and so on. As you can see <code>scheduleWithFixedDelay()</code> is handy if you cannot predict the duration of the scheduled tasks.</p>
+
+<p>This was the first part out of a series of concurrency tutorials. I recommend practicing the shown code samples by your own. You find all code samples from this article on <a href="https://github.com/winterbe/java8-tutorial">GitHub</a>, so feel free to fork the repo and <a href="https://github.com/winterbe/java8-tutorial/stargazers">give me star</a>.</p>
+
+<p>I hope you've enjoyed this article. If you have any further questions send me your feedback in the comments below or via <a href="https://twitter.com/winterbe_">Twitter</a>.</p>
+
+<ul>
+<li>Part 1: Threads and Executors</li>
+<li>Part 2: <a href="/posts/2015/04/30/java8-concurrency-tutorial-synchronized-locks-examples/">Synchronization and Locks</a></li>
+<li>Part 3: <a href="/posts/2015/05/22/java8-concurrency-tutorial-atomic-concurrent-map-examples/">Atomic Variables and ConcurrentMap</a></li>
+</ul>
+
+</div>
+<br><hr>
+<h1> Synchronization and Locks </h1>
+<div class="post">
+    <p>Welcome to the second part of my Java 8 Concurrency Tutorial out of a series of guides teaching multi-threaded programming in Java 8 with easily understood code examples. In the next 15 min you learn how to synchronize access to mutable shared variables via the synchronized keyword, locks and semaphores.</p>
+
+<ul>
+<li>Part 1: <a href="/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/">Threads and Executors</a></li>
+<li>Part 2: Synchronization and Locks</li>
+<li>Part 3: <a href="/posts/2015/05/22/java8-concurrency-tutorial-atomic-concurrent-map-examples/">Atomic Variables and ConcurrentMap</a></li>
+</ul>
+
+<p>The majority of concepts shown in this article also work in older versions of Java. However the code samples focus on Java 8 and make heavy use of lambda expressions and  new concurrency features. If you're not yet familiar with lambdas I recommend reading my <a href="/posts/2014/03/16/java-8-tutorial/">Java 8 Tutorial</a> first.</p>
+
+<p>For simplicity the code samples of this tutorial make use of the two helper methods <code>sleep(seconds)</code> and <code>stop(executor)</code> as defined <a href="https://github.com/winterbe/java8-tutorial/blob/master/src/com/winterbe/java8/samples/concurrent/ConcurrentUtils.java">here</a>.</p>
+
+<h3>Synchronized</h3>
+
+<p>In the <a href="(/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/)">previous tutorial</a> we've learned how to execute code in parallel via executor services. When writing such multi-threaded code you have to pay particular attention when accessing shared mutable variables concurrently from multiple threads. Let's just say we want to increment an integer which is accessible simultaneously from multiple threads.</p>
+
+<p>We define a field <code>count</code> with a method <code>increment()</code> to increase count by one:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+
+<span class="kt">void</span> <span class="nf">increment</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>When calling this method concurrently from multiple threads we're in serious trouble:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="k">this</span><span class="o">::</span><span class="n">increment</span><span class="o">));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">count</span><span class="o">);</span>  <span class="c1">// 9965</span>
+</code></pre></div>
+<p>Instead of seeing a constant result count of 10000 the actual result varies with every execution of the above code. The reason is that we share a mutable variable upon different threads without synchronizing the access to this variable which results in a <a href="http://en.wikipedia.org/wiki/Race_condition">race condition</a>.</p>
+
+<p>Three steps have to be performed in order to increment the number: (i) read the current value, (ii) increase this value by one and (iii) write the new value to the variable. If two threads perform these steps in parallel it's possible that both threads perform step 1 simultaneously thus reading the same current value. This results in lost writes so the actual result is lower. In the above sample 35 increments got lost due to concurrent unsynchronized access to count but you may see different results when executing the code by yourself.</p>
+
+<p>Luckily Java supports thread-synchronization since the early days via the <code>synchronized</code> keyword. We can utilize <code>synchronized</code> to fix the above race conditions when incrementing the count:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">incrementSync</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>When using <code>incrementSync()</code> concurrently we get the desired result count of 10000. No race conditions occur any longer and the result is stable with every execution of the code:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="k">this</span><span class="o">::</span><span class="n">incrementSync</span><span class="o">));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">count</span><span class="o">);</span>  <span class="c1">// 10000</span>
+</code></pre></div>
+<p>The <code>synchronized</code> keyword is also available as a block statement.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="kt">void</span> <span class="nf">incrementSync</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>Internally Java uses a so called <em>monitor</em> also known as <a href="https://docs.oracle.com/javase/tutorial/essential/concurrency/locksync.html">monitor lock or intrinsic lock</a> in order to manage synchronization. This monitor is bound to an object, e.g. when using synchronized methods each method share the same monitor of the corresponding object.</p>
+
+<p>All implicit monitors implement the <em>reentrant</em> characteristics. Reentrant means that locks are bound to the current thread. A thread can safely acquire the same lock multiple times without running into deadlocks (e.g. a synchronized method calls another synchronized method on the same object).</p>
+
+<h3>Locks</h3>
+
+<p>Instead of using implicit locking via the <code>synchronized</code> keyword the Concurrency API supports various explicit locks specified by the <code>Lock</code> interface. Locks support various methods for finer grained lock control thus are more expressive than implicit monitors.</p>
+
+<p>Multiple lock implementations are available in the standard JDK which will be demonstrated in the following sections.</p>
+
+<h4>ReentrantLock</h4>
+
+<p>The class <code>ReentrantLock</code> is a mutual exclusion lock with the same basic behavior as the implicit monitors accessed via the <code>synchronized</code> keyword but with extended capabilities. As the name suggests this lock implements reentrant characteristics just as implicit monitors.</p>
+
+<p>Let's see how the above sample looks like using <code>ReentrantLock</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+<span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+
+<span class="kt">void</span> <span class="nf">increment</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">count</span><span class="o">++;</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>A lock is acquired via <code>lock()</code> and released via <code>unlock()</code>. It's important to wrap your code into a <code>try/finally</code> block to ensure unlocking in case of exceptions. This method is thread-safe just like the synchronized counterpart. If another thread has already acquired the lock subsequent calls to <code>lock()</code> pause the current thread until the lock has been unlocked. Only one thread can hold the lock at any given time.</p>
+
+<p>Locks support various methods for fine grained control as seen in the next sample:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+<span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Locked: "</span> <span class="o">+</span> <span class="n">lock</span><span class="o">.</span><span class="na">isLocked</span><span class="o">());</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Held by me: "</span> <span class="o">+</span> <span class="n">lock</span><span class="o">.</span><span class="na">isHeldByCurrentThread</span><span class="o">());</span>
+    <span class="kt">boolean</span> <span class="n">locked</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">tryLock</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Lock acquired: "</span> <span class="o">+</span> <span class="n">locked</span><span class="o">);</span>
+<span class="o">});</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>While the first task holds the lock for one second the second task obtains different information about the current state of the lock:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Locked: true
+Held by me: false
+Lock acquired: false
+</code></pre></div>
+<p>The method <code>tryLock()</code> as an alternative to <code>lock()</code> tries to acquire the lock without pausing the current thread. The boolean result must be used to check if the lock has actually been acquired before accessing any shared mutable variables.</p>
+
+<h4>ReadWriteLock</h4>
+
+<p>The interface <code>ReadWriteLock</code> specifies another type of lock maintaining a pair of locks for read and write access. The idea behind read-write locks is that it's usually safe to read mutable variables concurrently as long as nobody is writing to this variable. So the read-lock can be held simultaneously by multiple threads as long as no threads hold the write-lock. This can improve performance and throughput in case that reads are more frequent than writes.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+<span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+<span class="n">ReadWriteLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantReadWriteLock</span><span class="o">();</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">lock</span><span class="o">.</span><span class="na">writeLock</span><span class="o">().</span><span class="na">lock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="s">"bar"</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">writeLock</span><span class="o">().</span><span class="na">unlock</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+</code></pre></div>
+<p>The above example first acquires a write-lock in order to put a new value to the map after sleeping for one second. Before this task has finished two other tasks are being submitted trying to read the entry from the map and sleep for one second:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">Runnable</span> <span class="n">readTask</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">lock</span><span class="o">.</span><span class="na">readLock</span><span class="o">().</span><span class="na">lock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"foo"</span><span class="o">));</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">readLock</span><span class="o">().</span><span class="na">unlock</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">readTask</span><span class="o">);</span>
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">readTask</span><span class="o">);</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>When you execute this code sample you'll notice that both read tasks have to wait the whole second until the write task has finished. After the write lock has been released both read tasks are executed in parallel and print the result simultaneously to the console. They don't have to wait for each other to finish because read-locks can safely be acquired concurrently as long as no write-lock is held by another thread.</p>
+
+<h4>StampedLock</h4>
+
+<p>Java 8 ships with a new kind of lock called <code>StampedLock</code> which also support read and write locks just like in the example above. In contrast to <code>ReadWriteLock</code> the locking methods of a <code>StampedLock</code> return a stamp represented by a <code>long</code> value. You can use these stamps to either release a lock or to check if the lock is still valid. Additionally stamped locks support another lock mode called <em>optimistic locking</em>.</p>
+
+<p>Let's rewrite the last example code to use <code>StampedLock</code> instead of <code>ReadWriteLock</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+<span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+<span class="n">StampedLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StampedLock</span><span class="o">();</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">writeLock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="s">"bar"</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlockWrite</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">Runnable</span> <span class="n">readTask</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">readLock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"foo"</span><span class="o">));</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlockRead</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">readTask</span><span class="o">);</span>
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">readTask</span><span class="o">);</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>Obtaining a read or write lock via <code>readLock()</code> or <code>writeLock()</code> returns a stamp which is later used for unlocking within the finally block. Keep in mind that stamped locks don't implement reentrant characteristics. Each call to lock returns a new stamp and blocks if no lock is available even if the same thread already holds a lock. So you have to pay particular attention not to run into deadlocks.</p>
+
+<p>Just like in the previous <code>ReadWriteLock</code> example both read tasks have to wait until the write lock has been released. Then both read tasks print to the console simultaneously because multiple reads doesn't block each other as long as no write-lock is held.</p>
+
+<p>The next example demonstrates <em>optimistic locking</em>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+<span class="n">StampedLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StampedLock</span><span class="o">();</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">tryOptimisticRead</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Optimistic Lock Valid: "</span> <span class="o">+</span> <span class="n">lock</span><span class="o">.</span><span class="na">validate</span><span class="o">(</span><span class="n">stamp</span><span class="o">));</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Optimistic Lock Valid: "</span> <span class="o">+</span> <span class="n">lock</span><span class="o">.</span><span class="na">validate</span><span class="o">(</span><span class="n">stamp</span><span class="o">));</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Optimistic Lock Valid: "</span> <span class="o">+</span> <span class="n">lock</span><span class="o">.</span><span class="na">validate</span><span class="o">(</span><span class="n">stamp</span><span class="o">));</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">writeLock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Write Lock acquired"</span><span class="o">);</span>
+        <span class="n">sleep</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Write done"</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>An optimistic read lock is acquired by calling <code>tryOptimisticRead()</code> which always returns a stamp without blocking the current thread, no matter if the lock is actually available. If there's already a write lock active the returned stamp equals zero. You can always check if a stamp is valid by calling <code>lock.validate(stamp)</code>.</p>
+
+<p>Executing the above code results in the following output:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Optimistic Lock Valid: true
+Write Lock acquired
+Optimistic Lock Valid: false
+Write done
+Optimistic Lock Valid: false
+</code></pre></div>
+<p>The optimistic lock is valid right after acquiring the lock. In contrast to normal read locks an optimistic lock doesn't prevent other threads to obtain a write lock instantaneously. After sending the first thread to sleep for one second the second thread obtains a write lock without waiting for the optimistic read lock to be released. From this point the optimistic read lock is no longer valid. Even when the write lock is released the optimistic read locks stays invalid.</p>
+
+<p>So when working with optimistic locks you have to validate the lock every time <em>after</em> accessing any shared mutable variable to make sure the read was still valid.</p>
+
+<p>Sometimes it's useful to convert a read lock into a write lock without unlocking and locking again. <code>StampedLock</code> provides the method <code>tryConvertToWriteLock()</code> for that purpose as seen in the next sample:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+<span class="n">StampedLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StampedLock</span><span class="o">();</span>
+
+<span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">readLock</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">tryConvertToWriteLock</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">stamp</span> <span class="o">==</span> <span class="mi">0</span><span class="n">L</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Could not convert to write lock"</span><span class="o">);</span>
+                <span class="n">stamp</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">writeLock</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="mi">23</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">count</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">(</span><span class="n">stamp</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>The task first obtains a read lock and prints the current value of field <code>count</code> to the console. But if the current value is zero we want to assign a new value of <code>23</code>. We first have to convert the read lock into a write lock to not break potential concurrent access by other threads. Calling <code>tryConvertToWriteLock()</code> doesn't block but may return a zero stamp indicating that no write lock is currently available. In that case we call <code>writeLock()</code> to block the current thread until a write lock is available.</p>
+
+<h3>Semaphores</h3>
+
+<p>In addition to locks the Concurrency API also supports counting semaphores. Whereas locks usually grant exclusive access to variables or resources, a semaphore is capable of maintaining whole sets of permits. This is useful in different scenarios where you have to limit the amount concurrent access to certain parts of your application.</p>
+
+<p>Here's an example how to limit access to a long running task simulated by <code>sleep(5)</code>:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">10</span><span class="o">);</span>
+
+<span class="n">Semaphore</span> <span class="n">semaphore</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Semaphore</span><span class="o">(</span><span class="mi">5</span><span class="o">);</span>
+
+<span class="n">Runnable</span> <span class="n">longRunningTask</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="kt">boolean</span> <span class="n">permit</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">permit</span> <span class="o">=</span> <span class="n">semaphore</span><span class="o">.</span><span class="na">tryAcquire</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">permit</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Semaphore acquired"</span><span class="o">);</span>
+            <span class="n">sleep</span><span class="o">(</span><span class="mi">5</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Could not acquire semaphore"</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">permit</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">semaphore</span><span class="o">.</span><span class="na">release</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">longRunningTask</span><span class="o">));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+</code></pre></div>
+<p>The executor can potentially run 10 tasks concurrently but we use a semaphore of size 5, thus limiting concurrent access to 5. It's important to use a <code>try/finally</code> block to properly release the semaphore even in case of exceptions.</p>
+
+<p>Executing the above code results in the following output:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>Semaphore acquired
+Semaphore acquired
+Semaphore acquired
+Semaphore acquired
+Semaphore acquired
+Could not acquire semaphore
+Could not acquire semaphore
+Could not acquire semaphore
+Could not acquire semaphore
+Could not acquire semaphore
+</code></pre></div>
+<p>The semaphores permits access to the actual long running operation simulated by <code>sleep(5)</code> up to a maximum of 5. Every subsequent call to <code>tryAcquire()</code> elapses the maximum wait timeout of one second, resulting in the appropriate console output that no semaphore could be acquired.</p>
+
+<p>This was the second part out of a series of concurrency tutorials. More parts will be released in the near future, so stay tuned. As usual you find all code samples from this article on <a href="https://github.com/winterbe/java8-tutorial">GitHub</a>, so feel free to fork the repo and try it by your own.</p>
+
+<p>I hope you've enjoyed this article. If you have any further questions send me your feedback in the comments below. You should also <a href="https://twitter.com/winterbe_">follow me on Twitter</a> for more dev-related stuff!</p>
+
+<ul>
+<li>Part 1: <a href="/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/">Threads and Executors</a></li>
+<li>Part 2: Synchronization and Locks</li>
+<li>Part 3: <a href="/posts/2015/05/22/java8-concurrency-tutorial-atomic-concurrent-map-examples/">Atomic Variables and ConcurrentMap</a></li>
+</ul>
+
+</div>
+<br><hr>
+<h1> Atomic Variables and ConcurrentMap </h1>
+<div class="post">
+    <p>Welcome to the third part of my tutorial series about multi-threaded programming in Java 8. This tutorial covers two important parts of the Concurrency API: Atomic Variables and Concurrent Maps. Both have been greatly improved with the introduction of lambda expressions and functional programming in the latest Java 8 release. All those new features are described with a bunch of easily understood code samples. Enjoy!</p>
+
+<ul>
+<li>Part 1: <a href="/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/">Threads and Executors</a></li>
+<li>Part 2: <a href="/posts/2015/04/30/java8-concurrency-tutorial-synchronized-locks-examples/">Synchronization and Locks</a></li>
+<li>Part 3: Atomic Variables and ConcurrentMap</li>
+</ul>
+
+<p>For simplicity the code samples of this tutorial make use of the two helper methods <code>sleep(seconds)</code> and <code>stop(executor)</code> as defined <a href="https://github.com/winterbe/java8-tutorial/blob/master/src/com/winterbe/java8/samples/concurrent/ConcurrentUtils.java">here</a>.</p>
+
+<h3>AtomicInteger</h3>
+
+<p>The package <code>java.concurrent.atomic</code> contains many useful classes to perform atomic operations. An operation is atomic when you can safely perform the operation in parallel on multiple threads without using the <code>synchronized</code> keyword or locks as shown in my <a href="/posts/2015/04/30/java8-concurrency-tutorial-synchronized-locks-examples/">previous tutorial</a>.</p>
+
+<p>Internally, the atomic classes make heavy use of <a href="http://en.wikipedia.org/wiki/Compare-and-swap">compare-and-swap</a> (CAS), an atomic instruction directly supported by most modern CPUs. Those instructions usually are much faster than synchronizing via locks. So my advice is to prefer atomic classes over locks in case you just have to change a single mutable variable concurrently.</p>
+
+<p>Now let's pick one of the atomic classes for a few examples: <code>AtomicInteger</code></p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">AtomicInteger</span> <span class="n">atomicInt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+
+<span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">atomicInt</span><span class="o">::</span><span class="n">incrementAndGet</span><span class="o">));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">atomicInt</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>    <span class="c1">// =&gt; 1000</span>
+</code></pre></div>
+<p>By using <code>AtomicInteger</code> as a replacement for <code>Integer</code> we're able to increment the number concurrently in a thread-safe manor without synchronizing the access to the variable. The method <code>incrementAndGet()</code> is an atomic operation so we can safely call this method from multiple threads.</p>
+
+<p>AtomicInteger supports various kinds of atomic operations. The method <code>updateAndGet()</code> accepts a lambda expression in order to perform arbitrary arithmetic operations upon the integer:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">AtomicInteger</span> <span class="n">atomicInt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+
+<span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span>
+            <span class="n">atomicInt</span><span class="o">.</span><span class="na">updateAndGet</span><span class="o">(</span><span class="n">n</span> <span class="o">-&gt;</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">2</span><span class="o">);</span>
+        <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+    <span class="o">});</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">atomicInt</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>    <span class="c1">// =&gt; 2000</span>
+</code></pre></div>
+<p>The method <code>accumulateAndGet()</code> accepts another kind of lambda expression of type <code>IntBinaryOperator</code>. We use this method to sum up all values from 0 to 1000 concurrently in the next sample:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">AtomicInteger</span> <span class="n">atomicInt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+
+<span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">Runnable</span> <span class="n">task</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span>
+            <span class="n">atomicInt</span><span class="o">.</span><span class="na">accumulateAndGet</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="n">m</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">n</span> <span class="o">+</span> <span class="n">m</span><span class="o">);</span>
+        <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+    <span class="o">});</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">atomicInt</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>    <span class="c1">// =&gt; 499500</span>
+</code></pre></div>
+<p>Other useful atomic classes are <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicBoolean.html">AtomicBoolean</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicLong.html">AtomicLong</a> and <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicReference.html">AtomicReference</a>.</p>
+
+<h3>LongAdder</h3>
+
+<p>The class <code>LongAdder</code> as an alternative to <code>AtomicLong</code> can be used to consecutively add values to a number.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1000</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">adder</span><span class="o">::</span><span class="n">increment</span><span class="o">));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">adder</span><span class="o">.</span><span class="na">sumThenReset</span><span class="o">());</span>   <span class="c1">// =&gt; 1000</span>
+</code></pre></div>
+<p>LongAdder provides methods <code>add()</code> and <code>increment()</code> just like the atomic number classes and is also thread-safe. But instead of summing up a single result this class maintains a set of variables internally to reduce contention over threads. The actual result can be retrieved by calling <code>sum()</code> or <code>sumThenReset()</code>.</p>
+
+<p>This class is usually preferable over atomic numbers when updates from multiple threads are more common than reads. This is often the case when capturing statistical data, e.g. you want to count the number of requests served on a web server. The drawback of <code>LongAdder</code> is higher memory consumption because a set of variables is held in-memory.</p>
+
+<h3>LongAccumulator</h3>
+
+<p>LongAccumulator is a more generalized version of LongAdder. Instead of performing simple add operations the class <code>LongAccumulator</code> builds around a lambda expression of type <code>LongBinaryOperator</code> as demonstrated in this code sample:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">LongBinaryOperator</span> <span class="n">op</span> <span class="o">=</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">;</span>
+<span class="n">LongAccumulator</span> <span class="n">accumulator</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LongAccumulator</span><span class="o">(</span><span class="n">op</span><span class="o">,</span> <span class="mi">1L</span><span class="o">);</span>
+
+<span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="n">accumulator</span><span class="o">.</span><span class="na">accumulate</span><span class="o">(</span><span class="n">i</span><span class="o">)));</span>
+
+<span class="n">stop</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">accumulator</span><span class="o">.</span><span class="na">getThenReset</span><span class="o">());</span>     <span class="c1">// =&gt; 2539</span>
+</code></pre></div>
+<p>We create a LongAccumulator with the function <code>2 * x + y</code> and an initial value of one. With every call to <code>accumulate(i)</code> both the current result and the value <code>i</code> are passed as parameters to the lambda expression.</p>
+
+<p>A <code>LongAccumulator</code> just like <code>LongAdder</code> maintains a set of variables internally to reduce contention over threads.</p>
+
+<h3>ConcurrentMap</h3>
+
+<p>The interface <code>ConcurrentMap</code> extends the map interface and defines one of the most useful concurrent collection types. Java 8 introduces functional programming by adding new methods to this interface.</p>
+
+<p>In the next code snippets we use the following sample map to demonstrates those new methods:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ConcurrentMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ConcurrentHashMap</span><span class="o">&lt;&gt;();</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="s">"bar"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"han"</span><span class="o">,</span> <span class="s">"solo"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"r2"</span><span class="o">,</span> <span class="s">"d2"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"c3"</span><span class="o">,</span> <span class="s">"p0"</span><span class="o">);</span>
+</code></pre></div>
+<p>The method <code>forEach()</code> accepts a lambda expression of type <code>BiConsumer</code> with both the key and value of the map passed as parameters. It can be used as a replacement to for-each loops to iterate over the entries of the concurrent map. The iteration is performed sequentially on the current thread.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">map</span><span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"%s = %s\n"</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">));</span>
+</code></pre></div>
+<p>The method <code>putIfAbsent()</code> puts a new value into the map only if no value exists for the given key. At least for the <code>ConcurrentHashMap</code> implementation of this method is thread-safe just like <code>put()</code> so you don't have to synchronize when accessing the map concurrently from different threads:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">value</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">putIfAbsent</span><span class="o">(</span><span class="s">"c3"</span><span class="o">,</span> <span class="s">"p1"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>    <span class="c1">// p0</span>
+</code></pre></div>
+<p>The method <code>getOrDefault()</code> returns the value for the given key. In case no entry exists for this key the passed default value is returned:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">value</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getOrDefault</span><span class="o">(</span><span class="s">"hi"</span><span class="o">,</span> <span class="s">"there"</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>    <span class="c1">// there</span>
+</code></pre></div>
+<p>The method <code>replaceAll()</code> accepts a lambda expression of type <code>BiFunction</code>. BiFunctions take two parameters and return a single value. In this case the function is called with the key and the value of each map entry and returns a new value to be assigned for the current key:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">map</span><span class="o">.</span><span class="na">replaceAll</span><span class="o">((</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="s">"r2"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">key</span><span class="o">)</span> <span class="o">?</span> <span class="s">"d3"</span> <span class="o">:</span> <span class="n">value</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"r2"</span><span class="o">));</span>    <span class="c1">// d3</span>
+</code></pre></div>
+<p>Instead of replacing all values of the map <code>compute()</code> let's us transform a single entry. The method accepts both the key to be computed and a bi-function to specify the transformation of the value.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">map</span><span class="o">.</span><span class="na">compute</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">value</span> <span class="o">+</span> <span class="n">value</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"foo"</span><span class="o">));</span>   <span class="c1">// barbar</span>
+</code></pre></div>
+<p>In addition to <code>compute()</code> two variants exist: <code>computeIfAbsent()</code> and <code>computeIfPresent()</code>. The functional parameters of these methods only get called if the key is absent or present respectively.</p>
+
+<p>Finally, the method <code>merge()</code> can be utilized to unify a new value with an existing value in the map. Merge accepts a key, the new value to be merged into the existing entry and a bi-function to specify the merging behavior of both values:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="s">"boo"</span><span class="o">,</span> <span class="o">(</span><span class="n">oldVal</span><span class="o">,</span> <span class="n">newVal</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">newVal</span> <span class="o">+</span> <span class="s">" was "</span> <span class="o">+</span> <span class="n">oldVal</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">map</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"foo"</span><span class="o">));</span>   <span class="c1">// boo was foo</span>
+</code></pre></div>
+<h3>ConcurrentHashMap</h3>
+
+<p>All those methods above are part of the <code>ConcurrentMap</code> interface, thereby available to all implementations of that interface. In addition the most important implementation  <code>ConcurrentHashMap</code> has been further enhanced with a couple of new methods to perform parallel operations upon the map.</p>
+
+<p>Just like parallel streams those methods use a special <code>ForkJoinPool</code> available via <code>ForkJoinPool.commonPool()</code> in Java 8. This pool uses a preset parallelism which depends on the number of available cores. Four CPU cores are available on my machine which results in a parallelism of three:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">ForkJoinPool</span><span class="o">.</span><span class="na">getCommonPoolParallelism</span><span class="o">());</span>  <span class="c1">// 3</span>
+</code></pre></div>
+<p>This value can be decreased or increased by setting the following JVM parameter:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"><span></span>-Djava.util.concurrent.ForkJoinPool.common.parallelism=5
+</code></pre></div>
+<p>We use the same example map for demonstrating purposes but this time we work upon the concrete implementation <code>ConcurrentHashMap</code> instead of the interface <code>ConcurrentMap</code>, so we can access all public methods from this class:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">ConcurrentHashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ConcurrentHashMap</span><span class="o">&lt;&gt;();</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"foo"</span><span class="o">,</span> <span class="s">"bar"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"han"</span><span class="o">,</span> <span class="s">"solo"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"r2"</span><span class="o">,</span> <span class="s">"d2"</span><span class="o">);</span>
+<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"c3"</span><span class="o">,</span> <span class="s">"p0"</span><span class="o">);</span>
+</code></pre></div>
+<p>Java 8 introduces three kinds of parallel operations: <code>forEach</code>, <code>search</code> and <code>reduce</code>. Each of those operations are available in four forms accepting functions with keys, values, entries and key-value pair arguments.</p>
+
+<p>All of those methods use a common first argument called <code>parallelismThreshold</code>. This threshold indicates the minimum collection size when the operation should be executed in parallel. E.g. if you pass a threshold of 500 and the actual size of the map is 499 the operation will be performed sequentially on a single thread. In the next examples we use a threshold of one to always force parallel execution for demonstrating purposes.</p>
+
+<h4>ForEach</h4>
+
+<p>The method <code>forEach()</code> is capable of iterating over the key-value pairs of the map in parallel. The lambda expression of type <code>BiConsumer</code> is called with the key and value of the current iteration step. In order to visualize parallel execution we print the current threads name to the console. Keep in mind that in my case the underlying <code>ForkJoinPool</code> uses up to a maximum of three threads.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">map</span><span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"key: %s; value: %s; thread: %s\n"</span><span class="o">,</span>
+        <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">()));</span>
+
+<span class="c1">// key: r2; value: d2; thread: main</span>
+<span class="c1">// key: foo; value: bar; thread: ForkJoinPool.commonPool-worker-1</span>
+<span class="c1">// key: han; value: solo; thread: ForkJoinPool.commonPool-worker-2</span>
+<span class="c1">// key: c3; value: p0; thread: main</span>
+</code></pre></div>
+<h4>Search</h4>
+
+<p>The method <code>search()</code> accepts a <code>BiFunction</code> returning a non-null search result for the current key-value pair or <code>null</code> if the current iteration doesn't match the desired search criteria. As soon as a non-null result is returned further processing is suppressed. Keep in mind that <code>ConcurrentHashMap</code> is unordered. The search function should not depend on the actual processing order of the map. If multiple entries of the map match the given search function the result may be non-deterministic.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">search</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+    <span class="k">if</span> <span class="o">(</span><span class="s">"foo"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">key</span><span class="o">))</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+<span class="o">});</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Result: "</span> <span class="o">+</span> <span class="n">result</span><span class="o">);</span>
+
+<span class="c1">// ForkJoinPool.commonPool-worker-2</span>
+<span class="c1">// main</span>
+<span class="c1">// ForkJoinPool.commonPool-worker-3</span>
+<span class="c1">// Result: bar</span>
+</code></pre></div>
+<p>Here's another example searching solely on the values of the map:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">searchValues</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">value</span> <span class="o">-&gt;</span> <span class="o">{</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">value</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+<span class="o">});</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Result: "</span> <span class="o">+</span> <span class="n">result</span><span class="o">);</span>
+
+<span class="c1">// ForkJoinPool.commonPool-worker-2</span>
+<span class="c1">// main</span>
+<span class="c1">// main</span>
+<span class="c1">// ForkJoinPool.commonPool-worker-1</span>
+<span class="c1">// Result: solo</span>
+</code></pre></div>
+<h4>Reduce</h4>
+
+<p>The method <code>reduce()</code> already known from Java 8 Streams accepts two lambda expressions of type <code>BiFunction</code>. The first function transforms each key-value pair into a single value of any type. The second function combines all those transformed values into a single result, ignoring any possible <code>null</code> values.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span></span><span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span>
+    <span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Transform: "</span> <span class="o">+</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="o">+</span> <span class="s">"="</span> <span class="o">+</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">},</span>
+    <span class="o">(</span><span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Reduce: "</span> <span class="o">+</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+        <span class="k">return</span> <span class="n">s1</span> <span class="o">+</span> <span class="s">", "</span> <span class="o">+</span> <span class="n">s2</span><span class="o">;</span>
+    <span class="o">});</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Result: "</span> <span class="o">+</span> <span class="n">result</span><span class="o">);</span>
+
+<span class="c1">// Transform: ForkJoinPool.commonPool-worker-2</span>
+<span class="c1">// Transform: main</span>
+<span class="c1">// Transform: ForkJoinPool.commonPool-worker-3</span>
+<span class="c1">// Reduce: ForkJoinPool.commonPool-worker-3</span>
+<span class="c1">// Transform: main</span>
+<span class="c1">// Reduce: main</span>
+<span class="c1">// Reduce: main</span>
+<span class="c1">// Result: r2=d2, c3=p0, han=solo, foo=bar</span>
+</code></pre></div>
+<p>I hope you've enjoyed reading the third part of my tutorial series about Java 8 Concurrency. The code samples from this tutorial are <a href="https://github.com/winterbe/java8-tutorial">hosted on GitHub</a> along with many other Java 8 code snippets. You're welcome to fork the repo and try it by your own.</p>
+
+<p>If you want to support my work, please share this tutorial with your friends. You should also <a href="https://twitter.com/winterbe_">follow me on Twitter</a> as I constantly tweet about Java and programming related stuff.</p>
+
+<ul>
+<li>Part 1: <a href="/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/">Threads and Executors</a></li>
+<li>Part 2: <a href="/posts/2015/04/30/java8-concurrency-tutorial-synchronized-locks-examples/">Synchronization and Locks</a></li>
+<li>Part 3: Atomic Variables and ConcurrentMap</li>
+</ul>
+
+</div>
+</body>
+</html>
