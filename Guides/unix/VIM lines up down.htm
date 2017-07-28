@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+    	div.comment-container {
+    		border: 1px solid #920000;
+    	}
+    	dt {
+    		font-weight: bold;
+    		/*background-color: #999;*/
+    		border-top: 1px solid black
+    	}
+    	dd {
+    		border-bottom: 1px solid black
+		}
+        code {
+            background-color: #C1E7CB; 
+        }
+    </style>
+</head>
+<body>
+<a href="http://vim.wikia.com/wiki/Moving_lines_up_or_down">src</a>
+<h2>Moving lines up or down</h2>
+<div id="WikiaArticle" class="WikiaArticle cye-lm-tag">
+<p class="cye-lm-tag">Programmers often want to move a line of text up or down, or to some other position. We start by explaining the basics (cut and paste, as well as move), and show how to append to a register. An amazing trick with the redo register is then <a href="#Reordering_up_to_nine_lines">presented</a> (useful for reordering up to nine lines), and there is a set of mappings so you can press a key to move the current line, or a block of selected lines, up or down.
+</p>
+<nav id="toc" class="toc" data-loaded="false"><div id="toctitle"><h2>Contents</h2><span class="toctoggle cye-lm-tag">[<a href="#" class="internal" id="togglelink" data-show="show" data-hide="hide">show</a>]</span></div><ol></ol></nav>
+<h2 class="cye-lm-tag"><span class="mw-headline cye-lm-tag" id="Cut_and_paste">Cut and paste</span><span class="editsection cye-lm-tag"></span></h2>
+<p class="cye-lm-tag">Cut the line that you want to move by typing <code>dd</code>, or visually select some lines (press <code>V</code> then move the cursor) and type <code>d</code> to cut the selected block.
+</p><p class="cye-lm-tag">Then move the cursor, and paste the text at the new position (press <code>p</code> to paste after the line with the cursor, or <code>P</code> to paste before).
+</p><p class="cye-lm-tag">You can cut several lines, or blocks of text, by appending to a register using an uppercase letter, for example:
+</p>
+<ul><li>Move to the first line you wish to move; type <code>"add</code> to delete it to register <code>a</code>.
+</li><li>Move to another line; type <code>"Add</code> to delete it and <i>append</i> to the same register.
+</li><li>Move to another line; type <code>"Add</code> to delete it and <i>append</i> to the same register.
+<ul><li>or type "." for the same effect
+</li></ul>
+</li><li>Select a range of lines vith V; type <code>"Ad</code> to delete the entire range and append it to the same register.
+</li><li>Continue in this fashion.
+</li><li>Move to the wanted destination.
+</li><li>Press <code>"ap</code> to paste after the line with the cursor, or <code>"aP</code> to paste before.
+</li></ul>
+<div id="INCONTENT_WRAPPER"><div id="INCONTENT_PLAYER" class="wikia-ad default-height" data-label="advertisement" strrz7p="" hidden=""><div class="provider-container" id="DirectGpt_INCONTENT_PLAYER"></div></div></div><h2><span class="mw-headline cye-lm-tag" id="Move_command">Move command</span><span class="editsection cye-lm-tag"></span></h2>
+<p class="cye-lm-tag">You can move a line, or a block of lines, with the <code>:m</code> command. Examples:
+</p>
+<table class="cleartable">
+<tbody><tr>
+<td> <code>:m 12</code> </td><td> move current line to after line 12
+</td></tr>
+<tr>
+<td> <code>:m 0</code> </td><td> move current line to before first line
+</td></tr>
+<tr>
+<td> <code>:m $</code> </td><td> move current line to after last line
+</td></tr>
+<tr>
+<td> <code>:m 'a</code> </td><td> move current line to after line with mark <code>a</code> (see <a href="/wiki/Using_marks" title="Using marks">using marks</a>)
+</td></tr>
+<tr>
+<td> <code>:m 'a-1</code> </td><td> move current line to before line with mark <code>a</code>
+</td></tr>
+<tr>
+<td> <code>:m '}-1</code> </td><td> move current line to the end of the current paragraph
+</td></tr></tbody></table>
+<p class="cye-lm-tag">For clarity, a space is shown after the <code>:m</code> commands above, but that space is not required.
+</p><p class="cye-lm-tag">To move a block of lines, use the same command but visually select the lines before entering the move command. You can also use arbitrary <a href="/wiki/Ranges" title="Ranges">ranges</a> with the move command. Examples:
+</p>
+<table class="cleartable">
+<tbody><tr>
+<td> <code>:5,7m 21</code> </td><td> move lines 5, 6 and 7 to after line 21
+</td></tr>
+<tr>
+<td> <code>:5,7m 0</code> </td><td> move lines 5, 6 and 7 to before first line
+</td></tr>
+<tr>
+<td> <code>:5,7m $</code> </td><td> move lines 5, 6 and 7 to after last line
+</td></tr>
+<tr>
+<td> <code>:.,.+4m 21</code> </td><td> move 5 lines starting at current line to after line 21
+</td></tr>
+<tr>
+<td> <code>:,+4m14</code> </td><td> same (<code>.</code> for current line is assumed)
+</td></tr></tbody></table>
+<h2><span class="mw-headline cye-lm-tag" id="Reordering_up_to_nine_lines">Reordering up to nine lines</span><span class="editsection cye-lm-tag"></span></h2>
+<p class="cye-lm-tag">The following example lines can be moved to a different order by deleting each line in turn (starting with the line that will be first when the move is complete):
+</p>
+<pre>line 3
+line 9
+line 8
+line 1
+line 5
+line 7
+line 2
+line 6
+line 4
+</pre>
+<p class="cye-lm-tag">Move the cursor to "line&nbsp;1" and type <code>dd</code> to delete the line. Go to "line&nbsp;2" and press <code>.</code> to repeat (delete another line). Repeat this on "line&nbsp;3", and so on, until everything has been deleted in order.
+</p><p class="cye-lm-tag">Now type <code>"1P</code> to paste the contents of register 1 before the cursor.
+</p><p class="cye-lm-tag">Repeat with the dot command, eight times:
+</p>
+<pre>........
+</pre>
+<p class="cye-lm-tag">The first dot command pastes register 2, and the next pastes register 3, and so on. The result is that all the lines are pasted, in the correct order.
+</p><p class="cye-lm-tag">You have to press <code>.</code> eight times (using a count like <code>8.</code> will insert the same line eight times). See <a rel="nofollow" class="external text" href="http://vimdoc.sourceforge.net/cgi-bin/help?tag=redo-register">:help&nbsp;redo-register</a>
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="Mappings_to_move_lines">Mappings to move lines</span><span class="editsection cye-lm-tag"></span></h2>
+<p class="cye-lm-tag">The following mappings in your <a href="/wiki/Vimrc" title="Vimrc" class="mw-redirect">vimrc</a> provide a quick way to move lines of text up or down. The mappings work in normal, insert and visual modes, allowing you to move the current line, or a selected block of lines.
+</p>
+<pre>nnoremap &lt;A-j&gt;&nbsp;:m .+1&lt;CR&gt;==
+nnoremap &lt;A-k&gt;&nbsp;:m .-2&lt;CR&gt;==
+inoremap &lt;A-j&gt; &lt;Esc&gt;:m .+1&lt;CR&gt;==gi
+inoremap &lt;A-k&gt; &lt;Esc&gt;:m .-2&lt;CR&gt;==gi
+vnoremap &lt;A-j&gt;&nbsp;:m '&gt;+1&lt;CR&gt;gv=gv
+vnoremap &lt;A-k&gt;&nbsp;:m '&lt;-2&lt;CR&gt;gv=gv
+</pre>
+<p class="cye-lm-tag">In normal mode or in insert mode, press Alt-j to move the current line down, or press Alt-k to move the current line up.
+</p><p class="cye-lm-tag">After visually selecting a block of lines (for example, by pressing <code>V</code> then moving the cursor down), press Alt-j to move the whole block down, or press Alt-k to move the block up.
+</p>
+<h3><span class="mw-headline cye-lm-tag" id="Explanation">Explanation</span><span class="editsection cye-lm-tag"></span></h3>
+<p class="cye-lm-tag">The command <code>:m .+1</code> (which can be abbreviated to <code>:m+</code>) moves the current line to after line number <code>.+1</code> (current line number + 1). That is, the current line is moved down one line.
+</p><p class="cye-lm-tag">The command <code>:m .-2</code> (which can be abbreviated to <code>:m-2</code>) moves the current line to after line number <code>.-2</code> (current line number − 2). That is, the current line is moved up one line.
+</p><p class="cye-lm-tag">After visually selecting some lines, entering <code>:m '&gt;+1</code> moves the selected lines to after line number <code>'&gt;+1</code> (one line after the last selected line; <code>'&gt;</code> is a mark assigned by Vim to identify the selection end). That is, the block of selected lines is moved down one line.
+</p><p class="cye-lm-tag">The <code>==</code> re-indents the line to suit its new position. For the visual-mode mappings, <code>gv</code> reselects the last visual block and <code>=</code> re-indents that block.
+</p>
+<h2><span class="mw-headline cye-lm-tag" id="See_also">See also</span><span class="editsection cye-lm-tag"></span></h2>
+<ul><li><a href="/wiki/VimTip191" title="VimTip191" class="mw-redirect">Transposing</a> enhanced mappings (better at maintaining cursor position?)
+</li><li><a href="/wiki/VimTip344" title="VimTip344" class="mw-redirect">Cut or copy lines without counting the lines</a> <i>(needs to be fixed)</i>
+</li><li><a rel="nofollow" class="external text" href="http://stackoverflow.com/questions/741814/move-entire-line-up-and-down-in-vim">stackoverflow - Move entire line up and down in Vim</a>
+</li></ul>
+
+</div>
+<br><hr>
+</body>
+</html>

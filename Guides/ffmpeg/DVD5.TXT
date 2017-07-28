@@ -1,0 +1,29 @@
+DVD5
+_______ TO ONE FILE _________
+ffmpeg -i concat:"VTS_01_1.VOB|VTS_01_2.VOB|VTS_01_3.VOB|VTS_01_4.VOB" -vf yadif -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 64k -crf 25 ../sem11.mp4
+
+>> ffmpeg -i concat:VTS_01_1.VOB\|VTS_01_2.VOB\|VTS_01_3.VOB -map 0:v -map 0:a -c:v libx264 -crf 18 -vf yadif -c:a flac aikido.mkv
+
+>> ffmpeg -i concat:"VTS_03_1.VOB|VTS_03_2.VOB|VTS_03_3.VOB" -c:v libx264 -vf yadif -c:a mp3 output.mp4
+
+________ CMDS _________________
+ffmpeg -i "VTS_01_1.VOB" -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 128k -crf 23 test1.mp4
+
+ffmpeg -i "VTS_01_1.VOB" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -b:a 64k -crf 26 test2.mp4
+
+ffmpeg -i "VTS_01_1.VOB" -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 64k -crf 25 test3.mp4
+
+ffmpeg -i "VTS_01_1.VOB" -vf yadif -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 64k -crf 25 ALL1.mp4
+
+____________ RESULTS _________________
+frame=28954 fps= 61 q=-1.0 Lsize=  174008kB time=00:19:18.04 bitrate=1230.9kbits/s speed=2.45x
+video:155914kB audio:17006kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 0.629500%
+
+frame=28954 fps=251 q=-1.0 Lsize=   69998kB time=00:19:18.04 bitrate= 495.2kbits/s speed=  10x
+video:60088kB  audio:9079kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.200923%
+
+frame=28954 fps=234 q=-1.0 Lsize=   94614kB time=00:19:18.04 bitrate= 669.3kbits/s speed=9.35x
+video:84433kB audio:9092kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.163887%
+
+frame=28954 fps=233 q=-1.0 Lsize=   74156kB time=00:19:18.04 bitrate= 524.6kbits/s speed=9.31x
+video:63954kB audio:9092kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.519915%

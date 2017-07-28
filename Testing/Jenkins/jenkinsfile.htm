@@ -1,0 +1,911 @@
+<html class="cye-enabled cye-lm cye-lm-tag" style="
+    font-family: arial;
+    background-color: #c0c0c0;
+"><head></head><body class="cye-lm-tag">
+    <div class="section cye-lm-tag">
+<h1 id="using-a-jenkinsfile">
+Using a Jenkinsfile
+<a class="anchorjs-link " href="#using-a-jenkinsfile" aria-label="Anchor link for: using a jenkinsfile" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h1>
+<div id="toc" class="toc cye-lm-tag">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1 cye-lm-tag">
+<li class="cye-lm-tag"><a href="#creating-a-jenkinsfile">Creating a Jenkinsfile</a>
+<ul class="sectlevel2 cye-lm-tag">
+<li><a href="#build">Build</a></li>
+<li><a href="#test">Test</a></li>
+<li class="cye-lm-tag"><a href="#deploy">Deploy</a></li>
+</ul>
+</li>
+<li><a href="#advanced-syntax-for-pipeline">Advanced Syntax for Pipeline</a>
+<ul class="sectlevel2">
+<li><a href="#string-interpolation">String Interpolation</a></li>
+<li><a href="#working-with-the-environment">Working with the Environment</a></li>
+<li><a href="#parameters">Parameters</a></li>
+<li><a href="#handling-failures">Handling Failures</a></li>
+<li><a href="#using-multiple-agents">Using multiple agents</a></li>
+<li><a href="#optional-step-arguments">Optional step arguments</a></li>
+<li><a href="#advanced-scripted-pipeline">Advanced Scripted Pipeline</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div id="preamble" class="cye-lm-tag">
+<div class="sectionbody cye-lm-tag">
+<div class="paragraph">
+<p class="cye-lm-tag">This section builds on the information covered in <a href="../getting-started/">Getting Started</a>,
+and introduces more useful steps, common patterns, and demonstrates some
+non-trivial <code>Jenkinsfile</code> examples.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Creating a <code>Jenkinsfile</code>, which is checked into source control
+<sup class="footnote" id="_footnote_scm">[<a id="_footnoteref_1" class="footnote" href="#_footnote_1" title="View footnote.">1</a>]</sup>,
+provides a number of immediate benefits:</p>
+</div>
+<div class="ulist cye-lm-tag">
+<ul class="cye-lm-tag">
+<li>
+<p class="cye-lm-tag">Code review/iteration on the Pipeline</p>
+</li>
+<li>
+<p class="cye-lm-tag">Audit trail for the Pipeline</p>
+</li>
+<li class="cye-lm-tag">
+<p class="cye-lm-tag">Single source of truth
+<sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="#_footnote_2" title="View footnote.">2</a>]</sup>
+for the Pipeline, which can be viewed and edited by multiple members of the project.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">Pipeline supports <a href="../syntax/">two syntaxes</a>, Declarative (introduced in
+Pipeline 2.5) and Scripted Pipeline. Both of which support building continuous
+delivery pipelines. Both may be used to define a Pipeline in either the web UI
+or with a <code>Jenkinsfile</code>, though it’s generally considered a best practice to
+create a <code>Jenkinsfile</code> and check the file into the source control repository.</p>
+</div>
+</div>
+</div>
+<div class="sect1 cye-lm-tag">
+<h2 id="creating-a-jenkinsfile"><a class="anchor" href="#creating-a-jenkinsfile"></a>Creating a Jenkinsfile<a class="anchorjs-link " href="#creating-a-jenkinsfile" aria-label="Anchor link for: creating a jenkinsfile" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h2>
+<div class="sectionbody cye-lm-tag">
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">As discussed in the <a href="../getting-started/#defining-a-pipeline-in-scm">Getting Started</a>
+section, a <code class="cye-lm-tag">Jenkinsfile</code> is a text file that contains the definition of a
+Jenkins Pipeline and is checked into source control. Consider the following
+Pipeline which implements a basic three-stage continuous delivery pipeline.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Building..</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Testing..</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploy</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploying....</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Building....</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+    }
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Building....</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+    }
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploy</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploying....</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+    }
+}</code></pre>
+</div></div></div>
+<div class="paragraph">
+<p class="cye-lm-tag">Not all Pipelines will have these same three stages, but it is a good starting
+point to define them for most projects. The sections below will demonstrate the
+creation and execution of a simple Pipeline in a test installation of Jenkins.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p class="cye-lm-tag">It is assumed that there is already a source control repository set up for
+the project and a Pipeline has been defined in Jenkins following
+<a href="../getting-started/#defining-a-pipeline-in-scm">these instructions</a>.</p>
+</div>
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Using a text editor, ideally one which supports
+<a href="http://groovy-lang.org">Groovy</a>
+syntax highlighting, create a new <code>Jenkinsfile</code> in the root directory of the
+project.</p>
+</div>
+<div class="paragraph declarative-pipeline cye-lm-tag">
+<p class="cye-lm-tag">The Declarative Pipeline example above contains the minimum necessary structure
+to implement a continuous delivery pipeline. The <a href="../syntax/#agent" class="cye-lm-tag">agent
+directive</a>, which is required, instructs Jenkins to allocate an executor and
+workspace for the Pipeline. Without an <code>agent</code> directive, not only is the
+Declarative Pipeline not valid, it would not be capable of doing any work! By
+default the <code>agent</code> directive ensures that the source repository is checked out
+and made available for steps in the subsequent stages`</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">The <a href="../syntax/#stages">stages directive</a>, and <a href="../syntax/#steps">steps directives</a>
+are also required for a valid Declarative Pipeline as they instruct Jenkins
+what to execute and in which stage it should be executed.</p>
+</div>
+<div class="exampleblock scripted-pipeline cye-lm-tag">
+<div class="content cye-lm-tag">
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">For more advanced usage with Scripted Pipeline, the example above <code>node</code> is
+a crucial first step as it allocates an executor and workspace for the
+Pipeline. In essence, without <code>node</code>, a Pipeline cannot do any work! From
+within <code>node</code>, the first order of business will be to checkout the source code
+for this project.  Since the <code>Jenkinsfile</code> is being pulled directly from source
+control, Pipeline provides a quick and easy way to access the right
+revision of the source code</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-script" style="display: true">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    checkout scm <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>checkout</code> step will checkout code from source control; <code>scm</code> is a
+special variable which instructs the <code>checkout</code> step to clone the specific
+revision which triggered this Pipeline run.</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class="sect2 cye-lm-tag">
+<h3 id="build"><a class="anchor" href="#build"></a>Build<a class="anchorjs-link " href="#build" aria-label="Anchor link for: build" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">For many projects the beginning of "work" in the Pipeline would be the "build"
+stage. Typically this stage of the Pipeline will be where source code is
+assembled, compiled, or packaged. The <code>Jenkinsfile</code> is <strong>not</strong> a replacement for an
+existing build tool such as GNU/Make, Maven, Gradle, etc, but rather can be
+viewed as a glue layer to bind the multiple phases of a project’s development
+lifecycle (build, test, deploy, etc) together.</p>
+</div>
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">Jenkins has a number of plugins for invoking practically any build tool in
+general use, but this example will simply invoke <code>make</code> from a shell step
+(<code>sh</code>).  The <code>sh</code> step assumes the system is Unix/Linux-based, for
+Windows-based systems the <code>bat</code> could be used instead.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+                archiveArtifacts <span style="color:#606" class="cye-lm-tag">artifacts</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.jar</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">fingerprint</span>: <span style="color:#069" class="cye-lm-tag">true</span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+        archiveArtifacts <span style="color:#606" class="cye-lm-tag">artifacts</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.jar</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">fingerprint</span>: <span style="color:#069" class="cye-lm-tag">true</span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+    }
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>sh</code> step invokes the <code>make</code> command and will only continue if a
+zero exit code is returned by the command. Any non-zero exit code will fail the
+Pipeline.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>archiveArtifacts</code> captures the files built matching the include pattern
+(<code>**/target/*.jar</code>) and saves them to the Jenkins master for later retrieval.</td>
+</tr>
+</tbody></table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p class="cye-lm-tag">Archiving artifacts is not a substitute for using external artifact
+repositories such as Artifactory or Nexus and should be considered only for
+basic reporting and file archival.</p>
+</div>
+</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="test"><a class="anchor" href="#test"></a>Test<a class="anchorjs-link " href="#test" aria-label="Anchor link for: test" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Running automated tests is a crucial component of any successful continuous
+delivery process. As such, Jenkins has a number of test recording, reporting,
+and visualization facilities provided by a
+<a href="https://plugins.jenkins.io/?labels=report">number of plugins</a>.
+At a fundamental level, when there are test failures, it is useful to have
+Jenkins record the failures for reporting and visualization in the web UI.  The
+example below uses the <code>junit</code> step, provided by the
+<a href="https://plugins.jenkins.io/junit">JUnit plugin</a>.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">In the example below, if tests fail, the Pipeline is marked "unstable", as
+denoted by a yellow ball in the web UI. Based on the recorded test reports,
+Jenkins can also provide historical trend analysis and visualization.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                <span style="color:#777" class="cye-lm-tag">/* `make check` returns non-zero on test failures,
+                * using `true` to allow the Pipeline to continue nonetheless
+                */</span>
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check || true</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+                junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        <span style="color:#777" class="cye-lm-tag">/* `make check` returns non-zero on test failures,
+         * using `true` to allow the Pipeline to continue nonetheless
+         */</span>
+        sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check || true</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+        junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+    }
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Using an inline shell conditional (<code>sh 'make || true'</code>) ensures that the
+<code>sh</code> step always sees a zero exit code, giving the <code>junit</code> step the opportunity
+to capture and process the test reports. Alternative approaches to this are
+covered in more detail in the <a href="#handling-failures">Handling Failures</a> section below.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>junit</code> captures and associates the JUnit XML files matching the inclusion
+pattern (<code>**/target/*.xml</code>).</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+<div class="sect2 cye-lm-tag">
+<h3 id="deploy"><a class="anchor" href="#deploy"></a>Deploy<a class="anchorjs-link " href="#deploy" aria-label="Anchor link for: deploy" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">Deployment can imply a variety of steps, depending on the project or
+organization requirements, and may be anything from publishing built artifacts
+to an Artifactory server, to pushing code to a production system.</p>
+</div>
+<div class="paragraph cye-lm-tag">
+<p class="cye-lm-tag">At this stage of the example Pipeline, both the "Build" and "Test" stages have
+successfully executed. In essense, the "Deploy" stage will only execute
+assuming previous stages completed successfully, otherwise the Pipeline would
+have exited early.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploy</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            when {
+              expression {
+                currentBuild.result == <span style="color:#069" class="cye-lm-tag">null</span> || currentBuild.result == <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">SUCCESS</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+              }
+            }
+            steps {
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make publish</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Deploy</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">if</span> (currentBuild.result == <span style="color:#069" class="cye-lm-tag">null</span> || currentBuild.result == <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">SUCCESS</span><span style="color:#710" class="cye-lm-tag">'</span></span>) { <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+            sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make publish</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+    }
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Accessing the <code>currentBuild.result</code> variable allows the Pipeline to
+determine if there were any test failures. In which case, the value would be
+<code>UNSTABLE</code>.</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Assuming everything has executed successfully in the example Jenkins Pipeline,
+each successful Pipeline run will have associated build artifacts archived,
+test results reported upon and the full console output all in Jenkins.</p>
+</div>
+<div class="paragraph scripted-pipeline">
+<p class="cye-lm-tag">A Scripted Pipeline can include conditional tests (shown above), loops,
+try/catch/finally blocks and even functions. The next section will cover this
+advanced Scripted Pipeline syntax in more detail.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1 cye-lm-tag">
+<h2 id="advanced-syntax-for-pipeline"><a class="anchor" href="#advanced-syntax-for-pipeline"></a>Advanced Syntax for Pipeline<a class="anchorjs-link " href="#advanced-syntax-for-pipeline" aria-label="Anchor link for: advanced syntax for pipeline" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h2>
+<div class="sectionbody cye-lm-tag">
+<div class="sect2">
+<h3 id="string-interpolation"><a class="anchor" href="#string-interpolation"></a>String Interpolation<a class="anchorjs-link " href="#string-interpolation" aria-label="Anchor link for: string interpolation" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Jenkins Pipeline uses rules identical to
+<a href="http://groovy-lang.org">Groovy</a>
+for string interpolation. Groovy’s String interpolation support can be
+confusing to many newcomers to the language. While Groovy supports
+declaring a string with either single quotes, or double quotes, for
+example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight nowrap"><code data-lang="groovy"><span style="color:#080;font-weight:bold" class="cye-lm-tag">def</span> singlyQuoted = <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Hello</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+<span style="color:#080;font-weight:bold" class="cye-lm-tag">def</span> doublyQuoted = <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="color:#D20" class="cye-lm-tag">World</span><span style="color:#710" class="cye-lm-tag">"</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Only the latter string will support the dollar-sign (<code>$</code>) based string
+interpolation, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight nowrap"><code data-lang="groovy"><span style="color:#080;font-weight:bold" class="cye-lm-tag">def</span> username = <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Jenkins</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Hello Mr. ${username}</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="color:#D20" class="cye-lm-tag">I said, Hello Mr. </span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>username<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#710" class="cye-lm-tag">"</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Would result in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight nowrap"><code>Hello Mr. ${username}
+I said, Hello Mr. Jenkins</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Understanding how to use string interpolation is vital for using some of
+Pipeline’s more advanced features.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="working-with-the-environment"><a class="anchor" href="#working-with-the-environment"></a>Working with the Environment<a class="anchorjs-link " href="#working-with-the-environment" aria-label="Anchor link for: working with the environment" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Jenkins Pipeline exposes environment variables via the global variable <code>env</code>,
+which is available from anywhere within a <code>Jenkinsfile</code>. The full list of
+environment variables accessible from within Jenkins Pipeline is documented at
+<a href="http://localhost:8080/pipeline-syntax/globals#env">localhost:8080/pipeline-syntax/globals#env</a>,
+assuming a Jenkins master is running on <code>localhost:8080</code>, and includes:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">BUILD_ID</dt>
+<dd>
+<p class="cye-lm-tag">The current build ID, identical to BUILD_NUMBER for builds created in Jenkins versions 1.597+</p>
+</dd>
+<dt class="hdlist1">JOB_NAME</dt>
+<dd>
+<p class="cye-lm-tag">Name of the project of this build, such as "foo" or "foo/bar".</p>
+</dd>
+<dt class="hdlist1">JENKINS_URL</dt>
+<dd>
+<p class="cye-lm-tag">Full URL of Jenkins, such as <a href="http://example.com:port/jenkins/" class="bare">example.com:port/jenkins/</a> (NOTE: only available if Jenkins URL set in "System Configuration")</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Referencing or using these environment variables can be accomplished like
+accessing any key in a Groovy
+<a href="http://groovy-lang.org/syntax.html#_maps">Map</a>,
+for example:</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Example</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="color:#D20" class="cye-lm-tag">Running </span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>env.BUILD_ID<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#D20" class="cye-lm-tag"> on </span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>env.JENKINS_URL<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#710" class="cye-lm-tag">"</span></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="color:#D20" class="cye-lm-tag">Running </span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>env.BUILD_ID<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#D20" class="cye-lm-tag"> on </span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>env.JENKINS_URL<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#710" class="cye-lm-tag">"</span></span>
+}</code></pre>
+</div></div></div>
+<div class="sect3">
+<h4 id="setting-environment-variables"><a class="anchor" href="#setting-environment-variables"></a>Setting environment variables<a class="anchorjs-link " href="#setting-environment-variables" aria-label="Anchor link for: setting environment variables" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h4>
+<div class="paragraph">
+<p class="cye-lm-tag">Setting an environment variable within a Jenkins Pipeline is accomplished
+differently depending on whether Declarative or Scripted Pipeline is used.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Declarative Pipeline supports an <a href="../syntax/#environment">environment</a>
+directive, whereas users of Scripted Pipeline must use the <code>withEnv</code> step.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+    environment { <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+        CC = <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">clang</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+    }
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Example</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            environment { <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+                DEBUG_FLAGS = <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">-g</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+            steps {
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">printenv</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+    withEnv([<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="color:#D20" class="cye-lm-tag">PATH+MAVEN=</span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>tool <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">M3</span><span style="color:#710" class="cye-lm-tag">'</span></span><span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#D20" class="cye-lm-tag">/bin</span><span style="color:#710" class="cye-lm-tag">"</span></span>]) {
+        sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">mvn -B verify</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+    }
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>An <code>environment</code> directive used in the top-level <code>pipeline</code> block will
+apply to all steps within the Pipeline.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>An <code>environment</code> directive defined within a <code>stage</code> will only apply the
+given environment variables to steps within the <code>stage</code>.</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class="sect2 cye-lm-tag">
+<h3 id="parameters"><a class="anchor" href="#parameters"></a>Parameters<a class="anchorjs-link " href="#parameters" aria-label="Anchor link for: parameters" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Declarative Pipeline supports parameters out-of-the-box, allowing the Pipeline
+to accept user-specified parameters at runtime via the <a href="../syntax/#parameters">parameters directive</a>. Configuring parameters with Scripted Pipeline is done
+with the <code>properties</code> step, which can be found in the Snippet Generator.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">If you configured your pipeline to accept parameters using the <strong>Build with
+Parameters</strong> option, those parameters are accessible as members of the <code>params</code>
+variable.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Assuming that a String parameter named "Greeting" has been configuring in the
+<code>Jenkinsfile</code>, it  can access that parameter via <code>${params.Greeting}</code>:</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+    parameters {
+        string(<span style="color:#606" class="cye-lm-tag">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Greeting</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">defaultValue</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Hello</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">description</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">How should I greet the world?</span><span style="color:#710" class="cye-lm-tag">'</span></span>)
+    }
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Example</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>params.Greeting<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#D20" class="cye-lm-tag"> World!</span><span style="color:#710" class="cye-lm-tag">"</span></span>
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">properties([parameters([string(<span style="color:#606" class="cye-lm-tag">defaultValue</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Hello</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">description</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">How should I greet the world?</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Greeting</span><span style="color:#710" class="cye-lm-tag">'</span></span>)])])
+
+node {
+    echo <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">"</span><span style="background-color:hsla(0,0%,0%,0.07);color:black" class="cye-lm-tag"><span style="font-weight:bold;color:#666" class="cye-lm-tag">${</span>params.Greeting<span style="font-weight:bold;color:#666" class="cye-lm-tag">}</span></span><span style="color:#D20" class="cye-lm-tag"> World!</span><span style="color:#710" class="cye-lm-tag">"</span></span>
+}</code></pre>
+</div></div></div>
+</div>
+<div class="sect2">
+<h3 id="handling-failures"><a class="anchor" href="#handling-failures"></a>Handling Failures<a class="anchorjs-link " href="#handling-failures" aria-label="Anchor link for: handling failures" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Declarative Pipeline supports robust failure handling by default via its
+<a href="../syntax/#post">post section</a> which allows declaring a number of different
+"post conditions" such as: <code>always</code>, <code>unstable</code>, <code>success</code>, <code>failure</code>, and
+<code>changed</code>. The <a href="#syntax">Pipeline Syntax</a> section provides more detail on
+how to use the various post conditions.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent any
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            steps {
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+    }
+    post {
+        always {
+            junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+        failure {
+            mail <span style="color:#606" class="cye-lm-tag">to</span>: team<span style="color:#007" class="cye-lm-tag">@example</span>.com, <span style="color:#606" class="cye-lm-tag">subject</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">The Pipeline failed :(</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">node {
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+    stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">try</span> {
+            sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">finally</span> {
+            junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+    }
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+}</code></pre>
+</div></div></div>
+<div class="exampleblock scripted-pipeline">
+<div class="content">
+<div class="paragraph">
+<p class="cye-lm-tag">Scripted Pipeline however relies on Groovy’s built-in <code>try</code>/<code>catch</code>/<code>finally</code> semantics
+for handling failures during execution of the Pipeline.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">In the <a href="#test">Test</a> example above, the <code>sh</code> step was modified to never return a
+non-zero exit code (<code>sh 'make check || true'</code>). This approach, while valid,
+means the following stages need to check <code>currentBuild.result</code> to know if
+there has been a test failure or not.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">An alternative way of handling this, which preserves the early-exit behavior of
+failures in Pipeline, while still giving <code>junit</code> the chance to capture test
+reports, is to use a series of <code>try</code>/<code>finally</code> blocks:</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="using-multiple-agents"><a class="anchor" href="#using-multiple-agents"></a>Using multiple agents<a class="anchorjs-link " href="#using-multiple-agents" aria-label="Anchor link for: using multiple agents" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">In all the previous examples, only a single agent has been used.  This means
+Jenkins will allocate an executor wherever one is available, regardless of how
+it is labeled or configured. Not only can this behavior be overridden, but
+Pipeline allows utilizing multiple agents in the Jenkins environment from
+within the <em>same</em> <code>Jenkinsfile</code>, which can helpful for more advanced use-cases
+such as  executing builds/tests across multiple platforms.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">In the example below, the "Build" stage will be performed on one agent and the
+built results will be reused on two subsequent agents, labelled "linux" and
+"windows" respectively, during the "Test" stage.</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-declarative">
+    <div class="title">Jenkinsfile (Declarative Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">pipeline {
+    agent none
+    stages {
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            agent any
+            steps {
+                checkout scm
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+                stash <span style="color:#606" class="cye-lm-tag">includes</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.jar</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+            }
+        }
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test on Linux</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            agent { <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+                label <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">linux</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+            steps {
+                unstash <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="3"></i><b>(3)</b></span>
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+            post {
+                always {
+                    junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+                }
+            }
+        }
+        stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test on Windows</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            agent {
+                label <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">windows</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+            steps {
+                unstash <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+                bat <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="4"></i><b>(4)</b></span>
+            }
+            post {
+                always {
+                    junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+                }
+            }
+        }
+    }
+}</code></pre>
+</div></div>  <div class="pipeline-script-expand">
+    <a href="#" onclick="javascript:$(this).parent().siblings('.pipeline-script').toggle(); return false;">Toggle Scripted Pipeline</a>
+    <em>(Advanced)</em>
+  </div>
+  <div class="listingblock pipeline-script" style="display: none">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+    node {
+        checkout scm
+        sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        stash <span style="color:#606" class="cye-lm-tag">includes</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.jar</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="1"></i><b>(1)</b></span>
+    }
+}
+
+stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+    node(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">linux</span><span style="color:#710" class="cye-lm-tag">'</span></span>) { <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="2"></i><b>(2)</b></span>
+        checkout scm
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">try</span> {
+            unstash <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="3"></i><b>(3)</b></span>
+            sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">finally</span> {
+            junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+    }
+    node(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">windows</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+        checkout scm
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">try</span> {
+            unstash <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            bat <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag"><i class="conum" data-value="4"></i><b>(4)</b></span>
+        }
+        <span style="color:#080;font-weight:bold" class="cye-lm-tag">finally</span> {
+            junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+        }
+    }
+}</code></pre>
+</div></div></div>
+<div class="colist arabic">
+<table>
+<tbody><tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>stash</code> step allows capturing files matching an inclusion pattern
+(<code>**/target/*.jar</code>) for reuse within the <em>same</em> Pipeline. Once the Pipeline has
+completed its execution, stashed files are deleted from the Jenkins master.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The parameter in <code>agent</code>/<code>node</code> allows for any valid Jenkins label
+expression. Consult the <a href="../syntax/">Pipeline Syntax</a> section for more details.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>unstash</code> will retrieve the named "stash" from the Jenkins master into the
+Pipeline’s current workspace.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The <code>bat</code> script allows for executing batch scripts on Windows-based
+platforms.</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="optional-step-arguments"><a class="anchor" href="#optional-step-arguments"></a>Optional step arguments<a class="anchorjs-link " href="#optional-step-arguments" aria-label="Anchor link for: optional step arguments" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Pipeline follows the Groovy language convention of allowing parentheses to be
+omitted around method arguments.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Many Pipeline steps also use the named-parameter syntax as a shorthand for
+creating a Map in Groovy, which uses the syntax <code>[key1: value1, key2: value2]</code>.
+Making statements like the following functionally equivalent:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight nowrap"><code data-lang="groovy">git <span style="color:#606" class="cye-lm-tag">url</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">git://example.com/amazing-project.git</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">branch</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">master</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+git([<span style="color:#606" class="cye-lm-tag">url</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">git://example.com/amazing-project.git</span><span style="color:#710" class="cye-lm-tag">'</span></span>, <span style="color:#606" class="cye-lm-tag">branch</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">master</span><span style="color:#710" class="cye-lm-tag">'</span></span>])</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">For convenience, when calling steps taking only one parameter (or only one
+mandatory parameter), the parameter name may be omitted, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight nowrap"><code data-lang="groovy">sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">echo hello</span><span style="color:#710" class="cye-lm-tag">'</span></span> <span style="color:#777" class="cye-lm-tag">/* short form  */</span>
+sh([<span style="color:#606" class="cye-lm-tag">script</span>: <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">echo hello</span><span style="color:#710" class="cye-lm-tag">'</span></span>])  <span style="color:#777" class="cye-lm-tag">/* long form */</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="advanced-scripted-pipeline"><a class="anchor" href="#advanced-scripted-pipeline"></a>Advanced Scripted Pipeline<a class="anchorjs-link " href="#advanced-scripted-pipeline" aria-label="Anchor link for: advanced scripted pipeline" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h3>
+<div class="paragraph">
+<p class="cye-lm-tag">Scripted Pipeline is a domain-specific language
+<sup class="footnote" id="_footnote_dsl">[<a id="_footnoteref_3" class="footnote" href="#_footnote_3" title="View footnote.">3</a>]</sup>
+based on Groovy, most
+<a href="http://groovy-lang.org/semantics.html">Groovy syntax</a>
+can be used in Scripted Pipeline without modification.</p>
+</div>
+<div class="sect3">
+<h4 id="executing-in-parallel"><a class="anchor" href="#executing-in-parallel"></a>Executing in parallel<a class="anchorjs-link " href="#executing-in-parallel" aria-label="Anchor link for: executing in parallel" data-anchorjs-icon="" style="font-style: normal; font-variant: normal; font-weight: normal; font-stretch: normal; font-size: 1em; line-height: 1; font-family: anchorjs-icons; padding-left: 0.375em;"></a></h4>
+<div class="paragraph">
+<p class="cye-lm-tag">The example in the <a href="#using-multiple-nodes">section above</a> runs tests across two
+different platforms in a linear series. In practice, if the <code>make check</code>
+execution takes 30 minutes to complete, the "Test" stage would now take 60
+minutes to complete!</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Fortunately, Pipeline has built-in functionality for executing portions of
+Scripted Pipeline in parallel, implemented in the aptly named <code>parallel</code> step.</p>
+</div>
+<div class="paragraph">
+<p class="cye-lm-tag">Refactoring the example above to use the <code>parallel</code> step:</p>
+</div>
+<div class="pipeline-block">  <div class="listingblock pipeline-script" style="display: true">
+    <div class="title">Jenkinsfile (Scripted Pipeline)</div>
+    <div class="content">
+  <pre class="CodeRay highlight nowrap"><code class="language-groovy" data-lang="groovy">stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Build</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+    <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+}
+
+stage(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">Test</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+    parallel <span style="color:#606" class="cye-lm-tag">linux</span>: {
+        node(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">linux</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            checkout scm
+            <span style="color:#080;font-weight:bold" class="cye-lm-tag">try</span> {
+                unstash <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">app</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+                sh <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">make check</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+            <span style="color:#080;font-weight:bold" class="cye-lm-tag">finally</span> {
+                junit <span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">**/target/*.xml</span><span style="color:#710" class="cye-lm-tag">'</span></span>
+            }
+        }
+    },
+    <span style="color:#606" class="cye-lm-tag">windows</span>: {
+        node(<span style="background-color:hsla(0,100%,50%,0.05)" class="cye-lm-tag"><span style="color:#710" class="cye-lm-tag">'</span><span style="color:#D20" class="cye-lm-tag">windows</span><span style="color:#710" class="cye-lm-tag">'</span></span>) {
+            <span style="color:#777" class="cye-lm-tag">/* .. snip .. */</span>
+        }
+    }
+}</code></pre>
+</div></div></div>
+<div class="paragraph">
+<p class="cye-lm-tag">Instead of executing the tests on the "linux" and "windows" labelled nodes in
+series, they will now execute in parallel assuming the requisite capacity
+exists in the Jenkins environment.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnote_1">
+<a href="#_footnoteref_1">1</a>. <a href="https://en.wikipedia.org/wiki/Source_control_management" class="bare">en.wikipedia.org/wiki/Source_control_management</a>
+</div>
+<div class="footnote" id="_footnote_2">
+<a href="#_footnoteref_2">2</a>. <a href="https://en.wikipedia.org/wiki/Single_Source_of_Truth" class="bare">en.wikipedia.org/wiki/Single_Source_of_Truth</a>
+</div>
+<div class="footnote" id="_footnote_3">
+<a href="#_footnoteref_3">3</a>. <a href="https://en.wikipedia.org/wiki/Domain-specific_language" class="bare">en.wikipedia.org/wiki/Domain-specific_language</a>
+</div>
+</div>
+</div>
+  
+</body></html>

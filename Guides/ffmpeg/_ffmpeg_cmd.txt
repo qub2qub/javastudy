@@ -1,0 +1,45 @@
+ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -crf 20 output.mp4
+ffmpeg -i "n37 Profiling.mp4" -s 1280x720 -b:v 512k -vcodec libx264 -acodec aac output2.mp4
+ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -crf 23 output3.mp4
+ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -b:a 64k -b:v 84k -crf 24 output4.mp4
+ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -b:a 64k -b:v 84k output5.mp4
+ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -b:a 64k -crf 28 output6.mp4
+
+>>>>____ использую это внизу ____ >>>>
+ffmpeg -i "filename.mp4" -vcodec libx264 -crf 28 -acodec aac -ar 16000 -ac 1 -b:a 64k  resultFile.mp4
+
+>>>>
+ffmpeg -i "VTS_01_1.VOB" -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 128k -crf 23 test1.mp4
+
+--------------------------------------
+http://www.mpabo.com/2014/12/14/ffmpeg-and-x264-encoding-guide/
+https://www.dvd-guides.com/guides/dvdrip/235-convert-dvd-to-h264-mkv-mp4-using-handbrake
+--------------------------------------
+Ripping DVD with FFMPEG
+>> http://mso-chronicles.blogspot.com.by/2014/08/ripping-dvd-with-ffmpeg.html
+
+This more a post to myself than to others, but even so, others might find it useful as well. Because sometimes having a DVD is inconvenient compared to your usual Matroska file saved on a HDD, I was looking for a simple way to encode the DVD. I have it decrypted and copied in a folder, but there are a bunch of 1 GiB VOB files, which is a) big, b) inconvenient. So the idea is, join the VOBs and transcode it into h264 (substitute theora, vp8 or dirac if you are more radical FLOSS supporter than me) and FLAC for audio. Actually simple search on the net presented me with an easy solution using FFMPEG (I kinda had problems with using the GUI ripping software), but it took some more research (reading the ffmpeg man pages) to find out how to rip more than one audio stream into the final file (I used a JAP/ENG DVD about Aikido).
+
+__So, without further ado, here's the command:__
+>> ffmpeg -i concat:VTS_01_1.VOB\|VTS_01_2.VOB\|VTS_01_3.VOB -map 0:v -map 0:a -c:v libx264 -crf 18 -vf yadif -c:a flac aikido.mkv
+
+__Very nice article. I used the following on Windows, with quotes to hide the pipe characters "|". Just used x264/mp3 with defaults and the result was good.___
+>> ffmpeg -i concat:"VTS_03_1.VOB|VTS_03_2.VOB|VTS_03_3.VOB" -c:v libx264 -vf yadif -c:a mp3 output.mp4
+
+And some info:
+The ffmpeg command is in ffmpeg package, from rpmfusion free. It's not in Fedora proper because of patent issues, I believe.
+-i concat:VTS_01_1.VOB\|VTS_01_2.VOB\|VTS_01_3.VOB marks that input file is a direct join of the three VOB files listed, the backslash is to escape the "|" so that it's seen by ffmpeg instead of bash.
+-map 0:v tells that ALL video streams are to be copied/transcoded.
+-map 0:a tells that ALL audio streams are to be copied/transcoded.
+-c:v libx264 tells that for video streams we'll use libx264 codec (i. e. we'll transcode to h264).
+-crf 18 tells that we want to use Constant Rate Factor, value 18 (which might be a bit of overkill, but I don't want to sacrifice quality for space and I don't have the time tune it).
+-vf yadif use YADIF deinterlacing, because I don't wanna keep interlacing in the video – I'll be playing it on a computer, after all.
+-c:a flac tells we'll be using FLAC for audio streams. It's free and lossless. Again, it might be overkill, but I like to keep the original sound without using nonfree codec like AAC or AC3.
+When I originally omitted the -map parameters, only single video and single audio stream were transcoded, so it's necessary if you want to transcode more audio streams or different stream than the first one.
+--------------------------------------
+>>https://unix.stackexchange.com/questions/28803/how-can-i-reduce-a-videos-size-with-ffmpeg
+Calculate the bitrate you need by dividing 1 GB by the video length in seconds. So, for a video of length 16:40 (1000 seconds), use a bitrate of 1000000 bytes/sec:
+>>ffmpeg -i input.mp4 -b 1000000 output.mp4
+
+Additional options that might be worth considering is setting the Constant Rate Factor, which lowers the average bit rate, but retains better quality. Vary the CRF between around 18 and 24 — the lower, the higher the bitrate.
+>> ffmpeg -i input.mp4 -vcodec libx264 -crf 20 output.mp4
