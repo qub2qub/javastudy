@@ -1,0 +1,103 @@
+также соответсвтвуют SOA манифесту, но по-другому реализуют.
+основное что отилчает микросервисы от обычных сервисов -- микросервисы строятся вокруг бизнес логики.
+
+1) Architectural style =микросервисы - это архитектурный стиль
+2) Small services =маленькие сервисы - на 2 пиццы - 6-9челов
+3) Lightweight communication =легковесная коммуникация
+4) Around business capabilities =строятся вокруг бизнес требований
+5) Independent deployment =УСТАНАВЛИВАЮТСЯ (деплоятся) независимо друг от друга
+6) Minimum centralized management =ис-ют минимум централизованного управления
+7) Different languages =могут быть написаны на разных языках
+8) Different databases =могут ходить/использовать в разные БД
+9) интегрируются с другими сервисами ис-я микросервисный подход
+10) одна команда полностью сопровождает сервис - от разработки, тестирования, до деплоя
+
+===================================================
+
+Используя микросервисный подход мы получаем:
+___AGILITY___[подвижность, проворство, быстрота; живость; ловкость; сообразительность]
+1) Independent Scalability =масштабировать сервисы независимо друг от друга
+2) Availability of several versions of the same services simultaneously
+=поддерживать работу разных версий одного и того же одновременно
+3) Gradual upgrade to newer services versions within the whole platform
+=обновлять сервисы по 1, независимо от работы других сервисов
+4) Independent development and deployment of services
+=можем независимо разрабатывать, каждая команда пишет свои сервисы одновременно и не влияют друг на друга.
+=архитекторы утверждают контракты взаимодействия, 
+5) New team members can quickly become productive
+=т.к. маленькие сервисы, не нужно много знать сразу, поэтому новая команда быстро становится эффективной.
+6) Easy adding new services or features 
+=уменьшается TIME-TO-MARKET, новые фичи быстрее выходят в продакшн
+__REDUCING COST__
+7) Efficient resource utilization =ресурсы эффективно используются/загружаются работой
+8) Lightweight technology stack =SpringBoot легкий и простой, ничего кроме знать не надо.
+__INCREASE COMPETITIVE ADVANTAGE__
+9) Technology Heterogeneity =Разнородность, неоднородность, разнотипность
+__CONSOLIDATION__объединение; соединение в одно целое
+10) Zero-coding time for platform service coding
+__ALIGNMENT__выравнивание, расположение по одной линии;
+11) The code is organized around business capabilities
+
+
+===================================================
+
+КОНЦЕПТУАЛЬНЫЕ НЕДОСТАТКИ МИКРОСЕРВИСОВ:
+___ CONCEPTUAL DIFFICULTIES
+1) Eventual Consistency =согласованность в конечном счёте (потенциальная непротиворечивость)
+=Т.Е. данные будут несогласованы в какой-то момент времени
+=когда покупал куклу она как бы была, я оплатил успешно, а потом оказалось что они закончились.
+2) Network reliability =ненадёжность сети
+3) Security =много сервисов, а кому что разрешать - вопрос? также просадка производительности при использовании всех безопасных каналоы
+___ DEVELOPMENT
+4) Implicit interfaces =заранее описывать все интерфейсы, общаться со всеми кто ис-ет сервисы
+5) Duplication of efforts =дублировании усилий, т.к. каждая команда разрабатывает похожий функционал и он не может быть переиспользован.
+6) Eventual Consistency =на каждом этапе бизнес логики должны делать доп.проверки что данные всё ещё валидны
+7) Failure Management =быть гововы, что любой вызов может упасть -- как это обрабатываеть? 
+=заново послать, вернуть из кэша, вернуть ошибку, взять дефолты и др. надо продумать на этапе дизайна.
+8) Complicated Testing = 1 сервис локально протесттиь легко, а как их все вместе протетстить и предугадать всех и кейсы/комбинации общения тыщи сервисов в версий. 
+9) Resource Demand for Testing =нужно доп. ресурсы для интерграционного тестирования
+___ OPERATIONS
+10) Significant operations overhead =так деплоили бы 1монолит, а так - тыщи, и каждый надо деплоить, настраивать, или обновлять все версии, что делать, как обновлять каждый сервис/версию
+11) Tracing issues problem =как понять, в каком конкретном сервисе проблемы, надо ставить отдельый сервис, который будет следить/искать причину ошибки.
+12) Dynamic Microservices Configuration =как менять поведение сервисов на лету ч/з конфигурацию? должна быть какая-то система по конфигу.
+___ PERFORMANCE
+13) Network latency =просадка производительности при передаче по сети, задержки сети
+14) Marshalling and Unmarshalling =часто и все сервисы будут делать марш и унмарш, можно ещё паковать в бинарный протокол для улучшения производительности.
+
+===================================================
+
+1) Consumer Layer shows different clients of the product 
+2) Delivery Layer balances requests, caches static web content, addresses requests to a right application (На уровне регионов, дата центров)
+3) Aggregation Layer includes Server Side UI Application, different sets of APIs for specific clients which aggregates business services (API для каждого клиента [SLA/Security специфиное для каждого клиента])
+4) Service Layer contains Business Services, System Services, Gateway and Discovery services (для взаимодействия с бизнес-микросервисами.)
+5) API Gateway and Service Discovery internal components which provides routing, discovery, balancing and security for the Service Layer (API Gatevay перенаправляет запрос в бизнес-микросервисам, применив какие-то правила и фильтры. А Service Discovery отслеживает, какие сервисы находятся в нашей системе, какие из них запущены и работают. А LoadBalancer позволяет наприваить запрос на тот сервис, который простаивает в данный момент.)
+6) Business Microservices  implement business logic and processes (могут иметь свою собственную БД/у каждого сервиса)
+6,5) Messaging channel - есть легковесный канал обмена сообщениями между сервисами.
+можно ис-ть http или бинарный для улучшения производительности. http -для синхронного общения, или дургой Messaging channel - для асинхронного общения.
+7) System Services include existing services in customer‘s environment like LDAP, printing service, Email Server, Time Service
+8) Platform Services provide support for security and microservices management. --заменяют ESB - централизированное security, management, logging, monitoring, configuration.
+Например, если сервис сломался- то как узнать какой - заходить на каждый сервис?
+или как быстро посмотреть все логи?
+Или сколько памяти жрёт каждый сервис, скорость передачи данных, бизнес метрики и т.п.
+Удобно всё иметь в одном месте.
+А Конфигурация (в одном месте) - чтобы менять динамически поведение микросервисов (на лету менять например разные версии)
+9) (IaaS)Infrastructure Layer provides virtual infrastructure for the platform.
+
+===================================================
+
+как вообще запросы обрабатываются в микросервисах?
+
+1) все запросы попадают на API Gateway, это единая точка входа.
+2) API Gateway обращается в Service Discovery, чтобы узнать, какие сейчас сервисы запущены, получает таблицу.
+3) потом API Gateway обращается к севрвису Security и говорит ему "вот тут пришёл такой-то запрос от этого клиента, ему можно пройти?" аутентифицируем или проверяем права на доступ
+4) т.к. запросы идут по сети - то примеяем патерн Circuit Breaker = для этого histrix  - самая известная имплементация, чтобы могли бысто фэйлится при сетевойошибке.
+5) делаем запрос на бизнес-сервис, который при старте зарегился в сервис-дисковери, и каждые 30 секунд посылает в него запросы "я живой". Но иногда API Gateway может обратиться к сервису, который не живой, тогда надо продумать как этот обработать.
+6) Первый бизнес-сервис должен вызвать другие пару сервисов, поэтому он также идёт в Service Discovery, узнаёт про эти сервисы и ис-я Circuit Breaker посылает к ним запросы. и так по цепочке, если надо.
+
+1) API Gateway routes a service request to a proper service with a certain version
+2) Service Discovery is a register service that allows to get alive services list to  call them
+3) Circuit Breaker wraps remote calls to protect calling components from hanging
+4) Business Services Composition is a business service that aggregates other services within some business logic
+5) Client Balancer is a Client-Side Load Balancer which is positioned  in front of circuit breaker to discover a service and balance a call
+
+
