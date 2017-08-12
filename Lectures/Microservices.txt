@@ -100,4 +100,62 @@ ___ PERFORMANCE
 4) Business Services Composition is a business service that aggregates other services within some business logic
 5) Client Balancer is a Client-Side Load Balancer which is positioned  in front of circuit breaker to discover a service and balance a call
 
+===================================================
+
+Реализация на NETFLIX-СТЕКЕ
+1) Spring Boot for setup and auto configuration 
+2) Spring Cloud Feign for zero-time Service Clients implementation
+3) Ribbon provides a client side load balancing via Eureka
+4) Zuul acts as a API Gateway and routes calls to services
+5) Eureka acts as a Discovery Service
+6) Hystrix is a Circuit Breaker implementation that adds fault tolerance to service-service calls
+7) Spring Cloud Security is used for a Security Service 
+8) Spring Cloud Config is specified for Centralized Configuration Service
+9) Spring Cloud Sleuth acts as a Monitoring Service
+10) Spring framework is used for REST API implementation
+
+CENTRALIZED MONITORING
+1) Consumer Layer shows different clients of the product 
+2) Delivery Layer balances requests, caches static web content, addresses requests to a right application 
+3) Aggregation Layer includes Server Side UI Application, different sets of APIs for specific clients which aggregates business services
+4) Service Layer contains Business Services, System Services, Gateway and Discovery services
+5) API Gateway and Service Discovery internal components which provides routing, discovery, balancing and security for the Service Layer
+6) Business Microservices  implement business logic and processes
+7) System Services include existing services in customer's environment like LDAP, printing service, Email Server, Time Service
+8) Platform Services provide support for security and microservices management. 
+9) Infrastructure Layer provides virtual infrastructure for the platform.
+
+================
+Перевод большого монилита на микросервисы:
+
+1) Понять с точки зрения бизнеса, какие компоненты ему нужны в микросервисах
+с точки бизнес логики какие микросервисы видит клиент
+2) и когда описан каждый микросервис и чем он должен заниматься
+можно выбрать правильный технологический стэк и архитектурное решение, как будут взаимодействовать сервисы друг с другом
+3) и предупредить бизнес что в этот момент будет просадка по префомансу и будет eventual consistency -- готов ли будет бизнес идти с этим в прод?
+4) после всего этого надо обсуждать как всё это реализовывать
+5) понять какие части системы в какой микросервис попадут
+окажется что есть общие части: барьер (business rule engine) - где на основе параметров введённых пользователем (какой-то конфигурации) вы выбираете ту или иную бизнес логику (конкретный бизнес-flow)
+ТО выносих их нужно не в микросервисы а в общие библиотеки. (общие части будут зашарены )
+6) выбранный стэк технологий где-то описать, чтобы новые команды с новыми фичами узнали новый технологический стек и спецификацию взаимодействия с другими микросервисами.
+
+---------
+Проблема GOD-Object:
+как резать этот большой объект?
+Поэтому надо сделать ТЕСТИРОВАНИЕ:
+Писать очень много тестов: юнит тесты, компонентные тесты, интеграционные тесты, регрессионные тесты
+Кроссфункциональные команды -- и ТимЛиды должны решать все эти вопросы : дизайн, как построить.
+регрессионно дожно лечь в основу.
+
+Как деплоить?
+у каждой команды должен быть своей енваромент для своего микросервиса.
+набор общих енвароментов, где они все интегрируются, проверяется надёжность и быстродействие всех сервисов.
+продакшн енваромент.
+
+Когда их много - то будет дженкинс с джобами,
+но этот процесс сборки и деплоя нужно довести до полного автоматизма, чтобы это были действительно микросервисы.
+Т.е. при комите код попадает в репо, запускается билд и статический анализ кода, дженкинс +1, кто-то ревьюит код, нажимает approve, запускается сборка, юнит тесты, и др.тесты, оборачиваем в докер, прописываем все версии , загружаем в реестр микросервисов или в артифактори , после этого деплоем в на енваромент для команды, проверяем интеграцию с другими микросервисами, запускаем другие тесты для проверки бизнес-флоу, 
+если всё отработало хорошо - пайплайн идёт дальше - сервис маркируется как релизный, 
+деплоем на интеграционный енваромент со всеми микросервисами, проверяем, потом на стейджинг, перед деплоем на продакшен может быть ещё мануальные шаг (или не быть - то continious deployment) 
+
 
