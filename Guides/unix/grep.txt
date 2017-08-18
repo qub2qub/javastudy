@@ -1,0 +1,61 @@
+check list of processes and 'grep' out those that are interesting for me:
+ps aux  | grep tomcat
+
+ps aux  | grep java
+sudo -iu ecosb
+cdapp
+ll
+rpm -qa | grep fuse
+
+
+The usual trick is this: 
+ps aux | grep '[t]erminal'
+This will match lines containing terminal, which grep '[t]erminal' does not!
+
+PS AUX includes the full command line (path and parameters), 
+while PGREP only looks at the first 15 characters of the executable's names
+
+--------------
+Найти строки содержащие текст и вывести их все в редакторе:
+grep "text_to_fing" replicator.log | subl
+grep -v "exclude_text" replicator.log | subl
+grep "refdata_countries" redhat-jboss-fuse.log | less
+
+Will filter the lines that have the "unwanted_word" and will list only lines with pattern XXXXXXXX:
+grep -v "unwanted_word" file | grep XXXXXXXX
+---------------
+
+---------------
+How to find all files containing specific text on Linux?
+
+Do the following:
+
+grep -rnw '/path/to/somewhere/' -e "pattern"
+-r or -R is recursive,
+-n is line number, and
+-w stands for match the whole word.
+-l (lower-case L) can be added to just give the file name of matching files.
+Along with these, --exclude, --include, --exclude-dir or --include-dir flags could be used for efficient searching:
+
+This will only search through those files which have .c or .h extensions:
+grep --include=\*.{c,h} -rnw '/path/to/somewhere/' -e "pattern"
+
+This will exclude searching all the files ending with .o extension:
+grep --exclude=*.o -rnw '/path/to/somewhere/' -e "pattern"
+
+Just like exclude files, it's possible to exclude/include directories through --exclude-dir and --include-dir parameter. 
+
+For example, this will exclude the dirs dir1/, dir2/ and all of them matching *.dst/:
+grep --exclude-dir={dir1,dir2,*.dst} -rnw '/path/to/somewhere/' -e "pattern"
+
+This works very well for me, to achieve almost the same purpose like yours.
+
+For more options check man grep.
+
+=======================================================
+>> grep -n "YOUR SEARCH STRING" * > output-file
+The -n will print the line number and the > will redirect grep-results to the output-file. 
+If you want to "clean" the results you can filter them using pipe | for example:
+
+>> grep -n "test" your_file.txt | grep -v "mytest" > output-file 
+will match all the lines that have the string "test" except the lines that match the string "mytest" (that's the switch -v) - and will redirect the result to an output file. 

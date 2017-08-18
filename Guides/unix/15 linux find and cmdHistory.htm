@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>15 linux find and cmdHistory</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">src1</a>
+<div class="post_content" itemprop="articleBody">
+<h1 class="headline" itemprop="name">15 Practical Linux Find Command Examples</h1>
+<div class="optional_excerpt"><br>
+</div>
+<p>Apart from the basic operation of looking for files under a directory structure, you can also perform several practical operations using find command that will make your command line journey easy.<br>
+<code> </code><br>
+In this article, let us review 15 practical examples of Linux find command that will be very useful to both newbies and experts.<br>
+<code> </code><br>
+<span id="more-412"></span><br>
+First, create the following sample empty files under your home directory to try some of the find command examples mentioned below.</p>
+<pre># vim create_sample_files.sh
+touch MybashProgram.sh
+touch mycprogram.c
+touch MyCProgram.c
+touch Program.c
+
+mkdir backup
+cd backup
+
+touch MybashProgram.sh
+touch mycprogram.c
+touch MyCProgram.c
+touch Program.c
+
+# chmod +x create_sample_files.sh
+
+# ./create_sample_files.sh
+
+# ls -R
+.:
+backup                  MybashProgram.sh  MyCProgram.c
+create_sample_files.sh  mycprogram.c      Program.c
+
+./backup:
+MybashProgram.sh  mycprogram.c  MyCProgram.c  Program.c</pre>
+<h3>1. Find Files Using Name</h3>
+<p>This is a basic usage of the find command. This example finds all files with name — MyCProgram.c in the current directory and all its sub-directories.</p>
+<pre># find -name "MyCProgram.c"
+./backup/MyCProgram.c
+./MyCProgram.c</pre>
+<h3>2. Find Files Using Name and Ignoring Case</h3>
+<p>This is a basic usage of the find command. This example finds all files with name — MyCProgram.c (ignoring the case) in the current directory and all its sub-directories.</p>
+<pre># find -iname "MyCProgram.c"
+./mycprogram.c
+./backup/mycprogram.c
+./backup/MyCProgram.c
+./MyCProgram.c</pre>
+<h3>3. Limit Search To Specific Directory Level Using mindepth and maxdepth</h3>
+<p>Find the passwd file under all sub-directories starting from root directory.</p>
+<pre># find / -name passwd
+./usr/share/doc/nss_ldap-253/pam.d/passwd
+./usr/bin/passwd
+./etc/pam.d/passwd
+./etc/passwd</pre>
+<p><code> </code><br>
+Find the passwd file under root and one level down. (i.e root — level 1, and one sub-directory — level 2)</p>
+<pre># find -maxdepth 2 -name passwd
+./etc/passwd</pre>
+<p><code> </code><br>
+Find the passwd file under root and two levels down. (i.e root — level 1, and two sub-directories — level 2 and 3 )</p>
+<pre># find / -maxdepth 3 -name passwd
+./usr/bin/passwd
+./etc/pam.d/passwd
+./etc/passwd</pre>
+<p><code> </code><br>
+Find the password file between sub-directory level 2 and 4.</p>
+
+<pre># find -mindepth 3 -maxdepth 5 -name passwd
+./usr/bin/passwd
+./etc/pam.d/passwd</pre>
+<h3>4. Executing Commands on the Files Found by the Find Command.</h3>
+<p>In the example below, the find command calculates the md5sum of all the files with the name MyCProgram.c (ignoring case). {} is replaced by the current file name.</p>
+<pre># find -iname "MyCProgram.c" -exec md5sum {} \;
+d41d8cd98f00b204e9800998ecf8427e  ./mycprogram.c
+d41d8cd98f00b204e9800998ecf8427e  ./backup/mycprogram.c
+d41d8cd98f00b204e9800998ecf8427e  ./backup/MyCProgram.c
+d41d8cd98f00b204e9800998ecf8427e  ./MyCProgram.c</pre>
+<h3>5. Inverting the match.</h3>
+<p>Shows the files or directories whose name are not MyCProgram.c .Since the maxdepth is 1, this will look only under current directory.</p>
+<pre># find -maxdepth 1 -not -iname "MyCProgram.c"
+.
+./MybashProgram.sh
+./create_sample_files.sh
+./backup
+./Program.c</pre>
+<h3>6. Finding Files by its inode Number.</h3>
+<p>Every file has an unique inode number, using that we can identify that file. Create two files with similar name. i.e one file with a space at the end.</p>
+<pre># touch "test-file-name"
+
+# touch "test-file-name "
+[Note: There is a space at the end]
+
+# ls -1 test*
+test-file-name
+test-file-name</pre>
+<p><code> </code><br>
+From the ls output, you cannot identify which file has the space at the end. Using option -i, you can view the inode number of the file, which will be different for these two files.</p>
+<pre># ls -i1 test*
+16187429 test-file-name
+16187430 test-file-name</pre>
+<p><code> </code><br>
+You can specify inode number on a find command as shown below. In this example, find command renames a file using the inode number.</p>
+<pre># find -inum 16187430 -exec mv {} new-test-file-name \;
+
+# ls -i1 *test*
+16187430 new-test-file-name
+16187429 test-file-name</pre>
+<p><code> </code><br>
+You can use this technique when you want to do some operation with the files which are named poorly as shown in the example below. For example, the file with name — file?.txt has a special character in it. If you try to execute “rm file?.txt”, all the following three files will get removed. So, follow the steps below to delete only the “file?.txt” file.</p>
+<pre># ls
+file1.txt  file2.txt  file?.txt</pre>
+<p><code> </code><br>
+Find the inode numbers of each file.</p>
+<pre># ls -i1
+804178 file1.txt
+804179 file2.txt
+804180 file?.txt</pre>
+<p><code> </code><br>
+Use the inode number to remove the file that had special character in it as shown below.</p>
+<pre># find -inum 804180 -exec rm {} \;
+
+# ls
+file1.txt  file2.txt
+[Note: The file with name "file?.txt" is now removed]</pre>
+<h3>7. Find file based on the File-Permissions</h3>
+<p>Following operations are possible.</p>
+<ul>
+<li>Find files that match exact permission</li>
+<li>Check whether the given permission matches, irrespective of other permission bits</li>
+<li>Search by giving octal / symbolic representation</li>
+</ul>
+<p><code> </code><br>
+For this example, let us assume that the directory contains the following files. Please note that the file-permissions on these files are different.</p>
+<pre># ls -l
+total 0
+-rwxrwxrwx 1 root root 0 2009-02-19 20:31 all_for_all
+-rw-r--r-- 1 root root 0 2009-02-19 20:30 everybody_read
+---------- 1 root root 0 2009-02-19 20:31 no_for_all
+-rw------- 1 root root 0 2009-02-19 20:29 ordinary_file
+-rw-r----- 1 root root 0 2009-02-19 20:27 others_can_also_read
+----r----- 1 root root 0 2009-02-19 20:27 others_can_only_read</pre>
+<p><code> </code><br>
+Find files which has read permission to group. Use the following command to find all files that are readable by the world in your home directory, irrespective of other permissions for that file.</p>
+<pre># find . -perm -g=r -type f -exec ls -l {} \;
+-rw-r--r-- 1 root root 0 2009-02-19 20:30 ./everybody_read
+-rwxrwxrwx 1 root root 0 2009-02-19 20:31 ./all_for_all
+----r----- 1 root root 0 2009-02-19 20:27 ./others_can_only_read
+-rw-r----- 1 root root 0 2009-02-19 20:27 ./others_can_also_read</pre>
+<p><code> </code><br>
+Find files which has read permission only to group.</p>
+<pre># find . -perm g=r -type f -exec ls -l {} \;
+----r----- 1 root root 0 2009-02-19 20:27 ./others_can_only_read</pre>
+<p><code> </code><br>
+Find files which has read permission only to group [ search by octal ]</p>
+<pre># find . -perm 040 -type f -exec ls -l {} \;
+----r----- 1 root root 0 2009-02-19 20:27 ./others_can_only_read</pre>
+<h3>8. Find all empty files (zero byte file) in your home directory and its subdirectory</h3>
+<p>Most files of the following command output will be lock-files and place holders created by other applications.</p>
+<pre># find ~ -empty</pre>
+<p><code> </code><br>
+List all the empty files only in your home directory.</p>
+<pre># find . -maxdepth 1 -empty</pre>
+<p><code> </code><br>
+List only the non-hidden empty files only in the current directory.</p>
+<pre># find . -maxdepth 1 -empty -not -name ".*"</pre>
+<h3>9. Finding the Top 5 Big Files</h3>
+<p>The following command will display the top 5 largest file in the current directory and its subdirectory. This may take a while to execute depending on the total number of files the command has to process.</p>
+<pre># find . -type f -exec ls -s {} \; | sort -n -r | head -5</pre>
+<h3>10. Finding the Top 5 Small Files</h3>
+<p>Technique is same as finding the bigger files, but the only difference the sort is ascending order.</p>
+<pre># find . -type f -exec ls -s {} \; | sort -n  | head -5</pre>
+<p><code> </code><br>
+In the above command, most probably you will get to see only the ZERO byte files ( empty files ). So, you can use the following command to list the smaller files other than the ZERO byte files.</p>
+<pre># find . -not -empty -type f -exec ls -s {} \; | sort -n  | head -5</pre>
+<h3>11. Find Files Based on file-type using option -type</h3>
+<p>Find only the socket files.</p>
+<pre># find . -type s</pre>
+<p><code> </code><br>
+Find all directories</p>
+<pre># find . -type d</pre>
+<p><code> </code><br>
+Find only the normal files</p>
+<pre># find . -type f</pre>
+<p><code> </code><br>
+Find all the hidden files</p>
+<pre># find . -type f -name ".*"</pre>
+<p><code> </code><br>
+Find all the hidden directories</p>
+<pre># find -type d -name ".*"</pre>
+<h3>12. Find files by comparing with the modification time of other file.</h3>
+<p>Show files which are modified after the specified file. The following find command displays all the files that are created/modified after ordinary_file.</p>
+<pre># ls -lrt
+total 0
+-rw-r----- 1 root root 0 2009-02-19 20:27 others_can_also_read
+----r----- 1 root root 0 2009-02-19 20:27 others_can_only_read
+-rw------- 1 root root 0 2009-02-19 20:29 ordinary_file
+-rw-r--r-- 1 root root 0 2009-02-19 20:30 everybody_read
+-rwxrwxrwx 1 root root 0 2009-02-19 20:31 all_for_all
+---------- 1 root root 0 2009-02-19 20:31 no_for_all
+
+# find -newer ordinary_file
+.
+./everybody_read
+./all_for_all
+./no_for_all</pre>
+<h3>13. Find Files by Size</h3>
+<p>Using the -size option you can find files by size.<br>
+<code> </code><br>
+Find files bigger than the given size</p>
+<pre># find ~ -size +100M</pre>
+<p><code> </code><br>
+Find files smaller than the given size</p>
+<pre># find ~ -size -100M</pre>
+<p><code> </code><br>
+Find files that matches the exact given size</p>
+<pre># find ~ -size 100M</pre>
+<p><code> </code><br>
+Note: – means less than the give size, + means more than the given size, and no symbol means exact given size.</p>
+<h3>14. Create Alias for Frequent Find Operations</h3>
+<p>If you find some thing as pretty useful, then you can make it as an alias. And execute it whenever you want.</p>
+<p><code> </code><br>
+Remove the files named a.out frequently.</p>
+<pre># alias rmao="find . -iname a.out -exec rm {} \;"
+# rmao</pre>
+<p><code> </code><br>
+Remove the core files generated by c program.</p>
+<pre># alias rmc="find . -iname core -exec rm {} \;"
+# rmc</pre>
+<p><code> </code></p>
+<h3>15. Remove big archive files using find command</h3>
+<p>The following command removes *.zip files that are over 100M.</p>
+<pre># find / -type f -name *.zip -size +100M -exec rm -i {} \;"</pre>
+<p>Remove all *.tar file that are over 100M using the alias rm100m (Remove 100M). Use the similar concepts and create alias like rm1g, rm2g, rm5g to remove file size greater than 1G, 2G and 5G respectively.</p>
+<pre># alias rm100m="find / -type f -name *.tar -size +100M -exec rm -i {} \;"
+# alias rm1g="find / -type f -name *.tar -size +1G -exec rm -i {} \;"
+# alias rm2g="find / -type f -name *.tar -size +2G -exec rm -i {} \;"
+# alias rm5g="find / -type f -name *.tar -size +5G -exec rm -i {} \;"
+
+# rm100m
+# rm1g
+# rm2g
+# rm5g</pre>
+<h3>Find Command Examples Second Part</h3>
+<p>If you liked this Mommy article on find command, don’t forget to check-out the Daddy article of the find command — <a href="http://www.thegeekstuff.com/2009/06/15-practical-unix-linux-find-command-examples-part-2/">Daddy, I found it!, 15 Awesome Linux Find Command Examples (Part2)</a></p>
+<h3>Awesome Linux Articles</h3>
+<p>Following are few awesome <strong>15 examples</strong> articles that you might find helpful.</p>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/">15 Examples To Master Linux Command Line History</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/07/linux-ls-command-examples/">Unix LS Command: 15 Practical Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-unix-grep-command-examples/">Get a Grip on the Grep! – 15 Practical Grep Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">Linux Crontab: 15 Awesome Cron Job Examples</a></li>
+</ul>
+
+<h3>If you enjoyed this article, you might also like..</h3>
+<table>
+<tbody><tr>
+<td valign="top">
+<ol>
+<li><a href="http://www.thegeekstuff.com/2010/12/50-unix-linux-sysadmin-tutorials/">50 Linux Sysadmin Tutorials</a></li>
+<li><a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">50 Most Frequently Used Linux Commands (With Examples)</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/12/linux-performance-monitoring-tools/">Top 25 Best Linux Performance Monitoring and Debugging Tools</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! – 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/linux-101-hacks-ebook/">Linux 101 Hacks 2nd Edition eBook</a>&nbsp;<img title="Linux 101 Hacks Book" src="http://static.thegeekstuff.com/images/free-small.png" alt="Linux 101 Hacks Book"></li>
+</ol>
+</td>
+<td>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2010/01/awk-introduction-tutorial-7-awk-print-examples/">Awk Introduction – 7 Awk Print Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/8-essential-vim-editor-navigation-fundamentals/">8 Essential Vim Editor Navigation Fundamentals</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/06/iptables-rules-examples/">25 Most Frequently Used Linux IPTables Rules Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/turbocharge-putty-with-12-powerful-add-ons-software-for-geeks-3/">Turbocharge PuTTY with 12 Powerful Add-Ons</a></li>
+</ul>
+</td>
+</tr>
+</tbody></table>
+<br>
+
+<br>
+				</div>
+<br><hr>
+<a href="http://www.thegeekstuff.com/2009/06/15-practical-unix-linux-find-command-examples-part-2/">src2</a>
+<div class="post_content" itemprop="articleBody">
+<h1 class="headline" itemprop="name">15 Awesome Linux Find Command Examples (Part2)</h1>
+<p>A while back we reviewed 15 practical <a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">find command examples (Part I)</a>. Find command can do lot more than just searching for files based on name.<br>
+<code>&nbsp;</code><br>
+In this article (Part 2), let us discuss 15 advanced examples of <strong>find command</strong> including — finding files based on the time it is accessed, modified or changed, finding files comparatively, performing operation on found files etc.,<br>
+<code>&nbsp;</code><br>
+<strong>Ramesh Natarajan:</strong> That is my sweet little daughter in that picture. She was very happy to spot the sea lion in the California Long Beach Aquarium.<br>
+<span id="more-549"></span></p>
+<h2>Find Files Based on Access / Modification / Change Time</h2>
+<p>You can find files based on following three file time attribute.</p>
+<ol>
+<li><strong>Access time</strong> of the file. Access time gets updated when the <strong>file accessed</strong>.</li>
+<li><strong>Modification time</strong> of the file. Modification time gets updated when the <strong>file content modified</strong>.</li>
+<li><strong>Change time</strong> of the file. Change time gets updated when the <strong>inode data changes</strong>.</li>
+</ol>
+<p><code>&nbsp;</code><br>
+In the following examples, the difference between the <strong>min option</strong> and the <strong>time option</strong> is the argument.</p>
+<ul>
+<li><strong>min argument</strong> treats its argument as <strong>minutes</strong>. For example, min 60 = 60 minutes (1 hour).</li>
+<li><strong>time argument</strong> treats its argument as <strong>24 hours</strong>. For example, time 2 = 2*24 hours (2 days).</li>
+<li>While doing the 24 hours calculation, the fractional parts are ignored so 25 hours is taken as 24 hours, and 47 hours is also taken as 24 hours, only 48 hours is taken as 48 hours. To get more clarity refer the -atime section of the <strong>find command</strong> man page.</li>
+</ul>
+<h3>Example 1: Find files whose content got updated within last 1 hour</h3>
+<p>To find the files based up on the content modification time, the option -mmin, and -mtime is used. Following is the definition of mmin and mtime from man page.</p>
+<ul>
+<li><strong>-mmin n</strong> File’s data was last modified <strong>n minutes</strong> ago.</li>
+<li><strong>-mtime n</strong> File’s data was last modified <strong>n*24 hours</strong> ago.</li>
+</ul>
+<p><code>&nbsp;</code><br>
+Following example will find files in the current directory and sub-directories, whose content got updated within last 1 hour (60 minutes)</p>
+<pre># find . -mmin -60</pre>
+<p><code>&nbsp;</code><br>
+In the same way, following example finds all the files (under root file system /) that got updated within the last 24 hours (1 day).</p>
+<pre># find / -mtime -1</pre>
+<h3>Example 2: Find files which got accessed before 1 hour</h3>
+<p>To find the files based up on the file access time, the option -amin, and -atime is used. Following is the definition of amin and atime from find man page.</p>
+
+<ul>
+<li><strong>-amin n</strong> File was last accessed <strong>n minutes</strong> ago</li>
+<li><strong>-atime n</strong> File was last accessed <strong>n*24 hours</strong> ago</li>
+</ul>
+<p><code>&nbsp;</code><br>
+Following example will find files in the current directory and sub-directories, which got accessed within last 1 hour (60 minutes)</p>
+<pre># find -amin -60</pre>
+<p><code>&nbsp;</code><br>
+In the same way, following example finds all the files (under root file system /) that got accessed within the last 24 hours (1 day).</p>
+<pre># find / -atime -1</pre>
+<h3>Example 3: Find files which got changed exactly before 1 hour</h3>
+<p>To find the files based up on the file inode change time, the option -cmin, and -ctime is used. Following is the definition of cmin and ctime from find man page.</p>
+<ul>
+<li><strong>-cmin n</strong> File’s status was last changed <strong>n minutes</strong> ago.</li>
+<li><strong>-ctime n</strong> File’s status was last changed <strong>n*24 hours</strong> ago.</li>
+</ul>
+<p><code>&nbsp;</code><br>
+Following example will find files in the current directory and sub-directories, which changed within last 1 hour (60 minutes)</p>
+<pre># find . -cmin -60</pre>
+<p><code>&nbsp;</code><br>
+In the same way, following example finds all the files (under root file system /) that got changed within the last 24 hours (1 day).</p>
+<pre># find / -ctime -1</pre>
+<h3>Example 4: Restricting the find output only to files. (Display only files as find command results)</h3>
+<p>The above find command’s will also show the directories because directories gets accessed when the file inside it gets accessed. But if you want only the files to be displayed then give -type f in the find command as<br>
+<code>&nbsp;</code><br>
+The following <strong>find command</strong> displays files that are accessed in the last 30 minutes.</p>
+<pre># find /etc/sysconfig -amin -30
+.
+./console
+./network-scripts
+./i18n
+./rhn
+./rhn/clientCaps.d
+./networking
+./networking/profiles
+./networking/profiles/default
+./networking/profiles/default/resolv.conf
+./networking/profiles/default/hosts
+./networking/devices
+./apm-scripts
+[Note: The above output contains both files and directories]
+
+# find /etc/sysconfig -amin -30 -type f
+./i18n
+./networking/profiles/default/resolv.conf
+./networking/profiles/default/hosts
+[Note: The above output contains only files]</pre>
+<h3>Example 5: Restricting the search only to unhidden files. (Do not display hidden files in find output)</h3>
+<p>When we don’t want the hidden files to be listed in the find output, we can use the following regex.<br>
+The below find displays the files which are modified in the last 15 minutes. And it lists only the unhidden files. i.e hidden files that starts with a . (period) are not displayed in the find output.</p>
+<pre># find . -mmin -15 \( ! -regex ".*/\..*" \)</pre>
+<h2>Finding Files Comparatively Using Find Command</h2>
+<p>Human mind can remember things better by reference such as, i want to find files which i edited after editing the file “test”. You can find files by referring to the other files modification as like the following.</p>
+<h3>Example 6: Find files which are modified after modification of a particular FILE</h3>
+<pre>Syntax: find -newer FILE</pre>
+<p><code>&nbsp;</code><br>
+Following example displays all the files which are modified after the /etc/passwd files was modified. This is helpful, if you want to track all the activities you’ve done after adding a new user.</p>
+<pre># find -newer /etc/passwd</pre>
+<h3>Example 7: Find files which are accessed after modification of a specific FILE</h3>
+<pre>Syntax: find -anewer FILE</pre>
+<p><code>&nbsp;</code><br>
+Following example displays all the files which are accessed after modifying /etc/hosts. If you remember adding an entry to the /etc/hosts and would like to see all the files that you’ve accessed since then, use the following command.</p>
+<pre># find -anewer /etc/hosts</pre>
+<h3>Example 8: Find files whose status got changed after the modification of a specific FILE.</h3>
+<pre>Syntax: find -cnewer FILE</pre>
+<p><code>&nbsp;</code><br>
+Following example displays all the files whose status got changed after modifying the /etc/fstab. If you remember adding a mount point in the /etc/fstab and would like to know all the files who status got changed since then, use the following command.</p>
+<pre>find -cnewer /etc/fstab</pre>
+<h2>Perform Any Operation on Files Found From Find Command</h2>
+<p>We have looked at many different ways of finding files using <strong>find command</strong> in this article and also in our previous article. If you are not familiar in finding files in different ways, i strongly recommend you to read the part 1.<br>
+<code>&nbsp;</code><br>
+This section explains about how to do different operation on the files from the find command. i.e how to manipulate the files returned by the find command output.<br>
+<code>&nbsp;</code><br>
+We can specify any operation on the files found from find command.</p>
+<pre>find &lt;CONDITION to Find files&gt; -exec &lt;OPERATION&gt; \;</pre>
+<p><code>&nbsp;</code><br>
+The OPERATION can be anything such as:</p>
+<ul>
+<li><strong>rm command</strong> to remove the files found by find command.</li>
+<li><strong>mv command</strong> to rename the files found.</li>
+<li><strong>ls -l command</strong> to get details of the find command output files.</li>
+<li><strong>md5sum</strong> on find command output files</li>
+<li><strong>wc command</strong> to count the total number of words on find command output files.</li>
+<li>Execute any <strong>Unix shell command</strong> on find command output files.</li>
+<li>or Execute your own <strong>custom shell script</strong> / command on find command output files.</li>
+</ul>
+<h3>Example 9: ls -l in find command output. Long list the files which are edited within the last 1 hour.</h3>
+<pre># find -mmin -60
+./cron
+./secure
+
+# find -mmin -60 -exec ls -l {} \;
+-rw-------  1 root root 1028 Jun 21 15:01 ./cron
+-rw-------  1 root root 831752 Jun 21 15:42 ./secure</pre>
+<h3>Example 10: Searching Only in the Current Filesystem</h3>
+<p>System administrators would want to search in the root file system, but not in the other mounted partitions. When you have multiple partitions mounted, and if you want to search in /. You can do the following.<br>
+<code>&nbsp;</code><br>
+Following command will search for *.log files starting from /. i.e If you have multiple partitions mounted under / (root), the following command will search all those mounted partitions.</p>
+<pre># find / -name "*.log"</pre>
+<p><code>&nbsp;</code><br>
+This will search for the file only in the current file system. Following is the xdev definition from find man page:</p>
+<ul>
+<li><strong>-xdev</strong> Don’t descend directories on other filesystems.</li>
+</ul>
+<p><code>&nbsp;</code><br>
+Following command will search for *.log files starting from / (root) and only in the current file system. i.e If you have multiple partitions mounted under / (root), the following command will NOT search all those mounted partitions.</p>
+<pre># find / -xdev -name "*.log"</pre>
+<h3>Example 11: Using more than one { } in same command</h3>
+<p>Manual says only one instance of the {} is possible. But you can use more than one {} in the same command as shown below.</p>
+<pre># find -name "*.txt" cp {} {}.bkup \;</pre>
+<p><code>&nbsp;</code><br>
+Using this {} in the same command is possible but using it in different command it is not possible, say you want to rename the files as following, which will not give the expected result.</p>
+<pre>find -name "*.txt" -exec mv {} `basename {} .htm`.html \;</pre>
+<h3>Example 12: Using { } in more than one instance.</h3>
+<p>You can simulate it by writing a shell script as shown below.</p>
+<pre># mv "$1" "`basename "$1" .htm`.html"</pre>
+<p><code>&nbsp;</code><br>
+These double quotes are to handle spaces in file name. And then call that shell script from the <strong>find command</strong> as shown below.</p>
+<pre>find -name "*.html" -exec ./mv.sh '{}' \;</pre>
+<p>So for any reason if you want the same file name to be used more than once then writing the simple shell script and passing the file names as argument is the simplest way to do it.</p>
+<h3>Example 13: Redirecting errors to /dev/null</h3>
+<p>Redirecting the errors is not a good practice. An experienced user understands the importance of getting the error printed on terminal and fix it.<br>
+<code>&nbsp;</code><br>
+Particularly in find command redirecting the errors is not a good practice. But if you don’t want to see the errors and would like to redirect it to null do it as shown below.</p>
+<pre>find -name "*.txt" 2&gt;&gt;/dev/null</pre>
+<p><code>&nbsp;</code><br>
+Sometimes this may be helpful. For example, if you are trying to find all the *.conf file under / (root) from your account, you may get lot of “Permission denied” error message as shown below.</p>
+<pre>$ find / -name "*.conf"
+/sbin/generate-modprobe.conf
+find: /tmp/orbit-root: Permission denied
+find: /tmp/ssh-gccBMp5019: Permission denied
+find: /tmp/keyring-5iqiGo: Permission denied
+find: /var/log/httpd: Permission denied
+find: /var/log/ppp: Permission denied
+/boot/grub/grub.conf
+find: /var/log/audit: Permission denied
+find: /var/log/squid: Permission denied
+find: /var/log/samba: Permission denied
+find: /var/cache/alchemist/printconf.rpm/wm: Permission denied
+[Note: There are two valid *.conf files burned in the "Permission denied" messages]</pre>
+<p><code>&nbsp;</code><br>
+So, if you want to just view the real output of the <strong>find command</strong> and not the “Permission denied” error message you can redirect the error message to /dev/null as shown below.</p>
+<pre>$ find / -name "*.conf" 2&gt;&gt;/dev/null
+/sbin/generate-modprobe.conf
+/boot/grub/grub.conf
+[Note: All the "Permission denied" messages are not displayed]</pre>
+<h3>Example 14: Substitute space with underscore in the file name.</h3>
+<p>Audio files you download from internet mostly come with the spaces in it. But having space in the file name is not so good for Linux kind of systems. You can use the find and rename command combination as shown below to rename the files, by substituting the space with underscore.<br>
+<code>&nbsp;</code><br>
+The following replaces space in all the *.mp3 files with _</p>
+<pre>$ find . -type f -iname “*.mp3″ -exec rename “s/ /_/g” {} \;</pre>
+<h3>Example 15: Executing two find commands at the same time</h3>
+<p>As shown in the examples of the find command in its manual page, the following is the syntax which can be used to execute two commands in single traversal.<br>
+<code>&nbsp;</code><br>
+The following find command example, traverse the filesystem just once, listing setuid files and directories into /root/suid.txt and large files into /root/big.txt.</p>
+<pre># find /    \( -perm -4000 -fprintf /root/suid.txt '%#m %u %p\n' \) , \
+ \( -size +100M -fprintf /root/big.txt '%-10s %p\n' \)</pre>
+<h3>Our Other 15 Example Series Articles</h3>
+<ul>
+<li>15 Practical Unix <a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Find Command Examples</a> – Part 1</li>
+<li>15 Practical Linux <a href="http://www.thegeekstuff.com/2009/03/15-practical-unix-grep-command-examples/">Grep Command Examples</a></li>
+<li>Master <a href="http://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/">Unix Command Line History</a> With 15 Examples</li>
+<li>Manipulate Audio Files Using 15 Awesome <a href="http://www.thegeekstuff.com/2009/05/sound-exchange-sox-15-examples-to-manipulate-audio-files/">Sox Command Examples</a> (Sound eXchange)</li>
+<li>15 Advanced <a href="http://www.thegeekstuff.com/2009/05/15-advanced-postgresql-commands-with-examples/">PostgreSQL Command Examples</a></li>
+<li>15 Excellent <a href="http://www.thegeekstuff.com/2009/06/expertise-in-google-search/">Google Search Hacks, Tips and Tricks</a></li>
+<li>15 Advanced <a href="http://www.thegeekstuff.com/2009/04/15-practical-postgresql-database-adminstration-commands/">PostgreSQL DBA Examples</a></li>
+<li>15 Practical Usages of <a href="http://www.thegeekstuff.com/2009/01/15-practical-usages-of-mysqladmin-command-for-administering-mysql-server/">Mysqladmin Command Examples</a></li>
+<li>15 Awesome Linux <a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">Cron Job Examples</a></li>
+</ul>
+<p><code>&nbsp;</code><br>
+If you need to return, <a href="http://del.icio.us/post?url=http://www.thegeekstuff.com/2009/06/15-practical-unix-linux-find-command-examples-part-2/&amp;title=Daddy,%20I%20found%20it!,%2015%20Awesome%20Linux%20Find%20Command%20Examples%20(Part2)">bookmark this page at del.icio.us</a> for handy reference.</p>
+
+<h3>If you enjoyed this article, you might also like..</h3>
+<table>
+<tbody><tr>
+<td valign="top">
+<ol>
+<li><a href="http://www.thegeekstuff.com/2010/12/50-unix-linux-sysadmin-tutorials/">50 Linux Sysadmin Tutorials</a></li>
+<li><a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">50 Most Frequently Used Linux Commands (With Examples)</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/12/linux-performance-monitoring-tools/">Top 25 Best Linux Performance Monitoring and Debugging Tools</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! – 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/linux-101-hacks-ebook/">Linux 101 Hacks 2nd Edition eBook</a>&nbsp;<img title="Linux 101 Hacks Book" src="http://static.thegeekstuff.com/images/free-small.png" alt="Linux 101 Hacks Book"></li>
+</ol>
+</td>
+<td>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2010/01/awk-introduction-tutorial-7-awk-print-examples/">Awk Introduction – 7 Awk Print Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/8-essential-vim-editor-navigation-fundamentals/">8 Essential Vim Editor Navigation Fundamentals</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/06/iptables-rules-examples/">25 Most Frequently Used Linux IPTables Rules Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/turbocharge-putty-with-12-powerful-add-ons-software-for-geeks-3/">Turbocharge PuTTY with 12 Powerful Add-Ons</a></li>
+</ul>
+</td>
+</tr>
+</tbody></table>
+<br>
+
+<br>
+				</div>
+<br><hr>
+<a href="http://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/">src3</a>
+<div class="post_content" itemprop="articleBody">
+<h1 class="headline" itemprop="name">15 Examples To Master Linux Command Line History</h1>
+<p>When you are using Linux command line frequently, using the history effectively can be a major productivity boost. In fact, once you have mastered the 15 examples that I’ve provided here, you’ll find using command line more enjoyable and fun.<br>
+<span id="more-130"></span></p>
+<h3>1. Display timestamp using HISTTIMEFORMAT</h3>
+<p>Typically when you type history from command line, it displays the command# and the command. For auditing purpose, it may be beneficial to display the timepstamp along with the command as shown below.</p>
+<pre># <strong>export HISTTIMEFORMAT='%F %T '</strong>
+# <strong>history | more</strong>
+1  2008-08-05 19:02:39 service network restart
+2  2008-08-05 19:02:39 exit
+3  2008-08-05 19:02:39 id
+4  2008-08-05 19:02:39 cat /etc/redhat-release</pre>
+<h3>2. Search the history using Control+R</h3>
+<p>I strongly believe, this may be your most frequently used feature of history. When you’ve already executed a very long command, you can simply search history using a keyword and re-execute the same command without having to type it fully. <strong>Press Control+R and type the keyword</strong>. In the following example, I searched for <strong>red</strong>, which displayed the previous command “<strong>cat /etc/redhat-release</strong>” in the history that contained the word red.</p>
+<pre># <span style="color: #980000;">[Press <strong>Ctrl+R</strong> from the command prompt,
+which will display the reverse-i-search prompt]</span>
+(reverse-i-search)`<strong>red</strong>': cat /etc/redhat-release
+<span style="color: #980000;">[Note: Press <strong>enter when you see your command</strong>,
+which will execute the command from the history]</span>
+# cat /etc/redhat-release
+Fedora release 9 (Sulphur)</pre>
+<p>Sometimes you want to edit a command from history before executing it. For e.g. you can search for <strong>httpd</strong>, which will display <strong>service httpd stop</strong> from the command history, select this command and <strong>change the stop to start</strong> and re-execute it again as shown below.</p>
+<pre># <span style="color: #980000;">[Press <strong>Ctrl+R</strong> from the command prompt,
+which will display the reverse-i-search prompt]</span>
+(reverse-i-search)`<strong>httpd</strong>': service httpd stop
+<span style="color: #980000;">[Note: Press <strong>either left arrow or right arrow</strong> key when you see your
+command, which will display the command for you to edit, before executing it]</span>
+# service httpd start</pre>
+<h3>3. Repeat previous command quickly using 4 different methods</h3>
+<p>Sometime you may end up repeating the previous commands for various reasons. Following are the 4 different ways to repeat the last executed command.</p>
+<ol>
+<li>Use the <strong>up arrow</strong> to view the previous command and press enter to execute it.</li>
+<li>Type <strong>!!</strong> and press enter from the command line</li>
+<li>Type <strong>!-1</strong> and press enter from the command line.</li>
+<li>Press <strong>Control+P</strong> will display the previous command, press enter to execute it</li>
+</ol>
+<h3>4. Execute a specific command from history</h3>
+<p>In the following example, If you want to repeat the command #4, you can do <strong>!4</strong> as shown below.</p>
+<pre># <strong>history | more</strong>
+1  service network restart
+2  exit
+3  id
+4  cat /etc/redhat-release
+
+# <strong>!4</strong>
+cat /etc/redhat-release
+Fedora release 9 (Sulphur)</pre>
+<h3>5. Execute previous command that starts with a specific word</h3>
+<p>Type ! followed by the starting few letters of the command that you would like to re-execute. In the following example, typing !ps and enter, executed the previous command starting with ps, which is ‘ps aux | grep yp’.</p>
+
+<pre># <strong>!ps</strong>
+ps aux | grep yp
+root     16947  0.0  0.1  36516  1264 ?        Sl   13:10   0:00 ypbind
+root     17503  0.0  0.0   4124   740 pts/0    S+   19:19   0:00 grep yp</pre>
+<h3>6. Control the total number of lines in the history using HISTSIZE</h3>
+<p>Append the following two lines to the .bash_profile and relogin to the bash shell again to see the change. In this example, only 450 command will be stored in the bash history.</p>
+<pre># <strong>vi ~/.bash_profile</strong>
+HISTSIZE=450
+HISTFILESIZE=450</pre>
+<h3>7. Change the history file name using HISTFILE</h3>
+<p>By default, history is stored in <strong>~/.bash_history</strong> file. Add the following line to the .bash_profile and relogin to the bash shell, to store the history command in .commandline_warrior file instead of .bash_history file. I’m yet to figure out a practical use for this. I can see this getting used when you want to track commands executed from different terminals using different history file name.</p>
+<pre># <strong>vi ~/.bash_profile</strong>
+HISTFILE=/root/.commandline_warrior</pre>
+<p>If you have a good reason to change the name of the history file, please share it with me, as I’m interested in finding out how you are using this feature.</p>
+<h3>8. Eliminate the continuous repeated entry from history using HISTCONTROL</h3>
+<p>In the following example pwd was typed three times, when you do history, you can see all the 3 continuous occurrences of it. To eliminate duplicates, set HISTCONTROL to ignoredups as shown below.</p>
+<pre># <strong>pwd</strong>
+# <strong>pwd</strong>
+# <strong>pwd</strong>
+# <strong>history | tail -4</strong>
+44  pwd
+45  pwd
+46  pwd <span style="color: #980000;">[Note that there are <strong>three pwd</strong> commands in history, after
+executing pwd 3 times as shown above]</span>
+47  history | tail -4
+
+# <strong>export HISTCONTROL=ignoredups</strong>
+# <strong>pwd</strong>
+# <strong>pwd</strong>
+# <strong>pwd</strong>
+# <strong>history | tail -3</strong>
+56  export HISTCONTROL=ignoredups
+57  pwd <span style="color: #980000;">[Note that there is only <strong>one pwd</strong> command in the history, even after
+executing pwd 3 times as shown above]</span>
+58  history | tail -4</pre>
+<h3>9. Erase duplicates across the whole history using HISTCONTROL</h3>
+<p>The ignoredups shown above removes duplicates only if they are consecutive commands. To eliminate duplicates across the whole history, set the HISTCONTROL to erasedups as shown below.</p>
+<pre># <strong>export HISTCONTROL=erasedups</strong>
+# <strong>pwd</strong>
+# <strong>service httpd stop</strong>
+# <strong>history | tail -3</strong>
+38  pwd
+39  service httpd stop
+40  history | tail -3
+
+# <strong>ls -ltr</strong>
+# <strong>service httpd stop</strong>
+# <strong>history | tail -6</strong>
+35  export HISTCONTROL=erasedups
+36  pwd
+37  history | tail -3
+38  ls -ltr
+39  service httpd stop
+<span style="color: #980000;">[Note that the previous service httpd stop after pwd got erased]</span>
+40  history | tail -6</pre>
+<h3>10. Force history not to remember a particular command using HISTCONTROL</h3>
+<p>When you execute a command, you can instruct history to ignore the command by setting HISTCONTROL to ignorespace AND typing a space in front of the command as shown below. I can see lot of junior sysadmins getting excited about this, as they can hide a command from the history. It is good to understand how ignorespace works. But, as a best practice, don’t hide purposefully anything from history.</p>
+<pre># <strong>export HISTCONTROL=ignorespace</strong>
+# <strong>ls -ltr</strong>
+# <strong>pwd</strong>
+# <strong> service httpd stop</strong> <span style="color: #980000;">[Note that there is a space at the beginning of service,
+to ignore this command from history]</span>
+# <strong>history | tail -3</strong>
+67  ls -ltr
+68  pwd
+69  history | tail -3</pre>
+<h3>11. Clear all the previous history using option -c</h3>
+<p>Sometime you may want to clear all the previous history, but want to keep the history moving forward.</p>
+<pre># <strong>history -c</strong></pre>
+<h3>12. Subtitute words from history commands</h3>
+<p>When you are searching through history, you may want to execute a different command but use the same parameter from the command that you’ve just searched.</p>
+<p>In the example below, the <strong>!!:$</strong> next to the vi command gets the argument from the previous command to the current command.</p>
+<pre># <strong>ls anaconda-ks.cfg</strong>
+anaconda-ks.cfg
+# <strong>vi !!:$</strong>
+vi anaconda-ks.cfg</pre>
+<p>In the example below, the <strong>!^</strong> next to the vi command gets the first argument from the previous command (i.e cp command) to the current command (i.e vi command).</p>
+<pre># <strong>cp anaconda-ks.cfg anaconda-ks.cfg.bak</strong>
+anaconda-ks.cfg
+# <strong>vi  !^</strong>
+vi anaconda-ks.cfg</pre>
+<h3>13. Substitute a specific argument for a specific command.</h3>
+<p>In the example below, <strong>!cp:2</strong> searches for the previous command in history that starts with cp and takes the second argument of cp and substitutes it for the ls -l command as shown below.</p>
+<pre># <strong>cp ~/longname.txt /really/a/very/long/path/long-filename.txt</strong>
+# <strong>ls -l !cp:2</strong>
+ls -l /really/a/very/long/path/long-filename.txt</pre>
+<p>In the example below, <strong>!cp:$</strong> searches for the previous command in history that starts with cp and takes the last argument (in this case, which is also the second argument as shown above) of cp and substitutes it for the ls -l command as shown below.</p>
+<pre># <strong>ls -l !cp:$</strong>
+ls -l /really/a/very/long/path/long-filename.txt</pre>
+<h3>14. Disable the usage of history using HISTSIZE</h3>
+<p>If you want to disable history all together and don’t want bash shell to remember the commands you’ve typed, set the HISTSIZE to 0 as shown below.</p>
+<pre># <strong>export HISTSIZE=0</strong>
+# <strong>history</strong>
+# <span style="color: #980000;">[Note that history did not display anything]</span></pre>
+<h3>15. Ignore specific commands from the history using HISTIGNORE</h3>
+<p>Sometimes you may not want to clutter your history with basic commands such as pwd and ls. Use HISTIGNORE to specify all the commands that you want to ignore from the history. Please note that adding ls to the HISTIGNORE ignores only ls and not ls -l. So, you have to provide the exact command that you would like to ignore from the history.</p>
+<pre># <strong>export HISTIGNORE="pwd:ls:ls -ltr:"</strong>
+# <strong>pwd</strong>
+# <strong>ls</strong>
+# <strong>ls -ltr</strong>
+# <strong>service httpd stop</strong>
+
+# <strong>history | tail -3</strong>
+79  export HISTIGNORE="pwd:ls:ls -ltr:"
+80  service httpd stop
+81  history
+<span style="color: #980000;">[Note that history did not record pwd, ls and ls -ltr]</span></pre>
+
+
+
+
+<ul>
+<li><a href="http://www.thegeekstuff.com/2009/07/linux-ls-command-examples/">Unix LS Command: 15 Practical Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-unix-grep-command-examples/">Get a Grip on the Grep! – 15 Practical Grep Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">Linux Crontab: 15 Awesome Cron Job Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! — 15 Practical Linux Find Command Examples</a></li>
+</ul>
+
+<h3>If you enjoyed this article, you might also like..</h3>
+<table>
+<tbody><tr>
+<td valign="top">
+<ol>
+<li><a href="http://www.thegeekstuff.com/2010/12/50-unix-linux-sysadmin-tutorials/">50 Linux Sysadmin Tutorials</a></li>
+<li><a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">50 Most Frequently Used Linux Commands (With Examples)</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/12/linux-performance-monitoring-tools/">Top 25 Best Linux Performance Monitoring and Debugging Tools</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! – 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/linux-101-hacks-ebook/">Linux 101 Hacks 2nd Edition eBook</a>&nbsp;<img title="Linux 101 Hacks Book" src="http://static.thegeekstuff.com/images/free-small.png" alt="Linux 101 Hacks Book"></li>
+</ol>
+</td>
+<td>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2010/01/awk-introduction-tutorial-7-awk-print-examples/">Awk Introduction – 7 Awk Print Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/8-essential-vim-editor-navigation-fundamentals/">8 Essential Vim Editor Navigation Fundamentals</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/06/iptables-rules-examples/">25 Most Frequently Used Linux IPTables Rules Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/turbocharge-putty-with-12-powerful-add-ons-software-for-geeks-3/">Turbocharge PuTTY with 12 Powerful Add-Ons</a></li>
+</ul>
+</td>
+</tr>
+</tbody></table>
+<br>
+
+<br>
+				</div>
+</body>
+</html>

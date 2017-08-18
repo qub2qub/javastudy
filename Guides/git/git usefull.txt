@@ -202,6 +202,7 @@ If you want to write the new commit message from scratch, this suffices:
 
 git reset --soft HEAD~3 &&
 git commit
+
 If you want to start editing the new commit message with a concatenation of the existing commit messages (i.e. similar to what a pick/squash/squash/…/squash git rebase -i instruction list would start you with), then you need to extract those messages and pass them to git commit:
 
 git reset --soft HEAD~3 && 
@@ -210,3 +211,32 @@ git commit --edit -m"$(git log --format=%B --reverse HEAD..HEAD@{1})"
 Both of those methods squash the last three commits into a single new commit in the same way. The soft reset just re-points HEAD to the last commit that you do not want to squash. Neither the index nor the working tree are touched by the soft reset, leaving the index in the desired state for your new commit (i.e. it already has all the changes from the commits that you are about to “throw away”).
 
 ******************
+
+КАК ВЫЧЕКАУТИТЬ ВЕТКУ ПО ТЭГУ
+
+Lets first start by explaining what is tag in git
+
+A tag is used to label and mark a specific commit in the history.
+It is usually used to mark release points (eg. v1.0, etc.).
+
+Although a tag may appear similar to branch, a tag however does not change.
+It points directly to a specific commit in the history.
+You will not be able to checkout the tags if its not locally in your repository so first you have to fetch the tags to your local repository.
+
+First make sure that the tag exists locally by doing
+
+# --all will fetch all the remotes.
+# --tags will fetch all tags as well
+git fetch --all --tags --prune
+Then check out the tag by running
+
+git checkout tags/<tag_name> -b <branch_name>
+Instead of origin use the tags/ prefix.
+-------------
+How to create tags? ==> There are 2 ways to create tag:
+# normal tag 
+git tag 
+# anotated tag
+git tag -a
+The difference between the 2 is that that the when creating annotated tag you can add meta data like you have in a git commit:
+name, e-mail, date, comment & signature
