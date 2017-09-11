@@ -144,17 +144,19 @@ $ git push origin --delete serverfix
 To https://github.com/schacon/simplegit
  - [deleted]         serverfix
 
- ------------------------------
+ 15 ------------------------------
+ так можно сделать чекаут для файлов с длинными именами/путями
  http://stackoverflow.com/questions/21123415/git-pull-aborted-with-error-filename-too-long
  git config core.longpaths true <<< так лучше не делать
 
-----------------------
+16 ----------------------
+Как запушить 1 ветку в другую на сервере.
 If the local branch is called "localBranch" and you want to push to branch called "anotherBranch" on the remote called "remoteName", then do the following:
 
 git push remoteName localBranch:anotherBranch
 git push -f origin US5432_Fix_Error:devbr-name
 
----------------------------
+17 ---------------------------
 >>>> лучше всего при первом комите пушить такой командой:
 git push -u origin my_branch
 >>>> (^^^ см выше команду) the first time that you push that branch. You only need to do it once, and that sets up the association between your branch and the one at origin in the same way as git branch --set-upstream does.
@@ -182,20 +184,21 @@ git checkout -b my-branch -t origin/my-branch
 git checkout -b my-branch
 git push -u origin/my-branch
 
-************************************
+18 ************************************
 Remove(untrack) a file from a Git repository without deleting it from the local filesystem
 file >>>
 >> git rm --cached mylogfile.log
 For a directory >>>
 >> git rm --cached -r mydirectory
 
-********************************
+19 ********************************
 >> git rebase -i <after-this-commit> 
 and replace "pick" on the second and subsequent commits with "squash" or "fixup",
 <after-this-commit> is either the SHA1 hash or the relative location from the HEAD of the current branch from which commits are analyzed for the rebase command. 
 For example, if the user wishes to view 5 commits from the current HEAD in the past the command is 
 >> git rebase -i HEAD~5.
---------
+
+20 -----------------
 You can do this fairly easily without git rebase or git merge --squash. 
 In this example, we'll squash the last 3 commits.
 If you want to write the new commit message from scratch, this suffices:
@@ -210,7 +213,7 @@ git commit --edit -m"$(git log --format=%B --reverse HEAD..HEAD@{1})"
 
 Both of those methods squash the last three commits into a single new commit in the same way. The soft reset just re-points HEAD to the last commit that you do not want to squash. Neither the index nor the working tree are touched by the soft reset, leaving the index in the desired state for your new commit (i.e. it already has all the changes from the commits that you are about to “throw away”).
 
-******************
+21 ******************
 
 КАК ВЫЧЕКАУТИТЬ ВЕТКУ ПО ТЭГУ
 
@@ -240,3 +243,16 @@ git tag
 git tag -a
 The difference between the 2 is that that the when creating annotated tag you can add meta data like you have in a git commit:
 name, e-mail, date, comment & signature
+
+22 ****************************
+КАК СДЕЛАТЬ ПАТЧ НА ОСНОВЕ DIFF
+исходная ветка, вторая сравниваемая
+>git diff origin/master HEAD > US23849_patch.txt
+
+Можно задать не все отличия, а до конкретных путей и файлов
+> git diff origin/master HEAD -- module/src/test/java/com/git/junits path/to/file.md > onlyJunits_Patch.txt
+
+или только для сырцов-кода
+> git diff origin/master HEAD -- module/src/main > onlyCode_Patch.txt
+
+23 ***************************

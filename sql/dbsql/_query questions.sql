@@ -67,7 +67,7 @@ GROUP BY maker ORDER BY avg_price DESC LIMIT 1;
 
 -- Найти производителей, средняя цена на ПК у которых не меньше, чем средние цены у КАЖДОГО из производителей ПК
 -- #1
-SELECTmaker, avg_price
+SELECT maker, avg_price
 FROM (SELECT maker, AVG(price) avg_price
       FROM comp.product P JOIN comp.pc PC ON P.model=PC.model
       GROUP BY maker) X
