@@ -266,7 +266,7 @@ The type of the input parameter to popAll() should not be “collection of E” 
 // Wildcard type for parameter that serves as an E consumer
     popAll(Collection<? super E> dst_consumer)
 
-For maximum flexibility, use wildcard types on input parameters that represent producers or consumers. 
+!!! For maximum flexibility, use wildcard types on input parameters that represent producers or consumers. 
 If an input parameter is both a producer and a consumer, then wildcard types will do you NO good: you need an exact type match, which is what you get without any wildcards.
 
 Here is a mnemonic to help you remember which wildcard type to use: !! PECS !!
@@ -276,6 +276,8 @@ In other words,
 if a parameterized type (аргумент метода) представляет собой
 represents a T producer, use <? extends T>; 
 if it represents a T consumer, use <? super T>. 
+Из producer будут получаться элементы, из неё извлекаться. Массив - это продьюсер, из него мы берём элементы.
+А в consumer будут записываться элементы, т.е. записывать в неё создаваемые элементы.
 
 In our Stack example, pushAll’s src parameter produces E instances for use by the Stack, so the appropriate type for src is Iterable<? extends E>; 
 popAll’s dst parameter consumes E instances from the Stack, so the appropriate type for dst is Collection<? super E>. 
@@ -329,7 +331,7 @@ Iterator<? extends T> i = list.iterator();
 It means that list is not a List<T>, so its iterator method doesn’t return Iterator<T>. It returns an iterator of <some subtype of T>, so we replace the iterator declaration with this one, which uses a bounded wildcard type.
 
 ---------
-There is one more wildcard-related topic that bears discussing. There is a duality between TYPE PARAMETERS and WILDCARDS, and many methods can be declared using one or the other. 
+There is one more wildcard-related topic that bears discussing. There is a DUALITY between TYPE PARAMETERS and WILDCARDS, and many methods can be declared using one or the other. 
 For example, here are two possible declarations for a static method to swap two indexed items in a list. The first uses an UNBOUNDED TYPE PARAMETER (Item 27) and the second an UNBOUNDED WILDCARD:
 
 1) public static <E> void swap(List<E> list, int i, int j); 
@@ -389,7 +391,7 @@ The next thing to notice is that the value type of the favorites Map is simply O
 
 The cast method is the dynamic analog of Java’s cast operator. It simply checks that its argument is an instance of the type represented by the Class object. If so, it returns the argument; otherwise it throws a ClassCastException. 
 --
-There are two limitations to the Favorites class that are worth noting. First, a malicious client could easily corrupt the type safety of a Favori tes instance, simply by using a Class object in its raw form. But the resulting client code would generate an unchecked warning when it was compiled. 
+There are two limitations to the Favorites class that are worth noting. First, a malicious client could easily corrupt the type safety of a Favorites instance, simply by using a Class object in its raw form. But the resulting client code would generate an unchecked warning when it was compiled. 
 --
 There are collection wrappers in java.util.Collections that play the same trick. They are called checkedSet, checkedList, checkedMap, and so forth. Their static factories take a Class object (or two) in addition to a collection (or map). The static factories are generic methods, ensuring that the compile-time types of the Class object and the collection match. The wrappers add reification to the collections they wrap. 
 For example, the wrapper throws a ClassCastException at runtime if someone tries to put Coin into your Collection<Stamp>. These wrappers are useful for tracking down who adds an incorrectly typed element to a collection in an application that mixes generic and legacy code.
@@ -411,7 +413,7 @@ Non-reifiable types are types where information has been removed at compile-time
 
 There is no entirely satisfactory workaround for the second limitation. There is a technique called super type tokens that goes a long way toward addressing the limitation, but this technique has limitations of its own.
 
-The type tokens used by Favorites are unbounded: getFavorite and putFavorite accept any Class object. Sometimes you may need to limit the types that can be passed to a method. This can be achieved with a BOUNDED TYPE TOKEN, which is simply a type token that places a bound on what type can be represented, using a bounded type parameter (Item 27) or a bounded wildcard (Item 28).
+The type tokens used by Favorites are unbounded: getFavorite() and putFavorite() accept any Class object. Sometimes you may need to limit the types that can be passed to a method. This can be achieved with a BOUNDED TYPE TOKEN, which is simply a type token that places a bound on what type can be represented, using a bounded type parameter (Item 27) or a bounded wildcard (Item 28).
 
 The annotations API (Item 35) makes extensive use of bounded type tokens. For example, here is the method to read an annotation at runtime.....
 
