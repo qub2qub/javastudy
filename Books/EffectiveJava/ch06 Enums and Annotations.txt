@@ -1,0 +1,117 @@
+ср06 Enums and Annotations
+
+******************************************************
+*** Item 30: Use enums instead of int constants ***
+
+a common pattern for representing enumerated types was to declare a group of named int constants, one for each member of the type.
+This technique, known as the int enum pattern, has many shortcomings. It provides nothing in the way of type safety and little in the way of convenience. The compiler won’t complain if you pass an apple to a method that expects an orange, compare apples to oranges with the == operator, or worse..
+
+Prefixes prevent name clashes when two int enum groups have identically named constants.
+
+Programs that use the int enum pattern are brittle. Because int enums are compile-time constants, they are compiled into the clients that use them. If the int associated with an enum constant is changed, its clients must be recompiled. If they aren’t, they will still run, but their behavior will be undefined
+
+There is no easy way to translate int enum constants into printable strings. If you print such a constant or display it from a debugger, all you see is a number, which isn’t very helpful. There is no reliable way to iterate over all the int enum constants in a group, or even to obtain the size of an int enum group.
+
+Можно ис-ть стринги как констаныты, но у них тоже много проблем: производительность при сравнении, когда чел не ис-ет поле, а хардкодит стрингу.
+
+Java’s enum types are full-fledged [окончательно готовый, полностью отработанный] classes that export one instance for each enumeration constant via a PUBLIC STATIC FINAL FIELD.
+Enum types are effectively final, by virtue of having no accessible constructors.
+In other words, enum types are instance-controlled.
+They are a generalization of singletons (Item 3), which are essentially single-element enums.
+
+Enums provide compile-time type safety. If you declare a parameter to be of type Apple, you are guaranteed that any non-null object reference passed to the parameter...
+Attempts to pass values of the wrong type will result in compile-time errors.
+
+Enum types with identically named constants coexist peacefully because each type has its own namespace. 
+You can add or reorder constants in an enum type without recompiling its clients because the fields that export the constants provide a layer of insulation between an enum type and its clients: 
+the constant values are not compiled into the clients as they are in the int enum pattern. 
+
+Finally, you can translate enums into printable strings by calling their toString() method.
+У всех енамов есть общий предок = java.lang.Enum
+
+In addition to rectifying the deficiencies of int enums, enum types let you add arbitrary methods and fields and implement arbitrary interfaces. 
+They provide high-quality implementations of all the Object methods (Chapter 3), they implement Comparable (Item 12) and Serializable (Chapter 11), and their serialized form is designed to withstand most changes to the enum type.
+
+You can augment an enum type with any method that seems appropriate.
+
+To associate data with enum constants, declare instance fields and write a constructor that takes the data and stores it in the fields. 
+
+Enums are by their nature immutable, so all fields should be final (Item 15). They can be public, but it is better to make them private and provide public accessors (Item 14). 
+   In the case of Planet, the constructor also computes and stores the surface gravity, but this is just an optimization.
+
+ALL ENUMS has a static ".values()" method that returns an array of its values in the order they were declared. 
+Note also that the toString() method returns the declared name of each enum value, enabling easy printing by println and printf. 
+If you’re dissatisfied with this string representation, you can change it by overriding the toString method.
+
+//System.out.printf(”Weight on %s is %f%n”, p, p.surfaceWeight(mass));
+
+Some behaviors associated with enum constants may need to be used only from within the class or package in which the enum is defined. 
+Such behaviors are best implemented as private or package-private methods. 
+Each constant then carries with it a hidden collection of behaviors that allows the class or package containing the enum to react appropriately when presented with the constant. 
+** как это скрытое поведение работает? потестить **
+Just as with other classes, unless you have a compelling reason to expose an enum method to its clients, declare it private or, if need be, package-private (Item 13).
+
+If an enum is generally useful, it should be a top-level class; if its use is tied to a specific top-level class, it should be a member class of that top-level class (Item 22). For example, the java.math.RoundingMode...
+
+Luckily, there is a better way to associate a different behavior with each enum constant: declare an abstract "apply()" method in the enum type, and override it with a concrete method for each constant in a constant-specific class body. 
+Such methods are knows as CONSTANT-SPECIFIC METHOD IMPLEMENTATIONS:
+
+
+public enum Operation {
+	PLUS("+") {
+		double apply(double x, double y) {
+			return x + y;
+		}
+	},
+	....
+	abstract double apply(double x, double y);
+...
+
+Constant-specific method implementations can be combined with constant-specific data. For example, here is a version of Operation that overrides the toString method to return the symbol commonly associated with the operation:
+
+Enum types have an automatically generated "valueOf(String)" method that translates a constant’s name into the constant itself. 
+If you override the "toString()" method in an enum type, consider writing a "fromString()" method to translate the custom string representation back to the corresponding enum. The following code (with the type name changed appropriately) will do the trick for any enum, so long as each constant has a unique string representation:
+
+Note that the "Operation" constants are put into the stringToEnum map from a static block that runs after the constants have been created. 
+Trying to make each constant put itself into the map from its own constructor would cause a compilation error. This is a good thing, because it would cause a NullPointerException if it were legal. Enum constructors aren’t permitted to access the enum’s static fields, except for compile-time constant fields. This restriction is necessary because these static fields have not yet been initialized when the constructors run.
+*** 1 конструктор для каждого поля вызовется по 1му разу ***
+A disadvantage of constant-specific method implementations is that they make it harder to share code among enum constants.
+
+What you really want is to be forced to choose an overtime pay strategy each time you add an enum constant. Luckily, there is a nice way to achieve this. The idea is to move the overtime pay computation into a private nested enum, and to pass an instance of this (strategy enum) to the constructor for the Payroll Day enum. The PayrollDay enum then delegates the overtime pay calculation to the strategy enum, eliminating the need for a switch statement or constant-specific method implementation in PayrollDay. While this pattern is less concise than the switch statement, it is safer and more flexible:
+enum PayrollDay {
+	MONDAY(PayType.WEEKDAY),
+	....
+	private enum PayType {
+		WEEKDAY {
+			double overtimePay(double hours, double payRate) {
+			.....
+
+If switch statements on enums are not a good choice for implementing constant-specific behavior on enums, what are they good for? 
+Switches on enums are good for augmenting external enum types [прибавлять поведение ко внешним енамам] with constant-specific behavior. 
+For example, suppose the Operation ENUM IS NOT UNDER YOUR CONTROL, and you wish it had an instance method to return the inverse of each operation. You can simulate the effect with the following static method:
+// Switch on an enum to simulate a missing method
+public static Operation inverse(Operation op) { switch(op) {
+case PLUS:    return    Operation.MINUS;
+case MINUS:    return    Operation.PLUS;
+case TIMES:    return    Operation.DIVIDE;
+case DIVIDE:    return    Operation.TIMES;
+default: throw new AssertionError(”Unknown op: ” + op);
+}
+}
+
+Enums are, generally speaking, comparable in performance to int constants. A minor performance disadvantage of enums over int constants is that there is a 
+1) SPACE and 
+2) TIME COST TO LOAD AND INITIALIZE enum types. 
+Except on resource-constrained devices, such as cell phones and toasters, this is unlikely to be noticeable in practice.
+
+So when should you use enums? Anytime you need a fixed set of constants. Of course, this includes “natural enumerated types,” such as the planets, the days of the week, and the chess pieces. 
+But it also includes other sets for which you know all the possible values at compile time, such as choices on a menu, operation codes, and command line flags. 
+It is not necessary that the set of constants in an enum type stay fixed for all time. 
+The enum feature was specifically designed to allow for binary compatible evolution of enum types.
+
+In summary, the advantages of enum types over int constants are compelling. Enums are far more readable, safer, and more powerful. Many enums require no explicit constructors or members, but many others benefit from associating data with each constant and providing methods whose behavior is affected by this data. Far fewer enums benefit from associating multiple behaviors with a single method. In this relatively rare case, prefer constant-specific methods to enums that switch on their own values. Consider the strategy enum pattern if multiple enum constants share common behaviors.
+
+можно ли через reflection изменить значения филдов в енаме?
+
+******************************************************
+*** Item 31: Use instance fields instead of ordinals
