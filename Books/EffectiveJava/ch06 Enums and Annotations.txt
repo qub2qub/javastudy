@@ -115,3 +115,150 @@ In summary, the advantages of enum types over int constants are compelling. Enum
 
 ******************************************************
 *** Item 31: Use instance fields instead of ordinals
+
+можно юзать ordinal() но это не тру
+you can’t add a constant for an int value without adding constants for all intervening int values.
+Luckily, there is a simple solution to these problems. 
+Never derive a value associated with an enum from its ordinal; 
+store it in an instance field instead:
+SOLO(1), DUET(2), TRIO(3), QUARTET(4), QUINTET(5), SEXTET(6), SEPTET(7), OCTET(8), DOUBLE_QUARTET(8), NONET(9), DECTET(10), TRIPLE_QUARTET(12);
+
+The Enum specification has this to say about ordinal: “Most programmers will have no use for this method. It is designed for use by general-purpose enum-based data structures such as EnumSet and EnumMap.” Unless you are writing such a data structure, you are best off avoiding the ordinal method entirely.
+
+******************************************************
+*** Item 32: Use EnumSet instead of bit fields
+
+If the elements of an enumerated type are used primarily in sets, it is traditional to use the int enum pattern (Item 30), assigning a different power of 2 to each constant:
+This representation lets you use the bitwise OR operation to combine several constants into a set, known as a bit field:
+text.applyStyles(STYLE_BOLD | STYLE_ITALIC);
+
+The bit field representation also lets you perform set operations such as union and intersection efficiently using bitwise arithmetic. But bit fields have all the disadvantages of int enum constants and more. It is even harder to interpret a bit field than a simple int enum constant when it is printed as a number. Also, there is no easy way to iterate over all of the elements represented by a bit field.
+
+ The java.util package provides the EnumSet class to efficiently represent sets of values drawn from a single enum type. This class implements the Set interface...
+But internally, each EnumSet is represented as a bit vector. 
+
+If the underlying enum type has sixty-four (<=64) or fewer elements—and most do—the entire EnumSet is represented with a single long (page 7), so its performance is comparable to that of a bit field. 
+Bulk operations, such as removeAll and retainAll, are implemented using bitwise arithmetic, just as you’d do manually for bit fields. But you are insulated from the ugliness and error-proneness of manual bit twiddling: the EnumSet does the hard work for you.
+
+Note that the applyStyles method takes a Set<Style> rather than an EnumSet<Style>. 
+While it seems likely that all clients would pass an EnumSet to the method, it is good practice to accept the interface type rather than the implementation type. 
+This allows for the possibility of an unusual client to pass in some other Set implementation and has no disadvantages to speak of (page 190).
+
+******************************************************
+*** Item 33: Use EnumMap instead of ordinal indexing
+
+Occasionally you may see code that uses the ordinal method (Item 31) to index into an array. 
+		herbsByType[h.type.ordinal()].add(h);
+This technique works, but it is fraught with problems. Because arrays are not compatible with generics (Item 25), the program requires an unchecked cast and will not compile cleanly.
+ 	Because the array does not know what its index represents, you have to label the output manually. 
+ 	But the most serious problem with this technique is that when you access an array that is indexed by an enum’s ordinal, it is your responsibility to use the correct int value;
+there is a very fast Map implementation designed for use with enum keys, known as java.util.EnumMap.
+
+This program is shorter, clearer, safer, and comparable in speed to the original version. There is no unsafe cast; no need to label the output manually, as the map keys are enums that know how to translate themselves to printable strings; and no possibility for error in computing array indices. The reason that EnumMap is comparable in speed to an ordinal-indexed array is that EnumMap uses such an array internally. But it hides this implementation detail from the programmer, combining the richness and type safety of a Map with the speed of an array. Note that the EnumMap constructor takes the Class object of the key type: this is a bounded type token, which provides runtime generic type information (Item 29).
+----
+A MAPPING FROM TWO ENUM VALUES:
+
+Again, you can do much better with EnumMap. Because each phase transition is indexed by a pair of phase enums, you are best off representing the relationship as a map from one enum (the source phase) to a map from the second enum (the destination phase) to the result (the phase transition). The two phases associated with a phase transition are best captured by associating data with the phase transition enum, which is then used to initialize the nested EnumMap:
+The type of the map is Map<Phase, Map<Phase, Transition>>, which means “map from (source) phase to map from (destination) phase to transition.” The first loop in the static initializer block initializes the outer map to contain the three empty inner maps. The second loop in the block initializes the inner maps using the source and destination information provided by each state transition constant.
+
+******************************************************
+*** Item 34: Emulate extensible enums with interfaces
+
+In almost all respects, enum types are superior to the typesafe enum pattern;
+one exception concerns extensibility, which was possible under the original pattern but is not supported by the language construct.
+This is no accident. For the most part, extensibility of enums turns out to be a bad idea. 
+1) !! It is confusing that elements of an extension type are instances of the base type and not vice versa. 
+2) There is no good way to enumerate over all of the elements of a base type and its extension. 
+3) Finally, extensibility would complicate many aspects of the design and implementation.
+
+That said, there is at least one compelling use case for extensible enumerated types, which is operation codes, also known as opcodes. An opcode is an enumerated type whose elements represent operations on some machine, such as the Operation type in Item 30, which represents the functions on a simple calculator. Sometimes it is desirable to let the users of an API provide their own operations, effectively extending the set of operations provided by the API.
+
+ADVANTAGE of the fact that enum types can implement arbitrary interfaces by defining an interface for the opcode type and an enum that is the standard implementation of the interface. 
+
+You can define another enum type that implements this interface and use instances of this new type in place of the base type.
+
+You can use your new operations anywhere you could use the basic operations, provided that APIs are written to take the interface type (Operation), not the implementation (BasicOperation). Note that you don’t have to declare the abstract apply method in the enum as you do in a nonextensible enum with instance-specific method implementations (page 152). This is because the abstract method (apply) is a member of the interface (Operation).
+
+******************************************************
+*** Item 35: Prefer annotations to naming patterns
+
+Недостатки naming patterns:
+1) First, typographical errors may result in silent failures.
+2) there is no way to ensure that they are used only on appropriate program elements. 
+3) they provide no good way to associate parameter values with program elements. (ugly and fragile)
+
+Annotations solve all of these problems nicely.
+какие скоупы и параметры по умолчанию у аннотаций ?
+как ис-ся аннотации TYPE_PARAMETER и TYPE_USE ?
+
+Retention and Target annotations -- Such annotations on annotation type declarations are known as meta-annotations.
+The @Retention(RetentionPolicy.RUNTIME) meta-annotation indicates that Test annotations should be retained(удерживаться) at runtime. Without it, Test annotations would be invisible to the test tool. 
+The @Target(ElementType.METHOD) meta-annotation indicates that the Test annotation is legal only on method declarations: it cannot be applied to class declarations, field declarations, or other program elements.
+
+Note the comment above the Test annotation declaration that says, “Use only on parameterless static methods.” It would be nice if the compiler could enforce this restriction, but it can’t. There are limits to how much error checking the compiler can do for you even with annotations.
+
+It is called a marker annotation, because it has no parameters but simply “marks” the annotated element. 
+
+The type of the parameter for this annotation is Class<? extends Exceptions This wildcard type is, admittedly, a mouthful. In English, it means “the Class object for some class that extends Exception,” and it allows the user of the annotation to specify any exception type.
+
+it clearly demonstrates the superiority of annotations over naming patterns.
+
+That said, with the exception of toolsmiths, most programmers will have no need to define annotation types. All programmers should, however, use the predefined annotation types provided by the Java platform (Items 36 and Item 24). Also, consider using any annotations provided by your IDE or static analysis tools. Such annotations can improve the quality of the diagnostic information provided by these tools. Note, however, that these annotations have yet to be standardized, so you will have some work to do if you switch tools, or if a standard emerges.
+
+******************************************************
+*** Item 36: Consistently use the Override annotation
+
+@Override.
+This annotation can be used only on method declarations, and it indicates that the annotated method declaration overrides a declaration in a supertype. If you consistently use this annotation, it will protect you from a large class of nefarious bugs. 
+--- nefarious [nɪˈfɛərɪəs] скверный, гнусный, бесчестный, подлый
+
+Therefore, you should use the @Override annotation on every method declaration that you believe to override a superclass declaration. There is one minor exception to this rule. If you are writing a class that is not labeled abstract, and you believe that it overrides an abstract method, you needn’t bother putting the Override annotation on that method. In a class that is not declared abstract, the compiler will emit an error message if you fail to override an abstract superclass method. However, you might wish to draw attention to all of the methods in your class that override superclass methods, in which case you should feel free to annotate these methods too.
+
+или можно настроить IDE, чтобы она проверяла любые методы, которые могут случайно заоверридить 
+какой-то метод, и выдать ошибку про это.
+
+In release 1.6, it became legal to use the Override annotation on method declarations that override declarations from interfaces as well as classes.
+
+или же можно спецом ставить @Override в классе наследнике, чтобы случаено не написать новый метод, которого не было в родителе.
+
+In summary, the compiler can protect you from a great many errors if you use the Override annotation on every method declaration that you believe to override a supertype declaration, with one exception. In concrete classes, you need not annotate methods that you believe to override abstract method declarations (though it is not harmful to do so).
+
+******************************************************
+*** Item 37: Use marker interfaces to define types
+
+A marker interface is an interface that contains no method declarations, but merely designates [просто обозначает] (or “marks”) a class that implements the interface as having some property. 
+For example, consider the Serializable interface (Chapter 11). By implementing this interface, a class indicates that its instances can be written to an ObjectOutputStream (or “serialized”).
+
+You may hear it said that marker annotations (Item 35) make marker interfaces obsolete. 
+This assertion is incorrect. 
+MARKER INTERFACES HAVE TWO ADVANTAGES OVER MARKER ANNOTATIONS. 
+1) First and foremost, marker interfaces define a type that is implemented by instances of the marked class; marker annotations do not. The existence of this type allows you to catch errors at compile time that you couldn’t catch until runtime if you used a marker annotation.
+
+Serializable =>> indicates that instances are eligible for processing by ObjectOutputStream ==>> an attempt to call ObjectOutputStream.write() on an object that doesn’t implement Serializable will fail only at runtime, but it didn’t have to be that way.
+
+2) Another advantage of marker interfaces over marker annotations is that they CAN BE TARGETED MORE PRECISELY. 
+If an ANNOTATION type is declared with target ElementType.TYPE, it CAN BE APPLIED TO ANY CLASS OR INTERFACE. 
+Suppose you have a marker that is applicable only to implementations of a particular interface. If you define it as a marker interface, you can have it extend the sole interface to which it is applicable(????), guaranteeing that all marked types are also SUBTYPES OF THE SOLE INTERFACE to which it is applicable.
+
+3) The chief advantage of marker annotations over marker interfaces is that it is possible to add more information to an annotation type after it is already in use, by adding one or more annotation type elements with defaults [JLS, 9.6]. 
+What starts life as a mere marker annotation type can evolve into a richer annotation type over time. Such evolution is not possible with marker interfaces, as it is not generally possible to add methods to an interface after it has been implemented (Item 18).
+
+4) Another advantage of marker annotations is that they are part of the larger annotation facility. Therefore, marker annotations allow for consistency in frameworks that permit annotation of a variety of program elements.
+
+So when should you use a marker annotation and when should you use a marker interface? 
+Clearly you must use an annotation if the marker applies to any program element other than a class or interface, as only classes and interfaces can be made to implement or extend an interface. 
+If the marker applies only to classes and interfaces, ask yourself the question, Might I want to write one or more methods that accept only objects that have this marking? If so, you should use a marker interface in preference to an annotation. 
+This will make it possible for you to use the interface as a parameter type for the methods in question, which will result in the very real benefit of COMPILE-TIME TYPE CHECKING.
+
+If you answered no to the first question, ask yourself one more: 
+Do I want to limit the use of this marker to elements of a particular interface, forever? 
+(????)If so, it makes sense to define the marker as a subinterface of that interface. 
+
+If you answered no to both questions, you should probably use a marker annotation.
+
+In summary, marker interfaces and marker annotations both have their uses. If you want to define a type that does not have any new methods associated with it, a marker interface is the way to go. If you want to mark program elements other than classes and interfaces, to allow for the possibility of adding more information to the marker in the future, or to fit the marker into a framework that already makes heavy use of annotation types, then a marker annotation is the correct choice. If you find yourself writing a marker annotation type whose target is ElementType.TYPE, take the time to figure out whether it really should be an annotation type, or whether a marker interface would be more appropriate.
+
+In a sense, this item is the inverse of Item 19, which says, 
+“If you don’t want to define a type, don’t use an interface.” 
+To a first approximation, this item says, 
+“If you do want to define a type, do use an interface.”
