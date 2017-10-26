@@ -1,7 +1,290 @@
 ******************************************************
 *** Item 38: Check parameters for validity
 
+You should clearly document all such restrictions of the method paremeters and enforce them with checks at the beginning of the method body. 
+This is a special case of the general principle that you should attempt to detect errors as soon as possible after they occur. 
 
+if an invalid parameter value is passed to a method and the method checks its parameters BEFORE EXECUTION, it will fail quickly and cleanly with an appropriate exception. If the method fails to check its parameters, several things could happen. The method could fail with a confusing exception in the midst of processing. 
+Worse, the method could return normally but silently compute the wrong result. 
+Worst of all, the method could return normally but leave some object in a compromised state, causing an error at some unrelated point in the code at some undetermined time in the future.
 
+For public methods, use the Javadoc "throws" tag to document the exception that will be thrown if a restriction on parameter values is violated (Item 62).
 
+For an unexported method, you as the package author control the circumstances under which the method is called, so you CAN AND SHOULD ENSURE that only valid parameter values are ever passed in. Therefore, nonpublic methods should generally check their parameters using assertions.
+
+Asserts have no effect and essentially no cost unless you enable them, which you do by passing the -ea (or -enableassertions) flag to the java interpreter.
+
+!!! It is particularly important to check the validity of PARAMETERS that are not used by a method but are STORED AWAY FOR LATER USE. 
+
+CONSTRUCTORS represent a special case of the principle that you should check the validity of parameters that are to be stored away for later use. 
+!!! It is critical to check the validity of constructor parameters to prevent the construction of an object that violates its class invariants.
+
+There are exceptions to the rule that you should check a method’s parameters before performing its computation. An important exception is the case in which the validity check would be expensive or impractical and the validity check is performed implicitly in the process of doing the computation.
+
+Occasionally, a computation implicitly performs a required validity check but throws the wrong exception if the check fails. In other words, the exception that the computation would naturally throw as the result of an invalid parameter value doesn’t match the exception that the method is documented to throw. Under these circumstances, you should use the exception translation idiom, described in Item 61, to translate the natural exception into the correct one.
+
+On the contrary, you should design methods to be as general as it is practical to make them.
+The fewer restrictions that you place on parameters, the better, assuming the method can do something reasonable with all of the parameter values that it accepts.
+[Наверно не делать более специфичную валидацию, более чем не обходимо.
+Например, что просто не нул лист, и не больше]
+
+To summarize, each time you write a method or constructor, you should think about what restrictions exist on its parameters. You should document these restrictions and enforce them with explicit checks at the beginning of the method body. It is important to get into the habit of doing this. The modest work that it entails will be paid back with interest the first time a validity check fails.
+
+******************************************************
+*** Item 39: Make defensive copies when needed ( защищённая копия )
+
+Even in a safe language, you aren’t insulated from other classes without some effort on your part. You must program defensively, with the assumption that clients of your class will do their best to destroy its invariants. 
+
+Either way, it is worth taking the time to write classes that are robust in the face of ill-behaved clients.
+
+To protect the internals of a Period instance from this sort of attack, 
+1) it is essential to make a defensive copy of each mutable parameter to the constructor and to use the copies as components of the Period instance in place of the originals:
+
+Note that defensive copies are made before checking the validity of the parameters (Item 38), and the validity check is performed on the copies rather than on the originals. While this may seem unnatural, it is necessary. It protects the class against changes to the parameters from another thread during the “window of vulnerability” between the time the parameters are checked and the time they are copied. (In the computer security community, this is known as a time-of-check/time-of-use or TOCTOU attack )
+
+Если класс не final - то не надо ис-ть его clone() метод, т.к. the clone method is not guaranteed to return an object whose class is java.util.Date: it could return an instance of an untrusted subclass specifically designed for malicious mischief.
+To prevent this sort of attack, do not use the clone method to make a defensive copy of a parameter whose type is subclassable by untrusted parties.
+[от меня -> Поэтому не клонируйте, а создавайте новые инстансы.]
+
+2) To defend against the second attack, merely modify the accessors to return defensive copies of mutable internal fields:
+...These fields are truly encapsulated within the object.
+
+Defensive copying of parameters is not just for immutable classes. 
+Anytime you write a method or constructor that enters a client-provided object into an internal data structure, think about whether the client-provided object is potentially mutable. 
+If it is, think about whether your class could tolerate a change (стерпит изменение) in the object after it was entered into the data structure. 
+If the answer is NO, you must defensively COPY THE OBJECT AND ENTER THE COPY INTO THE DATA STRUCTURE IN PLACE OF THE ORIGINAL. 
+For example, if you are considering using a client-provided object reference as an element in an internal Set instance or as a key in an internal Map instance, you should be aware that the invariants of the set or map would be destroyed if the object were modified after it is inserted.
+
+The same is true for defensive copying of internal components prior to returning them to clients. 
+Whether or not your class is immutable, you should think twice before returning a reference to an internal component that is mutable. 
+Chances are, you should return a defensive copy. 
+
+!!! Remember that nonzero-length arrays are always mutable. 
+
+Therefore, you should always make a defensive copy of an internal array before returning it to a client. 
+Alternatively, you could return an immutable view of the array. Both of these techniques are shown in Item 13.
+
+!!! you should, where possible, use immutable objects as components of your objects, so that you that don’t have to worry about defensive copying (Item 15).
+
+Defensive copying can have a performance penalty associated with it and isn’t always justified.
+ If a class trusts its caller not to modify an internal component, perhaps because the class and its client are both part of the same package, then it may be appropriate to dispense with defensive copying. Under these circumstances, the class documentation must make it clear that the caller must not modify the affected parameters or return values.
+
+ Внутри пакета не всегда разумно делать копии изменяемого параметра перед его передачей в объект. Т.к. есть некоторые методы и конструкторы который явно берут управление над объектом. А клиенты вызывая данный метод гарантируют что не будут изменят объект напрямую. A method or constructor that expects to take ownership of a client-provided mutable object must make this clear in its documentation.
+
+Classes containing methods or constructors whose invocation indicates a TRANSFER OF CONTROL cannot defend themselves against malicious clients. 
+Such classes are acceptable only when there is MUTUAL TRUST between the class and its client 
+or 
+when damage to the class’s invariants would harm no one but the client. 
+
+In summary, if a class has mutable components that it gets from or returns to its clients, the class must defensively copy these components. 
+If the cost of the copy would be prohibitive and the class trusts its clients not to modify the components inappropriately, then the defensive copy may be replaced by documentation outlining the client’s responsibility not to modify the affected components.
+
+******************************************************
+*** Item 40: Design method signatures carefully (GRAB BAG)
+
+1) Choose method names carefully. Тщательно подбирайте имена методов.
+Names should always obey the standard naming conventions (Item 56). Your primary goal should be to choose names that are understandable and consistent with other names in the same package. 
+Your secondary goal should be to choose names consistent with the broader consensus, where it exists. When in doubt, look to the Java library APIs for guidance. While there are plenty of inconsistencies—inevitable, given the size and scope of these libraries—there is also a fair amount of consensus.
+
+2) Don’t go overboard in providing convenience methods. 
+Every method should “pull its weight.” 
+Too many methods make a class difficult to learn, use, document, test, and maintain. This is doubly true for interfaces, where too many methods complicate life for implementors as well as users. 
+For each action supported by your class or interface, provide a fully functional method. Consider providing a “shorthand” only if it will be used often. 
+When in doubt, leave it out.
+
+3) Avoid long parameter lists. ( <= 4 )
+Aim for four parameters or fewer. 
+Most programmers can’t remember longer parameter lists. If many of your methods exceed this limit, your API won’t be usable without constant reference to its documentation. Modern IDEs help, but you’re still much better off with short parameter lists. 
+
+!!! Long sequences of identically typed parameters are especially harmful.
+
+ Not only won’t users be able to remember the order of the parameters, but when they transpose parameters accidentally, their programs will still compile and run. 
+ They just won’t do what their authors intended.
+
+	3.1) One is to break the method up into multiple methods, each of which requires only a subset of the parameters. If done carelessly (бездумно), this can lead to too many methods, but it can also help reduce the method count by increasing orthogonality. 
+	>> java.util.List does not provide methods to find the first or last index of an element in a sublist.
+	java.util.List#subList (int fromIndex, int toIndex)
+	java.util.List#lastIndexOf // java.util.List#indexOf
+	3.2) create helper classes to hold groups of parameters. 
+	Typically these helper classes are static member classes (Item 22). This technique is recommended if a frequently occurring sequence of parameters is seen to represent some distinct entity. (a card’s rank and its suit.)
+	3.3) adapt the Builder pattern (Item 2) from object construction to method invocation. If you have a method with many parameters, especially if some of them are optional, it can be beneficial to define an object that represents all of the parameters, and to allow the client to make multiple “setter” calls on this object, each of which sets a single parameter or a small, related group. Once the desired parameters have been set, the client invokes the object’s “execute” method, which does any final validity checks on the parameters and performs the actual computation.
+
+4) For parameter types, favor interfaces over classes (Item 52). 
+Тип параметра - лучше делать ИНТЕРФЕЙС, а не класс.
+If there is an appropriate interface to define a parameter, use it in favor of a class that implements the interface. For example, there is no reason ever to write a method that takes HashMap on input—use Map instead. 
+By using a class instead of an interface, you restrict your client to a particular implementation and force an unnecessary and potentially expensive copy operation if the input data happens to exist in some other form.
+
+5) Prefer two-element enum types to boolean parameters. 
+It makes your code easier to read and to write, especially if you’re using an IDE that supports autocompletion. Also, it makes it easy to add more options later.
+
+******************************************************
+*** Item 41: Use overloading judiciously [ʤu:`dıʃəslı] [благоразумно, рассудительно]
+
+!!Выбор, какой из перегруженных методов вызывать, происходит на этапе компиляции.
+
+Because the classify method is overloaded, and the choice of which overloading to invoke is made at compile time. 
+For all three iterations of the loop, the compile-time type of the parameter is the same: Collection<?>. The runtime type is different in each iteration, but this does not affect the choice of overloading. Because the compile-time type of the parameter is Collection<?>, the only applicable overloading is the third one, classify(Collection<?>), and this overloading is invoked in each iteration of the loop.
+
+For all three iterations of the loop, the compile-time type of the parameter is the same: Collection<?>. 
+!! THE RUNTIME TYPE IS DIFFERENT IN EACH ITERATION, but this does not affect the choice of overloading. 
+Because the compile-time type of the parameter is Collection<?>, the only applicable overloading is the third one, classify(Collection<?>), and this overloading is invoked in each iteration of the loop.
+
+!!!!:
+The behavior of this program is counterintuitive because 
+selection among OVERLOADED methods is STATIC, 
+while selection among OVERRIDDEN methods is DYNAMIC. 
+
+The correct version of an overridden method is chosen at runtime, based on the runtime type of the object on which the method is invoked. 
+As a reminder, 
+!! a method is OVERRIDDEN when a subclass contains a method declaration with the same signature as a method declaration in an ancestor. 
+If an instance method is overridden in a subclass and this method is invoked on an instance of the subclass, the subclass’s overriding method executes, regardless of the compiletime type of the subclass instance. 
+
+The compile-time type of an object has no effect on which method is executed when an OVERRIDDEN method is invoked; the “most specific” overriding method always gets executed.
+Compare this to OVERLOADING, where the runtime type of an object has no effect on which overloading is executed; the selection is made at compile time, based entirely on the compile-time types of the parameters.
+
+Because OVERRIDING IS THE NORM and OVERLOADING IS THE EXCEPTION, 
+overriding sets people’s expectations for the behavior of method invocation. As demonstrated by the CollectionClassifier example, overloading can easily confound these expectations. It is bad practice to write code whose behavior is likely to confuse programmers. This is especially true for APIs. If the typical user of an API does not know which of several method overloadings will get invoked for a given set of parameters, use of the API is likely to result in errors. These errors will likely manifest themselves as erratic behavior at runtime, and many programmers will be unable to diagnose them. Therefore you should avoid confusing uses of overloading.
+
+ A safe, conservative policy is NEVER to export two overloadings with the same number of parameters. 
+ If a method uses varargs, a conservative policy is not to overload it at all, except as described in Item 42.
+
+For constructors, you don’t have the option of using different names: multiple constructors for a class are always overloaded. You do, in many cases, have the option of exporting static factories instead of constructors (Item 1). Also, with constructors you don’t have to worry about interactions between overloading and overriding, because constructors can’t be overridden. 
+You will probably have occasion to export multiple constructors with the same number of parameters, so it pays to know how to do it safely.
+
+!!! Two types are RADICALLY DIFFERENT if it is clearly impossible to cast an instance of either type to the other. 
+
+и тогда если при OVERLOADING эти методы “radically different” -- то норм, можно юзать.
+
+Under these circumstances, which overloading applies to a given set of actual parameters is fully determined by the runtime types of the parameters and cannot be affected by their compile-time types, so the major source of confusion goes away. For example, ArrayList has one constructor that takes an int and a second constructor that takes a Collection. It is hard to imagine any confusion over which of these two constructors will be invoked under any circumstances.
+
+ The call to set.remove(i) selects the overloading remove(E), where E is the element type of the set (Integer), and autoboxes i from int to Integer.
+
+The call to list.remove(i), on the other hand, selects the overloading remove(int i), which removes the element at the specified position from a list. 
+
+ List<E> interface has two overloadings of the remove method: remove(E) and remove(int).
+
+!!! Array types and classes other than Object are radically different. 
+Also, array types and interfaces other than Serializable and Cloneable are radically different. 
+Two distinct classes are said to be unrelated if neither class is a descendant  of the other [dɪˈsendənt]  [потомок, наследник]. 
+For example, String and Throwable are unrelated. It is impossible for any object to be an instance of two unrelated classes, so unrelated classes are radically different.
+
+To summarize, just because you can overload methods doesn’t mean you should. You should generally refrain from overloading methods with multiple signatures that have the same number of parameters. In some cases, especially where constructors are involved, it may be impossible to follow this advice. In that case, you should at least avoid situations where the same set of parameters can be passed to different overloadings by the addition of casts. If such a situation cannot be avoided, for example, because you are retrofitting an existing class to implement a new interface, you should ensure that all overloadings behave identically when passed the same parameters. If you fail to do this, programmers will be hard pressed to make effective use of the overloaded method or constructor, and they won’t understand why it doesn’t work.
+
+******************************************************
+*** Item 42: Use varargs judiciously
+
+In release 1.5, varargs methods, formally known as variable arity methods, were added to the language. 
+Varargs methods accept ZERO OR MORE arguments of a specified type. 
+The varargs facility works by 
+1) first creating an array whose size is the number of arguments passed at the call site, 
+2) then putting the argument values into the array, 
+3) and finally passing the array to the method.
+
+Sometimes it’s appropriate to write a method that requires one or more arguments of some type, rather than zero or more. 
+For example, suppose you want to compute the minimum of a number of int arguments. This function is not well defined if the client passes no arguments. You could check the array length at runtime =WRONG!
+This solution has several problems. The most serious is that if the client invokes this method with no arguments, 
+1) it fails at runtime rather than compile time. 
+2) Another problem is that it is ugly. 
+You have to include an explicit validity check on args, and you can’t use a for-each loop unless you initialize min to Integer.MAX_VALUE, which is also ugly.
+
+!!! Both printf and reflection benefit enormously from varargs.
+
+...The Arrays.asList() method, now “enhanced” to use varargs, gathers up the object reference to the int array digits into a one-element array of arrays and dutifully wraps it into a List<int []> instance. Printing this list causes toString to be invoked on the list, which in turn causes toString to be invoked on its sole element, the int array, with the unfortunate result described above.
+
+System.out.println(Arrays.toString(digits)); // right solution
+
+!!! Don’t retrofit every method that has a final array parameter; use varargs only when a call really operates on a variable-length sequence of values.
+
+Two method signatures are particularly suspect:
+ReturnType1 suspect1(Object... args) { }
+<T> ReturnType2 suspect2(T... args) { }
+
+Methods with either of these signatures will accept any parameter list. 
+Any compile-time type-checking that you had prior to the retrofit will be lost, as demonstrated by what happened to Arrays.asList.
+
+Exercise care when using the varargs facility in performance-critical situations. 
+!!! EVERY INVOCATION OF A VARARGS METHOD CAUSES AN ARRAY ALLOCATION AND INITIALIZATION.
+
+If you have determined empirically that you can’t afford this cost but you need the flexibility of varargs, there is a pattern that lets you have your cake and eat it too. Suppose you’ve determined that 95 percent of the calls to a method have three or fewer parameters. Then declare five overloadings of the method, one each with zero through three ordinary parameters, and a single varargs method for use when the number of arguments exceeds three:
+
+In summary, varargs methods are a convenient way to define methods that require a variable number of arguments, but they should not be overused. They can produce confusing results if used inappropriately.
+
+******************************************************
+*** Item 43: Return empty arrays or collections, not nulls
+
+This sort of circumlocution is required in nearly every use of a method that returns null in place of an empty (zero-length) array or collection. It is error-prone, because the programmer writing the client might forget to write the special-case code to handle a null return. Such an error may go unnoticed for years, as such methods usually return one or more objects. Less significant, but still worthy of note, returning null in place of an empty array also complicates the method that returns the array or collection.
+
+It is sometimes argued that a null return value is preferable to an empty array because it avoids the expense of allocating the array. This argument fails on two counts. First, it is inadvisable to worry about performance at this level unless profiling has shown that the method in question is a real contributor to performance problems (Item 55). Second, it is possible to return the same zero-length array from every invocation that returns no items because zero-length arrays are immutable and immutable objects may be shared freely (Item 15). 
+
+In fact, this is exactly what happens when you use the standard idiom for dumping items from a collection into a typed array:
+public Cheese[] getCheeses() {
+	return cheesesInStock.toArray(EMPTY_CHEESE_ARRAY);
+}
+In this idiom, an empty-array constant is passed to the toArray method to indicate the desired return type. 
+Normally the toArray() method allocates the returned array, but if the collection is empty, it fits in the zero-length input array, and the specification for Collection.toArray(T[]) guarantees that the input array will be returned if it is large enough to hold the collection. Therefore the idiom never allocates an empty array.
+
+******************************************************
+*** Item 44: Write doc comments for all exposed API elements
+
+If an API is to be usable, it must be documented. Traditionally API documentation was generated manually, and keeping it in sync with code was a chore. The Java programming environment eases this task with the Javadoc utility. Javadoc generates API documentation automatically from source code with specially formatted documentation comments, more commonly known as doc comments.
+
+To document your API properly, you must precede every exported class, interface, constructor, method, and field declaration with a doc comment. If a class is serializable, you should also document its serialized form (Item 75). In the absence of a doc comment, the best that Javadoc can do is to reproduce the declaration as the sole documentation for the affected API element. It is frustrating and error-prone to use an API with missing documentation comments. To write maintainable code, you should also write doc comments for most unexported classes, interfaces, constructors, methods, and fields.
+
+!!! The doc comment for a method should describe succinctly the contract between the method and its client.
+
+With the exception of methods in classes designed for inheritance (Item 17), the contract should say what the method does rather than how it does its job. 
+The doc comment should enumerate all of the method’s PRECONDITIONS, which are the things that have to be true in order for a client to invoke it, and its POSTCONDITIONS, which are the things that will be true after the invocation has completed successfully. 
+   Typically, preconditions are described implicitly by the ©throws tags for unchecked exceptions; each unchecked exception corresponds to a precondition violation. 
+ Also, preconditions can be specified along with the affected parameters in their @param tags.
+
+In addition to PRECONDITIONS and POSTCONDITIONS, methods should document ANY SIDE EFFECTS. 
+!!! A SIDE EFFECT is an observable change in the state of the system that is not obviously required in order to achieve the postcondition. 
+
+For example, if a method starts a background thread, the documentation should make note of it. Finally, documentation comments should describe the thread safety of a class or method, as discussed in Item 70.
+
+To describe a method’s contract fully, the doc comment should have an @paramtag for every parameter, an @returntag unless the method has a void return type, and an @throwstag for every exception thrown by the method, whether checked or unchecked (Item 62). 
+By convention, the text following an @paramtag or @returntag should be a noun phrase describing the value repre-sented by the parameter or return value. The text following an @throwstag should consist of the word “if,” followed by a clause describing the conditions under which the exception is thrown. 
+Occasionally, arithmetic expressions are used in place of noun phrases. By convention, the phrase or clause following an @param, @return, or @throwstag is not terminated by a period. 
+
+To include a multiline code example in a doc comment, use a Javadoc {©code} tag wrapped inside an HTML <pre> tag. 
+In other words, precede the multiline code example with the characters <pre>{©code and follow it with the characters }</pre>.
+
+Finally, notice the use of the word “this” in the doc comment. By convention, the word “this” always refers to the object on which the method is invoked when it is used in the doc comment for an instance method.
+
+the {©literal} tag, which suppress processing of HTML markup and nested Javadoc tags. It is like the {©code} tag, except that it doesn’t render the text in code font. 
+	* The triangle inequality is {@literal |x + y| < |x| + |y|}.
+
+The summary description must stand on its own to describe the functionality of the element it summarizes. To avoid confusion, no two members or constructors in a class or interface should have the same summary description. Pay particular attention to overloadings, for which it is often natural to use the same first sentence in a prose description (but unacceptable in doc comments).
+
+It is somewhat misleading to say that the summary description is the first sentence in a doc comment. Convention dictates that it should seldom be a complete sentence. For methods and constructors, the summary description should be a full verb phrase (including any object) describing the action performed by the method. For example,
+
+•    ArrayList(int initialCapacity)—Constructs an empty list with the specified initial capacity.
+•    Collection.size()—Returns the number of elements in this collection.
+
+For classes, interfaces, and fields, the summary description should be a noun phrase describing the thing represented by an instance of the class or interface or by the field itself. For example,
+
+•    TimerTask—A task that can be scheduled for one-time or repeated execution by a Timer.
+•    Math .PI—The double value that is closer than any other to pi, the ratio of the circumference of a circle to its diameter.
+---------------------------------
+SPECIAL CARE in doc comments: GENERICS, ENUMS, AND ANNOTATIONS. 
+When documenting a generic type or method, be sure to document all type parameters:
+		* @param <K> the type of keys maintained by this map
+		* @param <V> the type of mapped values
+
+When documenting an ENUM TYPE, be sure to document the constants as well as the type and any public methods. 
+Note that you can put an entire doc comment on one line if it’s short:
+
+When documenting an ANNOTATION TYPE, be sure to document any members as well as the type itself. Document members with noun phrases, as if they were fields. For the summary description of the type, use a verb phrase that says what it means when a program element has an annotation of this type:
+
+As of release 1.5, package-level doc comments should be placed in a file called "package-info.java" instead of "package.html". 
+In addition to package-level doc comments, package-info.java can (but is not required to) contain a package declaration and package annotations.
+
+Two aspects of a class’s exported API that are often neglected are thread-safety and serializability. Whether or not a class is thread-safe, you should document its thread-safety level, as described in Item 70. If a class is serializable, you should document its serialized form, as described in Item 75.
+
+Javadoc has the ability to “inherit” method comments. If an API element does not have a doc comment, Javadoc searches for the most specific applicable doc comment, giving preference to interfaces over superclasses.
+You can also inherit parts of doc comments from supertypes using the {@inheritDoc} tag. This means, among other things, that classes can reuse doc comments from interfaces they implement, rather than copying these comments.
+
+ While it is necessary to provide documentation comments for all exported API elements, it is not always sufficient. For complex APIs consisting of multiple interrelated classes, it is often necessary to supplement the documentation comments with an external document describing the overall architecture of the API. If such a document exists, the relevant class or package documentation comments should include a link to it.
+
+To summarize, documentation comments are the best, most effective way to document your API. Their use should be considered mandatory for all exported API elements. Adopt a consistent style that adheres to standard conventions. Remember that arbitrary HTML is permissible within documentation comments and that HTML metacharacters must be escaped.
 
