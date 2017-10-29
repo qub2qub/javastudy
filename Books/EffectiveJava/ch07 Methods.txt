@@ -185,6 +185,8 @@ The varargs facility works by
 2) then putting the argument values into the array, 
 3) and finally passing the array to the method.
 
+!! когда нет аргументов - то создаётся массив нулевой длинны
+
 Sometimes it’s appropriate to write a method that requires one or more arguments of some type, rather than zero or more. 
 For example, suppose you want to compute the minimum of a number of int arguments. This function is not well defined if the client passes no arguments. You could check the array length at runtime =WRONG!
 This solution has several problems. The most serious is that if the client invokes this method with no arguments, 
@@ -194,9 +196,9 @@ You have to include an explicit validity check on args, and you can’t use a fo
 
 !!! Both printf and reflection benefit enormously from varargs.
 
-...The Arrays.asList() method, now “enhanced” to use varargs, gathers up the object reference to the int array digits into a one-element array of arrays and dutifully wraps it into a List<int []> instance. Printing this list causes toString to be invoked on the list, which in turn causes toString to be invoked on its sole element, the int array, with the unfortunate result described above.
+...The Arrays.asList() method, now “enhanced” to use varargs, gathers up the object reference to the int array digits into a ONE-ELEMENT ARRAY OF ARRAYS and dutifully wraps it into a List<int []> instance. Printing this list causes toString to be invoked on the list, which in turn causes toString to be invoked on its sole element, the int array, with the unfortunate result described above.
 
-System.out.println(Arrays.toString(digits)); // right solution
+!!! System.out.println(Arrays.toString(digits)); // right solution
 
 !!! Don’t retrofit every method that has a final array parameter; use varargs only when a call really operates on a variable-length sequence of values.
 
@@ -205,7 +207,7 @@ ReturnType1 suspect1(Object... args) { }
 <T> ReturnType2 suspect2(T... args) { }
 
 Methods with either of these signatures will accept any parameter list. 
-Any compile-time type-checking that you had prior to the retrofit will be lost, as demonstrated by what happened to Arrays.asList.
+Any compile-time type-checking that you had prior to the retrofit will be lost, as demonstrated by what happened to Arrays.asList().
 
 Exercise care when using the varargs facility in performance-critical situations. 
 !!! EVERY INVOCATION OF A VARARGS METHOD CAUSES AN ARRAY ALLOCATION AND INITIALIZATION.
@@ -239,37 +241,45 @@ To document your API properly, you must precede every exported class, interface,
 
 With the exception of methods in classes designed for inheritance (Item 17), the contract should say what the method does rather than how it does its job. 
 The doc comment should enumerate all of the method’s PRECONDITIONS, which are the things that have to be true in order for a client to invoke it, and its POSTCONDITIONS, which are the things that will be true after the invocation has completed successfully. 
-   Typically, preconditions are described implicitly by the ©throws tags for unchecked exceptions; each unchecked exception corresponds to a precondition violation. 
+   Typically, preconditions are described implicitly by the @throws tags for unchecked exceptions; each unchecked exception corresponds to a precondition violation. 
  Also, preconditions can be specified along with the affected parameters in their @param tags.
 
 In addition to PRECONDITIONS and POSTCONDITIONS, methods should document ANY SIDE EFFECTS. 
-!!! A SIDE EFFECT is an observable change in the state of the system that is not obviously required in order to achieve the postcondition. 
+!!! A SIDE EFFECT is an observable CHANGE IN THE STATE OF THE SYSTEM that is not obviously required in order to achieve the postcondition. 
 
 For example, if a method starts a background thread, the documentation should make note of it. Finally, documentation comments should describe the thread safety of a class or method, as discussed in Item 70.
 
-To describe a method’s contract fully, the doc comment should have an @paramtag for every parameter, an @returntag unless the method has a void return type, and an @throwstag for every exception thrown by the method, whether checked or unchecked (Item 62). 
-By convention, the text following an @paramtag or @returntag should be a noun phrase describing the value repre-sented by the parameter or return value. The text following an @throwstag should consist of the word “if,” followed by a clause describing the conditions under which the exception is thrown. 
-Occasionally, arithmetic expressions are used in place of noun phrases. By convention, the phrase or clause following an @param, @return, or @throwstag is not terminated by a period. 
+To describe a method’s contract fully, the doc comment should have an @PARAM tag for every parameter, an @RETURN tag unless the method has a void return type, and an @THROWS tag for every exception thrown by the method, whether checked or unchecked (Item 62). 
+
+By convention, the text following an @param tag or @return tag should be a noun phrase describing the value represented by the parameter or return value. 
+The text following an @throws tag should consist of the word “if,” followed by a clause describing the conditions under which the exception is thrown. 
+Occasionally, arithmetic expressions are used in place of noun phrases. By convention, the phrase or clause following an @param, @return, or @throws tag is not terminated by a period. 
+
+!! есть тэги <p> и <i>
 
 To include a multiline code example in a doc comment, use a Javadoc {©code} tag wrapped inside an HTML <pre> tag. 
 In other words, precede the multiline code example with the characters <pre>{©code and follow it with the characters }</pre>.
 
 Finally, notice the use of the word “this” in the doc comment. By convention, the word “this” always refers to the object on which the method is invoked when it is used in the doc comment for an instance method.
 
-the {©literal} tag, which suppress processing of HTML markup and nested Javadoc tags. It is like the {©code} tag, except that it doesn’t render the text in code font. 
+the {@literal} tag, which suppress processing of HTML markup and nested Javadoc tags. It is like the {@code} tag, except that it doesn’t render the text in code font. 
 	* The triangle inequality is {@literal |x + y| < |x| + |y|}.
 
-The summary description must stand on its own to describe the functionality of the element it summarizes. To avoid confusion, no two members or constructors in a class or interface should have the same summary description. Pay particular attention to overloadings, for which it is often natural to use the same first sentence in a prose description (but unacceptable in doc comments).
+The SUMMARY DESCRIPTION must stand on its own to describe the functionality of the element it summarizes. To avoid confusion, no two members or constructors in a class or interface should have the same summary description. 
+Pay particular attention to overloadings, for which it is often natural to use the same first sentence in a prose description (but unacceptable in doc comments).
 
-It is somewhat misleading to say that the summary description is the first sentence in a doc comment. Convention dictates that it should seldom be a complete sentence. For methods and constructors, the summary description should be a full verb phrase (including any object) describing the action performed by the method. For example,
-
+It is somewhat misleading to say that the SUMMARY DESCRIPTION IS THE FIRST SENTENCE IN A DOC COMMENT. Convention dictates that it should seldom be a complete sentence. For methods and constructors, the summary description should be a FULL VERB PHRASE (including any object) describing the action performed by the method. 
+For example,
 •    ArrayList(int initialCapacity)—Constructs an empty list with the specified initial capacity.
 •    Collection.size()—Returns the number of elements in this collection.
 
-For classes, interfaces, and fields, the summary description should be a noun phrase describing the thing represented by an instance of the class or interface or by the field itself. For example,
-
-•    TimerTask—A task that can be scheduled for one-time or repeated execution by a Timer.
-•    Math .PI—The double value that is closer than any other to pi, the ratio of the circumference of a circle to its diameter.
+For classes, interfaces, and fields, the summary description should be a NOUN PHRASE describing the thing represented by an instance of the class or interface or by the field itself. 
+For example,
+•    TimerTask — A task that can be scheduled for one-time or repeated execution by a Timer.
+•    Math.PI — The double value that is closer than any other to pi, the ratio of the circumference of a circle to its diameter.
+---------------------------------
+если есть точка и за ней пробел.
+если в 1м предложении есть точка и за ней пробел то он её отрезает и пишет как summary description в сгенеренную доку.
 ---------------------------------
 SPECIAL CARE in doc comments: GENERICS, ENUMS, AND ANNOTATIONS. 
 When documenting a generic type or method, be sure to document all type parameters:
@@ -277,19 +287,25 @@ When documenting a generic type or method, be sure to document all type paramete
 		* @param <V> the type of mapped values
 
 When documenting an ENUM TYPE, be sure to document the constants as well as the type and any public methods. 
-Note that you can put an entire doc comment on one line if it’s short:
+Note that you can put an entire doc comment on one line if it’s short: /** текст */
 
-When documenting an ANNOTATION TYPE, be sure to document any members as well as the type itself. Document members with noun phrases, as if they were fields. For the summary description of the type, use a verb phrase that says what it means when a program element has an annotation of this type:
+When documenting an ANNOTATION TYPE, be sure to document any MEMBERS as well as the type itself. Document members with noun phrases, as if they were fields. For the summary description of the type, use a verb phrase that says what it means when a program element has an annotation of this type:
 
 As of release 1.5, package-level doc comments should be placed in a file called "package-info.java" instead of "package.html". 
 In addition to package-level doc comments, package-info.java can (but is not required to) contain a package declaration and package annotations.
 
-Two aspects of a class’s exported API that are often neglected are thread-safety and serializability. Whether or not a class is thread-safe, you should document its thread-safety level, as described in Item 70. If a class is serializable, you should document its serialized form, as described in Item 75.
+Two aspects of a class’s exported API THAT ARE OFTEN NEGLECTED 
+1) are thread-safety 
+2) and serializability. 
+Whether or not a class is thread-safe, you should document its thread-safety level, as described in Item 70. If a class is serializable, you should document its serialized form, as described in Item 75.
 
-Javadoc has the ability to “inherit” method comments. If an API element does not have a doc comment, Javadoc searches for the most specific applicable doc comment, giving preference to interfaces over superclasses.
+Javadoc has the ability to “inherit” method comments. 
+If an API element does not have a doc comment, Javadoc searches for the most specific applicable doc comment, giving preference to interfaces over superclasses.
 You can also inherit parts of doc comments from supertypes using the {@inheritDoc} tag. This means, among other things, that classes can reuse doc comments from interfaces they implement, rather than copying these comments.
 
- While it is necessary to provide documentation comments for all exported API elements, it is not always sufficient. For complex APIs consisting of multiple interrelated classes, it is often necessary to supplement the documentation comments with an external document describing the overall architecture of the API. If such a document exists, the relevant class or package documentation comments should include a link to it.
+ While it is necessary to provide documentation comments for all exported API elements, it is not always sufficient. 
+ For complex APIs consisting of multiple interrelated classes, it is often necessary to supplement the documentation comments with an external document describing the overall architecture of the API. 
+ If such a document exists, the relevant class or package documentation comments should include a link to it.
 
 To summarize, documentation comments are the best, most effective way to document your API. Their use should be considered mandatory for all exported API elements. Adopt a consistent style that adheres to standard conventions. Remember that arbitrary HTML is permissible within documentation comments and that HTML metacharacters must be escaped.
 
