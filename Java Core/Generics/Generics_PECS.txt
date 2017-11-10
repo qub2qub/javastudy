@@ -1,0 +1,180 @@
+What is PECS (Producer Extends Consumer Super)?
+https://stackoverflow.com/questions/2723397/what-is-pecs-producer-extends-consumer-super
+ 
+Михаил Ершов — Разработка совместимого API
+ https://www.youtube.com/watch?v=EgOZSr-Uc3w
+
+Использование generic wildcards для повышения удобства Java API
+https://habrahabr.ru/post/207360
+
+Java Generics PECS – Producer Extends Consumer Super
+https://howtodoinjava.com/core-java/generics/java-generics-what-is-pecs-producer-extends-consumer-super/
+
+Java Generics Tutorial - Part III - Wildcards
+http://thegreyblog.blogspot.com.by/2011/03/java-generics-tutorial-part-iii.html
+
+Generics PECS principle, step by step
+http://yzaslavs.blogspot.com.by/2010/07/generics-pecs-principle-step-by-step.html
+
+========================= 0 ========================
+List<? extends Number>
+--Number и все его дети
+В качестве такого листа можно передать лист от Number или любого непосредственного наследника Number.
+
+List<? super Number>
+--Number и все его предки (непосредственные)
+В качестве такого листа можно передать лист от Number или любого непосредственного предка Number.
+
+========================= 1 ========================
+RPE => read->produce->extend <= ПРОИЗВОДИТЕЛЬ ЧИТАЕТ ИЗ АРГУМЕНТА
+WCS => write->consume->super <= ПОТРЕБИТЕЛЬ ПИШЕТ В АРГУМЕНТ
+
+Всё по отношению к листу:
+1) если из листа вынимаются элементы - то он производитель, 
+из него можно только вынимать элементы: 
+out of LIST -> PRODUCER
+
+2) если в лист кладутся элементы - то он потребитель, 
+в него можно только класть элементы: 
+into LIST <- CONSUMER
+
+1) PRODUCER -->> ГАРАНТИРУЕТ ТОЛЬКО ИЗВЛЕЧЕНИЕ ДАННОГО ЭЛЕМЕНТА ИЗ КОЛЛЕКЦИИ.
+получить данный тип можно (или он будет подтипом данного) , положить нельзя.
+2) CONSUMER -->> ГАРАНТИРУЕТ ТОЛЬКО ДОБАВЛЕНИЕ ДАННОГО ЭЛЕМЕНТА В КОЛЛЕКЦИЮ.
+получить элемент заданного типа нельзя, положить данный тип можно (возможно в коллекции лежат его предки-parents) .
+
+1) PRODUCER -->> т.е. если надо получить/изъять все элементам коллекции и что-то с ними сделать - то будет лист-производитель-PRODUCER.
+в ней могут лежать как более обобщённые типы, так и более узкие, но от общего родителя.
+Т.е. должна быть МАКСИМАЛЬНО ВЕРХНЯЯ ГРАНИЦА, все свойства которой присущи/доступны каждому элементу.
+И все элементы как минимум будут обладать свойствами родителя, и их можно будет выполнить над всеми элементами коллекции: 
+Поэтому Collection<? extends Thing>
+А положить в такую коллекцию какой-то определённый тип будет нельзя, т.к. ты не знаешь, какие именно специфические элементы в ней сейчас лежат, и может быть ошибка.
+Например, List<? extends Integer> = там могут лежать int, short, byte, но все они при этом int.
+
+2) CONSUMER -->> а если надо добавить элементы в коллекцию - то лист-потребитель-CONSUMER.
+В этом случае в коллекции могут лежать более обобщённые элементы,
+но должна быть возможность добавить в неё элемент минимально допустимого/узкого типа (и всех подтипов этого типа).
+В List<? super Number> можно положить int, long, double и т.п.
+А в List<? super Long> можно положить ТОЛЬКО long
+.
+т.е. должна быть МИНИМАЛЬНО НИЖНЯЯ ГРАНИЦА, т.е. лист может содержать элементы любых типов, но в т.ч. и Thing.
+Например, List<? super Integer> = там могут лежать int, long, Number, Object, 
+т.е. это может быть коллекция Long-ов или объектов, но гаранированно что ты в неё можешь положить int и любые подтипы от integer.
+НО НЕ ЗНАЧИТ, что все объекты из этой коллекции ты можешь скастить к int-у. 
+
+-------------
+ "PECS" is from the collection's point of view. 
+ If you are only pulling items from a generic collection, it is a producer and you should use extends; 
+ if you are only stuffing items in, it is a consumer and you should use super. 
+ If you do both with the same collection, you shouldn't use either extends or super.
+
+Suppose you have a method that takes as its parameter a collection of things, but you want it to be more flexible than just accepting a Collection<Thing>.
+
+Case 1 PRODUCER: You want to go through the collection and do things with each item.
+Then the list is a producer, so you should use a Collection<? extends Thing>.
+--The reasoning is that a Collection<? extends Thing> could hold any subtype of Thing, and thus each element will behave as a Thing when you perform your operation. (You actually cannot add anything to a Collection<? extends Thing>, because you cannot know at runtime which specific subtype of Thing the collection holds.)
+
+Case 2 CONSUMER: You want to add things to the collection.
+Then the list is a consumer, so you should use a Collection<? super Thing>.
+--The reasoning here is that unlike Collection<? extends Thing>, Collection<? super Thing> can always hold a Thing no matter what the actual parameterized type is. Here you don't care what is already in the list as long as it will allow a Thing to be added; this is what ? super Thing guarantees.
+
+-----------
+A PRODUCER is allowed to produce something more specific, hence EXTENDS, 
+a CONSUMER is allowed to accept something more general, hence SUPER.
+----------
+1) use an EXTENDS wildcard when you ONLY GET values out of a structure
+2) use a SUPER wildcard when you ONLY PUT values into a structure
+3) and DON’T USE A WILDCARD when you both get and put.
+----------
+1) <? extends Thing> => You cannot put anything into a type declared with an extends wildcard
+—except for the value null, which belongs to every reference type
+2) <? super Thing> => you cannot get anything out from a type declared with a super wildcard
+—except for a value of type Object, which is a supertype of every reference type.
+----------
+The principles behind this in Computer Science is named after:
+Covariance -> 		? extends MyClass,
+Contravariance -> 	? super MyClass and
+Invariance/non-Variance ->  MyClass
+
+========================= 2 ========================
+всё, что можно сделать с Vehicle, можно сделать и с Car! Так что мы вполне могли бы использовать предикат по Vehicle для выбора значений типа Car.
+
+имея ссылку на MyObjectStore<Long, Vehicle>, пользователь вполне вправе положить в хранилище набор объектов Map<Long, Car> (ведь Car - это подтип Vehicle)
+--------------
+Если метод имеет аргументы с параметризованным типом (например, Collection или Predicate), то в случае, 
+если аргумент - производитель (producer), нужно использовать ? extends T, 
+а если аргумент - потребитель (consumer), нужно использовать ? super T.
+
+Производитель и потребитель, кто это такие? Очень просто: 
+если метод ЧИТАЕТ ДАННЫЕ ИЗ АРГУМЕНТА, то этот аргумент - ПРОИЗВОДИТЕЛЬ, <? extends T>
+а если метод ПЕРЕДАЁТ ДАННЫЕ В АРГУМЕНТ, то аргумент является ПОТРЕБИТЕЛЕМ. <? super T>
+Важно заметить, что определяя производителя или потребителя, мы рассматриваем только данные типа T.
+
+producer => ПРОИЗВОДИТЕЛЬ ИЗ себя
+consumer <= ПОТРЕБИТЕЛЬ В себя
+
+В нашем примере 
+Predicate - это потребитель (метод getAll(Predicate) передаёт в этот аргумент данные типа T), 
+а Map<K, V> - производитель (метод putAll(Map<K, V>) читает данные типа T - 
+в данном случае под T подразумевается K и V - из этого аргумента).
+
+В случае, если аргумент является и потребителем, и производителем одновременно - например, если метод одновременно и читает из коллекции, и пишет в неё (плохой стиль, но всякое бывает) - тогда его нужно оставить как есть. 
+
+С возвращаемыми значениями тоже ничего делать не нужно - никакого удобства использование wildcard-ов в этом случае пользователю не принесёт, а лишь вынудит его использовать wildcard-ы в собственном коде.
+---------
+Производителями могут быть не только коллекции. Самый очевидный пример производителя - это фабрика.
+Хорошим примером аргумента, являющегося и производителем, и потребителем, будет аргумент в методе для клонирования.
+------------
+«знай только необходимый минимум о типах передаваемых тебе параметров» 
+------------
+термин, "вариантность":
+Например, параметр типа в конструкции <T> является инвариантным, 
+в <? extends T> — ковариантным, covariance (narrowing a reference)
+а в <? super T> — контравариантным. contra-variance (widening a reference)
+
+========================= 3 ========================
+https://howtodoinjava.com/core-java/generics/complete-java-generics-tutorial/
+
+WE LEARNED THAT GENERICS IS USED FOR TYPE SAFETY AND INVARIANT BY NATURE. 
+A usecase can be list of Integer i.e. List<Integer>. If you declare a list in java like List<Integer>, then java guarantees that it will detect and report you any attempt to insert any non-integer type into above list.
+But many times, we face situations where we have to pass a sub-type or super-type of a class as argument in a method for specific purposes. 
+In these cases, we have to use concepts like covariance (narrowing a reference) and contra-variance (widening a reference).
+----------
+PE (Producer extends) -- a basket of fruits (i.e. collection of fruits). When we pick a fruit from basket, then we want to be sure that we are taking out only fruit only and nothing else
+It ensures that whatever it comes out from basket is definitely going to be a fruit; so you iterate over it and simply cast it a Fruit. 
+if we think about it; the <? extends Fruit> wildcard tells the compiler that we’re dealing with a subtype of the type Fruit, but we cannot know which fruit as there may be multiple subtypes. Since there’s no way to tell, and we need to guarantee type safety (invariance), you won’t be allowed to put anything inside such a structure.
+On the other hand, since we know that whichever type it might be, it will be a subtype of Fruit, we can get data out of the structure with the guarantee that it will be a Fruit.
+-----------
+CS (Consumer Super)
+Let’s assume we are defining a method where we will only be adding different fruits inside this basket.
+In such case, basket is used for storing the elements so it should be called consumer of elements.
+
+We are able to add apple and even Asian apple inside basket, but we are not able to add Fruit (super type of apple) to basket. Why?
+Reason is that basket is a reference to a List of something that is a supertype of Apple. 
+Again, we cannot know which supertype it is, but we know that Apple and any of its subtypes (which are subtype of Fruit) can be added to be without problem (you can always add a subtype in collection of supertype). So, now we can add any type of Apple inside basket.
+------------
+1) Use the <? extends T> wildcard if you need to retrieve object of type T from a collection.
+2) Use the <? super T> wildcard if you need to put objects of type T in a collection.
+3) If you need to satisfy both things, well, don’t use any wildcard. As simple as it is.
+
+========================= 4 ========================
+--- "? extends" reintroduces covariant subtyping for generics types: 
+Apple is a subtype of Fruit and List<Apple> is a subtype of List<? extends Fruit>.
+
+List<Apple> apples = new ArrayList<Apple>();
+List<? extends Fruit> fruits = apples;
+
+you can't put anything into a structure whose type uses the ? extends wildcard.
+
+The reason is pretty simple, if we think about it: 
+the ? extends T wildcard tells the compiler that we're dealing with a subtype of the type T, but we cannot know which one. Since there's no way to tell, and we need to guarantee type safety, you won't be allowed to put anything inside such a structure. On the other hand, since we know that whichever type it might be, it will be a subtype of T, we can get data out of the structure with the guarantee that it will be a T instance
+----------------
+
+--- Given a supertype B of a type A, then C<B> is a subtype of C<? super A>:
+List<Fruit> fruits = new ArrayList<Fruit>();
+List<? super Apple> = fruits;
+
+We know that fruits is a reference to a List of something that is a supertype of Apple. Again, we cannot know which supertype it is, but we know that Apple and any of its subtypes will be assignment compatible with it. Indeed, since such an unknown type will be both an Apple and a GreenApple supertype,
+
+========================= 5 ========================
+

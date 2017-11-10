@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>VIM navigation</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">src</a>
+<div id="post-6484" class="post_box grt top" itemscope="" itemtype="http://schema.org/Article">
+
+				<div class="post_content" itemprop="articleBody">
+<p>This article provides practical examples for 50 most frequently used commands in Linux / UNIX.</p>
+<p>This is not a comprehensive list by any means, but this should give you a jumpstart on some of the common Linux commands. Bookmark this article for your future reference.<br>
+<span id="more-6484"></span><br>
+Did I miss any frequently used Linux commands? <a href="#respond">Leave a comment</a> and let me know.</p>
+<h3>1. tar command examples</h3>
+<p>Create a new tar archive.</p>
+<pre>$ tar cvf archive_name.tar dirname/
+</pre>
+<p>Extract from an existing tar archive.</p>
+<pre>$ tar xvf archive_name.tar
+</pre>
+<p>View an existing tar archive.</p>
+<pre>$ tar tvf archive_name.tar
+</pre>
+<p>More tar examples: <a href="http://www.thegeekstuff.com/2010/04/unix-tar-command-examples/">The Ultimate Tar Command Tutorial with 10 Practical Examples</a></p>
+<h3>2. grep command examples</h3>
+<p>Search for a given string in a file (case in-sensitive search).</p>
+   
+
+
+<pre>$ grep -i "the" demo_file
+</pre>
+<p>Print the matched line, along with the 3 lines after it.</p>
+<pre>$ grep -A 3 -i "example" demo_text
+</pre>
+<p>Search for a given string in all files recursively</p>
+<pre>$ grep -r "ramesh" *
+</pre>
+<p>More grep examples: <a href="http://www.thegeekstuff.com/2009/03/15-practical-unix-grep-command-examples/">Get a Grip on the Grep! – 15 Practical Grep Command Examples</a></p>
+<h3>3. find command examples</h3>
+<p>Find files using file-name ( case in-sensitve find)</p>
+<pre># find -iname "MyCProgram.c"
+</pre>
+<p>Execute commands on files found by the find command</p>
+<pre>$ find -iname "MyCProgram.c" -exec md5sum {} \;
+</pre>
+<p>Find all empty files in home directory</p>
+<pre># find ~ -empty
+</pre>
+<p>More find examples: <a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! — 15 Practical Linux Find Command Examples</a></p>
+<h3>4. ssh command examples</h3>
+<p>Login to remote host</p>
+<pre>ssh -l jsmith remotehost.example.com
+</pre>
+<p>Debug ssh client</p>
+<pre>ssh -v -l jsmith remotehost.example.com
+</pre>
+<p>Display ssh client version</p>
+<pre>$ ssh -V
+OpenSSH_3.9p1, OpenSSL 0.9.7a Feb 19 2003
+</pre>
+<p>More ssh examples: <a href="http://www.thegeekstuff.com/2008/05/5-basic-linux-ssh-client-commands/">5 Basic Linux SSH Client Commands</a></p>
+<h3>5. sed command examples</h3>
+<p>When you copy a DOS file to Unix, you could find \r\n in the end of each line. This example converts the DOS file format to Unix file format using sed command.</p>
+<pre>$sed 's/.$//' filename
+</pre>
+<p>Print file content in reverse order</p>
+<pre>$ sed -n '1!G;h;$p' thegeekstuff.txt
+</pre>
+<p>Add line number for all non-empty-lines in a file</p>
+<pre>$ sed '/./=' thegeekstuff.txt | sed 'N; s/\n/ /'
+</pre>
+<p>More sed examples: <a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></p>
+<h3>6. awk command examples</h3>
+<p>Remove duplicate lines using awk</p>
+<pre>$ awk '!($0 in array) { array[$0]; print }' temp
+</pre>
+<p>Print all lines from /etc/passwd that has the same uid and gid</p>
+<pre>$awk -F ':' '$3==$4' passwd.txt
+</pre>
+<p>Print only specific field from a file.</p>
+<pre>$ awk '{print $2,$5;}' employee.txt
+</pre>
+<p>More awk examples: <a href="http://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/">8 Powerful Awk Built-in Variables – FS, OFS, RS, ORS, NR, NF, FILENAME, FNR</a></p>
+<h3>7. vim command examples</h3>
+<p>Go to the 143rd line of file</p>
+<pre>$ vim +143 filename.txt
+</pre>
+<p>Go to the first match of the specified</p>
+<pre>$ vim +/search-term filename.txt
+</pre>
+<p>Open the file in read only mode.</p>
+<pre>$ vim -R /etc/passwd
+</pre>
+<p>More vim examples: <a href="http://www.thegeekstuff.com/2009/01/vi-and-vim-macro-tutorial-how-to-record-and-play/">How To Record and Play in Vim Editor</a></p>
+<h3>8. diff command examples</h3>
+<p>Ignore white space while comparing.</p>
+<pre># diff -w name_list.txt name_list_new.txt
+
+2c2,3
+&lt; John Doe --- &gt; John M Doe
+&gt; Jason Bourne
+</pre>
+<p>More diff examples: <a href="http://www.thegeekstuff.com/2010/06/linux-file-diff-utilities/">Top 4 File Difference Tools on UNIX / Linux – Diff, Colordiff, Wdiff, Vimdiff</a></p>
+<h3>9. sort command examples</h3>
+<p>Sort a file in ascending order</p>
+<pre>$ sort names.txt
+</pre>
+<p>Sort a file in descending order</p>
+<pre>$ sort -r names.txt
+</pre>
+<p>Sort passwd file by 3rd field.</p>
+<pre>$ sort -t: -k 3n /etc/passwd | more
+</pre>
+<h3>10. export command examples</h3>
+<p>To view oracle related environment variables.</p>
+<pre>$ export | grep ORACLE
+declare -x ORACLE_BASE="/u01/app/oracle"
+declare -x ORACLE_HOME="/u01/app/oracle/product/10.2.0"
+declare -x ORACLE_SID="med"
+declare -x ORACLE_TERM="xterm"
+</pre>
+<p>To export an environment variable:</p>
+<pre>$ export ORACLE_HOME=/u01/app/oracle/product/10.2.0
+</pre>
+<h3>11. xargs command examples</h3>
+<p>Copy all images to external hard-drive</p>
+<pre># ls *.jpg | xargs -n1 -i cp {} /external-hard-drive/directory
+</pre>
+<p>Search all jpg images in the system and archive it.</p>
+<pre># find / -name *.jpg -type f -print | xargs tar -cvzf images.tar.gz
+</pre>
+<p>Download all the URLs mentioned in the url-list.txt file</p>
+<pre># cat url-list.txt | xargs wget –c
+</pre>
+<h3>12. ls command examples</h3>
+<p>Display filesize in human readable format (e.g. KB, MB etc.,)</p>
+<pre>$ ls -lh
+-rw-r----- 1 ramesh team-dev 8.9M Jun 12 15:27 arch-linux.txt.gz
+</pre>
+<p>Order Files Based on Last Modified Time (In Reverse Order) Using ls -ltr</p>
+<pre>$ ls -ltr
+</pre>
+<p>Visual Classification of Files With Special Characters Using ls -F</p>
+<pre>$ ls -F
+</pre>
+<p>More ls examples: <a href="http://www.thegeekstuff.com/2009/07/linux-ls-command-examples/">Unix LS Command: 15 Practical Examples</a></p>
+<h3>13. pwd command</h3>
+<p>pwd is Print working directory. What else can be said about the good old pwd who has been printing the current directory name for ages.</p>
+<h3>14. cd command examples</h3>
+<p>Use “cd -” to toggle between the last two directories</p>
+<p>Use “shopt -s cdspell” to automatically correct mistyped directory names on cd</p>
+<p>More cd examples: <a href="http://www.thegeekstuff.com/2008/10/6-awesome-linux-cd-command-hacks-productivity-tip3-for-geeks/">6 Awesome Linux cd command Hacks</a></p>
+<h3>15. gzip command examples</h3>
+<p>To create a *.gz compressed file:</p>
+<pre>$ gzip test.txt
+</pre>
+<p>To uncompress a *.gz file:</p>
+<pre>$ gzip -d test.txt.gz
+</pre>
+<p>Display compression ratio of the compressed file using gzip -l</p>
+<pre>$ gzip -l *.gz
+         compressed        uncompressed  ratio uncompressed_name
+              23709               97975  75.8% asp-patch-rpms.txt
+</pre>
+<h3>16. bzip2 command examples</h3>
+<p>To create a *.bz2 compressed file:</p>
+<pre>$ bzip2 test.txt
+</pre>
+<p>To uncompress a *.bz2 file:</p>
+<pre>bzip2 -d test.txt.bz2
+</pre>
+<p>More bzip2 examples: <a href="http://www.thegeekstuff.com/2010/10/bzcommand-examples/">BZ is Eazy! bzip2, bzgrep, bzcmp, bzdiff, bzcat, bzless, bzmore examples</a></p>
+<h3>17. unzip command examples</h3>
+<p>To extract a *.zip compressed file:</p>
+<pre>$ unzip test.zip
+</pre>
+<p>View the contents of *.zip file (Without unzipping it):</p>
+<pre>$ unzip -l jasper.zip
+Archive:  jasper.zip
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+    40995  11-30-98 23:50   META-INF/MANIFEST.MF
+    32169  08-25-98 21:07   classes_
+    15964  08-25-98 21:07   classes_names
+    10542  08-25-98 21:07   classes_ncomp
+</pre>
+<h3>18. shutdown command examples</h3>
+<p>Shutdown the system and turn the power off immediately.</p>
+<pre># shutdown -h now
+</pre>
+<p>Shutdown the system after 10 minutes.</p>
+<pre># shutdown -h +10
+</pre>
+<p>Reboot the system using shutdown command.</p>
+<pre># shutdown -r now
+</pre>
+<p>Force the filesystem check during reboot.</p>
+<pre># shutdown -Fr now
+</pre>
+<h3>19. ftp command examples</h3>
+<p>Both ftp and secure ftp (sftp) has similar commands. To connect to a remote server and download multiple files, do the following.</p>
+<pre>$ ftp IP/hostname
+ftp&gt; mget *.html
+</pre>
+<p>To view the file names located on the remote server before downloading, mls ftp command as shown below.</p>
+<pre>ftp&gt; mls *.html -
+/ftptest/features.html
+/ftptest/index.html
+/ftptest/othertools.html
+/ftptest/samplereport.html
+/ftptest/usage.html
+</pre>
+<p>More ftp examples: <a href="http://www.thegeekstuff.com/2010/06/ftp-sftp-tutorial/">FTP and SFTP Beginners Guide with 10 Examples</a></p>
+<h3>20. crontab command examples</h3>
+<p>View crontab entry for a specific user</p>
+<pre># crontab -u john -l
+</pre>
+<p>Schedule a cron job every 10 minutes.</p>
+<pre>*/10 * * * * /home/ramesh/check-disk-space
+</pre>
+<p>More crontab examples: <a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">Linux Crontab: 15 Awesome Cron Job Examples</a></p>
+<h3>21. service command examples</h3>
+<p>Service command is used to run the system V init scripts. i.e Instead of calling the scripts located in the /etc/init.d/ directory with their full path, you can use the service command.</p>
+<p>Check the status of a service:</p>
+<pre># service ssh status
+</pre>
+<p>Check the status of all the services.</p>
+<pre>service --status-all
+</pre>
+<p>Restart a service.</p>
+<pre># service ssh restart
+</pre>
+<h3>22. ps command examples</h3>
+<p>ps command is used to display information about the processes that are running in the system.</p>
+<p>While there are lot of arguments that could be passed to a ps command, following are some of the common ones.</p>
+<p>To view current running processes.</p>
+<pre>$ ps -ef | more
+</pre>
+<p>To view current running processes in a tree structure. H option stands for process hierarchy.</p>
+<pre>$ ps -efH | more
+</pre>
+<h3>23. free command examples</h3>
+<p>This command is used to display the free, used, swap memory available in the system.</p>
+<p>Typical free command output. The output is displayed in bytes.</p>
+<pre>$ free
+             total       used       free     shared    buffers     cached
+Mem:       3566408    1580220    1986188          0     203988     902960
+-/+ buffers/cache:     473272    3093136
+Swap:      4000176          0    4000176
+</pre>
+<p>If you want to quickly check how many GB of RAM your system has use the -g option. -b option displays in bytes, -k in kilo bytes, -m in mega bytes.</p>
+<pre>$ free -g
+             total       used       free     shared    buffers     cached
+Mem:             3          1          1          0          0          0
+-/+ buffers/cache:          0          2
+Swap:            3          0          3
+</pre>
+<p>If you want to see a total memory ( including the swap), use the -t switch, which will display a total line as shown below.</p>
+<pre>ramesh@ramesh-laptop:~$ free -t
+             total       used       free     shared    buffers     cached
+Mem:       3566408    1592148    1974260          0     204260     912556
+-/+ buffers/cache:     475332    3091076
+Swap:      4000176          0    4000176
+Total:     7566584    1592148    5974436
+</pre>
+<h3>24. top command examples</h3>
+<p>top command displays the top processes in the system ( by default sorted by cpu usage ). To sort top output by any column, Press O (upper-case O) , which will display all the possible columns that you can sort by as shown below.</p>
+<pre>Current Sort Field:  P  for window 1:Def
+Select sort field via field letter, type any other key to return
+
+  a: PID        = Process Id              v: nDRT       = Dirty Pages count
+  d: UID        = User Id                 y: WCHAN      = Sleeping in Function
+  e: USER       = User Name               z: Flags      = Task Flags
+  ........
+</pre>
+<p>To displays only the processes that belong to a particular user use -u option. The following will show only the top processes that belongs to oracle user.</p>
+<pre>$ top -u oracle
+</pre>
+<p>More top examples: <a href="http://www.thegeekstuff.com/2010/01/15-practical-unix-linux-top-command-examples/">Can You Top This? 15 Practical Linux Top Command Examples</a></p>
+<h3>25. df command examples</h3>
+<p>Displays the file system disk space usage. By default df -k displays output in bytes.</p>
+<pre>$ df -k
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda1             29530400   3233104  24797232  12% /
+/dev/sda2            120367992  50171596  64082060  44% /home
+</pre>
+<p>df -h displays output in human readable form. i.e size will be displayed in GB’s.</p>
+<pre>ramesh@ramesh-laptop:~$ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda1              29G  3.1G   24G  12% /
+/dev/sda2             115G   48G   62G  44% /home
+</pre>
+<p>Use -T option to display what type of file system.</p>
+<pre>ramesh@ramesh-laptop:~$ df -T
+Filesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sda1     ext4    29530400   3233120  24797216  12% /
+/dev/sda2     ext4   120367992  50171596  64082060  44% /home
+</pre>
+<h3>26. kill command examples</h3>
+<p>Use kill command to terminate a process. First get the process id using ps -ef command, then use kill -9 to kill the running Linux process as shown below. You can also use killall, pkill, xkill to terminate a unix process.</p>
+<pre>$ ps -ef | grep vim
+ramesh    7243  7222  9 22:43 pts/2    00:00:00 vim
+
+$ kill -9 7243
+</pre>
+<p>More kill examples: <a href="http://www.thegeekstuff.com/2009/12/4-ways-to-kill-a-process-kill-killall-pkill-xkill/">4 Ways to Kill a Process – kill, killall, pkill, xkill</a></p>
+<h3>27. rm command examples</h3>
+<p>Get confirmation before removing the file.</p>
+<pre>$ rm -i filename.txt
+</pre>
+<p>It is very useful while giving shell metacharacters in the file name argument.</p>
+<p>Print the filename and get confirmation before removing the file.</p>
+<pre>$ rm -i file*
+</pre>
+<p>Following example recursively removes all files and directories under the example directory. This also removes the example directory itself.</p>
+<pre>$ rm -r example
+</pre>
+<h3>28. cp command examples</h3>
+<p>Copy file1 to file2 preserving the mode, ownership and timestamp.</p>
+<pre>$ cp -p file1 file2
+</pre>
+<p>Copy file1 to file2. if file2 exists prompt for confirmation before overwritting it.</p>
+<pre>$ cp -i file1 file2
+</pre>
+<h3>29. mv command examples</h3>
+<p>Rename file1 to file2. if file2 exists prompt for confirmation before overwritting it.</p>
+<pre>$ mv -i file1 file2
+</pre>
+<p>Note: mv -f is just the opposite, which will overwrite file2 without prompting.</p>
+<p>mv -v will print what is happening during file rename, which is useful while specifying shell metacharacters in the file name argument.</p>
+<pre>$ mv -v file1 file2
+</pre>
+<h3>30. cat command examples</h3>
+<p>You can view multiple files at the same time. Following example prints the content of file1 followed by file2 to stdout.</p>
+<pre>$ cat file1 file2
+</pre>
+<p>While displaying the file, following cat -n command will prepend the line number to each line of the output.</p>
+<pre>$ cat -n /etc/logrotate.conf
+    1	/var/log/btmp {
+    2	    missingok
+    3	    monthly
+    4	    create 0660 root utmp
+    5	    rotate 1
+    6	}
+</pre>
+<h3>31. mount command examples</h3>
+<p>To mount a file system, you should first create a directory and mount it as shown below.</p>
+<pre># mkdir /u01
+
+# mount /dev/sdb1 /u01
+</pre>
+<p>You can also add this to the fstab for automatic mounting. i.e Anytime system is restarted, the filesystem will be mounted.</p>
+<pre>/dev/sdb1 /u01 ext2 defaults 0 2
+</pre>
+<h3>32. chmod command examples</h3>
+<p>chmod command is used to change the permissions for a file or directory.</p>
+<p>Give full access to user and group (i.e read, write and execute ) on a specific file.</p>
+<pre>$ chmod ug+rwx file.txt
+</pre>
+<p>Revoke all access for the group (i.e read, write and execute ) on a specific file.</p>
+<pre>$ chmod g-rwx file.txt
+</pre>
+<p>Apply the file permissions recursively to all the files in the sub-directories.</p>
+<pre>$ chmod -R ug+rwx file.txt
+</pre>
+<p>More chmod examples: <a href="http://www.thegeekstuff.com/2010/06/chmod-command-examples/">7 Chmod Command Examples for Beginners</a></p>
+<h3>33. chown command examples</h3>
+<p>chown command is used to change the owner and group of a file. \</p>
+<p>To change owner to oracle and group to db on a file. i.e Change both owner and group at the same time.</p>
+<pre>$ chown oracle:dba dbora.sh
+</pre>
+<p>Use -R to change the ownership recursively.</p>
+<pre>$ chown -R oracle:dba /home/oracle
+</pre>
+<h3>34. passwd command examples</h3>
+<p>Change your password from command line using passwd. This will prompt for the old password followed by the new password.</p>
+<pre>$ passwd
+</pre>
+<p>Super user can use passwd command to reset others password. This will not prompt for current password of the user.</p>
+<pre># passwd USERNAME
+</pre>
+<p>Remove password for a specific user. Root user can disable password for a specific user. Once the password is disabled, the user can login without entering the password.</p>
+<pre># passwd -d USERNAME
+</pre>
+<h3>35. mkdir command examples</h3>
+<p>Following example creates a directory called temp under your home directory.</p>
+<pre>$ mkdir ~/temp
+</pre>
+<p>Create nested directories using one mkdir command. If any of these directories exist already, it will not display any error. If any of these directories doesn’t exist, it will create them.</p>
+<pre>$ mkdir -p dir1/dir2/dir3/dir4/
+</pre>
+<h3>36. ifconfig command examples</h3>
+<p>Use ifconfig command to view or configure a network interface on the Linux system.</p>
+<p>View all the interfaces along with status.</p>
+<pre>$ ifconfig -a
+</pre>
+<p>Start or stop a specific interface using up and down command as shown below.</p>
+<pre>$ ifconfig eth0 up
+
+$ ifconfig eth0 down
+</pre>
+<p>More ifconfig examples: <a href="http://www.thegeekstuff.com/2009/03/ifconfig-7-examples-to-configure-network-interface/">Ifconfig: 7 Examples To Configure Network Interface</a></p>
+<h3>37. uname command examples</h3>
+<p>Uname command displays important information about the system such as — Kernel name, Host name, Kernel release number,<br>
+Processor type, etc.,</p>
+<p>Sample uname output from a Ubuntu laptop is shown below.</p>
+<pre>$ uname -a
+Linux john-laptop 2.6.32-24-generic #41-Ubuntu SMP Thu Aug 19 01:12:52 UTC 2010 i686 GNU/Linux
+</pre>
+<h3>38. whereis command examples</h3>
+<p>When you want to find out where a specific Unix command exists (for example, where does ls command exists?), you can execute the following command.</p>
+<pre>$ whereis ls
+ls: /bin/ls /usr/share/man/man1/ls.1.gz /usr/share/man/man1p/ls.1p.gz
+</pre>
+<p>When you want to search an executable from a path other than the whereis default path, you can use -B option and give path as argument to it. This searches for the executable lsmk in the /tmp directory, and displays it, if it is available.</p>
+<pre>$ whereis -u -B /tmp -f lsmk
+lsmk: /tmp/lsmk
+</pre>
+<h3>39. whatis command examples</h3>
+<p>Whatis command displays a single line description about a command.</p>
+<pre>$ whatis ls
+ls		(1)  - list directory contents
+
+$ whatis ifconfig
+ifconfig (8)         - configure a network interface
+</pre>
+<h3>40. locate command examples</h3>
+<p>Using locate command you can quickly search for the location of a specific file (or group of files). Locate command uses the database created by updatedb.</p>
+<p>The example below shows all files in the system that contains the word crontab in it.</p>
+<pre>$ locate crontab
+/etc/anacrontab
+/etc/crontab
+/usr/bin/crontab
+/usr/share/doc/cron/examples/crontab2english.pl.gz
+/usr/share/man/man1/crontab.1.gz
+/usr/share/man/man5/anacrontab.5.gz
+/usr/share/man/man5/crontab.5.gz
+/usr/share/vim/vim72/syntax/crontab.vim
+</pre>
+<h3>41. man command examples</h3>
+<p>Display the man page of a specific command.</p>
+<pre>$ man crontab
+</pre>
+<p>When a man page for a command is located under more than one section, you can view the man page for that command from a specific section as shown below.</p>
+<pre>$ man SECTION-NUMBER commandname
+</pre>
+<p>Following 8 sections are available in the man page.</p>
+<ol>
+<li>General commands</li>
+<li>System calls</li>
+<li>C library functions</li>
+<li>Special files (usually devices, those found in /dev) and drivers</li>
+<li>File formats and conventions</li>
+<li>Games and screensavers</li>
+<li>Miscellaneous</li>
+<li>System administration commands and daemons</li>
+</ol>
+<p>For example, when you do whatis crontab, you’ll notice that crontab has two man pages (section 1 and section 5). To view section 5 of crontab man page, do the following.</p>
+<pre>$ whatis crontab
+crontab (1)          - maintain crontab files for individual users (V3)
+crontab (5)          - tables for driving cron
+
+$ man 5 crontab
+</pre>
+<h3>42. tail command examples</h3>
+<p>Print the last 10 lines of a file by default.</p>
+<pre>$ tail filename.txt
+</pre>
+<p>Print N number of lines from the file named filename.txt</p>
+<pre>$ tail -n N filename.txt
+</pre>
+<p>View the content of the file in real time using tail -f. This is useful to view the log files, that keeps growing. The command can be terminated using CTRL-C.</p>
+<pre>$ tail -f log-file
+</pre>
+<p>More tail examples: <a href="http://www.thegeekstuff.com/2009/09/multitail-to-view-tail-f-output-of-multiple-log-files-in-one-terminal/">3 Methods To View tail -f output of Multiple Log Files in One Terminal</a></p>
+<h3>43. less command examples</h3>
+<p>less is very efficient while viewing huge log files, as it doesn’t need to load the full file while opening.</p>
+<pre>$ less huge-log-file.log
+</pre>
+<p>One you open a file using less command, following two keys are very helpful.</p>
+<pre>CTRL+F – forward one window
+CTRL+B – backward one window
+</pre>
+<p>More less examples: <a href="http://www.thegeekstuff.com/2010/02/unix-less-command-10-tips-for-effective-navigation/">Unix Less Command: 10 Tips for Effective Navigation</a></p>
+<h3>44. su command examples</h3>
+<p>Switch to a different user account using su command. Super user can switch to any other user without entering their password.</p>
+<pre>$ su - USERNAME
+</pre>
+<p>Execute a single command from a different account name. In the following example, john can execute the ls command as raj username. Once the command is executed, it will come back to john’s account.</p>
+<pre>[john@dev-server]$ su - raj -c 'ls'
+
+[john@dev-server]$
+</pre>
+<p>Login to a specified user account, and execute the specified shell instead of the default shell.</p>
+<pre>$ su -s 'SHELLNAME' USERNAME
+</pre>
+<h3>45. mysql command examples</h3>
+<p>mysql is probably the most widely used open source database on Linux. Even if you don’t run a mysql database on your server, you might end-up using the mysql command ( client ) to connect to a mysql database running on the remote server.</p>
+<p>To connect to a remote mysql database. This will prompt for a password.</p>
+<pre>$ mysql -u root -p -h 192.168.1.2
+</pre>
+<p>To connect to a local mysql database.</p>
+<pre>$ mysql -u root -p
+</pre>
+<p>If you want to specify the mysql root password in the command line itself, enter it immediately after -p (without any space).</p>
+<h3>46. yum command examples</h3>
+<p>To install apache using yum.</p>
+<pre>$ yum install httpd
+</pre>
+<p>To upgrade apache using yum.</p>
+<pre>$ yum update httpd
+</pre>
+<p>To uninstall/remove apache using yum.</p>
+<pre>$ yum remove httpd
+</pre>
+<h3>47. rpm command examples</h3>
+<p>To install apache using rpm.</p>
+<pre># rpm -ivh httpd-2.2.3-22.0.1.el5.i386.rpm
+</pre>
+<p>To upgrade apache using rpm.</p>
+<pre># rpm -uvh httpd-2.2.3-22.0.1.el5.i386.rpm
+</pre>
+<p>To uninstall/remove apache using rpm.</p>
+<pre># rpm -ev httpd
+</pre>
+<p>More rpm examples: <a href="http://www.thegeekstuff.com/2010/07/rpm-command-examples/">RPM Command: 15 Examples to Install, Uninstall, Upgrade, Query RPM Packages</a></p>
+<h3>48. ping command examples</h3>
+<p>Ping a remote host by sending only 5 packets.</p>
+<pre>$ ping -c 5 gmail.com
+</pre>
+<p>More ping examples: <a href="http://www.thegeekstuff.com/2009/11/ping-tutorial-13-effective-ping-command-examples/">Ping Tutorial: 15 Effective Ping Command Examples</a></p>
+<h3>49. date command examples</h3>
+<p>Set the system date:</p>
+<pre># date -s "01/31/2010 23:59:53"
+</pre>
+<p>Once you’ve changed the system date, you should syncronize the hardware clock with the system date as shown below.</p>
+<pre># hwclock –systohc
+
+# hwclock --systohc –utc
+</pre>
+<h3>50. wget command examples</h3>
+<p>The quick and effective method to download software, music, video from internet is using wget command.</p>
+<pre>$ wget http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-3.2.1.tar.gz
+</pre>
+<p>Download and store it with a different name.</p>
+<pre>$ wget -O taglist.zip http://www.vim.org/scripts/download_script.php?src_id=7701
+</pre>
+<p>More wget examples: <a href="http://www.thegeekstuff.com/2009/09/the-ultimate-wget-download-guide-with-15-awesome-examples/">The Ultimate Wget Download Guide With 15 Awesome Examples</a></p>
+<p>Did I miss any frequently used Linux commands? Leave a comment and let me know.</p>
+
+<table>
+<tbody><tr>
+<td valign="top">
+<ol>
+<li><a href="http://www.thegeekstuff.com/2010/12/50-unix-linux-sysadmin-tutorials/">50 Linux Sysadmin Tutorials</a></li>
+<li><a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">50 Most Frequently Used Linux Commands (With Examples)</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/12/linux-performance-monitoring-tools/">Top 25 Best Linux Performance Monitoring and Debugging Tools</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! – 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/linux-101-hacks-ebook/">Linux 101 Hacks 2nd Edition eBook</a>&nbsp;<img title="Linux 101 Hacks Book" src="http://static.thegeekstuff.com/images/free-small.png" alt="Linux 101 Hacks Book"></li>
+</ol>
+</td>
+<td>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2010/01/awk-introduction-tutorial-7-awk-print-examples/">Awk Introduction – 7 Awk Print Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/8-essential-vim-editor-navigation-fundamentals/">8 Essential Vim Editor Navigation Fundamentals</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/06/iptables-rules-examples/">25 Most Frequently Used Linux IPTables Rules Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/turbocharge-putty-with-12-powerful-add-ons-software-for-geeks-3/">Turbocharge PuTTY with 12 Powerful Add-Ons</a></li>
+</ul>
+</td>
+</tr>
+</tbody></table>
+<br>
+<br>
+				</div>
+			</div>
+
+<br><hr>
+</body>
+</html>

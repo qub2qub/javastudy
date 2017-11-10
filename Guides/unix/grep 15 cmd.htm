@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>grep 15 cmd</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="http://www.thegeekstuff.com/2009/03/15-practical-unix-grep-command-examples/">src</a>
+<div class="post_content" itemprop="articleBody">
+<p>You should get a grip on the Linux grep command. </p>
+<p>This is part of the on-going 15 Examples series, where 15 detailed examples will be provided for a specific command or functionality.&nbsp; Earlier we discussed 15 practical examples for Linux <a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">find command</a>,&nbsp; Linux <a href="http://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/">command line history</a> and <a href="http://www.thegeekstuff.com/2009/01/15-practical-usages-of-mysqladmin-command-for-administering-mysql-server/">mysqladmin command</a>.<br>
+<code> </code><br>
+<code> </code><br>
+In this article let us review 15 practical examples of Linux grep command that will be very useful to both newbies and experts.<br>
+<code> </code><br>
+<span id="more-433"></span></p>
+<p><code> </code><br>
+First create the following demo_file that will be used in the examples below to demonstrate grep command.<br>
+<code> </code></p>
+<pre>$ cat demo_file
+THIS LINE IS THE 1ST UPPER CASE LINE IN THIS FILE.
+this line is the 1st lower case line in this file.
+This Line Has All Its First Character Of The Word With Upper Case.
+
+Two lines above this line is empty.
+And this is the last line.</pre>
+<h3>1. Search for the given string in a single file</h3>
+<p>The basic usage of grep command is to search for a specific string in the specified file as shown below.</p>
+<pre>Syntax:
+grep "literal_string" filename</pre>
+<p><code> </code></p>
+<pre>$ grep "this" demo_file
+this line is the 1st lower case line in this file.
+Two lines above this line is empty.
+And this is the last line.</pre>
+<h3>2. Checking for the given string in multiple files.</h3>
+<pre>Syntax:
+grep "string" FILE_PATTERN</pre>
+<p><code> </code><br>
+This is also a basic usage of grep command. For this example, let us copy the demo_file to demo_file1. The grep output will also include the file name in front of the line that matched the specific pattern as shown below. When the Linux shell sees the meta character, it does the expansion and gives all the files as input to grep.</p>
+<pre>$ cp demo_file demo_file1
+
+$ grep "this" demo_*
+demo_file:this line is the 1st lower case line in this file.
+demo_file:Two lines above this line is empty.
+demo_file:And this is the last line.
+demo_file1:this line is the 1st lower case line in this file.
+demo_file1:Two lines above this line is empty.
+demo_file1:And this is the last line.</pre>
+<h3>3. Case insensitive search using grep -i</h3>
+<pre>Syntax:
+grep -i "string" FILE</pre>
+<p><code> </code><br>
+This is also a basic usage of the grep. This searches for the given string/pattern case insensitively. So it matches all the words such as “the”, “THE” and “The” case insensitively as shown below.</p>
+
+<pre>$ grep -i "the" demo_file
+THIS LINE IS THE 1ST UPPER CASE LINE IN THIS FILE.
+this line is the 1st lower case line in this file.
+This Line Has All Its First Character Of The Word With Upper Case.
+And this is the last line.</pre>
+<h3>4. Match regular expression in files</h3>
+<pre>Syntax:
+grep "REGEX" filename</pre>
+<p><code> </code><br>
+This is a very powerful feature, if you can use use regular expression effectively. In the following example, it searches for all the pattern that starts with “lines” and ends with “empty” with anything in-between. i.e To search “lines[anything in-between]empty” in the demo_file.</p>
+<pre>$ grep "lines.*empty" demo_file
+Two lines above this line is empty.</pre>
+<p>From documentation of grep: A regular expression may be followed by one of several repetition operators:</p>
+<ul>
+<li>? The preceding item is optional and matched at most once.</li>
+<li>* The preceding item will be matched zero or more times.</li>
+<li>+ The preceding item will be matched one or more times.</li>
+<li>{n} The preceding item is matched exactly n times.</li>
+<li>{n,} The preceding item is matched n or more times.</li>
+<li>{,m} The preceding item is matched at most m times.</li>
+<li>{n,m} The preceding item is matched at least n times, but not more than m times.</li>
+</ul>
+<h3>5. Checking for full words, not for sub-strings using grep -w</h3>
+<p>If you want to search for a word, and to avoid it to match the substrings use -w option. Just doing out a normal search will show out all the lines.<br>
+<code> </code><br>
+The following example is the regular grep where it is searching for “is”. When you search for “is”, without any option it will show out “is”, “his”, “this” and everything which has the substring “is”.</p>
+<pre>$ grep -i "is" demo_file
+THIS LINE IS THE 1ST UPPER CASE LINE IN THIS FILE.
+this line is the 1st lower case line in this file.
+This Line Has All Its First Character Of The Word With Upper Case.
+Two lines above this line is empty.
+And this is the last line.</pre>
+<p><code> </code><br>
+The following example is the WORD grep where it is searching only for the word “is”. Please note that this output does not contain the line “This Line Has All Its First Character Of The Word With Upper Case”, even though “is” is there in the “This”, as the following is looking only for the word “is” and not for “this”.</p>
+<pre>$ grep -iw "is" demo_file
+THIS LINE IS THE 1ST UPPER CASE LINE IN THIS FILE.
+this line is the 1st lower case line in this file.
+Two lines above this line is empty.
+And this is the last line.</pre>
+<h3>6. Displaying lines before/after/around the match using grep -A, -B and -C</h3>
+<p>When doing a grep on a huge file, it may be useful to see some lines after the match. You might feel handy if grep can show you not only the matching lines but also the lines after/before/around the match.</p>
+<p><code> </code><br>
+Please create the following demo_text file for this example.</p>
+<pre>$ cat demo_text
+4. Vim Word Navigation
+
+You may want to do several navigation in relation to the words, such as:
+
+ * e - go to the end of the current word.
+ * E - go to the end of the current WORD.
+ * b - go to the previous (before) word.
+ * B - go to the previous (before) WORD.
+ * w - go to the next word.
+ * W - go to the next WORD.
+
+WORD - WORD consists of a sequence of non-blank characters, separated with white space.
+word - word consists of a sequence of letters, digits and underscores.
+
+Example to show the difference between WORD and word
+
+ * 192.168.1.1 - single WORD
+ * 192.168.1.1 - seven words.</pre>
+<h4>6.1 Display N lines after match</h4>
+<p>-A is the option which prints the specified N lines after the match as shown below.</p>
+<pre>Syntax:
+grep -A &lt;N&gt; "string" FILENAME</pre>
+<p><code> </code><br>
+The following example prints the matched line, along with the 3 lines after it.</p>
+<pre>$ grep -A 3 -i "example" demo_text
+Example to show the difference between WORD and word
+
+* 192.168.1.1 - single WORD
+* 192.168.1.1 - seven words.</pre>
+<h4>6.2 Display N lines before match</h4>
+<p>-B is the option which prints the specified N lines before the match.</p>
+<pre>Syntax:
+grep -B &lt;N&gt; "string" FILENAME
+</pre>
+<p><code> </code><br>
+When you had option to show the N lines after match, you have the -B option for the opposite.</p>
+<pre>$ grep -B 2 "single WORD" demo_text
+Example to show the difference between WORD and word
+
+* 192.168.1.1 - single WORD</pre>
+<h4>6.3 Display N lines around match</h4>
+<p>-C is the option which prints the specified N lines before the match. In some occasion you might want the match to be appeared with the lines from both the side. This options shows N lines in both the side(before &amp; after) of match.</p>
+<pre>$ grep -C 2 "Example" demo_text
+word - word consists of a sequence of letters, digits and underscores.
+
+Example to show the difference between WORD and word
+
+* 192.168.1.1 - single WORD</pre>
+<h3>7. Highlighting the search using GREP_OPTIONS</h3>
+<p>As grep prints out lines from the file by the pattern / string you had given, if you wanted it to highlight which part matches the line, then you need to follow the following way.<br>
+<code> </code><br>
+When you do the following export you will get the highlighting of the matched searches. In the following example, it will highlight all the this when you set the GREP_OPTIONS environment variable as shown below.</p>
+<pre>$ export GREP_OPTIONS='--color=auto' GREP_COLOR='100;8'
+
+$ grep this demo_file
+<strong>this</strong> line is the 1st lower case line in this file.
+Two lines above <strong>this</strong> line is empty.
+And <strong>this</strong> is the last line.</pre>
+<h3>8. Searching in all files recursively using grep -r</h3>
+<p>When you want to search in all the files under the current directory and its sub directory. -r option is the one which you need to use. The following example will look for the string “ramesh” in all the files in the current directory and all it’s subdirectory.</p>
+<pre>$ grep -r "ramesh" *</pre>
+<h3>9. Invert match using grep -v</h3>
+<p>You had different options to show the lines matched, to show the lines before match, and to show the lines after match, and to highlight match. So definitely You’d also want the option -v to do invert match.<br>
+<code> </code><br>
+When you want to display the lines which does not matches the given string/pattern, use the option -v as shown below. This example will display all the lines that did not match the word “go”.</p>
+<pre>$ grep -v "go" demo_text
+4. Vim Word Navigation
+
+You may want to do several navigation in relation to the words, such as:
+
+WORD - WORD consists of a sequence of non-blank characters, separated with white space.
+word - word consists of a sequence of letters, digits and underscores.
+
+Example to show the difference between WORD and word
+
+* 192.168.1.1 - single WORD
+* 192.168.1.1 - seven words.</pre>
+<h3>10. display the lines which does not matches all the given pattern.</h3>
+<pre>Syntax:
+grep -v -e "pattern" -e "pattern"</pre>
+<p><code> </code></p>
+<pre>$ cat test-file.txt
+a
+b
+c
+d
+
+$ grep -v -e "a" -e "b" -e "c" test-file.txt
+d</pre>
+<h3>11. Counting the number of matches using grep -c</h3>
+<p>When you want to count that how many lines matches the given pattern/string, then use the option -c.</p>
+<pre>Syntax:
+grep -c "pattern" filename</pre>
+<p><code> </code></p>
+<pre>$ grep -c "go" demo_text
+6</pre>
+<p><code> </code><br>
+When you want do find out how many lines matches the pattern</p>
+<pre>$ grep -c this demo_file
+3</pre>
+<p><code> </code><br>
+When you want do find out how many lines that does not match the pattern</p>
+<pre>$ grep -v -c this demo_file
+4</pre>
+<h3>12. Display only the file names which matches the given pattern using grep -l</h3>
+<p>If you want the grep to show out only the file names which matched the given pattern, use the -l (lower-case L) option.<br>
+<code> </code><br>
+When you give multiple files to the grep as input, it displays the names of file which contains the text that matches the pattern, will be very handy when you try to find some notes in your whole directory structure.</p>
+<pre>$ grep -l this demo_*
+demo_file
+demo_file1</pre>
+<h3>13. Show only the matched string</h3>
+<p>By default grep will show the line which matches the given pattern/string, but if you want the grep to show out only the matched string of the pattern then use the -o option.<br>
+<code> </code><br>
+It might not be that much useful when you give the string straight forward. But it becomes very useful when you give a regex pattern and trying to see what it matches as</p>
+<pre>$ grep -o "is.*line" demo_file
+is line is the 1st lower case line
+is line
+is is the last line</pre>
+<h3>14. Show the position of match in the line</h3>
+<p>When you want grep to show the position where it matches the pattern in the file, use the following options as</p>
+<pre>Syntax:
+grep -o -b "pattern" file</pre>
+<p><code> </code></p>
+<pre>$ cat temp-file.txt
+12345
+12345
+
+$ grep -o -b "3" temp-file.txt
+2:3
+8:3</pre>
+<p><code> </code><br>
+<strong>Note:</strong> The output of the grep command above is not the position in the line, it is byte offset of the whole file.</p>
+<h3>15. Show line number while displaying the output using grep -n</h3>
+<p>To show the line number of file with the line matched. It does 1-based line numbering for each file. Use -n option to utilize this feature.</p>
+<pre>$ grep -n "go" demo_text
+5: * e - go to the end of the current word.
+6: * E - go to the end of the current WORD.
+7: * b - go to the previous (before) word.
+8: * B - go to the previous (before) WORD.
+9: * w - go to the next word.
+10: * W - go to the next WORD.</pre>
+<h3>Additional Grep Tutorials</h3>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2011/10/grep-or-and-not-operators/">7 Linux Grep OR, Grep AND, Grep NOT Operator Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/01/regular-expressions-in-grep-command/">Regular Expressions in Grep Command with 10 Examples – Part I</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/01/advanced-regular-expressions-in-grep-command-with-10-examples-%e2%80%93-part-ii/">Advanced Regular Expressions in Grep Command with 10 Examples – Part II</a></li>
+<li>Search in a *.bz2 file using <a href="http://www.thegeekstuff.com/2010/10/bzcommand-examples/">bzgrep</a>, and *.gz file using <a href="http://www.thegeekstuff.com/2009/05/zcat-zless-zgrep-zdiff-zcmp-zmore-gzip-file-operations-on-the-compressed-files/">zgrep</a></li>
+</ul>
+<h3>Awesome Linux Articles</h3>
+<p>Following are few awesome <strong>15 examples</strong> articles that you might find helpful.</p>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">Linux Crontab: 15 Awesome Cron Job Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! — 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/15-examples-to-master-linux-command-line-history/">15 Examples To Master Linux Command Line History</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/07/linux-ls-command-examples/">Unix LS Command: 15 Practical Examples</a></li>
+</ul>
+
+
+<table>
+<tbody><tr>
+<td valign="top">
+<ol>
+<li><a href="http://www.thegeekstuff.com/2010/12/50-unix-linux-sysadmin-tutorials/">50 Linux Sysadmin Tutorials</a></li>
+<li><a href="http://www.thegeekstuff.com/2010/11/50-linux-commands/">50 Most Frequently Used Linux Commands (With Examples)</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/12/linux-performance-monitoring-tools/">Top 25 Best Linux Performance Monitoring and Debugging Tools</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/15-practical-linux-find-command-examples/">Mommy, I found it! – 15 Practical Linux Find Command Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/linux-101-hacks-ebook/">Linux 101 Hacks 2nd Edition eBook</a>&nbsp;<img title="Linux 101 Hacks Book" src="http://static.thegeekstuff.com/images/free-small.png" alt="Linux 101 Hacks Book"></li>
+</ol>
+</td>
+<td>
+<ul>
+<li><a href="http://www.thegeekstuff.com/2010/01/awk-introduction-tutorial-7-awk-print-examples/">Awk Introduction – 7 Awk Print Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/10/unix-sed-tutorial-advanced-sed-substitution-examples/">Advanced Sed Substitution Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2009/03/8-essential-vim-editor-navigation-fundamentals/">8 Essential Vim Editor Navigation Fundamentals</a></li>
+<li><a href="http://www.thegeekstuff.com/2011/06/iptables-rules-examples/">25 Most Frequently Used Linux IPTables Rules Examples</a></li>
+<li><a href="http://www.thegeekstuff.com/2008/08/turbocharge-putty-with-12-powerful-add-ons-software-for-geeks-3/">Turbocharge PuTTY with 12 Powerful Add-Ons</a></li>
+</ul>
+</td>
+</tr>
+</tbody></table>
+<br>
+
+<br>
+				</div>
+<br><hr>
+</body>
+</html>

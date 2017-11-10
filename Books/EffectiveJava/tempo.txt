@@ -1,0 +1,164 @@
+You can obtain many of the benefits of reflection while incurring few of its costs by using it only in a very limited form.
+
+intervening [ɪntəˈviːnɪŋ] промежуточный (intermediate); вмешивающийся (interfering)
+        /intervening period - промежуточный период
+
+pervasive [pɜːˈveɪsɪv] 1. всепроникающий, повсеместный, вездесущий, тотальный (ubiquitous, widespread, omnipresent, total); 2. всеобъемлющий (comprehensive) 3. глубокий (deep)
+/pervasive nature - всепроникающий характер
+/pervasive corruption - повсеместная коррупция
+
+warp [wɔːp] noun
+1. основа (basis)
+2. деформация, перекос, искривление, коробление (deformation, distortion, curvature)
+        /time warp - искривление времени
+коробить, деформировать, деформироваться, покоробиться (jar, deform, warped)
+3. искажать, исказить (distort  [dɪsˈtɔːt])
+	/distort reality - искажать действительность
+    /distorted image - искаженное изображение
+    /distort the truth - извращать истину
+4. верповать (kedge)
+
+effort [ˈefət] 1. усилие, старание
+ /serious effort - серьезное усилие
+ /law enforcement efforts - усилия правоохранительных органов
+ /make special efforts - прилагать особых усилий
+ /coordination of joint efforts - координация совместных усилий
+2. попытка, стремление (attempt, desire)
+ /last ditch effort - последняя попытка
+ /ongoing effort - постоянное стремление
+3. напряжение (stress)
+        /mental effort - умственное напряжение
+4. работа, деятельность, труд (work, activity)
+        /research effort - исследовательская работа
+        /scientific effort - научная деятельность
+5. достижение (achievement)
+
+haystack [ˈheɪstæk] стог сена, стог (stack)
+/needle in a haystack - иголка в стоге сена
+/It’s like looking for a needle in a haystack
+
+outright lies - откровенная ложь
+
+Loosely speaking - Грубо говоря
+
+
+***************************************************
+*** Item 53: Prefer interfaces to reflection
+
+The core reflection facility, java.lang.reflect, offers programmatic access to information about loaded classes. Given a Class object, you can obtain Constructor, Method, and Field instances representing the constructors, methods, and fields of the class represented by the Class instance. These objects provide programmatic access to the class’s member names, field types, method signatures, and so on.
+
+Moreover, Constructor, Method, and Field instances let you manipulate their underlying counterparts reflectively: you can construct instances, invoke methods, and access fields of the underlying class by invoking methods on the Constructor, Method, and Field instances. For example, Method.invoke lets you invoke any method on any object of any class (subject to the usual security constraints). Reflection allows one class to use another, even if the latter class did not exist when the former was compiled. This power, however, comes at a price:
+•    You lose all the benefits of compile-time type checking, including exception checking. If a program attempts to invoke a nonexistent or inaccessible method reflectively, it will fail at runtime unless you’ve taken special precautions.
+•    The code required to perform reflective access is clumsy and verbose. It is tedious to write and difficult to read.
+•    Performance suffers. Reflective method invocation is much slower than normal method invocation. Exactly how much slower is hard to say, because there are so many factors at work. On my machine, the speed difference can be as small as a factor of two or as large as a factor of fifty.
+
+The core reflection facility was originally designed for [component-based application builder tools]. Such tools generally load classes on demand and use reflection to find out what methods and constructors they support. 
+The tools let their users interactively construct applications that access these classes, but [the generated applications] access the classes normally, not reflectively. 
+Reflection is used only at design time. As a rule, objects should not be accessed reflectively in normal applications at runtime.
+
+There are a few sophisticated applications that require reflection. Examples include class browsers, object inspectors, code analysis tools, and interpretive embedded systems. Reflection is also appropriate for use in remote procedure call (RPC) systems to eliminate the need for stub compilers. If you have any doubts as to whether your application falls into one of these categories, it probably doesn’t.
+
+You can obtain many of the benefits of reflection while incurring few of its costs by using it only in a very limited form. For many programs that must use a class that is unavailable at compile time, there exists at compile time an appropriate interface or superclass by which to refer to the class (Item 52). If this is the case, you can create instances reflectively and access them normally via their interface or superclass. If the appropriate constructor has no parameters, then you don’t even need to use java.lang.reflect; the Class.newInstance method provides the required functionality.
+
+ two disadvantages of reflection:
+   1) First, the example can generate three runtime errors, all of which would have been compile-time errors if reflective instantiation were not used. 
+   2) Second, it takes twenty lines of tedious code to generate an instance of the class from its name, whereas a constructor invocation would fit neatly on a single line. 
+These disadvantages are, however, restricted to the part of the program that instantiates the object. Once instantiated, it is indistinguishable from any other Set instance. In a real program, the great bulk of the code is thus unaffected by this limited use of reflection.
+
+!!! System.exit() ->
+It is rarely appropriate to call this method, which terminates the entire VM. 
+It is, however, appropriate for abnormal termination of a command line utility.
+
+A legitimate use of reflection:
+ if rare, -> is to manage a class’s dependencies on other classes, methods, or fields that may be absent at runtime. 
+ This can be useful if you are writing a package that must run against multiple versions of some other package. 
+ The technique is to compile your package against the minimal environment required to support it, typically the oldest version, and to access any newer classes or methods reflectively. 
+
+ In summary, reflection is a powerful facility that is required for certain sophisticated system programming tasks, but it has many disadvantages. If you are writing a program that has to work with classes unknown at compile time, you should, if at all possible, use reflection only to instantiate objects, and access the objects using some interface or superclass that is known at compile time.
+
+***************************************************
+*** Item 54: Use native methods judiciously
+
+The Java Native Interface (JNI) allows Java applications to call native methods, which are special methods written in native programming languages such as C or C++. Native methods can perform arbitrary computation in native languages before returning to the Java programming language.
+
+Historically, native methods have had three main uses. They provided access to platform-specific facilities such as registries and file locks. They provided access to libraries of legacy code, which could in turn provide access to legacy data. Finally, native methods were used to write performance-critical parts of applications in native languages for improved performance.
+
+It is legitimate to use native methods to access platform-specific facilities, but as the Java platform matures, it provides more and more features previously found only in host platforms. For example, java.util.prefs, added in release 1.4, offers the functionality of a registry, and java.awt.SystemTray, added in release 1.6, offers access to the desktop system tray area. It is also legitimate to use native methods to access legacy code.
+
+It is rarely advisable to use native methods for improved performance. In early releases (prior to 1.3), it was often necessary, but JVM implementations have gotten much faster. For most tasks, it is now possible to obtain comparable performance without resorting to native methods.
+
+The use of native methods has serious disadvantages. Because native languages are not safe (Item 39), applications using native methods are no longer immune to memory corruption errors. Because native languages are platform dependent, applications using native methods are far less portable. Applications using native code are far more difficult to debug. There is a fixed cost associated with going into and out of native code, so native methods can decrease performance if they do only a small amount of work. Finally, native methods require “glue code” that is difficult to read and tedious to write.
+
+In summary, think twice before using native methods. Rarely, if ever, use them for improved performance. If you must use native methods to access low-level resources or legacy libraries, use as little native code as possible and test it thoroughly. A single bug in the native code can corrupt your entire application.
+
+***************************************************
+*** Item 55: Optimize judiciously
+Три афоризма про оптимизацию:
+1) More computing sins are committed in the name of efficiency (without necessarily achieving it) than for any other single reason—including blind stupidity.
+2) We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.
+3) We follow two rules in the matter of optimization:
+		Rule 1. Don’t do it.
+		Rule 2 (for experts only). Don’t do it yet — that is, not until you have a perfectly clear and unoptimized solution.
+
+They tell a deep truth about optimization: it is easy to do more harm than good, especially if you optimize prematurely. In the process, you may produce software that is neither fast nor correct and cannot easily be fixed.
+
+!! DON’T SACRIFICE SOUND ARCHITECTURAL PRINCIPLES FOR PERFORMANCE. 
+!! STRIVE TO WRITE GOOD PROGRAMS RATHER THAN FAST ONES. 
+If a good program is not fast enough, its architecture will allow it to be optimized. Good programs embody the principle of information hiding: where possible, they localize design decisions within individual modules, so individual decisions can be changed without affecting the remainder of the system (Item 13).
+
+Но тем не менее --> 
+!!! YOU MUST THINK ABOUT PERFORMANCE DURING THE DESIGN PROCESS.
+потому что
+pervasive architectural flaws that limit performance can be impossible to fix without rewriting the system.
+
+!! STRIVE TO AVOID DESIGN DECISIONS THAT LIMIT PERFORMANCE. 
+The components of a design [that are most difficult to change after the fact] are those [specifying interactions between modules] and with the outside world. 
+Chief among these design components are: 
+--> APIs, wire-level protocols, and persistent data formats. 
+Not only are these design components difficult or impossible to change after the fact, but all of them can place significant limitations on the performance that a system can ever achieve.
+
+!! CONSIDER THE PERFORMANCE CONSEQUENCES OF YOUR API DESIGN DECISIONS.
+
+Making a public type mutable may require a lot of needless defensive copying (Item 39). Similarly, using inheritance in a public class where composition would have been appropriate ties the class forever to its superclass, which can place artificial limits on the performance of the subclass (Item 16). As a final example, using an implementation type rather than an interface in an API ties you to a specific implementation, even though faster implementations may be written in the future (Item 52).
+
+!! THE EFFECTS OF API DESIGN ON PERFORMANCE ARE VERY REAL.
+
+!! GOOD API DESIGN IS CONSISTENT WITH GOOD PERFORMANCE.
+It is a very bad idea to warp an API to achieve good performance. The performance issue that caused you to warp the API may go away in a future release of the platform or other underlying software, but the warped API and the support headaches that come with it will be with you for life.
+
+Once you’ve carefully designed your program and produced a clear, concise, and well-structured implementation, then it may be time to consider optimization, assuming you’re not already satisfied with the performance of the program.
+
+Measure performance before and after each attempted optimization. You may be surprised by what you find. Often, attempted optimizations have no measurable effect on performance; sometimes, they make it worse. 
+The main reason is that it’s difficult to guess where your program is spending its time. The part of the program that you think is slow may not be at fault, in which case you’d be wasting your time trying to optimize it. 
+Common wisdom says that programs spend 80 percent of their time in 20 percent of their code.
+
+Profiling tools can help you decide where to focus your optimization efforts. Such tools give you runtime information, such as roughly how much time each method is consuming and how many times it is invoked. In addition to focusing your tuning efforts, this can alert you to the need for algorithmic changes. If a quadratic (or worse) algorithm lurks inside your program, no amount of tuning will fix the problem. You must replace the algorithm with one that is more efficient. The more code in the system, the more important it is to use a profiler. It’s like looking for a needle in a haystack: the bigger the haystack, the more useful it is to have a metal detector. The JDK comes with a simple profiler and modern IDEs provide more sophisticated profiling tools.
+
+The need to measure the effects of attempted optimization is even greater on the Java platform than on more traditional platforms, because the Java programming language does not have a strong performance model. The relative costs of the various primitive operations are not well defined. The “semantic gap” between what the programmer writes and what the CPU executes is far greater than in traditional statically compiled languages, which makes it very difficult to reliably predict the performance consequences of any optimization. 
+There are plenty of performance myths floating around that turn out to be half-truths or outright lies.
+
+Not only is Java’s performance model ill-defined, but it varies from JVM implementation to JVM implementation, from release to release, and from processor to processor. If you will be running your program on multiple JVM implementations or multiple hardware platforms, it is important that you measure the effects of your optimization on each. Occasionally you may be forced to make trade-offs between performance on different JVM implementations or hardware platforms.
+
+To summarize, do not strive to write fast programs—strive to write good ones; speed will follow. Do think about performance issues while you’re designing systems and especially while you’re designing APIs, wire-level protocols, and persistent data formats. When you’ve finished building the system, measure its performance. If it’s fast enough, you’re done. If not, locate the source of the problems with the aid of a profiler, and go to work optimizing the relevant parts of the system. The first step is to examine your choice of algorithms: no amount of low-level optimization can make up for a poor choice of algorithm. Repeat this process as necessary, measuring the performance after every change, until you’re satisfied.
+
+***************************************************
+*** Item 56: Adhere to generally accepted naming conventions
+
+Loosely speaking, naming conventions fall into two categories: 
+TYPOGRAPHICAL and GRAMMATICAL.
+
+There are only a handful of typographical naming conventions, covering packages, classes, interfaces, methods, fields, and type variables. You should rarely violate them and never without a very good reason. If an API violates these conventions, it may be difficult to use. If an implementation violates them, it may be difficult to maintain. In both cases, violations have the potential to confuse and irritate other programmers who work with the code and can cause faulty assumptions that lead to errors. The conventions are summarized in this item.
+
+Package names should be hierarchical with the components separated by periods. Components should consist of lowercase alphabetic characters and, rarely, digits. The name of any package that will be used outside your organization should begin with your organization’s Internet domain name with the top-level domain first, for example, edu.cmu, com.sun, gov.nsa. The standard libraries and optional packages, whose names begin with java and javax, are exceptions to this rule. Users must not create packages whose names begin with java or javax.
+
+The remainder of a package name should consist of one or more components describing the package. Components should be short, generally eight or fewer characters. Meaningful abbreviations are encouraged, for example, util rather than utilities. Acronyms are acceptable, for example, awt. Components should generally consist of a single word or abbreviation.
+
+Many packages have names with just one component in addition to the Internet domain name. Additional components are appropriate for large facilities whose size demands that they be broken up into an informal hierarchy.
+Such packages are known as subpackages, although there is no linguistic support for package hierarchies.
+
+Class and interface names, including enum and annotation type names, should consist of one or more words, with the first letter of each word capitalized, for example, Timer or FutureTask. Abbreviations are to be avoided, except for acronyms and certain common abbreviations like max and min. There is little consensus as to whether acronyms should be uppercase or have only their first letter capitalized. While uppercase may be more common, a strong argument can be made in favor of capitalizing only the first letter: even if multiple acronyms occur back-to-back, you can still tell where one word starts and the next word ends. Which class name would you rather see, HTTPURL or HttpUrl ?
+
+Method and field names follow the same typographical conventions as class and interface names, except that the first letter of a method or field name should be lowercase, for example, remove or ensureCapacity. If an acronym occurs as the first word of a method or field name, it should be lowercase.
+
+The sole exception to the previous rule concerns “constant fields,” whose names should consist of one or more uppercase words separated by the underscore character.
+A constant field is a static final field whose value is immutable. If a static final field has a primitive type or an immutable reference type (Item 15), then it is a constant field. For example, enum constants are constant fields. If a static final field has a mutable reference type, it can still be a constant field if the referenced object is immutable. Note that constant fields constitute the only recommended use of underscores.
