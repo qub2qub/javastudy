@@ -1,0 +1,233 @@
+ch09 Exceptions 241-259
+***************************************************************
+*** Item 57: Use exceptions only for exceptional conditions
+
+Ис-ть try-catch для выхода из цикла -- очень плохо!!
+•    Because exceptions are designed for exceptional circumstances, there is little incentive for JVM implementors to make them as fast as explicit tests.
+•    Placing code inside a try-catch block inhibits certain optimizations that modern JVM implementations might otherwise perform.
+•    The standard idiom for looping through an array doesn’t necessarily result in redundant checks. Modern JVM implementations optimize them away.
+
+In fact, the exception-based idiom is far slower than the standard one on modern JVM implementations. On my machine, the exception-based idiom is more than twice as slow as the standard one for arrays of one hundred elements.
+
+Not only does the exception-based loop obfuscate the purpose of the code and reduce its performance, but it’s not guaranteed to work! In the presence of an unrelated bug, the loop can fail silently and mask the bug, greatly complicating the debugging process.
+
+The moral of this story is simple: exceptions are, as their name implies, to be used only for exceptional conditions; they should never be used for ordinary control flow.
+   More generally, you should use standard, easily recognizable idioms in preference to overly clever techniques that purport to offer better performance. Even if the performance advantage is real, it may not remain in the face of steadily improving platform implementations. The subtle bugs and maintenance headaches that come from overly clever techniques, however, are sure to remain.
+
+This principle also has implications for API design. 
+A WELL-DESIGNED API MUST NOT FORCE ITS CLIENTS TO USE EXCEPTIONS FOR ORDINARY CONTROL FLOW. 
+A class with a “state-dependent” method that can be invoked only under certain unpredictable conditions should generally have a separate “state-testing” method indicating whether it is appropriate to invoke the state-dependent method. 
+--For example, the Iterator interface has the state-dependent method next and the corresponding state-testing method hasNext. This enables the standard idiom for iterating over a collection with a traditional for loop (as well as the for-each loop, where the hasNext() method is used internally):
+
+ In addition to being wordy and misleading, the exception-based loop is likely to perform poorly and can mask bugs in unrelated parts of the system.
+
+An alternative to providing a separate state-testing method is to have the state-dependent method return a distinguished value such as null if it is invoked with the object in an inappropriate state. This technique would not be appropriate for Iterator, as null is a legitimate return value for the next method.
+
+Here are some guidelines to help you choose between a state-testing method and a distinguished return value. 
+1) If an object is to be ACCESSED CONCURRENTLY without external synchronization or is subject to [externally induced state transitions], you must use a DISTINGUISHED RETURN VALUE, as the object’s state could change in the interval between the invocation of a state-testing method and its state-dependent method. 
+Performance concerns may dictate that a DISTINGUISHED RETURN VALUE be used if a separate state-testing method would duplicate the work of the state-dependent method. 
+2) ALL OTHER THINGS BEING EQUAL, a state-testing method is mildly preferable to a distinguished return value. It offers slightly better readability, and incorrect use may be easier to detect: if you forget to call a state-testing method, the state-dependent method will throw an exception, making the bug obvious; if you forget to check for a distinguished return value, the bug may be subtle.
+
+In summary, exceptions are designed for use in exceptional conditions. Don’t use them for ordinary control flow, and don’t write APIs that force others to do so.
+
+***************************************************************
+*** Item 58: Use CHECKED EXCEPTIONS for RECOVERABLE CONDITIONS 
+and runtime exceptions for programming errors
+
+The cardinal rule in deciding whether to use a checked or an unchecked exception is this: 
+!!! use CHECKED EXCEPTIONS for conditions from which the CALLER CAN REASONABLY BE EXPECTED TO RECOVER. 
+By throwing a checked exception, you force the caller to handle the exception in a catch clause or to propagate it outward. Each checked exception that a method is declared to throw is therefore a potent indication to the API user that the associated condition is a possible outcome of invoking the method.
+
+By confronting the API user with a checked exception, the API designer presents a mandate to recover from the condition. The user can disregard the mandate by catching the exception and ignoring it, but this is usually a bad idea (Item 65).
+
+THERE ARE TWO KINDS OF UNCHECKED THROWABLES: RUNTIME EXCEPTIONS AND ERRORS. 
+They are identical in their behavior: both are throwables that needn’t, and generally shouldn’t, be caught. If a program throws an unchecked exception or an error, it is generally the case that recovery is impossible and continued execution would do more harm than good. If a program does not catch such a throwable, it will cause the current thread to halt with an appropriate error message.
+
+USE RUNTIME EXCEPTIONS TO INDICATE PROGRAMMING ERRORS. 
+The great majority of runtime exceptions indicate precondition violations. A precondition violation is simply a failure by the client of an API to adhere to the contract established by the API specification. For example, the contract for array access specifies that the array index must be between zero and the array length minus one. ArraylndexOutOfBoundsException indicates that this precondition was violated.
+
+While the Java Language Specification does not require it, there is a strong convention that ERRORS ARE RESERVED FOR USE BY THE JVM TO INDICATE RESOURCE DEFICIENCIES,
+invariant failures, or other conditions that make it impossible to continue execution. Given the almost universal acceptance of this convention, IT’S BEST NOT TO IMPLEMENT ANY NEW ERROR SUBCLASSES. Therefore, all of the unchecked throwables you implement should subclass RuntimeException (directly or indirectly).
+
+IT IS POSSIBLE TO DEFINE A THROWABLE THAT IS NOT A SUBCLASS OF EXCEPTION, RUNTIMEEXCEPTION, OR ERROR. The JLS does not address such throwables directly but specifies implicitly that they are behaviorally identical to ordinary checked exceptions (which are subclasses of Exception but not RuntimeException). 
+--- So when should you use such a beast? In a word, never. It has no benefits over an ordinary checked exception and would merely serve to confuse the user of your API.
+
+To summarize, use checked exceptions for recoverable conditions and runtime exceptions for programming errors. Of course, the situation is not always black and white. For example, consider the case of resource exhaustion, which can be caused by a programming error such as allocating an unreasonably large array or by a genuine shortage of resources. If resource exhaustion is caused by a temporary shortage or by temporarily heightened demand, the condition may well be recoverable. It is a matter of judgment on the part of the API designer whether a given instance of resource exhaustion is likely to allow for recovery. If you believe a condition is likely to allow for recovery, use a checked exception; if not, use a runtime exception. If it isn’t clear whether recovery is possible, you’re probably better off using an unchecked exception, for reasons discussed in Item 59.
+
+API designers often forget that exceptions are full-fledged objects on which arbitrary methods can be defined. The primary use of such methods is to provide the code that catches the exception with additional information concerning the condition that caused the exception to be thrown. In the absence of such methods, programmers have been known to parse the string representation of an exception to ferret out additional information. This is extremely bad practice (Item 10). 
+
+Because checked exceptions generally indicate recoverable conditions, it’s especially important for such exceptions to provide methods that furnish information that could help the caller to recover. 
+
+***************************************************************
+*** Item 59: Avoid unnecessary use of checked exceptions
+
+Checked exceptions are a wonderful feature of the Java programming language. Unlike return codes, they force the programmer to deal with exceptional conditions, greatly enhancing reliability. 
+THAT SAID, OVERUSE OF CHECKED EXCEPTIONS CAN MAKE AN API FAR LESS PLEASANT TO USE. 
+If a method throws one or more checked exceptions, the code that invokes the method must handle the exceptions in one or more catch blocks, or it must declare that it throws the exceptions and let them propagate outward. Either way, it places a nontrivial burden on the programmer.
+
+The burden is justified if the exceptional condition cannot be prevented by proper use of the API and the programmer using the API can take some useful action once confronted with the exception. 
+Unless both of these conditions hold, an unchecked exception is more appropriate. As a litmus test, ask yourself how the programmer will handle the exception. Is this the best that can be done?
+
+If the programmer using the API can do no better, an unchecked exception would be more appropriate. One example of an exception that fails this test is CloneNotSupportedException. It is thrown by Object.clone(), which should be invoked only on objects that implement Cloneable (Item 11). In practice, the catch block almost always has the character of an assertion failure. The checked nature of the exception provides no benefit to the programmer, but it requires effort and complicates programs.
+
+The additional burden on the programmer caused by a checked exception is substantially higher if it is the sole checked exception thrown by a method. 
+If there are others, the method must already appear in a try block, and this exception merely requires another catch block. 
+If a method throws a single checked exception, this exception alone is responsible for the fact that the method must appear in a try block. Under these circumstances, it pays to ask yourself whether there isn’t some way to avoid the checked exception.
+
+One technique for turning a checked exception into an unchecked exception is to break the method that throws the exception into two methods, the first of which returns a boolean that indicates whether the exception would be thrown. 
+
+If you suspect that the simple calling sequence will be the norm, then this API refactoring may be appropriate. The API resulting from this refactoring is essentially identical to the state-testing method API in Item 57 and the same caveats apply: if an object is to be accessed concurrently without external synchronization or it is subject to externally induced state transitions, this refactoring is inappropriate, as the object’s state may change between the invocations of actionPermitted() and action(). If a separate actionPermitted method would, of necessity, duplicate the work of the action method, the refactoring may be ruled out by performance concerns.
+
+
+
+***************************************************************
+*** Item 60: Favor the use of standard exceptions
+
+One of the attributes that most strongly distinguishes expert programmers from less experienced ones is that experts strive for and usually achieve a high degree of code reuse. Exceptions are no exception to the general rule that code reuse is good. 
+
+Reusing preexisting exceptions has several benefits. Chief among these, it makes your API easier to learn and use because it matches established conventions with which programmers are already familiar. A close second is that programs using your API are easier to read because they aren’t cluttered with unfamiliar exceptions. Last (and least), fewer exception classes mean a smaller memory footprint and less time spent loading classes.
+
+IllegalArgumentException. 
+This is generally the exception to throw when the caller passes in an argument whose value is inappropriate.
+(if the caller passed a negative number in a parameter representing the number of times some action was to be repeated.)
+
+IllegalStateException. 
+This is generally the exception to throw if the invocation is illegal because of the state of the receiving object.
+( if the caller attempted to use some object before it had been properly initialized.)
+
+ If a caller passes null in some parameter for which null values are prohibited, convention dictates that NullPointerException be thrown rather than IllegalArgumentException. Similarly, if a caller passes an out-ofrange value in a parameter representing an index into a sequence, IndexOutOfBoundsException should be thrown rather than IllegalArgumentException.
+
+ConcurrentModificationException. 
+This exception should be thrown if an object that was designed for use by a single thread or with external synchronization detects that it is being (or has been) concurrently modified.
+
+UnsupportedOperationException - if an object does not support an attempted operation. 
+Its use is rare compared to the other exceptions discussed in this item, as most objects support all the methods they implement. This exception is used by implementations that fail to implement one or more optional operations defined by an interface.
+
+Exception     ||    Occasion for Use
+--------------------------------------------
+IllegalArgumentException  ||  Non-null parameter value is inappropriate
+IllegalStateException     ||  Object state is inappropriate for method invocation
+NullPointerException      ||  Parameter value is null where prohibited
+IndexOutOfBoundsException ||  Index parameter value is out of range
+ConcurrentModificationException ||  Concurrent modification of an object has been detected where it is prohibited
+UnsupportedOperationException   ||  Object does not support method
+
+
+!!! OTHER EXCEPTIONS MAY BE REUSED WHERE CIRCUMSTANCES WARRANT [оправдывать, служить основанием].
+
+it would be appropriate to reuse ArithmeticException and Number-FormatException if you were implementing arithmetic objects such as complex numbers or rational numbers. If an exception fits your needs, go ahead and use it, but only if the conditions under which you would throw it are consistent with the exception’s documentation. Reuse must be based on semantics, not just on name. Also, feel free to subclass an existing exception if you want to add a bit more failure-capture information (Item 63).
+
+Finally, be aware that choosing which exception to reuse is not always an exact science, as the occasions for use in the table above are not mutually exclusive. 
+
+***************************************************************
+*** Item 61: Throw exceptions appropriate to the abstraction
+
+It is disconcerting when a method throws an exception that has no apparent connection to the task that it performs.
+This often happens when a method propagates an exception thrown by a lower-level abstraction. Not only is this disconcerting, but it pollutes the API of the higher layer with implementation details. If the implementation of the higher layer changes in a subsequent release, the exceptions that it throws will change too, potentially breaking existing client programs.
+
+To avoid this problem, higher layers should catch lower-level exceptions and, in their place, throw exceptions that can be explained in terms of the higher-level abstraction. This idiom is known as EXCEPTION TRANSLATION.
+
+A special form of exception translation called EXCEPTION CHAINING is appropriate in cases where the lower-level exception might be helpful to someone debugging the problem that caused the higher-level exception. The lower-level exception (the cause) is passed to the higher-level exception, which provides an accessor method (Throwable. getCause(..)) to retrieve the lower-level exception.
+
+Most standard exceptions have CHAINING-AWARE CONSTRUCTORS. For exceptions that don’t, you can set the cause using Throwable’s initCause(..) method. Not only does exception chaining let you access the cause programmatically (with getCause), but it integrates the cause’s stack trace into that of the higher-level exception.
+
+While exception translation is superior to mindless propagation of exceptions from lower layers, it should not be overused. Where possible, THE BEST WAY TO DEAL WITH EXCEPTIONS FROM LOWER LAYERS is to AVOID THEM, by ensuring that LOWER-LEVEL METHODS SUCCEED. Sometimes you can do this by checking the validity of the higher-level method’s parameters before passing them on to lower layers.
+
+If it is impossible to prevent exceptions from lower layers, the next best thing is to have the higher layer silently work around these exceptions, INSULATING THE CALLER OF THE HIGHER-LEVEL METHOD FROM LOWER-LEVEL PROBLEMS. 
+Under these circumstances, it may be appropriate to log the exception using some appropriate logging facility such as java.util.logging. This allows an administrator to investigate the problem, while insulating the client code and the end user from it.
+
+In summary, if it isn’t feasible to prevent or to handle exceptions from lower layers, use exception translation, unless the lower-level method happens to guarantee that all of its exceptions are appropriate to the higher level. 
+Chaining provides the best of both worlds: it allows you to throw an appropriate higher-level exception, while capturing the underlying cause for failure analysis (Item 63).
+
+***************************************************************
+*** Item 62: Document all exceptions thrown by each method
+
+A description of the exceptions thrown by a method is an important part of the documentation required TO USE THE METHOD PROPERLY. 
+Therefore, it is critically important that you take the time to CAREFULLY DOCUMENT all of the exceptions thrown by each method.
+
+ALWAYS DECLARE CHECKED EXCEPTIONS INDIVIDUALLY !!!, and DOCUMENT PRECISELY THE CONDITIONS UNDER WHICH EACH ONE IS THROWN using the Javadoc @throws tag. 
+Don’t take the shortcut of declaring that a method throws some superclass of multiple exception classes that it can throw.
+
+While the language does not require programmers to declare the unchecked exceptions that a method is capable of throwing, IT IS WISE TO DOCUMENT THEM AS CAREFULLY AS THE CHECKED EXCEPTIONS. 
+Unchecked exceptions generally represent programming errors (Item 58), and familiarizing programmers with all of the errors they can make helps them avoid making these errors. 
+A well-documented list of the unchecked exceptions that a method can throw effectively describes the preconditions for its successful execution. It is essential that each method’s documentation describe its preconditions, and documenting its unchecked exceptions is the best way to satisfy this requirement.
+
+It is particularly important that methods in interfaces document the unchecked exceptions they may throw. This documentation forms a part of the interface’s general contract and enables common behavior among multiple implementations of the interface.
+
+Use the Javadoc @throws tag to DOCUMENT each UNCHECKED EXCEPTION that a method can throw, but DO NOT USE the throws keyword to INCLUDE unchecked exceptions IN THE METHOD DECLARATION. It is important that the programmers using your API be aware of which exceptions are checked and which are unchecked, as their responsibilities differ in these two cases.
+
+!! When a class undergoes revision, it is not a violation of source or binary compatibility if an exported method is modified to throw additional unchecked exceptions.
+
+If an exception is thrown by many methods in a class for the same reason, it is acceptable to document the exception in the class’s documentation comment rather than documenting it individually for each method.
+A common example is NullPointerException. It is fine for a class’s documentation comment to say, “All methods in this class throw a NullPointerException if a null object reference is passed in any parameter,” or words to that effect.
+
+In summary, document every exception that can be thrown by each method that you write. This is true for unchecked as well as checked exceptions, and for abstract as well as concrete methods. 
+Provide individual throws clauses for each checked exception and do not provide throws clauses for unchecked exceptions. If you fail to document the exceptions that your methods can throw, it will be difficult or impossible for others to make effective use of your classes and interfaces.
+
+***************************************************************
+*** Item 63: Include failure-capture information in detail messages
+
+When a program fails due to an uncaught exception, the system automatically prints out the exception’s stack trace. The stack trace contains the exception’s string representation, the result of invoking its toString method. This typically consists of the exception’s class name followed by its detail message. 
+FREQUENTLY THIS IS THE ONLY INFORMATION THAT PROGRAMMERS OR FIELD SERVICE PERSONNEL WILL HAVE WHEN INVESTIGATING A SOFTWARE FAILURE. 
+If the failure is not easily reproducible, it may be difficult or impossible to get any more information. Therefore, it is critically important that the exception’s toString method return as much information as possible concerning the cause of the failure. In other words, the detail message of an exception should capture the failure for subsequent analysis.
+
+To capture the failure, the detail message of an exception should contain the values of all parameters and fields that “contributed to the exception.” 
+(it is critical to include all of the pertinent “hard data” in the detail message of an exception)
+А ТАКЖЕ - it is generally unimportant to include a lot of prose. МЕНЬШЕ ВОДЫ!
+Lengthy prose descriptions of the failure are generally superfluous; the information can be gleaned by reading the source code.
+
+НАДО РАЗЛИЧАТЬ:
+The detail message of an exception should not be confused with a user-level error message, which must be intelligible to end users. Unlike a user-level error message, it is primarily for the benefit of programmers or field service personnel for use when analyzing a failure. Therefore, information content is far more important than intelligibility.
+
+ЧТОБЫ ИСКЛЮЧЕНИЕ СОДЕРЖАЛО ВСЮ ТАКУЮ ИНФУ, ПРОЩЕ ВСЕГО ДЕЛАТЬ СПЕЦ. КОНСТРУКТОР, К-Й
+ require this information in their constructors instead of a string detail message. 
+
+public IndexOutOfBoundsException(int lowerBound, int upperBound, int index) { }
+
+Unfortunately, the Java platform libraries do not make heavy use of this idiom, but it is highly recommended. It makes it easy for the programmer throwing an exception to capture the failure. In fact, it makes it hard for the programmer not to capture the failure!
+In effect, the idiom centralizes the code to generate a high-quality detail message for an exception in the exception class itself, rather than requiring each user of the class to generate the detail message redundantly.
+
+As suggested in Item 58, it may be appropriate for an exception to provide accessor methods for its failure-capture information (lowerBound, upperBound, and index in the above example). It is more important to provide such accessor methods on checked exceptions than on unchecked exceptions, because the failure-capture information could be useful in recovering from the failure. It is rare (although not inconceivable) that a programmer might want programmatic access to the details of an unchecked exception. Even for unchecked exceptions, however, it seems advisable to provide these accessors on general principle (Item 10, page 53).
+
+***************************************************************
+*** Item 64: Strive for failure atomicity [when one group, person, or thing is separate from others]
+
+After an object throws an exception, it is generally desirable that the object still be in a well-defined, usable state, even if the failure occurred in the midst of performing an operation. 
+This is especially true for CHECKED EXCEPTIONS, FROM WHICH THE CALLER IS EXPECTED TO RECOVER. 
+Generally speaking, a failed method invocation should leave the object in the state that it was in prior to the invocation. A method with this property is said to be FAILURE ATOMIC.
+
+There are several ways to achieve this effect. 
+
+1) The simplest is to design immutable objects (Item 15). If an object is immutable, failure atomicity is free. If an operation fails, it may prevent a new object from getting created, but it will never leave an existing object in an inconsistent state, because the state of each object is consistent when it is created and can’t be modified thereafter.
+
+2) For methods that operate on mutable objects, the most common way to achieve failure atomicity is to check parameters for validity before performing the operation (Item 38). This causes any exception to get thrown before object modification commences.
+
+3) A closely related approach to achieving failure atomicity is to order the computation so that any part that may fail takes place before any part that modifies the object. This approach is a natural extension of the previous one when arguments cannot be checked without performing a part of the computation. 
+
+4) A third and far less common approach to achieving failure atomicity is to write recovery code that intercepts a failure that occurs in the midst of an operation and causes the object to roll back its state to the point before the operation began. This approach is used mainly for durable (disk-based) data structures.
+
+5) A final approach to achieving failure atomicity is to perform the OPERATION ON A TEMPORARY COPY OF THE OBJECT and to replace the contents of the object with the temporary copy once the operation is complete. This approach occurs naturally when the computation can be performed more quickly once the data has been stored in a temporary data structure. For example, Collections .sort dumps its input list into an array prior to sorting to reduce the cost of accessing elements in the inner loop of the sort. This is done for performance, but as an added benefit, it ensures that the input list will be untouched if the sort fails.
+--------
+While failure atomicity is generally desirable, it is not always achievable. For example, if two threads attempt to modify the same object concurrently without proper synchronization, the object may be left in an inconsistent state. It would therefore be wrong to assume that an object was still usable after catching a ConcurrentModificationException. As a rule, errors (as opposed to exceptions) are unrecoverable, and methods need not even attempt to preserve failure atomicity when throwing errors.
+
+Even where failure atomicity is possible, it is NOT ALWAYS DESIRABLE. For some operations, IT WOULD SIGNIFICANTLY INCREASE THE COST OR COMPLEXITY. That said, it is often both free and easy to achieve failure atomicity once you’re aware of the issue.
+
+As a rule, any generated exception that is part of a method’s specification should leave the object in the same state it was in prior to the method invocation. 
+Where this rule is violated, the API documentation should clearly indicate what state the object will be left in. 
+Unfortunately, plenty of existing API documentation fails to live up to this ideal.
+
+***************************************************************
+*** Item 65: Don’t ignore exceptions
+
+While this advice may seem obvious, it is violated often enough that it bears repeating. 
+When the designers of an API declare a method to throw an exception, they are trying to tell you something. 
+Don’t ignore it! It is easy to ignore exceptions by surrounding a method invocation with a try statement with an empty catch block
+
+An empty catch block defeats the purpose of exceptions, which is to force you to handle exceptional conditions. 
+Ignoring an exception is analogous to ignoring a fire alarm — and turning it off so no one else gets a chance to see if there’s a real fire. You may get away with it, or the results may be disastrous.
+    At the very least, the catch block should contain a comment explaining why it is appropriate to ignore the exception.
+
+An example of the sort of situation where it might be appropriate to ignore an exception is when closing a FileInputStream. You haven’t changed the state of the file, so there’s no need to perform any recovery action, and you’ve already read the information that you need from the file, so there’s no reason to abort the operation in progress. Even in this case, it is wise to log the exception, so that you can investigate the matter if these exceptions happen often.
+
+The advice in this item applies equally to checked and unchecked exceptions. Whether an exception represents a predictable exceptional condition or a programming error, ignoring it with an empty catch block will result in a program that continues silently in the face of error. The program might then fail at an arbitrary time in the future, at a point in the code that bears no apparent relation to the source of the problem. Properly handling an exception can avert failure entirely. Merely letting an exception propagate outward can at least cause the program to fail swiftly, preserving information to aid in debugging the failure.
+
