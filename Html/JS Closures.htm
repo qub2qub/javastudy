@@ -1,112 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>JS Closures</title>
-<link rel="stylesheet" href="../Guides/grey.css">
-<style type="text/css">
-blockquote {
-border: 2px solid #920000;
-padding: 5px;
-}
-div.spoiler {
-border: 2px dotted black;
-}
-div.comment_body {
-border: 1px solid #920000;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>JS Closures</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+    blockquote {
+        border: 2px solid #920000;
+        padding: 5px;
+    }
+
+    div.spoiler {
+        border: 2px dotted black;
+    }
+
+    div.comment_body {
+        border: 1px solid #920000;
+    }
+    </style>
 </head>
+
 <body>
-<a href="https://habrahabr.ru/post/178133/">src1</a>
-<a href="https://habrahabr.ru/post/38642/">src2</a>
-<h2>Замыкания, Прототипирование и Контекст</h2>
-<div class="content html_format js-mediator-article cye-lm-tag">
-<p>Зародившись как скриптовый язык в помощь веб-разработчикам, с дальнейшим развитием JavaScript стал мощным инструментом разработки клиентской части, обеспечивающий удобство и интерактивность страницы прямо в браузере у пользователя. </p><p>
-Из-за специфичности среды и целей, JavaScript отличается от обычных языков программирования, и имеет множество особенностей, не понимая которые, довольно сложно написать хороший кроссбраузерный код.</p><p>
-Думаю, что большинство программистов, писавших код на JavaScript больше пары дней, сталкивались с этими особенностями. Цель данного топика не открыть что-то новое, а попытаться описать эти особенности «на пальцах» и <i class="cye-lm-tag">«недостатки» сделать «преимуществами»</i>.</p><p>
-В данном топике будут рассматриваться:</p><p>
-<ol>
-<li>Замыкания</li>
-<li>Прототипирование</li>
-<li>Контекст выполнения</li>
-</ol><br>
-<a name="habracut"></a><br>
-<h5>Предисловие</h5><br>
-Мне, как автору, конечно же хочется описать все-все-все возможности, которыми богат JavaScript. Однако если я просто попытаюсь сделать это, статья растянется на огромное количество страниц, и многие начинающие разработчики просто не смогут запомнить всю информацию. Поэтому приводимые примеры могут кому-то показаться слишком простыми, а темы раскрытыми не до конца. Но, надеюсь, статья сумеет заинтересовать тех, кто ещё не сильно знаком с данными особенностями, а тем, кто уже знаком, — помочь понять, что на самом-то деле всё элементарно. </p><p>
-<h4>Замыкания, или «Эти необычные области видимости»</h4><br>
-<blockquote><i>«Архиполезная штука!» — этими двумя словами можно выразить <br>
-моё отношение к замыканиям и их реализации в JavaScript.</i></blockquote></p><p>
-Суть замыканий проста: <b class="cye-lm-tag">внутри функции можно использовать все пременные, которые доступны в том месте, где функция была объявлена</b>.</p><p>
-Хотя идея замыканий проста, на практике зачастую возникает много непонятных моментов по поведению в том или ином случае. Так что для начала вспомним основы объявления переменной, а именно – "<i>переменные в JavaScript объявляются с помощью ключевого слова var</i>":</p><p>
-<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
+    <a href="https://habrahabr.ru/post/178133/">src1</a>
+    <a href="https://habrahabr.ru/post/38642/">src2</a>
+    <h2>Замыкания, Прототипирование и Контекст</h2>
+    <div class="content html_format js-mediator-article cye-lm-tag">
+        <p>Зародившись как скриптовый язык в помощь веб-разработчикам, с дальнейшим развитием JavaScript стал мощным инструментом разработки клиентской части, обеспечивающий удобство и интерактивность страницы прямо в браузере у пользователя. </p>
+        <p>
+            Из-за специфичности среды и целей, JavaScript отличается от обычных языков программирования, и имеет множество особенностей, не понимая которые, довольно сложно написать хороший кроссбраузерный код.</p>
+        <p>
+            Думаю, что большинство программистов, писавших код на JavaScript больше пары дней, сталкивались с этими особенностями. Цель данного топика не открыть что-то новое, а попытаться описать эти особенности «на пальцах» и <i class="cye-lm-tag">«недостатки» сделать «преимуществами»</i>.</p>
+        <p>
+            В данном топике будут рассматриваться:</p>
+        <p>
+            <ol>
+                <li>Замыкания</li>
+                <li>Прототипирование</li>
+                <li>Контекст выполнения</li>
+            </ol>
+            <br>
+            <a name="habracut"></a>
+            <br>
+            <h5>Предисловие</h5>
+            <br> Мне, как автору, конечно же хочется описать все-все-все возможности, которыми богат JavaScript. Однако если я просто попытаюсь сделать это, статья растянется на огромное количество страниц, и многие начинающие разработчики просто не смогут запомнить всю информацию. Поэтому приводимые примеры могут кому-то показаться слишком простыми, а темы раскрытыми не до конца. Но, надеюсь, статья сумеет заинтересовать тех, кто ещё не сильно знаком с данными особенностями, а тем, кто уже знаком, — помочь понять, что на самом-то деле всё элементарно. </p>
+        <p>
+            <h4>Замыкания, или «Эти необычные области видимости»</h4>
+            <br>
+            <blockquote><i>«Архиполезная штука!» — этими двумя словами можно выразить <br>
+моё отношение к замыканиям и их реализации в JavaScript.</i></blockquote>
+        </p>
+        <p>
+            Суть замыканий проста: <b class="cye-lm-tag">внутри функции можно использовать все пременные, которые доступны в том месте, где функция была объявлена</b>.</p>
+        <p>
+            Хотя идея замыканий проста, на практике зачастую возникает много непонятных моментов по поведению в том или ином случае. Так что для начала вспомним основы объявления переменной, а именно – "<i>переменные в JavaScript объявляются с помощью ключевого слова var</i>":</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
 alert(title);
-</code></pre></p><p>
-При запуске кода выведет текст "<i>Hello World</i>", как и ожидалось. Суть происходящего проста – создаётся глобальная переменная <i>title</i> со значением "<i>Hello World</i>", которое показывается пользователю с помощью <i>alert</i>-а. В данном примере, даже если мы опустим ключевое слово <i>var</i>, код всё равно сработает правильно из-за глобального контекста. Но об этом позже.</p><p>
-Теперь попробуем объявить ту же переменную, но уже внутри функции:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span> (<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            При запуске кода выведет текст "<i>Hello World</i>", как и ожидалось. Суть происходящего проста – создаётся глобальная переменная <i>title</i> со значением "<i>Hello World</i>", которое показывается пользователю с помощью <i>alert</i>-а. В данном примере, даже если мы опустим ключевое слово <i>var</i>, код всё равно сработает правильно из-за глобального контекста. Но об этом позже.</p>
+        <p>
+            Теперь попробуем объявить ту же переменную, но уже внутри функции:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span> (<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
 }
 alert(title);
-</code></pre></p><p>
-В результате запуска кода сгенерируется ошибка "<i>'title' is undefined</i>" — "<i>переменная 'title' не была объявлена</i>". Это происходит из-за механизма локальной области видимости переменных: <i>все переменные, объявленные внутри фукнции являются локальными и видны только внутри этой функции</i>. Или проще: если мы объявим какую-то переменную внутри функции, то вне этой функции доступа к этой переменной у нас не будет. </p><p>
-Для того, чтобы вывести надпись "<i>Hello World</i>", необходимо вызвать <i>alert</i> внутри вызываемой функции:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            В результате запуска кода сгенерируется ошибка "<i>'title' is undefined</i>" — "<i>переменная 'title' не была объявлена</i>". Это происходит из-за механизма локальной области видимости переменных: <i>все переменные, объявленные внутри фукнции являются локальными и видны только внутри этой функции</i>. Или проще: если мы объявим какую-то переменную внутри функции, то вне этой функции доступа к этой переменной у нас не будет. </p>
+        <p>
+            Для того, чтобы вывести надпись "<i>Hello World</i>", необходимо вызвать <i>alert</i> внутри вызываемой функции:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
 alert(title);
 }
 example();
-</code></pre></p><p>
-Либо вернуть значение из функции:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            Либо вернуть значение из функции:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"Hello World"</span>;
 <span class="hljs-keyword cye-lm-tag">return</span> title;
 }
 alert(example());
-</code></pre></p><p>
-Думаю, что все эти примеры очевидны — подобное поведение реализовано практически во всех языках программирования. Так в чём же особенность замыканий в JavaScript, что так сильно отличает реализацию от других языков?</p><p>
-<i>Ключевое отличие в том, что в JavaScript-е функции можно объявлять внутри других функций, а сами функции в JavaScript являются объектами! </i>Благодаря этому с ними можно производить те же действия, что и с обычными объектами — проверять на существование, присваивать переменным, добавлять свойства, вызывать методы и возвращать объект функции как разультат выполнения другой функции!</p><p>
-Так как функция — это объект, то это значит, что механизм областей видимости переменных распространяется и на функции: функция, объявленная внутри другой функции, видна только там, где она была объявлена</p><p>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            Думаю, что все эти примеры очевидны — подобное поведение реализовано практически во всех языках программирования. Так в чём же особенность замыканий в JavaScript, что так сильно отличает реализацию от других языков?</p>
+        <p>
+            <i>Ключевое отличие в том, что в JavaScript-е функции можно объявлять внутри других функций, а сами функции в JavaScript являются объектами! </i>Благодаря этому с ними можно производить те же действия, что и с обычными объектами — проверять на существование, присваивать переменным, добавлять свойства, вызывать методы и возвращать объект функции как разультат выполнения другой функции!</p>
+        <p>
+            Так как функция — это объект, то это значит, что механизм областей видимости переменных распространяется и на функции: функция, объявленная внутри другой функции, видна только там, где она была объявлена</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">B</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 alert(<span class="hljs-string cye-lm-tag">"Hello World"</span>);
 }
 }
 B();
-</code></pre></p><p>
-Как и в примере с переменной, при запуске кода сгенерируется ошибка, что переменная <i>B</i> не была объявлена. Если же поместить вызов функции <i>B</i> сразу после объявления внутри функции <i>A</i>, и вызвать саму функцию <i>A</i> — получим заветное сообщение "<i>Hello World</i>"</p><p>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            Как и в примере с переменной, при запуске кода сгенерируется ошибка, что переменная <i>B</i> не была объявлена. Если же поместить вызов функции <i>B</i> сразу после объявления внутри функции <i>A</i>, и вызвать саму функцию <i>A</i> — получим заветное сообщение "<i>Hello World</i>"</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">A</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">B</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 alert(<span class="hljs-string cye-lm-tag">"Hello World"</span>);
 }
 B();
 }
 A();
-</code></pre></p><p>
-Теперь приступим к описанию того, обо что спотыкаются большинство начинающих изучать JavaScript – определению того, откуда переменные берут свои значения. Как упоминалось выше, переменные нужно объявлять с помощью ключевого слова <i>var</i>:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'external'</span>;
+</code></pre></p>
+        <p>
+            Теперь приступим к описанию того, обо что спотыкаются большинство начинающих изучать JavaScript – определению того, откуда переменные берут свои значения. Как упоминалось выше, переменные нужно объявлять с помощью ключевого слова <i>var</i>:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'external'</span>;
 <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">'internal'</span>;
 alert(title);
 }
 example();
 alert(title);
-</code></pre></p><p>
-В данном примере переменная <i>title</i> была объявлена дважды – первый раз глобально, а второй раз – внутри функции. Благодара тому, что внутри функции <i>example</i> переменная <i>title</i> была объявлена с помощью ключевого слова <i>var</i>, она становится локальной и никак не связана с переменной <i>title</i>, объявленной до функции. В результате выполнения кода вначале выведется "<i>internal</i>" (внутренняя переменная), а затем "<i>external</i>" (глобальная переменная). </p><p>
-Если убрать ключевое слово <i>var</i> из строки <i>var title = 'internal'</i>, то запустив код, в результате дважды получим сообщение "<i>internal</i>". Это происходит из-за того, что при вызове функции мы объявляли не локальную переменную <i>title</i>, а перезаписывали значение глобальной переменной!</p><p>
-Таким образом можно увидеть, что использование ключевого слова var делает переменную локальной, гарантируя отсутствие конфликтов с внешними переменными (<i>к примеру, в PHP все переменные внутри функции по умолчанию являются локальными; и для того, чтобы обратиться к глобальной переменной необходимо объявить её глобальной с помощью ключевого слова global</i>).</p><p>
-<div class="spoiler cye-lm-tag spoiler_open"><b class="spoiler_title cye-lm-tag">Скрытый текст</b><div class="spoiler_text cye-lm-tag" style="display: block;">Следует помнить, что все параметры функции автоматически являются локальными переменными:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
+</code></pre></p>
+        <p>
+            В данном примере переменная <i>title</i> была объявлена дважды – первый раз глобально, а второй раз – внутри функции. Благодара тому, что внутри функции <i>example</i> переменная <i>title</i> была объявлена с помощью ключевого слова <i>var</i>, она становится локальной и никак не связана с переменной <i>title</i>, объявленной до функции. В результате выполнения кода вначале выведется "<i>internal</i>" (внутренняя переменная), а затем "<i>external</i>" (глобальная переменная). </p>
+        <p>
+            Если убрать ключевое слово <i>var</i> из строки <i>var title = 'internal'</i>, то запустив код, в результате дважды получим сообщение "<i>internal</i>". Это происходит из-за того, что при вызове функции мы объявляли не локальную переменную <i>title</i>, а перезаписывали значение глобальной переменной!</p>
+        <p>
+            Таким образом можно увидеть, что использование ключевого слова var делает переменную локальной, гарантируя отсутствие конфликтов с внешними переменными (<i>к примеру, в PHP все переменные внутри функции по умолчанию являются локальными; и для того, чтобы обратиться к глобальной переменной необходимо объявить её глобальной с помощью ключевого слова global</i>).</p>
+        <p>
+            <div class="spoiler cye-lm-tag spoiler_open"><b class="spoiler_title cye-lm-tag">Скрытый текст</b>
+                <div class="spoiler_text cye-lm-tag" style="display: block;">Следует помнить, что все параметры функции автоматически являются локальными переменными:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
 <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag">title</span>)</span>{
 title = <span class="hljs-string cye-lm-tag">"changing external title"</span>;
 alert(title);
 }
 example(<span class="hljs-string cye-lm-tag">'abc'</span>);
 alert(title);
-</code></pre><br>
-При запуске кода сгенерируются сообщения "<i class="cye-lm-tag">changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции, хотя мы её и не объявляли с помощью var.</p><p>
-Сам процесс инициализации локальных переменных происходит до выполнения кода — для этого интерпретатор пробегается по коду функции и инициализирует (<i>не присваивая значений!</i>) все найденные локальные переменные:</p><p>
-<pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
+</code></pre>
+            <br> При запуске кода сгенерируются сообщения "<i class="cye-lm-tag">changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции, хотя мы её и не объявляли с помощью var.</p>
+        <p>
+            Сам процесс инициализации локальных переменных происходит до выполнения кода — для этого интерпретатор пробегается по коду функции и инициализирует (<i>не присваивая значений!</i>) все найденные локальные переменные:</p>
+        <p>
+            <pre><code class="javascript hljs"><span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"external title"</span>;
 <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 title = <span class="hljs-string cye-lm-tag">"changing external title"</span>;
 alert(title);
@@ -114,25 +153,35 @@ alert(title);
 }
 example();
 alert(title);
-</code></pre></p><p>
-Как и в предыдущем примере, при запуске кода сгенерируются сообщения "<i>changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции. </p><p>
-Если закомментировать строку <i>title = «changing external title»;</i>, то при первым сгенерированным сообщением станет "<i>undefined</i>" — локальная переменная <i>title</i> <b>уже</b> была инициализирована (существует), но значение (на момент вызова alert-а) не было присвоено.</p><p>
-Код:<br>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre></p>
+        <p>
+            Как и в предыдущем примере, при запуске кода сгенерируются сообщения "<i>changing external title</i>", а затем "<i>external title</i>", показывающее, что внешняя переменная <i>title</i> не была изменена внутри функции. </p>
+        <p>
+            Если закомментировать строку <i>title = «changing external title»;</i>, то при первым сгенерированным сообщением станет "<i>undefined</i>" — локальная переменная <i>title</i> <b>уже</b> была инициализирована (существует), но значение (на момент вызова alert-а) не было присвоено.</p>
+        <p>
+            Код:
+            <br>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 alert(title);
 <span class="hljs-keyword cye-lm-tag">var</span> title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
 }
-</code></pre><br>
-эквивалентен следующему:<br>
-<pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
+</code></pre>
+            <br> эквивалентен следующему:
+            <br>
+            <pre><code class="javascript hljs"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">function</span> <span class="hljs-title cye-lm-tag">example</span>(<span class="hljs-params cye-lm-tag"></span>)</span>{
 <span class="hljs-keyword cye-lm-tag">var</span> title;
 alert(title);
 title = <span class="hljs-string cye-lm-tag">"internal title"</span>;
 }
-</code></pre></p><p>
-Таким образом становится понятно, что где бы не происходило объявлении переменной внутри функции, в момент вызова переменная уже будет проинициализированна. Также это значит, что повторное объявление не имеет смысла — интерпретатор просто проигнорирует объявлении переменной во второй раз.</p><p>
-</div></div></p><p>
-<h3>Итак, как же определить какая переменная используется в функции?</h6></p><p>
+</code></pre></p>
+        <p>
+            Таким образом становится понятно, что где бы не происходило объявлении переменной внутри функции, в момент вызова переменная уже будет проинициализированна. Также это значит, что повторное объявление не имеет смысла — интерпретатор просто проигнорирует объявлении переменной во второй раз.</p>
+        <p>
+            </div>
+            </div>
+        </p>
+        <p>
+            <h3>Итак, как же определить какая переменная используется в функции?</h6></p><p>
 Если при объявлении фукнции переменная не была объявлена локально с помощью ключевого слова <i>var</i>, переменная будет искаться в родительской функции. Если она не будет там найдена — поиск будет происходить дальше по цепочке функций-родителей до тех пор, пока интерпретатор не найдёт объявление переменной, либо не дойдёт до глобальной области видимости.</p><p>
 Если объявление переменной не будет найдено ни вверх по цепочке объявлений фукнции, ни в глобальной области видимости, существует два варианта развития:<br>
 <ol>
