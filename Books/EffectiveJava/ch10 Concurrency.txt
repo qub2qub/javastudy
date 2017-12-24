@@ -147,28 +147,29 @@ In fact, you can do even better. ConcurrentHashMap is optimized for retrieval op
 
 Besides offering excellent concurrency, ConcurrentHashMap is very fast.
 
-Unless you have a compelling reason to do otherwise, use ConcurrentHashMap in preference to Collections.synchro-nizedMap or Hashtable. Simply replacing old-style synchronized maps with concurrent maps can dramatically increase the performance of concurrent applications. More generally, use concurrent collections in preference to externally synchronized collections.
+Unless you have a compelling reason to do otherwise, use ConcurrentHashMap in preference to Collections.synchronizedMap() or Hashtable. Simply replacing old-style synchronized maps with concurrent maps can dramatically increase the performance of concurrent applications. More generally, use concurrent collections in preference to externally synchronized collections.
 
 Some of the collection interfaces have been extended with blocking operations, which wait (or block) until they can be successfully performed. For example, BlockingQueue extends Queue and adds several methods, including take, which removes and returns the head element from the queue, waiting if the queue is empty. This allows blocking queues to be used for work queues (also known as producer-consumer queues), to which one or more producer threads enqueue work items and from which one or more consumer threads dequeue and process items as they become available. As you’d expect, most ExecutorService implementations, including ThreadPoolExecutor, use a BlockingQueue (Item 68).
 
 !!!! SYNCHRONIZERS are objects that enable threads to wait for one another, allowing them to coordinate their activities. 
-The most commonly used synchronizers are CountDownLatch and Semaphore. Less commonly used are CyclicBarrier and Exchanger.
+The most commonly used synchronizers are CountDownLatch and Semaphore. 
+Less commonly used are CyclicBarrier and Exchanger.
 !!!!
 
-Countdown latches are single-use barriers that allow one or more threads to wait for one or more other threads to do something. The sole constructor for CountDownLatch takes an int that is the number of times the countDown method must be invoked on the latch before all waiting threads are allowed to proceed.
+COUNTDOWN LATCHES are single-use barriers that allow one or more threads to wait for one or more other threads to do something. The sole constructor for CountDownLatch takes an int that is the number of times the countDown() method must be invoked on the latch before all waiting threads are allowed to proceed.
 
-It is surprisingly easy to build useful things atop this simple primitive. For example, suppose you want to build a simple framework for timing the concurrent execution of an action. This framework consists of a single method that takes an executor to execute the action, a concurrency level representing the number of
-
-actions to be executed concurrently, and a runnable representing the action. All of the worker threads ready themselves to run the action before the timer thread starts the clock (this is necessary to get an accurate timing). When the last worker thread is ready to run the action, the timer thread “fires the starting gun,” allowing the worker threads to perform the action. As soon as the last worker thread finishes performing the action, the timer thread stops the clock. Implementing this logic directly on top of wait and notify would be messy to say the least, but it is surprisingly straightforward on top of CountDownLatch:
+It is surprisingly easy to build useful things atop this simple primitive. For example, suppose you want to build a simple framework for timing the concurrent execution of an action. This framework consists of a single method that takes an executor to execute the action, a concurrency level representing the number of actions to be executed concurrently, and a runnable representing the action. All of the worker threads ready themselves to run the action before the timer thread starts the clock (this is necessary to get an accurate timing). When the last worker thread is ready to run the action, the timer thread “fires the starting gun,” allowing the worker threads to perform the action. As soon as the last worker thread finishes performing the action, the timer thread stops the clock. Implementing this logic directly on top of wait and notify would be messy to say the least, but it is surprisingly straightforward on top of CountDownLatch:
 
 A few more details bear noting. 
 1) The executor that is passed to the time method must allow for the creation of at least as many threads as the given concurrency level, or the test will never complete. This is known as a THREAD STARVATION DEADLOCK.
-   2) If a worker thread catches an InterruptedException, it reasserts the interrupt using the idiom Thread.currentThread().interrupt() and returns from its run method. This allows the executor to deal with the interrupt as it sees fit, which is as it should be. 
+   2) If a worker thread catches an InterruptedException, it reasserts the interrupt using the idiom Thread.currentThread().interrupt() and returns from its run() method. This allows the executor to deal with the interrupt as it sees fit, which is as it should be. 
 3) Finally, note that System.nanoTime() is used to time the activity rather than System.currentTimeMillis(). For interval timing, always use System.nanoTime() in preference to System.currentTimeMillis(). System.nanoTime() is both more accurate and more precise, and it is not affected by adjustments to the system’s real-time clock.
 
 This item only scratches the surface of the concurrency utilities. For example, the three countdown latches in the previous example can be replaced by a single cyclic barrier. The resulting code is even more concise, but it is more difficult to understand.
 
-While you should always use the concurrency utilities in preference to wait and notify, you might have to maintain legacy code that uses wait and notify. The wait method is used to make a thread wait for some condition. It must be invoked inside a synchronized region that locks the object on which it is invoked. Here is the STANDARD IDIOM for using the WAIT METHOD:
+While you should always use the concurrency utilities in preference to wait and notify, you might have to MAINTAIN LEGACY CODE that uses wait() and notify(). 
+!! The wait() method is used to make a thread wait for some condition. 
+It must be invoked inside a synchronized region that locks the object on which it is invoked. Here is the STANDARD IDIOM for using the WAIT METHOD:
 
 synchronized (obj) {
 	while (<condition does not hold>) { // пока условие не выполняется
@@ -193,22 +194,25 @@ Testing the condition after waiting and [waiting again if the condition does not
 If the thread proceeds with the action when the condition does not hold, it can destroy the invariant guarded by the lock. 
 There are SEVERAL REASONS a THREAD MIGHT WAKE UP WHEN THE CONDITION DOES NOT HOLD:
 
-•    Another thread could have obtained the lock and changed the guarded state between the time a thread invoked notify and the time the waiting thread woke.
+•1    Another thread could have obtained the lock and changed the guarded state between the time a thread invoked notify() and the time the waiting thread woke.
 
-•    Another thread could have invoked notify accidentally or maliciously when the condition did not hold. Classes expose themselves to this sort of mischief by waiting on publicly accessible objects. Any wait contained in a synchronized method of a publicly accessible object is susceptible to this problem.
+•2    Another thread could have invoked notify() accidentally or maliciously when the condition did not hold. Classes expose themselves to this sort of mischief by waiting on PUBLICLY ACCESSIBLE OBJECTS. 
+Any wait contained in a synchronized method of a publicly accessible object is susceptible to this problem.
 
-•    The notifying thread could be overly “generous” in waking waiting threads. For example, the notifying thread might invoke notifyAll() even if only some of the waiting threads have their condition satisfied.
+•3    The notifying thread could be overly “generous” in waking waiting threads. For example, the notifying thread might invoke notifyAll() even if only some of the waiting threads have their condition satisfied.
 
-•    The waiting thread could (rarely) wake up in the absence of a notify. This is known as a SPURIOUS WAKEUP.
+•4    The waiting thread could (rarely) wake up in the absence of a notify. This is known as a SPURIOUS WAKEUP.
 
-A related issue is whether you should use notify() or notifyAll() to wake waiting threads. (Recall that notify() wakes a single waiting thread, assuming such a thread exists, and notifyAll() wakes all waiting threads.) 
+A related issue is whether you should use notify() or notifyAll() to wake waiting threads. (Recall that notify() wakes a single waiting thread, assuming such a thread exists, and notifyAll() wakes all waiting threads) 
    It is often said that you should always use notifyAll(). This is reasonable, conservative advice. It will always yield correct results because it guarantees that you’ll wake the threads that need to be awakened. 
 You may wake some other threads, too, but this won’t affect the correctness of your program. These threads will check the condition for which they’re waiting and, finding it false, will continue waiting.
 
 As an optimization, you may choose to invoke notify() instead of notifyAll() if all threads that could be in the wait-set are waiting for the SAME CONDITION and ONLY ONE THREAD AT A TIME CAN BENEFIT FROM THE CONDITION BECOMING TRUE.
+! особенно если у тебя private lock - то так видимо можно делать!
 
-Even if these conditions appear true, there may be cause to use notifyAll() in place of notify(). Just as placing the wait invocation in a loop protects against accidental or malicious notifications on a publicly accessible object, 
-using notifyAll() in place of notify() protects against accidental or malicious waits by an unrelated thread. Such waits could otherwise “swallow” a critical notification, leaving its intended recipient waiting indefinitely.
+Even if these conditions appear true, there may be cause to use notifyAll() in place of notify(). Just as placing the wait invocation in a loop protects against accidental or malicious notifications on a PUBLICLY ACCESSIBLE OBJECT, 
+!! using notifyAll() in place of notify() PROTECTS AGAINST ACCIDENTAL OR MALICIOUS WAITS BY AN UNRELATED THREAD. 
+Such waits could otherwise “SWALLOW” a critical notification, leaving its intended recipient waiting indefinitely.
 
 In summary, using wait() and notify() directly is like programming in “concurrency assembly language,” as compared to the higher-level language provided by java.util.concurrent. 
 There is seldom, if ever, a reason to use wait() and notify() in new code. If you maintain code that uses wait and notify, MAKE SURE THAT IT ALWAYS INVOKES WAIT FROM WITHIN A WHILE LOOP USING THE STANDARD IDIOM. 
@@ -217,10 +221,12 @@ The notifyAll() method should generally be used in preference to notify(). If no
 ***************************************************************
 *** Item 70: Document thread safety
 
-How a class behaves when its instances or static methods are subjected to concurrent use is an important part of the contract the class makes with its clients. If you don’t document this facet of a class’s behavior, programmers who use the class will be forced to make assumptions. If those assumptions are wrong, the resulting program may perform insufficient synchronization (Item 66) or excessive synchronization (Item 67). In either case, serious errors can result.
+How a class behaves when its instances or static methods are subjected to concurrent use is an important part of the contract the class makes with its clients. 
+If you don’t document this facet of a class’s behavior, programmers who use the class will be forced to make assumptions. If those assumptions are wrong, the resulting program may perform insufficient synchronization (Item 66) or excessive synchronization (Item 67). In either case, serious errors can result.
 
-In fact, there are several levels of thread safety. To enable safe concurrent use, a class must clearly document what level of thread safety it supports.
-The following list summarizes levels of thread safety. It is not exhaustive but covers the common cases:
+In fact, there are several LEVELS OF THREAD SAFETY. To enable safe concurrent use, a class must clearly document what level of thread safety it supports.
+The following list summarizes levels of thread safety. 
+It is not exhaustive but covers the common cases:
 
 •1    IMMUTABLE — НЕИЗМЕНЯЕМЫЕ
 Instances of this class appear constant. No external synchronization is necessary. Examples include String, Long, and Biglnteger (Item 15).
@@ -228,13 +234,15 @@ Instances of this class appear constant. No external synchronization is necessar
 •2    UNCONDITIONALLY THREAD-SAFE — БЕЗУСЛОВНО БЕЗОПАСНЫЕ
 Instances of this class are mutable, but the class has sufficient internal synchronization that its instances can be used concurrently without the need for any external synchronization. Examples include Random and ConcurrentHashMap.
 
-•    CONDITIONALLY THREAD-SAFE — УСЛОВНО БЕЗОПАСНЫЕ
-Like unconditionally thread-safe, except that some methods require external synchronization for safe concurrent use. Examples include the collections returned by the Collections.synchronized(..) wrappers, whose iterators require external synchronization.
+•4    CONDITIONALLY THREAD-SAFE — УСЛОВНО БЕЗОПАСНЫЕ
+Like unconditionally thread-safe, except that some methods require external synchronization for safe concurrent use. 
+Examples include the collections returned by the Collections.synchronized(..) wrappers, whose iterators require external synchronization.
 
-•    NOT THREAD-SAFE — НЕБЕЗОПАСНЫЕ
-Instances of this class are mutable. To use them concurrently, clients must surround each method invocation (or invocation sequence) with external synchronization of the clients’ choosing. Examples include the general-purpose collection implementations, such as ArrayList and HashMap.
+•5    NOT THREAD-SAFE — НЕБЕЗОПАСНЫЕ
+Instances of this class are mutable. To use them concurrently, clients must surround each method invocation (or invocation sequence) with external synchronization of the clients’ choosing. 
+Examples include the general-purpose collection implementations, such as ArrayList and HashMap.
 
-• THREAD-HOSTILE — ВРАЖДЕБНЫЕ К МНОГОПОТОЧНОСТИ
+•6 THREAD-HOSTILE — ВРАЖДЕБНЫЕ К МНОГОПОТОЧНОСТИ
 This class is not safe for concurrent use even if all method invocations are surrounded by external synchronization. 
 !! THREAD HOSTILITY usually results from modifying static data without synchronization. 
 
@@ -243,7 +251,8 @@ No one writes a thread-hostile class on purpose; such classes result from the fa
 These categories (apart from thread-hostile) correspond roughly to the thread safety annotations in Java Concurrency in Practice, which are @Immutable, @ThreadSafe, and @NotThreadSafe. 
 The UNCONDITIONALLY and CONDITIONALLY thread-safe categories in the above taxonomy are both covered under the THREADSAFE annotation.
 
-Documenting a conditionally thread-safe class requires care. You must indicate which invocation sequences require external synchronization, and which lock (or in rare cases, which locks) must be acquired to execute these sequences. Typically it is the lock on the instance itself, but there are exceptions. If an object represents a view on some other object, the client generally must synchronize on the backing object, so as to prevent its direct modification.
+Documenting a conditionally thread-safe class requires care. You must indicate which invocation sequences require external synchronization, and which lock (or in rare cases, which locks) must be acquired to execute these sequences. 
+Typically it is the lock on the instance itself, but there are exceptions. If an object represents a view on some other object, the client generally must synchronize on the BACKING OBJECT, so as to prevent its DIRECT MODIFICATION.
 
 It is imperative that the user manually synchronize on the returned map when iterating over any of its collection views:
 
@@ -255,21 +264,24 @@ synchronized(map) {    			// Synchronizing on "map", not s!
 
 Failure to follow this advice may result in non-deterministic behavior.
 
-The description of a class’s thread safety generally belongs in its documentation comment, but methods with special thread safety properties should describe these properties in their own documentation comments. It is not necessary to document the immutability of enum types. Unless it is obvious from the return type, static factories must document the thread safety of the returned object, as demonstrated by Collections.synchronizedMap (above).
+The description of a class’s thread safety generally belongs in its documentation comment, but methods with special thread safety properties should describe these properties in their own documentation comments. 
+It is not necessary to document the immutability of enum types. Unless it is obvious from the return type, static factories must document the thread safety of the returned object, as demonstrated by Collections.synchronizedMap (above).
 
-When a class commits to using a publicly accessible lock, it enables clients to execute a sequence of method invocations atomically, but this flexibility comes at a price. It is incompatible with high-performance internal concurrency control.
+When a class commits to using a PUBLICLY ACCESSIBLE LOCK, it enables clients to execute a sequence of method invocations atomically, but this flexibility comes at a price. 
+It is incompatible with HIGH-PERFORMANCE INTERNAL CONCURRENCY CONTROL.
 Also, a client can mount a denial-of-service attack by holding the publicly accessible lock for a prolonged period. This can be done accidentally or intentionally.
 
-To prevent this denial-of-service attack, you can use a private lock object instead of using synchronized methods (which imply a publicly accessible lock):
+To prevent this denial-of-service attack, you can use a PRIVATE LOCK OBJECT instead of using synchronized methods (which imply a publicly accessible lock):
 Because the private lock object is inaccessible to clients of the class, it is impossible for them to interfere with the object’s synchronization. In effect, we are applying the advice of Item 13 by encapsulating the lock object within the object it synchronizes.
 
-Note that the lock field is declared final. This prevents you from inadvertently changing its contents, which could result in catastrophic unsynchronized access to the containing object (Item 66). We are applying the advice of Item 15, by minimizing the mutability of the lock field.
+Note that the LOCK FIELD IS DECLARED FINAL. This prevents you from inadvertently changing its contents, which could result in catastrophic unsynchronized access to the containing object (Item 66). We are applying the advice of Item 15, by minimizing the mutability of the lock field.
 
 To reiterate, the PRIVATE LOCK OBJECT IDIOM can be used only on UNCONDITIONALLY thread-safe classes. 
 CONDITIONALLY thread-safe classes CAN’T USE THIS IDIOM because they must document WHICH LOCK THEIR CLIENTS ARE TO ACQUIRE when performing certain method invocation sequences.
 
 The PRIVATE LOCK OBJECT IDIOM is particularly well-suited to CLASSES DESIGNED FOR INHERITANCE (Item 17). 
-If such a class were to use its instances for locking, a subclass could easily and unintentionally interfere with the operation of the base class, or vice versa. By using the same lock for different purposes, the subclass and the base class could end up “stepping on each other’s toes.” This is not just a theoretical problem. For example, it happened with the Thread class 
+If such a class were to use its instances for locking, a subclass could easily and unintentionally interfere with the operation of the base class, or vice versa. 
+By using the same lock for different purposes, the subclass and the base class could end up “stepping on each other’s toes.” This is not just a theoretical problem. For example, it happened with the Thread class 
 
 To summarize, every class should clearly document its thread safety properties with a carefully worded prose description or a thread safety annotation. The synchronized modifier plays no part in this documentation. Conditionally thread-safe classes must document which method invocation sequences require external synchronization, and which lock to acquire when executing these sequences. If you write an unconditionally thread-safe class, consider using a private lock object in place of synchronized methods. This protects you against synchronization interference by clients and subclasses and gives you the flexibility to adopt a more sophisticated approach to concurrency control in a later release.
 
@@ -291,7 +303,7 @@ Here is a typical declaration for a normally initialized instance field. Note th
 private final FieldType field = computeFieldValue();
 
 If you use lazy initialization to break an initialization circularity, use a synchronized accessor, as it is the simplest, clearest alternative:
-// Lazy initialization of instance field - synchronized accessor
+// Lazy initialization of instance field - SYNCHRONIZED ACCESSOR
 private FieldType field;
 synchronized FieldType getField() { 
 	if (field == null) field = computeFieldValue(); 
@@ -310,11 +322,12 @@ static FieldType getField() { return FieldHolder.field; }
 When the getField() method is invoked for the first time, it reads FieldHolder.field for the first time, causing the FieldHolder class to get initialized. 
 The beauty of this idiom is that the getField() method IS NOT SYNCHRONIZED AND PERFORMS ONLY A FIELD ACCESS, so lazy initialization adds practically nothing to the cost of access. A modern VM will synchronize field access only to initialize the class. Once the class is initialized, the VM will patch the code so that subsequent access to the field does not involve any testing or synchronization.
 
-If you need to use lazy initialization for performance on an instance field, use the double-check idiom. This idiom avoids the cost of locking when accessing the field after it has been initialized (Item 67). The idea behind the idiom is to check the value of the field twice (hence the name double-check): once without locking, and then, if the field appears to be uninitialized, a second time with locking. Only if the second check indicates that the field is uninitialized does the call initialize the field. Because there is no locking if the field is already initialized, it is critical that the field be declared volatile (Item 66).
+If you need to use lazy initialization for performance on an instance field, use the DOUBLE-CHECK IDIOM. 
+This idiom avoids the cost of locking when accessing the field after it has been initialized (Item 67). The idea behind the idiom is to check the value of the field twice (hence the name double-check): once without locking, and then, if the field appears to be uninitialized, a second time with LOCKING. Only if the second check indicates that the field is uninitialized does the call initialize the field. Because there is no locking if the field is already initialized, it is critical that the field be declared volatile (Item 66).
 
 This code may appear a bit convoluted. In particular, the need for the local variable result may be unclear. What this variable does is to ensure that field is read only once in the common case where it’s already initialized. While not strictly necessary, this may improve performance and is more elegant by the standards applied to low-level concurrent programming. On my machine, the method above is about 25 percent faster than the obvious version without a local variable.
 
-Prior to release 1.5, the double-check idiom did not work reliably because the semantics of the volatile modifier were not strong enough to support it. 
+Prior to release 1.5, the DOUBLE-CHECK IDIOM did not work reliably because the semantics of the VOLATILE MODIFIER were not strong enough to support it. 
 THE MEMORY MODEL INTRODUCED IN RELEASE 1.5 fixed this problem. 
 Today, the DOUBLE-CHECK IDIOM is the technique of choice for lazily initializing an instance field. While you can apply the double-check idiom to static fields as well, there is no reason to do so: the LAZY INITIALIZATION HOLDER CLASS IDIOM is a better choice.
 
@@ -325,29 +338,42 @@ It is, not surprisingly, known as the SINGLE-CHECK IDIOM. Here is how it looks. 
 
  All of the initialization techniques discussed in this item apply to primitive fields as well as object reference fields. When the double-check or single-check idiom is applied to a numerical primitive field, the field’s value is checked against 0 (the default value for numerical primitive variables) rather than null.
 
-If you don’t care whether every thread recalculates the value of a field, and the type of the field is a primitive other than long or double, then you may choose to remove the volatile modifier from the field declaration in the single-check idiom. This variant is known as the racy single-check idiom. It speeds up field access on some architectures, at the expense of additional initializations (up to one per thread that accesses the field). This is definitely an exotic technique, not for everyday use. It is, however, used by String instances to cache their hash codes.
+If you don’t care whether every thread recalculates the value of a field, and the type of the field is a primitive [other than long or double], then you may choose to REMOVE THE VOLATILE MODIFIER from the field declaration in the single-check idiom. This variant is known as the RACY SINGLE-CHECK IDIOM. 
+It speeds up field access on some architectures, at the expense of additional initializations (up to one per thread that accesses the field). This is definitely an exotic technique, not for everyday use. It is, however, used by String instances to cache their hash codes.
 
-In summary, you should initialize most fields normally, not lazily. If you must initialize a field lazily in order to achieve your performance goals, or to break a harmful initialization circularity, then use the appropriate lazy initialization technique. For instance fields, it is the double-check idiom; for static fields, the lazy initialization holder class idiom. For instance fields that can tolerate repeated initialization, you may also consider the single-check idiom.
+In summary, you should initialize MOST FIELDS NORMALLY, not lazily. 
+If you must initialize a field lazily in order to achieve your performance goals, or to break a harmful initialization circularity, then use the appropriate lazy initialization technique. 
+1) For instance fields, it is the double-check idiom; 
+2) for static fields, the lazy initialization holder class idiom. 
+3) For instance fields that can tolerate repeated initialization, you may also  consider the single-check idiom (ПРИ ЭТОМ У ТЕБЯ VOLATILE ПЕРЕМЕННАЯ).
 
 ***************************************************************
-*** Item 72: Don’t depend on the thread scheduler
+*** Item 72: Don’t depend on the thread scheduler 
+(ОТ СИСТЕМНОГО ПЛАНИРОВЩИКА ПОТОКОВ)
 
 When many threads are runnable, the thread scheduler determines which ones get to run, and for how long. Any reasonable operating system will try to make this determination fairly, but the policy can vary. Therefore, well-written programs shouldn’t depend on the details of this policy. Any program that relies on the thread scheduler for correctness or performance is likely to be nonportable.
 
-The best way to write a robust, responsive, portable program is to ensure that the average number of runnable threads is not significantly greater than the number of processors. This leaves the thread scheduler with little choice: it simply runs the runnable threads till they’re no longer runnable. The program’s behavior doesn’t vary too much, even under radically different thread-scheduling policies. Note that the number of runnable threads isn’t the same as the total number of threads, which can be much higher. Threads that are waiting are not runnable.
+The best way to write a robust, responsive, portable program is to ensure that the AVERAGE NUMBER OF RUNNABLE THREADS IS NOT SIGNIFICANTLY GREATER THAN THE NUMBER OF PROCESSORS. 
+This leaves the thread scheduler with little choice: it simply runs the runnable threads till they’re no longer runnable. The program’s behavior doesn’t vary too much, even under radically different thread-scheduling policies. Note that the number of runnable threads isn’t the same as the total number of threads, which can be much higher. Threads that are waiting are not runnable.
 
-The main technique for keeping the number of runnable threads down is to have each thread do some useful work and then wait for more. Threads should not run if they aren’t doing useful work. In terms of the Executor Framework (Item 68), this means sizing your thread pools appropriately, and keeping tasks reasonably small and independent of one another. Tasks shouldn’t be too small, or dispatching overhead will harm performance.
+The main technique for keeping the number of runnable threads down is TO HAVE EACH THREAD DO SOME USEFUL WORK AND THEN WAIT FOR MORE. 
+Threads should not run if they aren’t doing useful work. In terms of the Executor Framework (Item 68), this means SIZING YOUR THREAD POOLS APPROPRIATELY, and keeping tasks reasonably small and independent of one another. Tasks shouldn’t be too small, or dispatching overhead will harm performance.
 
-Threads should not busy-wait, [т.е. ждать, выполняя какую-то пустую работу]
+!!THREADS SHOULD NOT BUSY-WAIT, [т.е. ждать, выполняя какую-то пустую работу]
 repeatedly checking a shared object waiting for something to happen. Besides making the program vulnerable to the vagaries of the scheduler, busy-waiting greatly increases the load on the processor, reducing the amount of useful work that others can accomplish. 
 
-When faced with a program that barely works because some threads aren’t getting enough CPU time relative to others, resist the temptation to “fix” the program by putting in calls to Thread.yield(). You may succeed in getting the program to work after a fashion, but it will not be portable. The same yield invocations that improve performance on one JVM implementation might make it worse on a second and have no effect on a third. Thread.yield() has no testable semantics. A better course of action is to restructure the application to reduce the number of concurrently runnable threads.
+When faced with a program that barely works because some threads aren’t getting enough CPU time relative to others, resist the temptation to “fix” the program by putting in calls to Thread.yield(). 
+You may succeed in getting the program to work after a fashion, but it will not be portable. The same yield invocations that improve performance on one JVM implementation might make it worse on a second and have no effect on a third. Thread.yield() has no testable semantics. 
+A BETTER COURSE OF ACTION IS TO RESTRUCTURE THE APPLICATION TO REDUCE THE NUMBER OF CONCURRENTLY RUNNABLE THREADS.
 
-A related technique, to which similar caveats apply, is adjusting thread priorities. Thread priorities are among the least portable features of the Java platform. It is not unreasonable to tune the responsiveness of an application by tweaking a few thread priorities, but it is rarely necessary and is not portable. It is unreasonable to solve a serious liveness problem by adjusting thread priorities. The problem is likely to return until you find and fix the underlying cause.
+A related technique, to which similar caveats apply, is adjusting thread priorities. Thread priorities are among the least portable features of the Java platform. 
+It is not unreasonable to tune the responsiveness of an application by tweaking a few thread priorities, but it is rarely necessary and is not portable. It is unreasonable to solve a serious liveness problem by adjusting thread priorities. The problem is likely to return until you find and fix the underlying cause.
 
-!! It is within specification for Thread.yield to do nothing at all, simply returning control to its caller. Some modern VMs actually do this. Therefore, you should use Thread.sleep(1) instead of Thread.yield for concurrency testing. Do not use Thread.sleep(0), which can return immediately.
+!! It is within specification for Thread.yield() to do nothing at all, simply returning control to its caller. Some modern VMs actually do this. Therefore, you should use Thread.sleep(1) instead of Thread.yield() for concurrency testing. Do not use Thread.sleep(0), which can return immediately.
 
-In summary, do not depend on the thread scheduler for the correctness of your program. The resulting program will be neither robust nor portable. As a corollary, do not rely on Thread.yield or thread priorities. These facilities are merely hints to the scheduler. Thread priorities may be used sparingly to improve the quality of service of an already working program, but they should never be used to “fix” a program that barely works.
+In summary, do not depend on the thread scheduler for the correctness of your program. The resulting program will be neither robust nor portable. 
+!!! As a corollary, do not rely on Thread.yield() or thread priorities. 
+These facilities are merely hints to the scheduler. Thread priorities may be used sparingly to improve the quality of service of an already working program, but they should never be used to “fix” a program that barely works.
 
 ***************************************************************
 *** Item 73: Avoid thread groups
