@@ -1,0 +1,123 @@
+Всеми этими зверушками руководил Application Context:
+пинал, запускал сканнер, фабрику, BPP, складировал бины и т.п.
+
+ConfigFileApplicationListener = EPP + ApplicationListener
+СИНИЙ С УШАМИ = помесь ЧЕБУРАШКИ И СПАЙДЕР-МЕНА
+
+SpringApplication = КАРЛСОН
+environment = Дед с большой корзиной
+
+SpringApplication дает ConfigFileApplicationListener-У environment и себя
+чтобы синий_С_ушами донастроил деда и карлсона
+
+ConfigFileApplicationListener = синий_С_ушами
+Сначала работает как Listener, и слушает ивэнты:
+● ApplicationStartingEvent //???
+● ApplicationEnvironmentPreparedEvent
+● ApplicationPreparedEvent
+
+А потом работает как EnvironmentPostProcessor, и пэтому считывает и загружает:
+● application.yml
+● application.properties
+● env vars
+● cmd args
+
+Синий при onApplicationEnvironmentPreparedEvent говорит SpringFactoriesLoader = МАШИНА С КРЮКОМ: "Сгоняй за EnvironmentPostProcessor-ами"
+
+МАШИНА привезла парочку Спайдер-Менов, Синий их отсортировал, и у каждого из них синий запутит метод postProcessEnvironment(..), но т.к. он сам явл-ся EPP, то такой же метод он запустит и у себя.
+Как листенер он нашёл своих братьев, а потом сам вместе с ними как EPP поехал выполнять свой postProcessEnvironment
+***********************************
+В спринг буте больше ивентов и они делятся на 2 вида:
+доступные всем листерам, и только избранныи EPP (которые происходят раньше)
+
+***********************************
+Как происходит работа спринг бута:
+1) Карлсон нашёл всёх листенеров: слона-джамбо, синего с ушами, чебурашку
+2) Построил и заполнил енваронмент с их помощью (вызывая из синих их грузовиков SpringFactoriesLoader)
+3) Потом только_находит все ApplicationInitializer-ы (Пасечники - которые инициализируют улей) (нашёл - сложил - работы пока не давал)
+4) Карслон создаёт контекст :  context = createApplicationContext();
+5) После того как построил контекст - запускает работать всех пасечников
+Это всё происходит на стадии prepareContext(context, environment, listeners,..)
+● run all ApplicationContextInitializer
+● load sources
+6) МАЛЫШ стал BeanDefinitionLoader-ом, который первый заполняет REGISTRY, использую при этом различных подходящий ридеров для конфигураций.
+org.springframework.boot.SpringApplication#load
+org.springframework.boot.BeanDefinitionLoader#load(java.lang.Object)
+7) BeanDefinitionRegistry = ведро с мёдом, часть пчелы, часть главного BeanFactory
+И Малыш напихал эти BeanDefinition-ы в это ведро-Registry.
+8)начинается этап Refresh context
+
+***********************************
+Дальше идёт магия из аннотации:
+@SpringBootApplication
+→ @ComponentScan
+→ @Configuration
+→ @EnableAutoConfiguration
+
+Всё настравиавется в @Import({EnableAutoConfigurationImportSelector.class})
+*ImportSelector = ОСЁЛ
+
+@Import(Some.class) может принимать в качестве аргумента:
+1) @Configuration
+2) ImportSelector
+3) ImportBeanDefinitionRegistrar = змей кусает себя за хвост
+BeanDefinitionRegistryPostProcessor = винни-пух, совмещает змею и BFPP
+
+Путь BeanDefinition
+– ImportBeanDefinitionRegistrar
+– BeanDefinitionRegistryPostProcessor
+– ImportSelector
+– postProcessBeanFactory
+
+ImportSelector ВЕРНЁТ String[] selectImports -- ЭТО список названий конфигураций, которые будут резолвится (или же МАССИВ БИНОВ, К-Е НАДО СОЗДАТЬ)
+
+Кто ищет все ImportSelectorsи находит осла?
+Этого осла запускает ШРЭК = ConfigurationClassParser
+ШРЭК - Он никто и создаётся через new
+Его задача искать в тех конфигурациях, которые ему дают:
+@Import
+@ImportResource
+@Component
+@ComponentScan
+И вытягивать дополнительные конфигурации
+
+А кто даёт шреку начальные конфигурации?
+Шрэка запускает винни-пух = BeanDefinitionRegistryPostProcessor
+у винни-пуха есть ложка=ридер, которой парсит все эти BeanDefinition-ы за несколько проходов.
+имплементация виннипуха - это ConfigurationClassPostProcessor, его задача развернуть из sources остальные конфигурации/бины
+
+Два вопроса
+1. Откуда взялся ConfigurationClassPostProcessor?
+2. Какие у него начальные конфигурации и где он их взял? 
+Он явл-ся частью контекста, его создал контекст.
+
+ConfigurationClassParser
+● метод parse рекурсивно сканирует полученный список конфигураций
+● добавляет и парсит BeanDefinition из 
+ImportSelector/ImportBeanDefinitionRegistrar/ComponentScan/Import
+● фильтрует BeanDefintion с помощью ConditionEvaluator
+● возращает все BeanDefinition найденных конфигураций, которые 
+передаются в BeanDefinitionReader
+
+*************************************
+Потом есть Conditional, который проверяются по многу раз, т.к. рекурсиавно эти BeanDefinition-ы парсятся, и него етсь метод shouldSkip, 
+есть BeanDefinition у которых beanName=null, т.к. они потом скорее всего отфильтруются
+
+
+BeanDefinitionReader
+● Обходит полученные конфигурации
+● Фильтрует не нужные с помощью @Condition
+● загружает @Bean
+● загружает *.xml *.groovy @ImportResource
+● загружает @Import(*Registrar)
+● именует BeanDefinition и добавляет в registry
+
+Немного выводов
+● Spring Boot вышел за пределы Spring Context
+● Starter от команды Spring отличаются от public convention
+○ не всегда в лучшую сторону
+● Три этапа построения контексты
+○ #1 Загрузка исходны классов/конфигураций – sources
+○ #2 Загрузка BeanDefinitionс помощью ImportSelector
+○ #3 Загрузка @Bean и прочего внутриBeanDefinition`ов из #2
+● в Spring Boot это космос, не магия
