@@ -1,7 +1,32 @@
 bean factory post processor
+BeanFactoryPostProcessor = ПАУКИ
 
 Позволяет настраивать bean definition ещё до того как будут создаваться бины из этого дефинишена.
 Также может дополнительно поднастроить BeanFactory.
 
 Например, подставить значение из пропертей в поле вида ${llogin}
+Для этого ис-ся специальный BFPP: 
+*****************************************
+
+ClassPathBeanDefinitionScanner = КРОТ = ОН ResourceLoaderAware
+приходит когда вызывается:
+1) <context:component-scan basePackage="..">
+2) new AnnotationConfigApplicationContext(..)
+он запускается и ищет все бины аннотированные @Component или любой другой аннотацией, которая включает в себя @Component.
+и создаёт дополнительные BeanDefinition-ы из найденных аннотированных классов.
+
+*****************************************
+Основной недостаток xml конфигурации - в том что если бин нуждается в какой-то кастомной логике -- то это очень сложно сделать в xml.
+
+AnnotatedBeanDefinitionReader = ПАРСИТ JAVA КОНФИГУРАЦИЮ,
+он лежит внутри ApplicationContext.
+
+Кто обрабатывает JavaConfig?
+ConfigurationClassPostProcessor = это особый BeanFactoryPostProcessor, который добавляет дополнительные BeanDefinition-ы из java класса (из методов с аннотацией @Bean).
+этот BFPP регистрируется из AnnotationConfigApplicationContext.
+
+А также в этом java config классе могут быть три другие аннотации:
+@Import
+@ImportResource
+@ComponentScan(basePackages = {"by.den.spring"})
 
