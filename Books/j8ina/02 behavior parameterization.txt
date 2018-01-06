@@ -1,0 +1,24 @@
+BEHAVIOR PARAMETERIZATION
+Behavior parameterization is a software development pattern that lets you handle frequent requirement changes. In a nutshell, it means taking a block of code and making it available without executing it. This block of code can be called later by other parts of your programs, which means that you can defer the execution of that block of code. For instance, you could pass the block of code as an argument to another method that will execute it later. As a result, the method’s behavior is parameterized based on that block of code. For example, if you process a collection, you may want to write a method that:
+ - Can do “something” for every element of a list
+ - Can do “something else” when you finish processing the list
+ - Can do “yet something else” if you encounter an error
+
+This is what behavior parameterization refers to. Here’s an analogy: your roommate knows how to drive to the supermarket and back home. So you can tell him to buy a list of things such as bread, cheese, and wine. This is equivalent to calling a method goAndBuy with a list of products as argument. But one day you’re at the office and you need him to do something he’s never done before: pick up a package from the post office. You now need to pass him a list of instructions: go to the post office, use this reference number, talk to the manager, and pick up the parcel. You could pass him the list of instructions by email, and when he receives it, he can go ahead and follow the instructions. You’ve now done something a bit more advanced that’s equivalent to a method: go, which can take different new behaviors as arguments and execute them.
+
+..........
+This solution is extremely bad. First, the client code looks terrible. What do true and false mean? In addition, this solution doesn’t cope well with changing requirements. What if the farmer asks you to filter with different attributes of an apple, for example, its size, its shape, its origin, and so on? Furthermore, what if the farmer asks you for more complicated queries that combine attributes, such as green apples that are also heavy? You’d either have multiple duplicated filter methods or one giant, very complex method. So far you’ve parameterized the filterApples method with values such as a String, an Integer, or a boolean. This can be fine for certain well-defined problems. But in this case what you need is a better way to tell your filterApples method the selection criteria for apples. In the next section we describe how to make use of behavior parameterization to attain that flexibility.
+
+*************************
+2.2. Behavior parameterization
+
+ PREDICATE - (that is, a function that returns a boolean)
+
+STRATEGY DESIGN PATTERN, which lets you define a family of algorithms, encapsulate each algorithm (called a strategy), and select an algorithm at run-time.
+In this case the family of algorithms is ApplePredicate and the different strategies are AppleHeavyWeightPredicate and AppleGreenColorPredicate.
+
+But how can you make use of the different implementations of ApplePredicate? You need your filterApples method to accept ApplePredicate objects to test a condition on an Apple. This is what behavior parameterization means: the ability to tell a method to take multiple behaviors (or strategies) as parameters and use them internally to accomplish different behaviors.
+
+To achieve this in the running example, you add a parameter to the filterApples method to take an ApplePredicate object. This has a great software engineering benefit: you can now separate the logic of iterating the collection inside the filterApples method with the behavior you want to apply to each element of the collection (in this case a predicate).
+
+2.2.1. Fourth attempt: filtering by abstract criteria

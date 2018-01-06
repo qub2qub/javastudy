@@ -1,0 +1,85 @@
+1.1.2. STREAM processing
+The first programming concept is stream processing. For introductory purposes, a stream is a sequence of data items that are conceptually produced one at a time—a program might read items from an input stream one by one and similarly write items to an output stream. The output stream of one program could well be the input stream of another.
+
+The key motivation for this is that you can now program in Java 8 at a higher level of abstraction, structuring your thoughts of turning a stream of this into a stream of that (similarly to how you think when writing database queries) rather than one item at a time. Another advantage is that Java 8 can transparently run your pipeline of Stream operations on several CPU cores on disjoint parts of the input—this is parallelism almost for free instead of hard work using Threads. 
+
+1.1.3. Passing code to methods with BEHAVIOR PARAMETERIZATION
+The second programming concept added to Java 8 is the ability to pass a piece of code to an API. This sounds awfully abstract. 
+Java 8 adds the ability to pass methods (your code) as arguments to other methods.
+ The Streams API is built on the idea of passing code to parameterize the behavior of its operations.
+
+1.1.4. Parallelism and shared mutable data
+You may have to make some small changes in the way you code the behavior passed to stream methods.
+You must provide behavior that is safe to execute concurrently on different pieces of the input. Typically this means writing code that doesn’t access shared mutable data to do its job. Sometimes these are referred to as pure functions or side-effect-free functions or stateless functions/
+
+****
+Two of these points (no shared mutable data and the ability to pass methods and functions—code—to other methods) are the cornerstones of what’s generally described as the paradigm of functional programming
+
+The no-shared-mutable-data requirement means that a method is perfectly described solely by the way it transforms arguments to results; in other words, it behaves as a mathematical function and has no (visible) side effects.
+***
+
+A takeaway line might be this: languages need to evolve to track changing hardware or programmer expectations 
+
+1.2. Functions in Java
+The word function in programming languages is commonly used as a synonym for method, particularly a static method; this is in addition to it being used for mathematical function, one without side effects. Fortunately, as you’ll see, when Java 8 refers to functions these usages very nearly coincide.
+
+Java 8 adds functions as new forms of value. These facilitate the use of Streams, which Java 8 provides to exploit parallel programming on multicore processors.
+
+1.2.1. Methods and lambdas as first-class citizens
+Experiments in other languages such as Scala and Groovy have determined that allowing concepts like methods to be used as first-class values made programming easier by adding to the toolset available to programmers
+
+METHOD REFERENCES
+:: syntax (meaning “use this method as a value”);
+One advantage is that your code now reads closer to the problem statement.
+in Java 8 when you write File::isHidden you create a method reference, which can similarly be passed around.
+
+As well as allowing (named) methods to be first-class values, Java 8 allows a richer idea of functions as values, including lambdas[4] (or anonymous functions).
+
+*********
+The word PREDICATE is often used in mathematics to mean something function-like that takes a value for an argument and returns true or false.
+
+a new notation (anonymous functions, or LAMBDAS)
+
+1.3. Streams
+Using a collection, you’re managing the iteration process yourself. You need to iterate through each element one by one using a for-each loop and then process the elements. We call this way of iterating over data external iteration. In contrast, using the Streams API, you don’t need to think in terms of loops at all. The data processing happens internally inside the library. We call this idea internal iteration. 
+
+COLLECTIONS is mostly about storing and accessing data, 
+whereas STREAMS is mostly about describing computations on data.
+
+ For example, the method Collections.sort() really belongs to the List interface but was never included. Ideally, you’d like to do list.sort(comparator) instead of Collections.sort(list, comparator). This may seem trivial but, prior to Java 8, 
+ YOU CAN UPDATE AN INTERFACE ONLY IF YOU UPDATE ALL THE CLASSES THAT IMPLEMENT IT — a logistic nightmare! This issue is resolved in Java 8 by default methods.
+
+Indeed, although the primary meaning of functional in functional programming means “using functions as first class values,” it often has a secondary nuance of “no interaction during execution between components.”
+
+************************
+1.4. Default methods
+Default methods are added to Java 8 largely to support library designers by enabling them to write more evolvable interfaces.
+-they facilitate program evolution rather than helping write any particular program
+
+There are many alternative collection frameworks that implement interfaces from the Collections API. Adding a new method to an interface means all concrete classes must provide an implementation for it. Language designers have no control on all existing implementations of Collections, so you have a bit of a dilemma: how can you evolve published interfaces without disrupting existing implementations?
+
+The Java 8 solution is to break the last link—an interface can now contain method signatures for which an implementing class doesn’t provide an implementation! So who implements them? The missing method bodies are given as part of the interface (hence default implementations) rather than in the implementing class.
+
+1.5. Other good ideas from functional programming
+The previous sections introduced two core ideas from functional programming that are now part of Java: using methods and lambdas as first-class values, and the idea that calls to functions or methods can be efficiently and safely executed in parallel in the absence of mutable shared state. Both of these ideas are exploited by the new Streams API
+
+Tony Hoare, one of the giants of computer science, said in a presentation at QCon London 2009:
+	I call it my billion-dollar mistake. It was the invention of the null reference in 1965.... I couldn’t resist the temptation to put in a null reference, simply because it was so easy to implement.
+
+In Java 8 there’s an Optional<T> class that, if used consistently, can help you avoid NullPointer exceptions. It’s a container object that may or not contain a value. Optional<T> includes methods to explicitly deal with the case where a value is absent, and as a result you can avoid NullPointer exceptions. In other words, it uses the type system to allow you to indicate when a variable is anticipated to potentially have a missing value.
+
+A second idea is that of (STRUCTURAL) PATTERN MATCHING:
+" a function is defined by cases, rather than using if-then-else."
+
+In object-oriented design, the visitor pattern is a common pattern used to walk through a family of classes (such as the different components of a car: wheel, engine, chassis, and so on) and apply an operation to each object visited. One advantage of pattern matching is that a compiler can report common errors such as “Class Brakes is part of the family of classes used to represent components of class Car. You forgot to explicitly deal with it.”
+
+1.6. Summary
+Following are the key concepts you should take away from this chapter:
+
+1) Keep in mind the idea of language ecosystem and the consequent evolve-or-wither pressure on languages. Although Java may be supremely healthy at the moment, you can recall other healthy languages such as COBOL that failed to evolve.
+2) The core additions to Java 8 provide exciting new concepts and functionality to ease the writing of programs that are both effective and concise.
+3) Multicore processors aren’t fully served by existing Java programming practice.
+4) Functions are first-class values; remember how methods can be passed as functional values and how anonymous functions (lambdas) are written.
+5) The Java 8 concept of Streams generalizes many aspects of Collections but both enables more readable code and allows elements of a stream to be processed in parallel.
+6) You can use a default method in an interface to provide a method body if an implementing class chooses not to do so.
+7) Other interesting ideas from functional programming include dealing with null and using pattern matching.
