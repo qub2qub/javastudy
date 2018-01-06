@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>New in Java 8</title>
+    <link rel="stylesheet" href="grey.css">
+	<style type="text/css">
+	pre, div.note {
+		font-family: "Trebuchet MS",Tahoma,Arial;
+		font-size: 18px;
+		font-weight: bold;
+		border: 1px solid #000;
+		background-color: #999;
+		padding: 5px;
+	}
+	body {
+		font-family: Arial,Tahoma,"Trebuchet MS";
+		font-size: 20px;
+		background-color: #c0c0c0;
+	}
+	table {
+		table-layout: fixed;
+		border-collapse: collapse;
+		border-spacing: 0;
+	}
+	td, th {
+		border: 1px solid black;
+		word-wrap: break-word;
+	}
+	div.comment-container {
+    		border: 1px solid #920000;
+    }
+	</style>
+</head>
+<body>
+<a href="https://leanpub.com/whatsnewinjava8/read">src</a>
+<div id="leanpub-main" class="kramdown">
+<h2 id="leanpub-auto-preface">Preface</h2>
+
+<p>Like many Java developers, the first time I heard about lambda expressions it piqued my interest. 
+Also like many others, I was disappointed when it was set back. 
+However, it is better late than never. </p>
+
+<p>Java 8 is a giant step forward for the Java language. Writing this book has forced me to learn a lot more about it.
+In Project Lambda, Java gets a new closure syntax, method-references, and default methods on interfaces. 
+It manages to add many of the features of functional languages without losing the clarity and simplicity Java developers have come to expect.</p>
+
+<p>Aside from Project Lambda, Java 8 also gets a new Date and Time API (JSR 310), the Nashorn JavaScript engine, and removes the Permanent Generation from the HotSpot virtual machine, among other changes.</p>
+
+<p>I would like to acknowledge the following people for providing valuable resources:</p>
+
+<ul>
+  <li>Brian Goetz – <a href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-final.html">“State of the Lambda”</a>
+</li>
+  <li>Aleksey Shipilev – <a href="https://github.com/shipilev/jdk8-lambda-samples">jdk8-lambda-samples</a>
+</li>
+  <li>Richard Warburton – <a href="http://shop.oreilly.com/product/0636920030713.do">“Java 8 Lambdas”</a>
+</li>
+  <li>Julien Ponge – “Oracle Nashorn” in the Jan./Feb. 2014 issue of Java Magazine.</li>
+  <li>Venkat Subramaniam – <a href="http://blog.agiledeveloper.com/">agiledeveloper.com</a>
+</li>
+  <li>All of the developers behind Java 8.</li>
+  <li>The developers of Guava, joda-time, Groovy, and Scala.</li>
+</ul>
+
+
+
+<h2 id="leanpub-auto-overview">
+<span class="section-number">1. </span>Overview</h2>
+
+<p>This book is a short introduction to Java 8.
+After reading it, you should have a basic understanding of the new features and be ready to start using it.</p>
+
+<p>This book assumes that you have a good understanding of Java the language and the JVM.
+If you’re not familiar with the language, including features of Java 7, it might be hard to follow some of the examples. </p>
+
+<p>Java 8 includes the following:</p>
+
+<ul>
+  <li>Lambda expressions</li>
+  <li>Method references</li>
+  <li>Default Methods (Defender methods)</li>
+  <li>A new Stream API.</li>
+  <li>Optional</li>
+  <li>A new Date/Time API.</li>
+  <li>Nashorn, the new JavaScript engine</li>
+  <li>Removal of the Permanent Generation</li>
+  <li>and more…</li>
+</ul>
+
+<p>The best way to read this book is with a Java 8 supporting IDE running so you can try out the new features.</p>
+
+<aside class="tip blurb">
+    <p>Code examples can be found on <a href="https://github.com/adamd/hellojava8">github</a>.</p>
+
+</aside>
+
+
+<h2 id="leanpub-auto-lambda-expressions">
+<span class="section-number">2. </span>Lambda Expressions</h2>
+
+<p>The biggest new feature of Java 8 is language level support for <em>lambda expressions</em> (Project Lambda). 
+A lambda expression is like syntactic sugar for an anonymous class<sup id="fnref-not"><a href="#fn-not" rel="footnote">1</a></sup> with one method whose type is inferred.
+However, it will have enormous implications for simplifying development.</p>
+
+<h3 id="leanpub-auto-syntax">
+<span class="section-number">2.1 </span>Syntax</h3>
+
+<p>The main syntax of a lambda expression is “parameters -&gt; body”.
+The compiler can usually use the context of the lambda expression to determine the functional interface<sup id="fnref-fi"><a href="#fn-fi" rel="footnote">2</a></sup> being used and the types of the parameters.
+There are four important rules to the syntax:</p>
+
+<ul>
+  <li>Declaring the types of the parameters is optional.</li>
+  <li>Using parentheses around the parameter is optional if you have only one parameter. </li>
+  <li>Using curly braces is optional (unless you need multiple statements).</li>
+  <li>The “return” keyword is optional if you have a single expression that returns a value.</li>
+</ul>
+
+<p>Here are some examples of the syntax:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="o">()</code> <code class="o">-&gt;</code> <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="k">this</code><code class="o">)</code>
+<code class="lineno">2 </code><code class="o">(</code><code class="n">String</code> <code class="n">str</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">str</code><code class="o">)</code>
+<code class="lineno">3 </code><code class="n">str</code> <code class="o">-&gt;</code> <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">str</code><code class="o">)</code>
+<code class="lineno">4 </code><code class="o">(</code><code class="n">String</code> <code class="n">s1</code><code class="o">,</code> <code class="n">String</code> <code class="n">s2</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="o">{</code> <code class="k">return</code> <code class="n">s2</code><code class="o">.</code><code class="na">length</code><code class="o">()</code> <code class="o">-</code> <code class="n">s1</code><code class="o">.</code><code class="na">length</code><code class="o">();</code> <code class="o">}</code>
+<code class="lineno">5 </code><code class="o">(</code><code class="n">s1</code><code class="o">,</code> <code class="n">s2</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">s2</code><code class="o">.</code><code class="na">length</code><code class="o">()</code> <code class="o">-</code> <code class="n">s1</code><code class="o">.</code><code class="na">length</code><code class="o">()</code>
+</pre></div>
+
+</figure>
+
+<p>The last expression could be used to sort a list; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Arrays</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">strArray</code><code class="o">,</code> 
+<code class="lineno">2 </code>  <code class="o">(</code><code class="n">String</code> <code class="n">s1</code><code class="o">,</code> <code class="n">String</code> <code class="n">s2</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">s2</code><code class="o">.</code><code class="na">length</code><code class="o">()</code> <code class="o">-</code> <code class="n">s1</code><code class="o">.</code><code class="na">length</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>In this case the lambda expression implements the <code>Comparator</code> interface to sort strings by length.</p>
+
+<h3 id="leanpub-auto-scope">
+<span class="section-number">2.2 </span>Scope</h3>
+
+<p>Here’s a short example of using lambdas with the Runnable interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kn">import</code> <code class="nn">static</code> <code class="n">java</code><code class="o">.</code><code class="na">lang</code><code class="o">.</code><code class="na">System</code><code class="o">.</code><code class="na">out</code><code class="o">;</code>
+<code class="lineno"> 2 </code>
+<code class="lineno"> 3 </code><code class="kd">public</code> <code class="kd">class</code> <code class="nc">Hello</code> <code class="o">{</code>
+<code class="lineno"> 4 </code>	<code class="n">Runnable</code> <code class="n">r1</code> <code class="o">=</code> <code class="o">()</code> <code class="o">-&gt;</code> <code class="n">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="k">this</code><code class="o">);</code>
+<code class="lineno"> 5 </code>	<code class="n">Runnable</code> <code class="n">r2</code> <code class="o">=</code> <code class="o">()</code> <code class="o">-&gt;</code> <code class="n">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">toString</code><code class="o">());</code>
+<code class="lineno"> 6 </code>
+<code class="lineno"> 7 </code>	<code class="kd">public</code> <code class="n">String</code> <code class="nf">toString</code><code class="o">()</code> <code class="o">{</code> <code class="k">return</code> <code class="s">"Hello, world!"</code><code class="o">;</code> <code class="o">}</code>
+<code class="lineno"> 8 </code>
+<code class="lineno"> 9 </code>	<code class="kd">public</code> <code class="kd">static</code> <code class="kt">void</code> <code class="nf">main</code><code class="o">(</code><code class="n">String</code><code class="o">...</code> <code class="n">args</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">10 </code>		<code class="k">new</code> <code class="n">Hello</code><code class="o">().</code><code class="na">r1</code><code class="o">.</code><code class="na">run</code><code class="o">();</code> <code class="c1">//Hello, world!</code>
+<code class="lineno">11 </code>		<code class="k">new</code> <code class="n">Hello</code><code class="o">().</code><code class="na">r2</code><code class="o">.</code><code class="na">run</code><code class="o">();</code> <code class="c1">//Hello, world!</code>
+<code class="lineno">12 </code>	<code class="o">}</code>
+<code class="lineno">13 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>The important thing to note is both the r1 and r2 lambdas call the <code>toString()</code> method of the Hello class. This demonstrates the scope available to the lambda.</p>
+
+<p>You can also refer to final variables or <em>effectively</em> final variables. A variable is effectively final if it is only assigned once.</p>
+
+<p>For example, using Spring’s HibernateTemplate:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">String</code> <code class="n">sql</code> <code class="o">=</code> <code class="s">"delete * from User"</code><code class="o">;</code>
+<code class="lineno">2 </code><code class="n">getHibernateTemplate</code><code class="o">().</code><code class="na">execute</code><code class="o">(</code><code class="n">session</code> <code class="o">-&gt;</code> 
+<code class="lineno">3 </code>    <code class="n">session</code><code class="o">.</code><code class="na">createSQLQuery</code><code class="o">(</code><code class="n">sql</code><code class="o">).</code><code class="na">uniqueResult</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>In the above, you can refer to the variable <code>sql</code> because it is only assigned once. 
+If you were to assign to it a second time, it would cause a compilation error.</p>
+
+<h3 id="leanpub-auto-method-references">
+<span class="section-number">2.3 </span>Method references</h3>
+
+<p>Since a lambda expression is like an object-less method, wouldn’t be nice if we could refer to existing methods instead of using a lamda expression? 
+This is exactly what we can do with <em>method references</em>.</p>
+
+<p>For example, imagine you frequently need to filter a list of Files based on file types. 
+Assume you have the following set of methods for determining a file’s type:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">public</code> <code class="kd">class</code> <code class="nc">FileFilters</code> <code class="o">{</code>
+<code class="lineno">2 </code>	<code class="kd">public</code> <code class="kd">static</code> <code class="kt">boolean</code> <code class="nf">fileIsPdf</code><code class="o">(</code><code class="n">File</code> <code class="n">file</code><code class="o">)</code> <code class="o">{</code><code class="cm">/*code*/</code><code class="o">}</code>
+<code class="lineno">3 </code>	<code class="kd">public</code> <code class="kd">static</code> <code class="kt">boolean</code> <code class="nf">fileIsTxt</code><code class="o">(</code><code class="n">File</code> <code class="n">file</code><code class="o">)</code> <code class="o">{</code><code class="cm">/*code*/</code><code class="o">}</code>
+<code class="lineno">4 </code>	<code class="kd">public</code> <code class="kd">static</code> <code class="kt">boolean</code> <code class="nf">fileIsRtf</code><code class="o">(</code><code class="n">File</code> <code class="n">file</code><code class="o">)</code> <code class="o">{</code><code class="cm">/*code*/</code><code class="o">}</code>
+<code class="lineno">5 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Whenever you want to filter a list of files, you can use a method reference as in the following example 
+(assuming you already defined a method <code>getFiles()</code> that returns a <code>Stream</code>):</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Stream</code><code class="o">&lt;</code><code class="n">File</code><code class="o">&gt;</code> <code class="n">pdfs</code> <code class="o">=</code> <code class="n">getFiles</code><code class="o">().</code><code class="na">filter</code><code class="o">(</code><code class="n">FileFilters</code><code class="o">::</code><code class="n">fileIsPdf</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">Stream</code><code class="o">&lt;</code><code class="n">File</code><code class="o">&gt;</code> <code class="n">txts</code> <code class="o">=</code> <code class="n">getFiles</code><code class="o">().</code><code class="na">filter</code><code class="o">(</code><code class="n">FileFilters</code><code class="o">::</code><code class="n">fileIsTxt</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">Stream</code><code class="o">&lt;</code><code class="n">File</code><code class="o">&gt;</code> <code class="n">rtfs</code> <code class="o">=</code> <code class="n">getFiles</code><code class="o">().</code><code class="na">filter</code><code class="o">(</code><code class="n">FileFilters</code><code class="o">::</code><code class="n">fileIsRtf</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Method references can point to:</p>
+
+<ul>
+  <li>Static methods.</li>
+  <li>Instance methods.</li>
+  <li>Methods on <em>particular</em> instances.</li>
+  <li>Constructors (ie. <code>TreeSet::new</code>)</li>
+</ul>
+
+<p>For example, using the new <code>java.nio.file.Files.lines</code> method:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Files</code><code class="o">.</code><code class="na">lines</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"Nio.java"</code><code class="o">))</code>
+<code class="lineno">2 </code>            <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">trim</code><code class="o">)</code>
+<code class="lineno">3 </code>            <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The above reads the file “Nio.java”, calls <code>trim()</code> on every line, and then prints out the lines.</p>
+
+<p>Notice that <code>System.out::println</code> refers to the <code>println</code> method on an instance of <code>PrintStream</code>.</p>
+
+<h3 id="leanpub-auto-functional-interfaces">
+<span class="section-number">2.4 </span>Functional Interfaces</h3>
+
+<p>In Java 8 a <em>functional interface</em> is defined as an interface with exactly one abstract method.
+This even applies to interfaces that were created with previous versions of Java.</p>
+
+<p>Java 8 comes with several new functional interfaces in the package, <code>java.util.function</code>.</p>
+
+<ul>
+  <li>Function<code>&lt;T,R&gt;</code> - takes an object of type T and returns R.</li>
+  <li>Supplier<code>&lt;T&gt;</code> - just returns an object of type T.</li>
+  <li>Predicate<code>&lt;T&gt;</code> - returns a boolean value based on input of type T.</li>
+  <li>Consumer<code>&lt;T&gt;</code> - performs an action with given object of type T.</li>
+  <li>BiFunction - like Function but with two parameters.</li>
+  <li>BiConsumer - like Consumer but with two parameters.</li>
+</ul>
+
+<p>It also comes with several corresponding interfaces for primitive types, such as:</p>
+
+<ul>
+  <li>IntConsumer</li>
+  <li>IntFunction<code>&lt;R&gt;</code>
+</li>
+  <li>IntPredicate</li>
+  <li>IntSupplier</li>
+</ul>
+
+<aside class="information blurb">
+    <p>See the <a href="http://download.java.net/jdk8/docs/api/java/util/function/package-summary.html">java.util.function Javadocs</a> for more information.</p>
+
+</aside>
+
+<p>The coolest thing about functional interfaces is that they can be assigned to anything that would fulfill their contract.
+Take the following code for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Function</code><code class="o">&lt;</code><code class="n">String</code><code class="o">,</code> <code class="n">String</code><code class="o">&gt;</code> <code class="n">atr</code> <code class="o">=</code> <code class="o">(</code><code class="n">name</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="o">{</code><code class="k">return</code> <code class="s">"@"</code> <code class="o">+</code> <code class="n">name</code><code class="o">;};</code>
+<code class="lineno">2 </code><code class="n">Function</code><code class="o">&lt;</code><code class="n">String</code><code class="o">,</code> <code class="n">Integer</code><code class="o">&gt;</code> <code class="n">leng</code> <code class="o">=</code> <code class="o">(</code><code class="n">name</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">name</code><code class="o">.</code><code class="na">length</code><code class="o">();</code>
+<code class="lineno">3 </code><code class="n">Function</code><code class="o">&lt;</code><code class="n">String</code><code class="o">,</code> <code class="n">Integer</code><code class="o">&gt;</code> <code class="n">leng2</code> <code class="o">=</code> <code class="n">String</code><code class="o">::</code><code class="n">length</code><code class="o">;</code>
+</pre></div>
+
+</figure>
+
+<p>This code is perfectly valid Java 8.
+The first line defines a function that prepends “@” to a String.
+The last two lines define functions that do the same thing: get the length of a String.</p>
+
+<p>The Java compiler is smart enough to convert the method reference to String’s <code>length()</code> method into a <code>Function</code> (a functional interface) whose
+<code>apply</code> method takes a String and returns an Integer.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="k">for</code> <code class="o">(</code><code class="n">String</code> <code class="n">s</code> <code class="o">:</code> <code class="n">args</code><code class="o">)</code> <code class="n">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">leng2</code><code class="o">.</code><code class="na">apply</code><code class="o">(</code><code class="n">s</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<p>This would print out the lengths of the given strings.</p>
+
+<p>Any interface can be functional interface, not merely those that come with Java.
+To declare your intention that an interface is functional, use the <code>@FunctionalInterface</code> annotation.
+Although not necessary, it will cause a compilation error if your interface does not satisfy the requirements (ie. one abstract method).</p>
+
+<aside class="information blurb">
+    <h4 id="leanpub-auto-github">Github</h4>
+  <p>See <a href="https://github.com/katoquro/jdk8-lambda-samples">jdk8-lambda-samples</a> for more examples.</p>
+
+</aside>
+
+
+<h3 id="leanpub-auto-comparisons-to-java-7">
+<span class="section-number">2.5 </span>Comparisons to Java 7</h3>
+
+<p>To better illustrate the benefit of Lambda-expressions, here are some examples of how code from Java 7 can be shortened in Java 8.</p>
+
+<h4 id="leanpub-auto-creating-an-actionlistener">Creating an ActionListener</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Java 7</code>
+<code class="lineno">2 </code><code class="n">ActionListener</code> <code class="n">al</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ActionListener</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">3 </code>    <code class="nd">@Override</code>
+<code class="lineno">4 </code>    <code class="kd">public</code> <code class="kt">void</code> <code class="nf">actionPerformed</code><code class="o">(</code><code class="n">ActionEvent</code> <code class="n">e</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">5 </code>        <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">e</code><code class="o">.</code><code class="na">getActionCommand</code><code class="o">());</code>
+<code class="lineno">6 </code>    <code class="o">}</code>
+<code class="lineno">7 </code><code class="o">};</code>
+<code class="lineno">8 </code><code class="c1">// Java 8</code>
+<code class="lineno">9 </code><code class="n">ActionListener</code> <code class="n">al8</code> <code class="o">=</code> <code class="n">e</code> <code class="o">-&gt;</code> <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">e</code><code class="o">.</code><code class="na">getActionCommand</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-printing-out-a-list-of-strings">Printing out a list of Strings</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Java 7</code>
+<code class="lineno">2 </code><code class="k">for</code> <code class="o">(</code><code class="n">String</code> <code class="n">s</code> <code class="o">:</code> <code class="n">list</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">3 </code>    <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">s</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="o">}</code>
+<code class="lineno">5 </code><code class="c1">//Java 8</code>
+<code class="lineno">6 </code><code class="n">list</code><code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-sorting-a-list-of-strings">Sorting a list of Strings</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="c1">// Java 7</code>
+<code class="lineno"> 2 </code><code class="n">Collections</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">list</code><code class="o">,</code> <code class="k">new</code> <code class="n">Comparator</code><code class="o">&lt;</code><code class="n">String</code><code class="o">&gt;()</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>    <code class="nd">@Override</code>
+<code class="lineno"> 4 </code>    <code class="kd">public</code> <code class="kt">int</code> <code class="nf">compare</code><code class="o">(</code><code class="n">String</code> <code class="n">s1</code><code class="o">,</code> <code class="n">String</code> <code class="n">s2</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 5 </code>        <code class="k">return</code> <code class="n">s1</code><code class="o">.</code><code class="na">length</code><code class="o">()</code> <code class="o">-</code> <code class="n">s2</code><code class="o">.</code><code class="na">length</code><code class="o">();</code>
+<code class="lineno"> 6 </code>    <code class="o">}</code>
+<code class="lineno"> 7 </code><code class="o">});</code>
+<code class="lineno"> 8 </code><code class="c1">//Java 8</code>
+<code class="lineno"> 9 </code><code class="n">Collections</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">list</code><code class="o">,</code> <code class="o">(</code><code class="n">s1</code><code class="o">,</code> <code class="n">s2</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">s1</code><code class="o">.</code><code class="na">length</code><code class="o">()</code> <code class="o">-</code> <code class="n">s2</code><code class="o">.</code><code class="na">length</code><code class="o">());</code>
+<code class="lineno">10 </code><code class="c1">// or</code>
+<code class="lineno">11 </code><code class="n">list</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">Comparator</code><code class="o">.</code><code class="na">comparingInt</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">length</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-sorting">Sorting</h4>
+
+<p>For the sorting examples, assume you have the following <code>Person</code> class:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">public</code> <code class="kd">static</code> <code class="kd">class</code> <code class="nc">Person</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>
+<code class="lineno"> 3 </code>    <code class="n">String</code> <code class="n">firstName</code><code class="o">;</code>
+<code class="lineno"> 4 </code>    <code class="n">String</code> <code class="n">lastName</code><code class="o">;</code>
+<code class="lineno"> 5 </code>
+<code class="lineno"> 6 </code>    <code class="kd">public</code> <code class="n">String</code> <code class="nf">getFirstName</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 7 </code>        <code class="k">return</code> <code class="n">firstName</code><code class="o">;</code>
+<code class="lineno"> 8 </code>    <code class="o">}</code>
+<code class="lineno"> 9 </code>
+<code class="lineno">10 </code>    <code class="kd">public</code> <code class="n">String</code> <code class="nf">getLastName</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">11 </code>        <code class="k">return</code> <code class="n">lastName</code><code class="o">;</code>
+<code class="lineno">12 </code>    <code class="o">}</code>
+<code class="lineno">13 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Here’s how you might sort this list in Java 7 by last-name and then first-name:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="n">Collections</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">list</code><code class="o">,</code> <code class="k">new</code> <code class="n">Comparator</code><code class="o">&lt;</code><code class="n">Person</code><code class="o">&gt;()</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>    <code class="nd">@Override</code>
+<code class="lineno"> 3 </code>    <code class="kd">public</code> <code class="kt">int</code> <code class="nf">compare</code><code class="o">(</code><code class="n">Person</code> <code class="n">p1</code><code class="o">,</code> <code class="n">Person</code> <code class="n">p2</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 4 </code>        <code class="kt">int</code> <code class="n">n</code> <code class="o">=</code> <code class="n">p1</code><code class="o">.</code><code class="na">getLastName</code><code class="o">().</code><code class="na">compareTo</code><code class="o">(</code><code class="n">p2</code><code class="o">.</code><code class="na">getLastName</code><code class="o">());</code>
+<code class="lineno"> 5 </code>        <code class="k">if</code> <code class="o">(</code><code class="n">n</code> <code class="o">==</code> <code class="mi">0</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>            <code class="k">return</code> <code class="n">p1</code><code class="o">.</code><code class="na">getFirstName</code><code class="o">().</code><code class="na">compareTo</code><code class="o">(</code><code class="n">p2</code><code class="o">.</code><code class="na">getFirstName</code><code class="o">());</code>
+<code class="lineno"> 7 </code>        <code class="o">}</code>
+<code class="lineno"> 8 </code>        <code class="k">return</code> <code class="n">n</code><code class="o">;</code>
+<code class="lineno"> 9 </code>    <code class="o">}</code>
+<code class="lineno">10 </code><code class="o">});</code>
+</pre></div>
+
+</figure>
+
+<p>In Java 8, this can be shortened to the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">list</code><code class="o">.</code><code class="na">sort</code><code class="o">(</code><code class="n">Comparator</code><code class="o">.</code><code class="na">comparing</code><code class="o">(</code><code class="n">Person</code><code class="o">::</code><code class="n">getLastName</code><code class="o">)</code>
+<code class="lineno">2 </code>        <code class="o">.</code><code class="na">thenComparing</code><code class="o">(</code><code class="n">Person</code><code class="o">::</code><code class="n">getFirstName</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<aside class="tip blurb">
+    <p>This example uses a static method on an interface (<code>comparing</code>) and a default method (<code>thenComparing</code>) which are discussed in the next chapter.</p>
+
+</aside>
+
+
+<h2 id="leanpub-auto-default-methods">
+<span class="section-number">3. </span>Default Methods</h2>
+
+<p>In order to add the <code>stream</code> method (or any others) to the core Collections API, Java needed another new feature, <em>Default methods</em> (also known as <em>Defender Methods</em> or <em>Virtual Extension methods</em>). 
+This way they could add new methods to the <code>List</code> interface for example without breaking all the existing implementations (backwards compatibility).</p>
+
+<p>Default methods can be added to any interface. Like the name implies, any class that implements the interface but does not override the method will get the default implementation.</p>
+
+<p>For example, the <code>stream</code> method in the <code>Collection</code> interface is defined something like the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="k">default</code> <code class="kd">public</code> <code class="n">Stream</code> <code class="nf">stream</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">2 </code>	<code class="k">return</code> <code class="n">StreamSupport</code><code class="o">.</code><code class="na">stream</code><code class="o">(</code><code class="n">spliterator</code><code class="o">());</code>
+<code class="lineno">3 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<aside class="information blurb">
+    <p>See <a href="http://download.java.net/jdk8/docs/api/java/util/Collection.html#spliterator--">the Java docs</a> for more on Spliterators.</p>
+
+</aside>
+
+<p>You can always override a default method if you need different behavior.</p>
+
+<h3 id="leanpub-auto-default-and-functional">
+<span class="section-number">3.1 </span>Default and Functional</h3>
+
+<p>An interface can have one or more default methods and still be functional.</p>
+
+<p>For example, take a look at the Iterable interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="nd">@FunctionalInterface</code>
+<code class="lineno"> 2 </code><code class="kd">public</code> <code class="kd">interface</code> <code class="nc">Iterable</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>	<code class="n">Iterator</code> <code class="nf">iterator</code><code class="o">();</code>
+<code class="lineno"> 4 </code>	<code class="k">default</code> <code class="kt">void</code> <code class="nf">forEach</code><code class="o">(</code><code class="n">Consumer</code><code class="o">&lt;?</code> <code class="kd">super</code> <code class="n">T</code><code class="o">&gt;</code> <code class="n">action</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 5 </code>		<code class="n">Objects</code><code class="o">.</code><code class="na">requireNonNull</code><code class="o">(</code><code class="n">action</code><code class="o">);</code>
+<code class="lineno"> 6 </code>		<code class="k">for</code> <code class="o">(</code><code class="n">T</code> <code class="n">t</code> <code class="o">:</code> <code class="k">this</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 7 </code>			<code class="n">action</code><code class="o">.</code><code class="na">accept</code><code class="o">(</code><code class="n">t</code><code class="o">);</code>
+<code class="lineno"> 8 </code>		<code class="o">}</code>
+<code class="lineno"> 9 </code>	<code class="o">}</code>
+<code class="lineno">10 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>It has both the <code>iterator()</code> method and the <code>forEach</code> method.</p>
+
+<h3 id="leanpub-auto-multiple-defaults">
+<span class="section-number">3.2 </span>Multiple Defaults</h3>
+
+<p>In the unlikely case that your class implements two or more interfaces that define the same default method, Java will throw a compilation error.
+You will need to override the method and choose from one of the methods.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">interface</code> <code class="nc">Foo</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>	<code class="k">default</code> <code class="kt">void</code> <code class="nf">talk</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>		<code class="n">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"Foo!"</code><code class="o">);</code>
+<code class="lineno"> 4 </code>	<code class="o">}</code>
+<code class="lineno"> 5 </code><code class="o">}</code>
+<code class="lineno"> 6 </code><code class="kd">interface</code> <code class="nc">Bar</code> <code class="o">{</code>
+<code class="lineno"> 7 </code>	<code class="k">default</code> <code class="kt">void</code> <code class="nf">talk</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 8 </code>		<code class="n">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"Bar!"</code><code class="o">);</code>
+<code class="lineno"> 9 </code>	<code class="o">}</code>
+<code class="lineno">10 </code><code class="o">}</code>
+<code class="lineno">11 </code><code class="kd">class</code> <code class="nc">FooBar</code> <code class="kd">implements</code> <code class="n">Foo</code><code class="o">,</code> <code class="n">Bar</code> <code class="o">{</code>
+<code class="lineno">12 </code>	<code class="nd">@Override</code>
+<code class="lineno">13 </code>	<code class="kt">void</code> <code class="nf">talk</code><code class="o">()</code> <code class="o">{</code> <code class="n">Foo</code><code class="o">.</code><code class="na">super</code><code class="o">.</code><code class="na">talk</code><code class="o">();</code> <code class="o">}</code>			
+<code class="lineno">14 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>In the above code, <code>talk</code> is overridden and calls <code>Foo</code>’s talk method.
+This is similar to the way you refer to a super class in pre-Java-8.</p>
+
+<h3 id="leanpub-auto-static-methods-on-interface">
+<span class="section-number">3.3 </span>Static Methods on Interface</h3>
+
+<p>Although not strictly related to default methods, the ability to add static methods to interfaces is a similar change to the Java language.</p>
+
+<p>For example, there are many static methods on the new <em>Stream</em> interface.
+This makes “helper” methods easier to find since they can be located directly on the interface, instead of a different class such as <em>StreamUtil</em> or <em>Streams</em>.</p>
+
+<p>Here’s an example in the new <em>Stream</em> interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">public</code> <code class="kd">static</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="n">Stream</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="nf">of</code><code class="o">(</code><code class="n">T</code><code class="o">...</code> <code class="n">values</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">2 </code>    <code class="k">return</code> <code class="n">Arrays</code><code class="o">.</code><code class="na">stream</code><code class="o">(</code><code class="n">values</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>The above method creates a new stream based on the given values.</p>
+
+
+<h2 id="leanpub-auto-streams">
+<span class="section-number">4. </span>Streams</h2>
+
+<p>The <code>Stream</code> interface is such a fundamental part of Java 8 it deserves its own chapter.</p>
+
+<h3 id="leanpub-auto-what-is-a-stream">
+<span class="section-number">4.1 </span>What is a Stream?</h3>
+
+<p>The <code>Stream</code> interface is located in the <code>java.util.stream</code> package.
+It represents a sequence of objects somewhat like the Iterator interface.
+However, unlike the Iterator, it supports parallel execution.</p>
+
+<p>The Stream interface supports the map/filter/reduce pattern and executes lazily,
+forming the basis (along with lambdas) for functional-style programming in Java 8.</p>
+
+<p>There are also corresponding primitive streams (IntStream, DoubleStream, and LongStream)
+for performance reasons.</p>
+
+<h3 id="leanpub-auto-generating-streams">
+<span class="section-number">4.2 </span>Generating Streams</h3>
+
+<p>There are many ways to create a Stream in Java 8.
+Many of the existing Java core library classes have Stream returning methods in Java 8.</p>
+
+<h4 id="leanpub-auto-streaming-collections">Streaming Collections</h4>
+
+<p>The most obvious way to create a stream is from a <code>Collection</code>.</p>
+
+<p>The Collection interface has two default methods on it for creating streams:</p>
+
+<ul>
+  <li>stream(): Returns a sequential Stream with the collection as its source.</li>
+  <li>parallelStream(): Returns a possibly parallel Stream with the collection as its source.</li>
+</ul>
+
+<p>The ordering of the Stream relies on the underlying collection just like an Iterator.</p>
+
+<h4 id="leanpub-auto-streaming-files">Streaming Files</h4>
+
+<p>The <code>BufferedReader</code> now has the <code>lines()</code> method which returns a Stream; for example<sup id="fnref-catch"><a href="#fn-catch" rel="footnote">3</a></sup>:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="k">try</code> <code class="o">(</code><code class="n">FileReader</code> <code class="n">fr</code> <code class="o">=</code> <code class="k">new</code> <code class="n">FileReader</code><code class="o">(</code><code class="s">"file"</code><code class="o">);</code>
+<code class="lineno">2 </code>    <code class="n">BufferedReader</code> <code class="n">br</code> <code class="o">=</code> <code class="k">new</code> <code class="n">BufferedReader</code><code class="o">(</code><code class="n">fr</code><code class="o">))</code> <code class="o">{</code>
+<code class="lineno">3 </code>    <code class="n">br</code><code class="o">.</code><code class="na">lines</code><code class="o">().</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>You can also read a file as a Stream using <code>Files.lines(Path filePath)</code>; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="k">try</code> <code class="o">(</code><code class="n">Stream</code> <code class="n">st</code> <code class="o">=</code> <code class="n">Files</code><code class="o">.</code><code class="na">lines</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"file"</code><code class="o">)))</code> <code class="o">{</code>
+<code class="lineno">2 </code>    <code class="n">st</code><code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Note this populates lazily; it does not read the entire file when you call it.</p>
+
+<aside class="warning blurb">
+    <p>Files.lines(Path): Any <code>IOException</code> that is thrown while processing the file (after the file is opened) will get wrapped in an <code>UncheckedIOException</code> and thrown.</p>
+
+</aside>
+
+<h4 id="leanpub-auto-streaming-file-trees">Streaming File Trees</h4>
+
+<p>There are several static methods on the <code>Files</code> class for navigating file trees using a Stream.</p>
+
+<ul>
+  <li>
+<code>list(Path dir)</code> – Stream of files in the given directory.</li>
+  <li>
+<code>walk(Path dir)</code><sup id="fnref-walk"><a href="#fn-walk" rel="footnote">4</a></sup> – Stream that traverses the file tree depth-first starting at the given directory.</li>
+  <li>
+<code>walk(Path dir, int maxDepth)</code> – Same as walk(dir) but with a maximum depth.</li>
+</ul>
+
+<h4 id="leanpub-auto-streaming-text-patterns">Streaming Text Patterns</h4>
+
+<p>The <a href="http://download.java.net/jdk8/docs/api/java/util/regex/Pattern.html">Pattern</a> class now has a method, <code>splitAsStream(CharSequence)</code>, which creates a Stream.</p>
+
+<p>For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kn">import</code> <code class="nn">java.util.regex.Pattern</code><code class="o">;</code>
+<code class="lineno">2 </code><code class="c1">// later on...</code>
+<code class="lineno">3 </code><code class="n">Pattern</code> <code class="n">patt</code> <code class="o">=</code> <code class="n">Pattern</code><code class="o">.</code><code class="na">compile</code><code class="o">(</code><code class="s">","</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="n">patt</code><code class="o">.</code><code class="na">splitAsStream</code><code class="o">(</code><code class="s">"a,b,c"</code><code class="o">)</code>
+<code class="lineno">5 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The above uses a very simple pattern, a comma, and splits the text into a stream and prints it out.
+This would produce the following output:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">a</code>
+<code class="lineno">2 </code><code class="n">b</code>
+<code class="lineno">3 </code><code class="n">c</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-infinite-streams">Infinite Streams</h4>
+
+<p>Using the <code>generate</code> or <code>iterate</code> static methods on Stream, you can create a Stream of values including never ending streams.
+For example, you could call generate in the following way to create an infinite supply of objects:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Stream</code><code class="o">.</code><code class="na">generate</code><code class="o">(()</code> <code class="o">-&gt;</code> <code class="k">new</code> <code class="n">Dragon</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>For example, you could use this technique to produce a stream of CPU load or memory usage.
+However, you should use this with caution. It is similar to an infinite loop.</p>
+
+<p>You could also use <code>generate</code> to create an infinite random number supply; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Stream</code><code class="o">.</code><code class="na">generate</code><code class="o">(()</code> <code class="o">-&gt;</code> <code class="n">Math</code><code class="o">.</code><code class="na">random</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>However, the <code>java.util.Random</code> class does this for you with the following new methods: <code>ints()</code>, <code>longs()</code>, and <code>doubles()</code>.
+Each of those methods is overloaded with definitions similar to the following:</p>
+
+<ul>
+  <li>
+<code>ints()</code>: An infinite Stream of random integers.</li>
+  <li>
+<code>ints(int n, int m)</code>: An infinite Stream of random integers from n (inclusive) to m (exclusive).</li>
+  <li>
+<code>ints(long size)</code>: A Stream of given size of random integers.</li>
+  <li>
+<code>ints(long size, int n, int m)</code>: A Stream of given size of random integers with given bounds.</li>
+</ul>
+
+<p>The <code>iterate</code> method is similar to <code>generate</code> except it takes an initial value and a Function that modifies that value.
+For example, you can iterate over the Integers using the following code:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Stream</code><code class="o">.</code><code class="na">iterate</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">i</code> <code class="o">-&gt;</code> <code class="n">i</code><code class="o">+</code><code class="mi">1</code><code class="o">)</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">print</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>This would print out “1234…” continuously until you stop the program.</p>
+
+<aside class="tip blurb">
+    <p>There are ways to limit an infinite stream which we will cover later (<code>filter</code> and <code>limit</code>).</p>
+
+</aside>
+
+<h4 id="leanpub-auto-ranges">Ranges</h4>
+
+<p>There are also new methods for creating ranges of numbers as Streams.</p>
+
+<p>For example, the static method, <code>range</code>, on the <code>IntStream</code> interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">IntStream</code><code class="o">.</code><code class="na">range</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="mi">11</code><code class="o">)</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The above would print out the numbers one through ten.</p>
+
+<p>Each primitive Stream (IntStream, DoubleStream, and LongStream) has a corresponding <code>range</code> method.</p>
+
+<h4 id="leanpub-auto-streaming-anything">Streaming Anything</h4>
+
+<p>You can create a Stream from any number of elements or an array using the two following methods:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Stream</code><code class="o">&lt;</code><code class="n">Integer</code><code class="o">&gt;</code> <code class="n">s</code> <code class="o">=</code> <code class="n">Stream</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="mi">2</code><code class="o">,</code> <code class="mi">3</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">Stream</code><code class="o">&lt;</code><code class="n">Object</code><code class="o">&gt;</code> <code class="n">s2</code> <code class="o">=</code> <code class="n">Arrays</code><code class="o">.</code><code class="na">stream</code><code class="o">(</code><code class="n">array</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p><code>Stream.of</code> can take any number of parameters of any type.</p>
+
+<h3 id="leanpub-auto-for-each">
+<span class="section-number">4.3 </span>For Each</h3>
+
+<p>The most basic thing you can do with a Stream is loop through it using the <code>forEach</code> method.</p>
+
+<p>For example, to print out all of the files in the current directory, you could do the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Files</code><code class="o">.</code><code class="na">list</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"."</code><code class="o">))</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>For the most part, this replaces the “for loop”. 
+It is more concise, and more object-oriented since you are delegating the implementation of the actual loop.</p>
+
+
+<h3 id="leanpub-auto-mapfilterreduce">
+<span class="section-number">4.4 </span>Map/Filter/Reduce</h3>
+
+<p>Lambda expressions and default methods allow us to implement map/filter/reduce in Java 8. 
+Actually it is already implemented for us in the standard library.</p>
+
+<p>For example, imagine you want to get the current point scores from a list of player-names and find the player with the most points.
+You have a simple class, <code>PlayerPoints</code>, and a <code>getPoints</code> method defined as the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">public</code> <code class="kd">static</code> <code class="kd">class</code> <code class="nc">PlayerPoints</code> <code class="o">{</code>
+<code class="lineno"> 2 </code> <code class="kd">public</code> <code class="kd">final</code> <code class="n">String</code> <code class="n">name</code><code class="o">;</code>
+<code class="lineno"> 3 </code> <code class="kd">public</code> <code class="kd">final</code> <code class="kt">long</code> <code class="n">points</code><code class="o">;</code>
+<code class="lineno"> 4 </code> 
+<code class="lineno"> 5 </code> <code class="kd">public</code> <code class="nf">PlayerPoints</code><code class="o">(</code><code class="n">String</code> <code class="n">name</code><code class="o">,</code> <code class="kt">long</code> <code class="n">points</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>   <code class="k">this</code><code class="o">.</code><code class="na">name</code> <code class="o">=</code> <code class="n">name</code><code class="o">;</code>
+<code class="lineno"> 7 </code>   <code class="k">this</code><code class="o">.</code><code class="na">points</code> <code class="o">=</code> <code class="n">points</code><code class="o">;</code>
+<code class="lineno"> 8 </code> <code class="o">}</code> 
+<code class="lineno"> 9 </code> 
+<code class="lineno">10 </code> <code class="kd">public</code> <code class="n">String</code> <code class="nf">toString</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">11 </code>   <code class="k">return</code> <code class="n">name</code> <code class="o">+</code> <code class="s">":"</code> <code class="o">+</code> <code class="n">points</code><code class="o">;</code>
+<code class="lineno">12 </code> <code class="o">}</code>
+<code class="lineno">13 </code><code class="o">}</code>
+<code class="lineno">14 </code>
+<code class="lineno">15 </code><code class="kd">public</code> <code class="kd">static</code> <code class="kt">long</code> <code class="nf">getPoints</code><code class="o">(</code><code class="kd">final</code> <code class="n">String</code> <code class="n">name</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">16 </code>	<code class="c1">// gets the Points for the Player</code>
+<code class="lineno">17 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Finding the highest player could be done very simply in Java 8 as shown in the following code:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">PlayerPoints</code> <code class="n">highestPlayer</code> <code class="o">=</code> 
+<code class="lineno">2 </code>  <code class="n">names</code><code class="o">.</code><code class="na">stream</code><code class="o">().</code><code class="na">map</code><code class="o">(</code><code class="n">name</code> <code class="o">-&gt;</code> <code class="k">new</code> <code class="n">PlayerPoints</code><code class="o">(</code><code class="n">name</code><code class="o">,</code> <code class="n">getPoints</code><code class="o">(</code><code class="n">name</code><code class="o">)))</code>
+<code class="lineno">3 </code>	<code class="o">.</code><code class="na">reduce</code><code class="o">(</code><code class="k">new</code> <code class="n">PlayerPoints</code><code class="o">(</code><code class="s">""</code><code class="o">,</code> <code class="mf">0.0</code><code class="o">),</code> 
+<code class="lineno">4 </code>			<code class="o">(</code><code class="n">s1</code><code class="o">,</code> <code class="n">s2</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="o">(</code><code class="n">s1</code><code class="o">.</code><code class="na">points</code> <code class="o">&gt;</code> <code class="n">s2</code><code class="o">.</code><code class="na">points</code><code class="o">)</code> <code class="o">?</code> <code class="n">s1</code> <code class="o">:</code> <code class="n">s2</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>This could also be done in Java 7 with the <code>dollar</code> library (or similarly with Guava or Functional-Java), but it would be much more verbose as shown in the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="n">PlayerPoints</code> <code class="n">highestPlayer</code> <code class="o">=</code> 
+<code class="lineno"> 2 </code>  <code class="n">$</code><code class="o">(</code><code class="n">names</code><code class="o">).</code><code class="na">map</code><code class="o">(</code><code class="k">new</code> <code class="n">Function</code><code class="o">&lt;</code><code class="n">String</code><code class="o">,</code> <code class="n">PlayerPoints</code><code class="o">&gt;()</code> <code class="o">{</code> 
+<code class="lineno"> 3 </code>		<code class="kd">public</code> <code class="n">PlayerPoints</code> <code class="nf">call</code><code class="o">(</code><code class="n">String</code> <code class="n">name</code><code class="o">)</code> <code class="o">{</code> 
+<code class="lineno"> 4 </code>			<code class="k">return</code> <code class="k">new</code> <code class="n">PlayerPoints</code><code class="o">(</code><code class="n">name</code><code class="o">,</code> <code class="n">getPoints</code><code class="o">(</code><code class="n">name</code><code class="o">));</code>
+<code class="lineno"> 5 </code>		<code class="o">}</code>
+<code class="lineno"> 6 </code>	<code class="o">})</code>
+<code class="lineno"> 7 </code>	<code class="o">.</code><code class="na">reduce</code><code class="o">(</code><code class="k">new</code> <code class="n">PlayerPoints</code><code class="o">(</code><code class="s">""</code><code class="o">,</code> <code class="mf">0.0</code><code class="o">),</code> 
+<code class="lineno"> 8 </code>	<code class="k">new</code> <code class="n">BiFunction</code><code class="o">&lt;</code><code class="n">PlayerPoints</code><code class="o">,</code> <code class="n">PlayerPoints</code><code class="o">,</code> <code class="n">PlayerPoints</code><code class="o">&gt;()</code> <code class="o">{</code>
+<code class="lineno"> 9 </code>		<code class="kd">public</code> <code class="n">PlayerPoints</code> <code class="nf">call</code><code class="o">(</code><code class="n">PlayerPoints</code> <code class="n">s1</code><code class="o">,</code> <code class="n">PlayerPoints</code> <code class="n">s2</code><code class="o">)</code> <code class="o">{</code> 
+<code class="lineno">10 </code>			<code class="k">return</code> <code class="o">(</code><code class="n">s1</code><code class="o">.</code><code class="na">points</code> <code class="o">&gt;</code> <code class="n">s2</code><code class="o">.</code><code class="na">points</code><code class="o">)</code> <code class="o">?</code> <code class="n">s1</code> <code class="o">:</code> <code class="n">s2</code><code class="o">;</code>
+<code class="lineno">11 </code>		<code class="o">}</code>
+<code class="lineno">12 </code>	<code class="o">});</code>
+</pre></div>
+
+</figure>
+
+<p>The major benefit to coding this way (apart from the reduction in lines of code) is the ability to hide the underlying implementation of map/reduce. For example, it’s possible that map and reduce are implemented concurrently, allowing you to easily take advantage of multiple processors.
+We’ll describe one way to do this (ParallelArray) in the following section.</p>
+
+<h3 id="leanpub-auto-parallel-array">
+<span class="section-number">4.5 </span>Parallel Array</h3>
+
+<p>The <code>ParallelArray</code> was part of JSR-166, but ended up <a href="http://puredanger.com/tech/2009/11/15/jsr-166-concurrency-updates-hit-jdk-7/">being excluded from the standard Java lib</a>. 
+It does exist and was released to the public domain (you can download it from the JSR website).</p>
+
+<p>Although it was already out there, it really wasn’t easy to use until closures were included in the Java language.
+In Java 7 using the ParallelArray looks like the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="c1">// with this class</code>
+<code class="lineno"> 2 </code><code class="kd">public</code> <code class="kd">class</code> <code class="nc">Student</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>    <code class="n">String</code> <code class="n">name</code><code class="o">;</code>
+<code class="lineno"> 4 </code>    <code class="kt">int</code> <code class="n">graduationYear</code><code class="o">;</code>
+<code class="lineno"> 5 </code>    <code class="kt">double</code> <code class="n">gpa</code><code class="o">;</code>
+<code class="lineno"> 6 </code><code class="o">}</code>
+<code class="lineno"> 7 </code><code class="c1">// this predicate</code>
+<code class="lineno"> 8 </code><code class="kd">final</code> <code class="n">Ops</code><code class="o">.</code><code class="na">Predicate</code><code class="o">&lt;</code><code class="n">Student</code><code class="o">&gt;</code> <code class="n">isSenior</code> <code class="o">=</code> 
+<code class="lineno"> 9 </code>	<code class="k">new</code> <code class="n">Ops</code><code class="o">.</code><code class="na">Predicate</code><code class="o">&lt;&gt;()</code> <code class="o">{</code>
+<code class="lineno">10 </code>		<code class="kd">public</code> <code class="kt">boolean</code> <code class="nf">op</code><code class="o">(</code><code class="n">Student</code> <code class="n">s</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">11 </code>			<code class="k">return</code> <code class="n">s</code><code class="o">.</code><code class="na">graduationYear</code> <code class="o">==</code> <code class="n">Student</code><code class="o">.</code><code class="na">THIS_YEAR</code><code class="o">;</code>
+<code class="lineno">12 </code>		<code class="o">}</code>
+<code class="lineno">13 </code>	<code class="o">};</code>
+<code class="lineno">14 </code><code class="c1">// and this conversion operation</code>
+<code class="lineno">15 </code><code class="kd">final</code> <code class="n">Ops</code><code class="o">.</code><code class="na">ObjectToDouble</code><code class="o">&lt;</code><code class="n">Student</code><code class="o">&gt;</code> <code class="n">selectGpa</code> <code class="o">=</code> 
+<code class="lineno">16 </code>	<code class="k">new</code> <code class="n">Ops</code><code class="o">.</code><code class="na">ObjectToDouble</code><code class="o">&lt;&gt;()</code> <code class="o">{</code>
+<code class="lineno">17 </code>		<code class="kd">public</code> <code class="kt">double</code> <code class="nf">op</code><code class="o">(</code><code class="n">Student</code> <code class="n">student</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">18 </code>			<code class="k">return</code> <code class="n">student</code><code class="o">.</code><code class="na">gpa</code><code class="o">;</code>
+<code class="lineno">19 </code>		<code class="o">}</code>
+<code class="lineno">20 </code>	<code class="o">};</code>
+<code class="lineno">21 </code><code class="c1">// create a fork-join-pool</code>
+<code class="lineno">22 </code><code class="n">ForkJoinPool</code> <code class="n">fjPool</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ForkJoinPool</code><code class="o">();</code>
+<code class="lineno">23 </code><code class="n">ParallelArray</code><code class="o">&lt;</code><code class="n">Student</code><code class="o">&gt;</code> <code class="n">students</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ParallelArray</code><code class="o">&lt;&gt;(</code><code class="n">fjPool</code><code class="o">,</code> <code class="n">data</code><code class="o">);</code>
+<code class="lineno">24 </code><code class="c1">// find the best GPA:</code>
+<code class="lineno">25 </code><code class="kt">double</code> <code class="n">bestGpa</code> <code class="o">=</code> <code class="n">students</code><code class="o">.</code><code class="na">withFilter</code><code class="o">(</code><code class="n">isSenior</code><code class="o">)</code>
+<code class="lineno">26 </code>                         <code class="o">.</code><code class="na">withMapping</code><code class="o">(</code><code class="n">selectGpa</code><code class="o">)</code>
+<code class="lineno">27 </code>                         <code class="o">.</code><code class="na">max</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>In Java 8, you can do the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// create a fork-join-pool</code>
+<code class="lineno">2 </code><code class="n">ForkJoinPool</code> <code class="n">pool</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ForkJoinPool</code><code class="o">();</code>
+<code class="lineno">3 </code><code class="n">ParallelArray</code><code class="o">&lt;</code><code class="n">Student</code><code class="o">&gt;</code> <code class="n">students</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ParallelArray</code><code class="o">&lt;&gt;(</code><code class="n">pool</code><code class="o">,</code><code class="n">data</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="c1">// find the best GPA:</code>
+<code class="lineno">5 </code><code class="kt">double</code> <code class="n">bestGpa</code> <code class="o">=</code> <code class="n">students</code>
+<code class="lineno">6 </code>    <code class="o">.</code><code class="na">withFilter</code><code class="o">((</code><code class="n">Student</code> <code class="n">s</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="o">(</code><code class="n">s</code><code class="o">.</code><code class="na">graduationYear</code> <code class="o">==</code> <code class="n">THIS_YEAR</code><code class="o">))</code>
+<code class="lineno">7 </code>    <code class="o">.</code><code class="na">withMapping</code><code class="o">((</code><code class="n">Student</code> <code class="n">s</code><code class="o">)</code> <code class="o">-&gt;</code> <code class="n">s</code><code class="o">.</code><code class="na">gpa</code><code class="o">)</code>
+<code class="lineno">8 </code>    <code class="o">.</code><code class="na">max</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>However, Java 8’s addition of <em>stream()</em> and <em>parallelStream()</em> make this even easier:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kt">double</code> <code class="n">bestGpa</code> <code class="o">=</code> <code class="n">students</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">parallelStream</code><code class="o">()</code>
+<code class="lineno">3 </code>    <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">s</code> <code class="o">-&gt;</code> <code class="o">(</code><code class="n">s</code><code class="o">.</code><code class="na">graduationYear</code> <code class="o">==</code> <code class="n">THIS_YEAR</code><code class="o">))</code>
+<code class="lineno">4 </code>    <code class="o">.</code><code class="na">mapToDouble</code><code class="o">(</code><code class="n">s</code> <code class="o">-&gt;</code> <code class="n">s</code><code class="o">.</code><code class="na">gpa</code><code class="o">)</code>
+<code class="lineno">5 </code>    <code class="o">.</code><code class="na">max</code><code class="o">().</code><code class="na">getAsDouble</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>This makes it extremely simple to switch between a sequential implementation and a concurrent one.</p>
+
+<aside>
+  <h3 id="leanpub-auto-groovy-gpars">Groovy GPars</h3>
+  <p>You can do something similar to this right now if you use Groovy with the GPars library in the following way:</p>
+
+  <figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">GParsPool</code><code class="o">.</code><code class="na">withPool</code> <code class="o">{</code>
+<code class="lineno">2 </code>   <code class="c1">// a map-reduce functional style (students is a Collection)</code>
+<code class="lineno">3 </code>   <code class="kt">def</code> <code class="n">bestGpa</code> <code class="o">=</code> <code class="n">students</code><code class="o">.</code><code class="na">parallel</code>
+<code class="lineno">4 </code>       <code class="o">.</code><code class="na">filter</code><code class="o">{</code> <code class="n">s</code> <code class="o">-&gt;</code> <code class="n">s</code><code class="o">.</code><code class="na">graduationYear</code> <code class="o">==</code> <code class="n">Student</code><code class="o">.</code><code class="na">THIS_YEAR</code> <code class="o">}</code>
+<code class="lineno">5 </code>       <code class="o">.</code><code class="na">map</code><code class="o">{</code> <code class="n">s</code> <code class="o">-&gt;</code> <code class="n">s</code><code class="o">.</code><code class="na">gpa</code> <code class="o">}</code>
+<code class="lineno">6 </code>       <code class="o">.</code><code class="na">max</code><code class="o">()</code>
+<code class="lineno">7 </code><code class="o">}</code>
+</pre></div>
+
+  </figure>
+
+  <p>The static method <code>GParsPool.withPool</code> takes in a closure and augments any Collection with several methods (using Groovy’s Category mechanism).
+The <code>parallel</code> method actually creates a ParallelArray (JSR-166) from the given Collection and uses it with a <a href="http://gpars.org/1.0.0/A&gt;guide/guide/dataParallelism.html#dataParallelism_map-reduce">thin wrapper around it.</a></p>
+
+</aside>
+
+
+<h3 id="leanpub-auto-peek">
+<span class="section-number">4.6 </span>Peek</h3>
+
+<p>You can peek into a stream to do some action without interrupting the stream.</p>
+
+<p>For example you could print out elements to debug code:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Files</code><code class="o">.</code><code class="na">list</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"."</code><code class="o">))</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Path</code><code class="o">::</code><code class="n">getFileName</code><code class="o">)</code>
+<code class="lineno">3 </code>    <code class="o">.</code><code class="na">peek</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">)</code>
+<code class="lineno">4 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">p</code> <code class="o">-&gt;</code> <code class="n">doSomething</code><code class="o">(</code><code class="n">p</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<p>You can use any action you want, but you should <em>not</em> try to modify elements; you should use <code>map</code> instead.</p>
+
+<h3 id="leanpub-auto-limit">
+<span class="section-number">4.7 </span>Limit</h3>
+
+<p>The <code>limit(int n)</code> method can be used to limit a stream to the given number of elements.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Random</code> <code class="n">rnd</code> <code class="o">=</code> <code class="k">new</code> <code class="n">Random</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">rnd</code><code class="o">.</code><code class="na">ints</code><code class="o">().</code><code class="na">limit</code><code class="o">(</code><code class="mi">10</code><code class="o">)</code>
+<code class="lineno">3 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The above would print out ten random integers.</p>
+
+<h3 id="leanpub-auto-sort">
+<span class="section-number">4.8 </span>Sort</h3>
+
+<p>Stream also has the <code>sorted()</code> method for sorting a stream.
+Like all <em>intermediate methods</em> on Stream (such as <code>map</code>, <code>filter</code>, and <code>peek</code>), the <code>sorted()</code> method executes lazily.
+Nothing happens until a terminating operation (such as <code>reduce</code> or <code>forEach</code>) is called.
+However, you should call a limiting operation like <code>limit</code> before calling <code>sorted()</code> on an infinite stream.</p>
+
+<p>For example, the following would throw a runtime exception (using build 1.8.0-b132):</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">rnd</code><code class="o">.</code><code class="na">ints</code><code class="o">().</code><code class="na">sorted</code><code class="o">().</code><code class="na">limit</code><code class="o">(</code><code class="mi">10</code><code class="o">)</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>However, the following code works just fine:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">rnd</code><code class="o">.</code><code class="na">ints</code><code class="o">().</code><code class="na">limit</code><code class="o">(</code><code class="mi">10</code><code class="o">).</code><code class="na">sorted</code><code class="o">()</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Also, you should call <code>sorted()</code> after any calls to <code>filter</code>.
+For example, this code prints out the first five Java file-names in the current directory:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Files</code><code class="o">.</code><code class="na">list</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"."</code><code class="o">))</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Path</code><code class="o">::</code><code class="n">getFileName</code><code class="o">)</code> <code class="c1">// still a path</code>
+<code class="lineno">3 </code>    <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Path</code><code class="o">::</code><code class="n">toString</code><code class="o">)</code> <code class="c1">// convert to Strings</code>
+<code class="lineno">4 </code>    <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">name</code> <code class="o">-&gt;</code> <code class="n">name</code><code class="o">.</code><code class="na">endsWith</code><code class="o">(</code><code class="s">".java"</code><code class="o">))</code>
+<code class="lineno">5 </code>    <code class="o">.</code><code class="na">sorted</code><code class="o">()</code> <code class="c1">// sort them alphabetically</code>
+<code class="lineno">6 </code>    <code class="o">.</code><code class="na">limit</code><code class="o">(</code><code class="mi">5</code><code class="o">)</code> <code class="c1">// first 5</code>
+<code class="lineno">7 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The code above does the following:</p>
+
+<ul>
+  <li>Lists the files in the current directory.</li>
+  <li>Maps those files to file names.</li>
+  <li>Finds names that end with “.java”.</li>
+  <li>Takes only the first five (sorted alphabetically).</li>
+  <li>Prints them out.</li>
+</ul>
+
+<h3 id="leanpub-auto-collectors-and-statistics">
+<span class="section-number">4.9 </span>Collectors and Statistics</h3>
+
+<p>Since Streams are lazily evaluated and support parallel execution, you need a special way to combine results; this is called a <em>Collector</em>.</p>
+
+<p>A <em>Collector</em> represents a way to combine the elements of a Stream into one result.
+It consists of three things:</p>
+
+<ul>
+  <li>A <em>supplier</em> of an initial value.</li>
+  <li>An <em>accumulator</em> which adds to the initial value.</li>
+  <li>A <em>combiner</em> which combines two results into one.</li>
+</ul>
+
+<p>There are two ways to do this: <code>collect(supplier,accumulator,combiner)</code>, or <code>collect(Collector)</code> (types left off for brevity).</p>
+
+<p>Luckily, Java 8 comes with several Collectors built in. 
+Import them the following way:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kn">import</code> <code class="nn">static</code> <code class="n">java</code><code class="o">.</code><code class="na">util</code><code class="o">.</code><code class="na">stream</code><code class="o">.</code><code class="na">Collectors</code><code class="o">.*;</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-simple-collectors">Simple Collectors</h4>
+
+<p>The simplest collectors are things like toList() and toCollection():</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Accumulate names into a List</code>
+<code class="lineno">2 </code><code class="n">List</code><code class="o">&lt;</code><code class="n">String</code><code class="o">&gt;</code> <code class="n">list</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">3 </code>        <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">getName</code><code class="o">)</code>
+<code class="lineno">4 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">toList</code><code class="o">());</code>
+<code class="lineno">5 </code>
+<code class="lineno">6 </code><code class="c1">// Accumulate names into a TreeSet</code>
+<code class="lineno">7 </code><code class="n">Set</code><code class="o">&lt;</code><code class="n">String</code><code class="o">&gt;</code> <code class="n">set</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">8 </code>        <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">getName</code><code class="o">)</code>
+<code class="lineno">9 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">toCollection</code><code class="o">(</code><code class="n">TreeSet</code><code class="o">::</code><code class="k">new</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-joining">Joining</h4>
+
+<p>If you’re familiar with Apache Commons’ <code>StringUtil.join</code>, the <code>joining</code> collector is similar to it.
+It combines the stream using a given delimiter.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">String</code> <code class="n">names</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">2 </code>        <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">getName</code><code class="o">)</code>
+<code class="lineno">3 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">joining</code><code class="o">(</code><code class="s">","</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<p>This would combine all of the names into one String separated by commas.</p>
+
+<h4 id="leanpub-auto-statistics">Statistics</h4>
+
+<p>More complex collectors resolve to a single value.
+For example, you can use an “averaging” Collector to get the average; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"\n-----&gt;Average line length:"</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code>
+<code class="lineno">3 </code>    <code class="n">Files</code><code class="o">.</code><code class="na">lines</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"Nio.java"</code><code class="o">))</code>
+<code class="lineno">4 </code>        <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">trim</code><code class="o">)</code>
+<code class="lineno">5 </code>        <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">s</code> <code class="o">-&gt;</code> <code class="o">!</code><code class="n">s</code><code class="o">.</code><code class="na">isEmpty</code><code class="o">())</code>
+<code class="lineno">6 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">averagingInt</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">length</code><code class="o">))</code>
+<code class="lineno">7 </code>        <code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The above code calculates the average length of non-empty lines in the file “Nio.java”.</p>
+
+<p>Sometimes you want to collect multiple statistics about a collection.
+Because Streams are consumed when you call <code>collect</code>, you need to calculate all of your statistics at once.
+This is where <em>SummaryStatistics</em> comes in.
+First import the one you want to use:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kn">import</code> <code class="nn">java.util.IntSummaryStatistics</code><code class="o">;</code>    
+</pre></div>
+
+</figure>
+
+<p>Then use the <code>summarizingInt</code> collector; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">IntSummaryStatistics</code> <code class="n">stats</code> <code class="o">=</code> <code class="n">Files</code><code class="o">.</code><code class="na">lines</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"Nio.java"</code><code class="o">))</code>
+<code class="lineno">2 </code>        <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">trim</code><code class="o">)</code>
+<code class="lineno">3 </code>        <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">s</code> <code class="o">-&gt;</code> <code class="o">!</code><code class="n">s</code><code class="o">.</code><code class="na">isEmpty</code><code class="o">())</code>
+<code class="lineno">4 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">summarizingInt</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">length</code><code class="o">));</code>
+<code class="lineno">5 </code>
+<code class="lineno">6 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">stats</code><code class="o">.</code><code class="na">getAverage</code><code class="o">());</code>
+<code class="lineno">7 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"count="</code> <code class="o">+</code> <code class="n">stats</code><code class="o">.</code><code class="na">getCount</code><code class="o">());</code>
+<code class="lineno">8 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"max="</code> <code class="o">+</code> <code class="n">stats</code><code class="o">.</code><code class="na">getMax</code><code class="o">());</code>
+<code class="lineno">9 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="s">"min="</code> <code class="o">+</code> <code class="n">stats</code><code class="o">.</code><code class="na">getMin</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>The above code performs the same average as before, but also computes the maximum, minimum, and count of the elements.</p>
+
+<aside class="tip blurb">
+    <p>There’s also <code>summarizingLong</code> and <code>summarizingDouble</code>.</p>
+
+</aside>
+
+<p>Equivalently, you can map your stream to a primitive type and then call <code>summaryStatistics()</code>.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">IntSummaryStatistics</code> <code class="n">stats</code> <code class="o">=</code> <code class="n">Files</code><code class="o">.</code><code class="na">lines</code><code class="o">(</code><code class="n">Paths</code><code class="o">.</code><code class="na">get</code><code class="o">(</code><code class="s">"Nio.java"</code><code class="o">))</code>
+<code class="lineno">2 </code>    <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">trim</code><code class="o">)</code>
+<code class="lineno">3 </code>    <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">s</code> <code class="o">-&gt;</code> <code class="o">!</code><code class="n">s</code><code class="o">.</code><code class="na">isEmpty</code><code class="o">())</code>
+<code class="lineno">4 </code>    <code class="o">.</code><code class="na">mapToInt</code><code class="o">(</code><code class="n">String</code><code class="o">::</code><code class="n">length</code><code class="o">)</code>
+<code class="lineno">5 </code>    <code class="o">.</code><code class="na">summaryStatistics</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-grouping-and-partitioning">
+<span class="section-number">4.10 </span>Grouping and Partitioning</h3>
+
+<p>The <code>groupingBy</code> collector groups elements based on a function you provide.
+For example: </p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Group by first letter of name</code>
+<code class="lineno">2 </code><code class="n">List</code><code class="o">&lt;</code><code class="n">Dragon</code><code class="o">&gt;</code> <code class="n">dragons</code> <code class="o">=</code> <code class="n">getDragons</code><code class="o">();</code>
+<code class="lineno">3 </code><code class="n">Map</code><code class="o">&lt;</code><code class="n">Character</code><code class="o">,</code><code class="n">List</code><code class="o">&lt;</code><code class="n">Dragon</code><code class="o">&gt;&gt;</code> <code class="n">map</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">4 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">groupingBy</code><code class="o">(</code><code class="n">dragon</code> <code class="o">-&gt;</code> <code class="n">dragon</code><code class="o">.</code><code class="na">getName</code><code class="o">().</code><code class="na">charAt</code><code class="o">(</code><code class="mi">0</code><code class="o">)));</code>
+</pre></div>
+
+</figure>
+
+<p>Similarly, the <code>partitioningBy</code> method creates a map with a boolean key.
+For example: </p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Group by whether or not the dragon is green</code>
+<code class="lineno">2 </code><code class="n">Map</code><code class="o">&lt;</code><code class="n">Boolean</code><code class="o">,</code><code class="n">List</code><code class="o">&lt;</code><code class="n">Dragon</code><code class="o">&gt;&gt;</code> <code class="n">map</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">3 </code>        <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">partitioningBy</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">isGreen</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<aside class="tip blurb">
+    <h4 id="leanpub-auto-parallel-grouping">Parallel Grouping</h4>
+  <p>To execute grouping in parallel (if you don’t care about ordering) you should use the <code>groupingByConcurrent</code> method.
+The underlying stream should be unordered to allow grouping to occur in parallel; for example:
+<code>dragons.parallelStream().unordered().collect(groupingByConcurrent(Dragon::getColor));</code>.</p>
+
+</aside>
+
+<h3 id="leanpub-auto-comparisons-to-java-7-1">
+<span class="section-number">4.11 </span>Comparisons to Java 7</h3>
+
+<p>To better illustrate the benefit of Streams in Java 8, here are some examples of code from Java 7 compared to their new versions.</p>
+
+<h4 id="leanpub-auto-finding-a-maximum">Finding a maximum</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="c1">// Java 7</code>
+<code class="lineno"> 2 </code><code class="kt">double</code> <code class="n">max</code> <code class="o">=</code> <code class="mi">0</code><code class="o">;</code>
+<code class="lineno"> 3 </code>
+<code class="lineno"> 4 </code><code class="k">for</code> <code class="o">(</code><code class="n">Double</code> <code class="n">d</code> <code class="o">:</code> <code class="n">list</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 5 </code>    <code class="k">if</code> <code class="o">(</code><code class="n">d</code> <code class="o">&gt;</code> <code class="n">max</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>        <code class="n">max</code> <code class="o">=</code> <code class="n">d</code><code class="o">;</code>
+<code class="lineno"> 7 </code>    <code class="o">}</code>
+<code class="lineno"> 8 </code><code class="o">}</code>
+<code class="lineno"> 9 </code><code class="c1">//Java 8</code>
+<code class="lineno">10 </code><code class="n">max</code> <code class="o">=</code> <code class="n">list</code><code class="o">.</code><code class="na">stream</code><code class="o">().</code><code class="na">reduce</code><code class="o">(</code><code class="mf">0.0</code><code class="o">,</code> <code class="n">Math</code><code class="o">::</code><code class="n">max</code><code class="o">);</code>
+<code class="lineno">11 </code><code class="c1">// or</code>
+<code class="lineno">12 </code><code class="n">max</code> <code class="o">=</code> <code class="n">list</code><code class="o">.</code><code class="na">stream</code><code class="o">().</code><code class="na">mapToDouble</code><code class="o">(</code><code class="n">Number</code><code class="o">::</code><code class="n">doubleValue</code><code class="o">).</code><code class="na">max</code><code class="o">().</code><code class="na">getAsDouble</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-calculating-an-average">Calculating an average</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kt">double</code> <code class="n">total</code> <code class="o">=</code> <code class="mi">0</code><code class="o">;</code>
+<code class="lineno">2 </code><code class="kt">double</code> <code class="n">ave</code> <code class="o">=</code> <code class="mi">0</code><code class="o">;</code>
+<code class="lineno">3 </code><code class="c1">// Java 7</code>
+<code class="lineno">4 </code><code class="k">for</code> <code class="o">(</code><code class="n">Double</code> <code class="n">d</code> <code class="o">:</code> <code class="n">list</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">5 </code>    <code class="n">total</code> <code class="o">+=</code> <code class="n">d</code><code class="o">;</code>
+<code class="lineno">6 </code><code class="o">}</code>
+<code class="lineno">7 </code><code class="n">ave</code> <code class="o">=</code> <code class="n">total</code> <code class="o">/</code> <code class="o">((</code><code class="kt">double</code><code class="o">)</code> <code class="n">list</code><code class="o">.</code><code class="na">size</code><code class="o">());</code>
+<code class="lineno">8 </code><code class="c1">//Java 8</code>
+<code class="lineno">9 </code><code class="n">ave</code> <code class="o">=</code> <code class="n">list</code><code class="o">.</code><code class="na">stream</code><code class="o">().</code><code class="na">mapToDouble</code><code class="o">(</code><code class="n">Number</code><code class="o">::</code><code class="n">doubleValue</code><code class="o">).</code><code class="na">average</code><code class="o">().</code><code class="na">getAsDouble</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-printing-the-numbers-one-through-ten">Printing the numbers one through ten</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="c1">// Java 7</code>
+<code class="lineno"> 2 </code><code class="k">for</code> <code class="o">(</code><code class="kt">int</code> <code class="n">i</code> <code class="o">=</code> <code class="mi">1</code><code class="o">;</code> <code class="n">i</code> <code class="o">&lt;</code> <code class="mi">11</code><code class="o">;</code> <code class="n">i</code><code class="o">++)</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>    <code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">i</code><code class="o">);</code>
+<code class="lineno"> 4 </code><code class="o">}</code>
+<code class="lineno"> 5 </code><code class="c1">// Java 8</code>
+<code class="lineno"> 6 </code><code class="n">IntStream</code><code class="o">.</code><code class="na">range</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="mi">11</code><code class="o">)</code>
+<code class="lineno"> 7 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+<code class="lineno"> 8 </code><code class="c1">//or</code>
+<code class="lineno"> 9 </code><code class="n">Stream</code><code class="o">.</code><code class="na">iterate</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">i</code> <code class="o">-&gt;</code> <code class="n">i</code><code class="o">+</code><code class="mi">1</code><code class="o">).</code><code class="na">limit</code><code class="o">(</code><code class="mi">10</code><code class="o">)</code>
+<code class="lineno">10 </code>    <code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">::</code><code class="n">println</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<h4 id="leanpub-auto-joining-strings">Joining Strings</h4>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Java 7 using commons-util</code>
+<code class="lineno">2 </code><code class="n">List</code><code class="o">&lt;</code><code class="n">String</code><code class="o">&gt;</code> <code class="n">names</code> <code class="o">=</code> <code class="k">new</code> <code class="n">LinkedList</code><code class="o">&lt;&gt;();</code>
+<code class="lineno">3 </code><code class="k">for</code> <code class="o">(</code><code class="n">Dragon</code> <code class="n">dragon</code> <code class="o">:</code> <code class="n">dragons</code><code class="o">)</code> 
+<code class="lineno">4 </code>    <code class="n">names</code><code class="o">.</code><code class="na">add</code><code class="o">(</code><code class="n">dragon</code><code class="o">.</code><code class="na">getName</code><code class="o">());</code>
+<code class="lineno">5 </code><code class="n">String</code> <code class="n">names</code> <code class="o">=</code> <code class="n">StringUtils</code><code class="o">.</code><code class="na">join</code><code class="o">(</code><code class="n">names</code><code class="o">,</code> <code class="s">","</code><code class="o">);</code>
+<code class="lineno">6 </code><code class="c1">// Java 8</code>
+<code class="lineno">7 </code><code class="n">String</code> <code class="n">names</code> <code class="o">=</code> <code class="n">dragons</code><code class="o">.</code><code class="na">stream</code><code class="o">()</code>
+<code class="lineno">8 </code>    <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">getName</code><code class="o">)</code>
+<code class="lineno">9 </code>    <code class="o">.</code><code class="na">collect</code><code class="o">(</code><code class="n">Collectors</code><code class="o">.</code><code class="na">joining</code><code class="o">(</code><code class="s">","</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+
+<h2 id="leanpub-auto-optional">
+<span class="section-number">5. </span>Optional</h2>
+
+<p>Java 8 comes with the <code>Optional</code> class in the <code>java.util</code> package for avoiding null return values (and thus <code>NullPointerException</code>).
+It is very similar to Google Guava’s <a href="http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/base/Optional.html">Optional</a>,
+which is similar to Nat Pryce’s <a href="http://www.natpryce.com/articles/000776.html">Maybe</a> class 
+and Scala’s <code>Option</code> class.</p>
+
+<aside>
+  <h3 id="leanpub-auto-the-billion-dollar-mistake">The Billion Dollar Mistake</h3>
+  <p>Tony Hoare, the inventor of null, has gone on record calling it his <a href="http://qconlondon.com/london-2009/presentation/Null+References:+The+Billion+Dollar+Mistake">“billion-dollar mistake”</a>. 
+Despite your opinion of null, many efforts have been made to make null-checks part of the compilation or automated-code-check process; 
+for example, the @Nonnull annotation of JSR-305.
+<code>Optional</code> makes it very simple for API designers to avoid null.</p>
+
+</aside>
+
+<p>You can use <code>Optional.of(x)</code> to wrap a non-null value, <code>Optional.empty()</code> to represent a missing value,
+ or <code>Optional.ofNullable(x)</code> to create an Optional from a reference that may or may not be null.</p>
+
+<p>After creating an instance of Optional, you then use <code>isPresent()</code> to determine if the there is a value and <code>get()</code> to get the value.
+Optional provides a few other helpful methods for dealing with missing values:</p>
+
+<ul>
+  <li>
+<code>orElse(T)</code> – Returns the given default value if the Optional is empty.</li>
+  <li>
+<code>orElseGet(Supplier&lt;T&gt;)</code> – Calls on the given Supplier to provide a value if the Optional is empty.</li>
+  <li>
+<code>orElseThrow(Supplier&lt;X extends Throwable&gt;)</code> – Calls on the given Supplier for an exception to throw if the Optional is empty.</li>
+</ul>
+
+<p>It also includes functional style (lambda friendly) methods, like the following:</p>
+
+<ul>
+  <li>
+<code>filter(Predicate&lt;? super T&gt; predicate)</code> – Filters the value and returns a new Optional.</li>
+  <li>
+<code>flatMap(Function&lt;? super T,Optional&lt;U&gt;&gt; mapper)</code> – Performs a mapping operation which returns an Optional.</li>
+  <li>
+<code>ifPresent(Consumer&lt;? super T&gt; consumer)</code> – Executes the given Consumer only if there is a value present (no return value).</li>
+  <li>
+<code>map(Function&lt;? super T,? extends U&gt; mapper)</code> – Uses the given mapping Function and returns a new Optional.</li>
+</ul>
+
+<aside>
+  <h3 id="leanpub-auto-stream-optional">Stream Optional</h3>
+  <p>The new <code>Stream</code> interface has multiple methods which return Optional (in case there are no values in the Stream):</p>
+
+  <ul>
+    <li>
+<code>reduce(BinaryOperator&lt;T&gt; accumulator)</code> – Reduces the stream to a single value.</li>
+    <li>
+<code>max(Comparator&lt;? super T&gt; comparator)</code> – Finds the maximum value.</li>
+    <li>
+<code>min(Comparator&lt;? super T&gt; comparator)</code> – Finds the minimum value.</li>
+  </ul>
+
+</aside>
+
+
+<h2 id="leanpub-auto-nashorn">
+<span class="section-number">6. </span>Nashorn</h2>
+
+<p><em>Nashorn</em> replaces Rhino as the default JavaScript engine for the Oracle JVM.
+Nashorn is much faster since it uses the <code>invokedynamic</code> feature of the JVM.
+It also includes a command line tool (<code>jjs</code>).</p>
+
+<h3 id="leanpub-auto-jjs">
+<span class="section-number">6.1 </span>jjs</h3>
+
+<p>JDK 8 includes the command line tool <code>jjs</code> for running JavaScript.</p>
+
+<p>You can run JavaScript files from the command line (assuming you have Java 8’s bin in your <code>PATH</code>):</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">$</code> <code class="n">jjs</code> <code class="n">script</code><code class="o">.</code><code class="na">js</code>
+</pre></div>
+
+</figure>
+
+<p>This can be useful for running scripts; for example, let’s say you wanted to quickly find the sum of some numbers:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">var</code> <code class="nx">data</code> <code class="o">=</code> <code class="p">[</code><code class="mi">1</code><code class="p">,</code> <code class="mi">3</code><code class="p">,</code> <code class="mi">5</code><code class="p">,</code> <code class="mi">7</code><code class="p">,</code> <code class="mi">11</code><code class="p">]</code>
+<code class="lineno">2 </code><code class="kd">var</code> <code class="nx">sum</code> <code class="o">=</code> <code class="nx">data</code><code class="p">.</code><code class="nx">reduce</code><code class="p">(</code><code class="kd">function</code><code class="p">(</code><code class="nx">x</code><code class="p">,</code> <code class="nx">y</code><code class="p">)</code> <code class="p">{</code><code class="k">return</code> <code class="nx">x</code> <code class="o">+</code> <code class="nx">y</code><code class="p">},</code> <code class="mi">0</code><code class="p">)</code>
+<code class="lineno">3 </code><code class="nx">print</code><code class="p">(</code><code class="nx">sum</code><code class="p">)</code>
+</pre></div>
+
+</figure>
+
+<p>Running the above code should print out <code>27</code>.</p>
+
+<h3 id="leanpub-auto-scripting">
+<span class="section-number">6.2 </span>Scripting</h3>
+
+<p>Running jjs with the <code>-scripting</code> option starts up an interactive shell where you can type and evaluate JavaScript.</p>
+
+<p>You can also embed variables into strings and have them evaluate; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">jjs</code><code class="o">&gt;</code> <code class="n">var</code> <code class="n">date</code> <code class="o">=</code> <code class="k">new</code> <code class="n">Date</code><code class="o">()</code>
+<code class="lineno">2 </code><code class="n">jjs</code><code class="o">&gt;</code> <code class="nf">print</code><code class="o">(</code><code class="s">"${date}"</code><code class="o">)</code>
+</pre></div>
+
+</figure>
+
+<p>This would print out the current date and time.</p>
+
+<h3 id="leanpub-auto-scriptengine">
+<span class="section-number">6.3 </span>ScriptEngine</h3>
+
+<p>You can also run JavaScript dynamically from Java.</p>
+
+<p>First, you need to import the ScriptEngine:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kn">import</code> <code class="nn">javax.script.ScriptEngine</code><code class="o">;</code>
+<code class="lineno">2 </code><code class="kn">import</code> <code class="nn">javax.script.ScriptEngineManager</code><code class="o">;</code>
+</pre></div>
+
+</figure>
+
+<p>Second, you use the <code>ScriptEngineManager</code> to get the Nashorn engine:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">ScriptEngineManager</code> <code class="n">engineManager</code> <code class="o">=</code> <code class="k">new</code> <code class="n">ScriptEngineManager</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">ScriptEngine</code> <code class="n">engine</code> <code class="o">=</code> <code class="n">engineManager</code><code class="o">.</code><code class="na">getEngineByName</code><code class="o">(</code><code class="s">"nashorn"</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Now you can evaluate javascript at any point:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">engine</code><code class="o">.</code><code class="na">eval</code><code class="o">(</code><code class="s">"function p(s) { print(s) }"</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">engine</code><code class="o">.</code><code class="na">eval</code><code class="o">(</code><code class="s">"p('Hello Nashorn');"</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The <code>eval</code> method can also take a <code>FileReader</code> as input:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">engine</code><code class="o">.</code><code class="na">eval</code><code class="o">(</code><code class="k">new</code> <code class="n">FileReader</code><code class="o">(</code><code class="err">'</code><code class="n">library</code><code class="o">.</code><code class="na">js</code><code class="err">'</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<p>This way you can include and run any JavaScript. However, keep in mind that the typical variables available to you in the browser (window, document, etc.) are not available.</p>
+
+<h3 id="leanpub-auto-importing">
+<span class="section-number">6.4 </span>Importing</h3>
+
+<p>You can import and use Java classes and packages using the <em>JavaImporter</em>.</p>
+
+<p>For example, import <code>java.util</code>, the IO, and NIO file packages:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">var</code> <code class="nx">imports</code> <code class="o">=</code> <code class="k">new</code> <code class="nx">JavaImporter</code><code class="p">(</code><code class="nx">java</code><code class="p">.</code><code class="nx">util</code><code class="p">,</code> <code class="nx">java</code><code class="p">.</code><code class="nx">io</code><code class="p">,</code> <code class="nx">java</code><code class="p">.</code><code class="nx">nio</code><code class="p">.</code><code class="nx">file</code><code class="p">);</code>
+<code class="lineno">2 </code><code class="kd">with</code> <code class="p">(</code><code class="nx">imports</code><code class="p">)</code> <code class="p">{</code>
+<code class="lineno">3 </code>        <code class="kd">var</code> <code class="nx">paths</code> <code class="o">=</code> <code class="k">new</code> <code class="nx">LinkedList</code><code class="p">();</code>
+<code class="lineno">4 </code>        <code class="nx">print</code><code class="p">(</code><code class="nx">paths</code> <code class="k">instanceof</code> <code class="nx">LinkedList</code><code class="p">);</code> <code class="c1">//true</code>
+<code class="lineno">5 </code>        <code class="nx">paths</code><code class="p">.</code><code class="nx">add</code><code class="p">(</code><code class="nx">Paths</code><code class="p">.</code><code class="nx">get</code><code class="p">(</code><code class="s2">"file1"</code><code class="p">));</code>
+<code class="lineno">6 </code>        <code class="nx">paths</code><code class="p">.</code><code class="nx">add</code><code class="p">(</code><code class="nx">Paths</code><code class="p">.</code><code class="nx">get</code><code class="p">(</code><code class="s2">"file2"</code><code class="p">));</code>
+<code class="lineno">7 </code>        <code class="nx">paths</code><code class="p">.</code><code class="nx">add</code><code class="p">(</code><code class="nx">Paths</code><code class="p">.</code><code class="nx">get</code><code class="p">(</code><code class="s2">"file3"</code><code class="p">));</code>
+<code class="lineno">8 </code>        <code class="nx">print</code><code class="p">(</code><code class="nx">paths</code><code class="p">)</code> <code class="c1">// [file1, file2, file3]</code>
+<code class="lineno">9 </code><code class="p">}</code>
+</pre></div>
+
+</figure>
+
+<p>The above demonstrates that <code>paths</code> is an instance of <code>LinkedList</code> and prints out the list.</p>
+
+<p>Later on you could add the following code to write text into the files:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="k">for</code> <code class="p">(</code><code class="kd">var</code> <code class="nx">i</code><code class="o">=</code><code class="mi">0</code><code class="p">;</code> <code class="nx">i</code> <code class="o">&lt;</code> <code class="nx">paths</code><code class="p">.</code><code class="nx">size</code><code class="p">();</code> <code class="nx">i</code><code class="o">++</code><code class="p">)</code>
+<code class="lineno">2 </code>	<code class="nx">Files</code><code class="p">.</code><code class="nx">newOutputStream</code><code class="p">(</code><code class="nx">paths</code><code class="p">.</code><code class="nx">get</code><code class="p">(</code><code class="nx">i</code><code class="p">))</code>
+<code class="lineno">3 </code>		<code class="p">.</code><code class="nx">write</code><code class="p">(</code><code class="s2">"test\n"</code><code class="p">.</code><code class="nx">getBytes</code><code class="p">());</code>
+</pre></div>
+
+</figure>
+
+<p>We can use existing Java classes, but we can also create new ones.</p>
+
+<h3 id="leanpub-auto-extending">
+<span class="section-number">6.5 </span>Extending</h3>
+
+<p>You can extend Java classes and interfaces using 
+the <code>Java.type</code> and <code>Java.extend</code> functions.
+For example, you can extend the Callable interface and implement the <code>call</code> method:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">var</code> <code class="nx">concurrent</code> <code class="o">=</code> <code class="k">new</code> <code class="nx">JavaImporter</code><code class="p">(</code><code class="nx">java</code><code class="p">.</code><code class="nx">util</code><code class="p">,</code> <code class="nx">java</code><code class="p">.</code><code class="nx">util</code><code class="p">.</code><code class="nx">concurrent</code><code class="p">);</code>
+<code class="lineno"> 2 </code><code class="kd">var</code> <code class="nx">Callable</code> <code class="o">=</code> <code class="nx">Java</code><code class="p">.</code><code class="nx">type</code><code class="p">(</code><code class="s2">"java.util.concurrent.Callable"</code><code class="p">);</code>
+<code class="lineno"> 3 </code><code class="kd">with</code> <code class="p">(</code><code class="nx">concurrent</code><code class="p">)</code> <code class="p">{</code>
+<code class="lineno"> 4 </code>  <code class="kd">var</code> <code class="nx">executor</code> <code class="o">=</code> <code class="nx">Executors</code><code class="p">.</code><code class="nx">newCachedThreadPool</code><code class="p">();</code>
+<code class="lineno"> 5 </code>  <code class="kd">var</code> <code class="nx">tasks</code> <code class="o">=</code> <code class="k">new</code> <code class="nx">LinkedHashSet</code><code class="p">();</code>
+<code class="lineno"> 6 </code>  <code class="k">for</code> <code class="p">(</code><code class="kd">var</code> <code class="nx">i</code><code class="o">=</code><code class="mi">0</code><code class="p">;</code> <code class="nx">i</code> <code class="o">&lt;</code> <code class="mi">200</code><code class="p">;</code> <code class="nx">i</code><code class="o">++</code><code class="p">)</code> <code class="p">{</code>
+<code class="lineno"> 7 </code>    <code class="kd">var</code> <code class="nx">MyTask</code> <code class="o">=</code> <code class="nx">Java</code><code class="p">.</code><code class="nx">extend</code><code class="p">(</code><code class="nx">Callable</code><code class="p">,</code> <code class="p">{</code><code class="nx">call</code><code class="o">:</code> <code class="kd">function</code><code class="p">()</code> <code class="p">{</code><code class="nx">print</code><code class="p">(</code><code class="s2">"task "</code> <code class="o">+</code> <code class="nx">i</code><code class="p">)}})</code>
+<code class="lineno"> 8 </code>    <code class="kd">var</code> <code class="nx">task</code> <code class="o">=</code> <code class="k">new</code> <code class="nx">MyTask</code><code class="p">();</code>
+<code class="lineno"> 9 </code>    <code class="nx">tasks</code><code class="p">.</code><code class="nx">add</code><code class="p">(</code><code class="nx">task</code><code class="p">);</code>
+<code class="lineno">10 </code>    <code class="nx">executor</code><code class="p">.</code><code class="nx">submit</code><code class="p">(</code><code class="nx">task</code><code class="p">);</code>
+<code class="lineno">11 </code>  <code class="p">}</code>
+<code class="lineno">12 </code><code class="p">}</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-invocable">
+<span class="section-number">6.6 </span>Invocable</h3>
+
+<p>You can also invoke JavaScript functions directly from Java.</p>
+
+<p>Firstly, you need to cast the engine to the Invocable interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Invocable</code> <code class="n">inv</code> <code class="o">=</code> <code class="o">(</code><code class="n">Invocable</code><code class="o">)</code> <code class="n">engine</code><code class="o">;</code>
+</pre></div>
+
+</figure>
+
+<p>Then, to invoke any function, simple use the <code>invokeFunction</code> method, for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">engine</code><code class="o">.</code><code class="na">eval</code><code class="o">(</code><code class="s">"function p(s) { print(s) }"</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">inv</code><code class="o">.</code><code class="na">invokeFunction</code><code class="o">(</code><code class="s">"p"</code><code class="o">,</code> <code class="s">"hello"</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Lastly, you can use the <code>getInterface</code> method to implement any interface in JavaScript. </p>
+
+<p>For example, if you have the following <code>JPrinter</code> interface, you can use it like so:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">public</code> <code class="kd">static</code> <code class="kd">interface</code> <code class="nc">JPrinter</code> <code class="o">{</code>
+<code class="lineno">2 </code>    <code class="kt">void</code> <code class="nf">p</code><code class="o">(</code><code class="n">String</code> <code class="n">s</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="o">}</code>
+<code class="lineno">4 </code><code class="c1">// later on...</code>
+<code class="lineno">5 </code><code class="n">JPrinter</code> <code class="n">printer</code> <code class="o">=</code> <code class="n">inv</code><code class="o">.</code><code class="na">getInterface</code><code class="o">(</code><code class="n">JPrinter</code><code class="o">.</code><code class="na">class</code><code class="o">);</code>
+<code class="lineno">6 </code><code class="n">printer</code><code class="o">.</code><code class="na">p</code><code class="o">(</code><code class="s">"Hello again!"</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+
+<h2 id="leanpub-auto-new-date-and-time-api">
+<span class="section-number">7. </span>New Date and Time API</h2>
+
+<p>Java 8 introduces a new Date/Time API that is thread-safe, easier to read, and more comprehensive than the previous API.
+Java’s Calendar implementation has not changed much since it was first introduced and <a href="http://www.joda.org/joda-time/">Joda-Time</a> 
+is widely regarded as a better replacement. Java 8’s new Date/Time API is very similar to Joda-Time.</p>
+
+<h3 id="leanpub-auto-new-classes">
+<span class="section-number">7.1 </span>New Classes</h3>
+
+<p>The main difference you will notice is that there are several different classes to represent time, date, time period, and timezone specific data. Also there are transformers for dates and times.</p>
+
+<p>For dates and times without a timezone, use the following: </p>
+
+<ul>
+  <li>
+<code>LocalDate</code> – Day, month, year.</li>
+  <li>
+<code>LocalTime</code> – Time of day only.</li>
+  <li>
+<code>LocalDateTime</code> – Both date and time.</li>
+</ul>
+
+<p>For timezone specific times you use <code>ZonedDateTime</code>.</p>
+
+<p>Previous to Java 8, to calculate the time eight hours in the future you would need to write something like the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Calendar</code> <code class="n">cal</code> <code class="o">=</code> <code class="n">Calendar</code><code class="o">.</code><code class="na">getInstance</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">cal</code><code class="o">.</code><code class="na">add</code><code class="o">(</code><code class="n">Calendar</code><code class="o">.</code><code class="na">HOUR</code><code class="o">,</code> <code class="mi">8</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">cal</code><code class="o">.</code><code class="na">getTime</code><code class="o">();</code> <code class="c1">// actually returns a Date</code>
+</pre></div>
+
+</figure>
+
+<p>In Java 8, you can more simply write the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalTime</code> <code class="n">now</code> <code class="o">=</code> <code class="n">LocalTime</code><code class="o">.</code><code class="na">now</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">LocalTime</code> <code class="n">later</code> <code class="o">=</code> <code class="n">now</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="mi">8</code><code class="o">,</code> <code class="n">HOURS</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>There are also well-named methods such as <code>plusDays</code>, <code>plusMonths</code>, <code>minusDays</code>, and <code>minusMonths</code>.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalDate</code> <code class="n">today</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">now</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">LocalDate</code> <code class="n">thirtyDaysFromNow</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plusDays</code><code class="o">(</code><code class="mi">30</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">LocalDate</code> <code class="n">nextMonth</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plusMonths</code><code class="o">(</code><code class="mi">1</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="n">LocalDate</code> <code class="n">aMonthAgo</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">minusMonths</code><code class="o">(</code><code class="mi">1</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Note that each method returns a different instance of <code>LocalDate</code>.
+The original LocalDate, <code>today</code>, remains unchanged.
+This is because the new Date-Time types are immutable.
+This allows them to be thread-safe and cacheable.</p>
+
+<h3 id="leanpub-auto-creation">
+<span class="section-number">7.2 </span>Creation</h3>
+
+<p>Creating new date and time objects is much easier and less error-prone in Java 8.
+Every type is immutable and has static factory methods.</p>
+
+<p>For example, creating a new LocalDate for March 15, 2014 is as simple as:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalDate</code> <code class="n">date</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="mi">2014</code><code class="o">,</code> <code class="mi">3</code><code class="o">,</code> <code class="mi">15</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>For more type-safety, you can use the new <code>Month</code> enum:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">date</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="mi">2014</code><code class="o">,</code> <code class="n">Month</code><code class="o">.</code><code class="na">MARCH</code><code class="o">,</code> <code class="mi">15</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>You can also easily create a LocalDateTime by combining an instance of LocalDate with a LocalTime:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalTime</code> <code class="n">time</code> <code class="o">=</code> <code class="n">LocalTime</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="mi">12</code><code class="o">,</code> <code class="mi">15</code><code class="o">,</code> <code class="mi">0</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">LocalDateTime</code> <code class="n">datetime</code> <code class="o">=</code> <code class="n">date</code><code class="o">.</code><code class="na">atTime</code><code class="o">(</code><code class="n">time</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>You could also use any of the following methods (on LocalDate):</p>
+
+<ul>
+  <li>atTime(int hour, int minute)</li>
+  <li>atTime(int hour, int minute, int second)</li>
+  <li>atTime(int hour, int minute, int second, int nanoOfSecond)</li>
+</ul>
+
+<p>Every class also has the <code>now()</code> method, which corresponds to the instant (or date) it is called.</p>
+
+<h3 id="leanpub-auto-enums">
+<span class="section-number">7.3 </span>Enums</h3>
+
+<p>Java 8 adds several enums, such as <code>java.time.temporal.ChronoUnit</code> for expressing things like “days” and “hours” 
+instead of the integer constants used in the Calendar API.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalDate</code> <code class="n">today</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">now</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">LocalDate</code> <code class="n">nextWeek</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">ChronoUnit</code><code class="o">.</code><code class="na">WEEKS</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">LocalDate</code> <code class="n">nextMonth</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">ChronoUnit</code><code class="o">.</code><code class="na">MONTHS</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="n">LocalDate</code> <code class="n">nextYear</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">ChronoUnit</code><code class="o">.</code><code class="na">YEARS</code><code class="o">);</code>
+<code class="lineno">5 </code><code class="n">LocalDate</code> <code class="n">nextDecade</code> <code class="o">=</code> <code class="n">today</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="mi">1</code><code class="o">,</code> <code class="n">ChronoUnit</code><code class="o">.</code><code class="na">DECADES</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>There’s also the <code>java.time.DayOfWeek</code> and <code>java.time.Month</code> enums.</p>
+
+<p>The month enum can be used to create LocalDates and is returned by <code>LocalDate::getMonth</code>.
+For example here is how you might create a LocalDate and print out the month.</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// import java.time.Month;</code>
+<code class="lineno">2 </code><code class="n">LocalDate</code> <code class="n">date</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="mi">2014</code><code class="o">,</code> <code class="n">Month</code><code class="o">.</code><code class="na">MARCH</code><code class="o">,</code> <code class="mi">27</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">date</code><code class="o">.</code><code class="na">getMonth</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<p>This would print out “MARCH”.</p>
+
+<h3 id="leanpub-auto-clock">
+<span class="section-number">7.4 </span>Clock</h3>
+
+<p>The <code>Clock</code> can be used in conjunction with dates and times to help build your tests. During production a normal Clock can be used, and a different one during tests.</p>
+
+<p>To get the default clock, use the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Clock</code><code class="o">.</code><code class="na">systemDefaultZone</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>The Clock can then be passed into factory methods; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalTime</code> <code class="n">time</code> <code class="o">=</code> <code class="n">LocalTime</code><code class="o">.</code><code class="na">now</code><code class="o">(</code><code class="n">clock</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-period-and-duration">
+<span class="section-number">7.5 </span>Period and Duration</h3>
+
+<p>Java 8 has two types for representing time differences as humans understand them, Period and Duration.</p>
+
+<p>Duration is a time-based amount of time, such as ‘34.5 seconds’. 
+Period is a date-based amount of time, such as ‘2 years, 3 months and 4 days’. </p>
+
+<p>Periods and Durations can be determined using the <code>between</code> method:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Period</code> <code class="n">p</code> <code class="o">=</code> <code class="n">Period</code><code class="o">.</code><code class="na">between</code><code class="o">(</code><code class="n">date1</code><code class="o">,</code> <code class="n">date2</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">Duration</code> <code class="n">d</code> <code class="o">=</code> <code class="n">Duration</code><code class="o">.</code><code class="na">between</code><code class="o">(</code><code class="n">time1</code><code class="o">,</code> <code class="n">time2</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>They can also be created using static methods. 
+For example, Durations can be created for any amount of seconds, minutes, hours, or days:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Duration</code> <code class="n">twoHours</code> <code class="o">=</code> <code class="n">Duration</code><code class="o">.</code><code class="na">ofHours</code><code class="o">(</code><code class="mi">2</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">Duration</code> <code class="n">tenMinutes</code> <code class="o">=</code> <code class="n">Duration</code><code class="o">.</code><code class="na">ofMinutes</code><code class="o">(</code><code class="mi">10</code><code class="o">);</code>
+<code class="lineno">3 </code><code class="n">Duration</code> <code class="n">thirtySecs</code> <code class="o">=</code> <code class="n">Duration</code><code class="o">.</code><code class="na">ofSeconds</code><code class="o">(</code><code class="mi">30</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>Periods and Durations can be added or subtracted from Java 8 date types.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">LocalTime</code> <code class="n">t2</code> <code class="o">=</code> <code class="n">time</code><code class="o">.</code><code class="na">plus</code><code class="o">(</code><code class="n">twoHours</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-temporal-adjusters">
+<span class="section-number">7.6 </span>Temporal Adjusters</h3>
+
+<p>A <code>TemporalAdjuster</code> can be used to do tricky date “math” that is popular in business applications.
+For example they can be used to find the “first Monday of the month” or “next Tuesday”.</p>
+
+<p>The <code>java.time.temporal.TemporalAdjusters</code> class contains a bunch of useful methods for creating TemporalAdjusters.
+Here are a few of them:</p>
+
+<ul>
+  <li>firstDayOfMonth()</li>
+  <li>firstDayOfNextMonth()</li>
+  <li>firstInMonth(DayOfWeek)</li>
+  <li>lastDayOfMont()</li>
+  <li>next(DayOfWeek)</li>
+  <li>nextOrSame(DayOfWeek)</li>
+  <li>previous(DayOfWeek)</li>
+  <li>previousOrSame(DayOfWeek)</li>
+</ul>
+
+<p>To use a <code>TemporalAdjuster</code> use the <code>with</code> method. This method returns an adjusted copy of the date-time or date object.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kn">import</code> <code class="nn">static</code> <code class="n">java</code><code class="o">.</code><code class="na">time</code><code class="o">.</code><code class="na">temporal</code><code class="o">.</code><code class="na">TemporalAdjusters</code><code class="o">.*;</code>
+<code class="lineno">2 </code><code class="c1">//...</code>
+<code class="lineno">3 </code><code class="n">LocalDate</code> <code class="n">nextTuesday</code> <code class="o">=</code> <code class="n">LocalDate</code><code class="o">.</code><code class="na">now</code><code class="o">().</code><code class="na">with</code><code class="o">(</code><code class="n">next</code><code class="o">(</code><code class="n">DayOfWeek</code><code class="o">.</code><code class="na">TUESDAY</code><code class="o">));</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-instant">
+<span class="section-number">7.7 </span>Instant</h3>
+
+<p>The <code>Instant</code> class represents a point in time measured to the nanosecond.
+It forms the basis of time measurements in the Java 8 date-time API.</p>
+
+<p>Much like the old Date class, Instant measures time starting from the “epoch” (Jan. 1, 1970) and is time-zone ignorant.</p>
+
+<h3 id="leanpub-auto-time-zones">
+<span class="section-number">7.8 </span>Time Zones</h3>
+
+<p>Time-Zones are represented by the <code>java.time.ZoneId</code> class.
+There are two types of ZoneIds, fixed offsets and geographical regions. 
+This is to compensate for things like “daylight saving time” which can be very complex.</p>
+
+<p>You can get an instance of a ZoneId in many ways including the following two:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">ZoneId</code> <code class="n">mountainTime</code> <code class="o">=</code> <code class="n">ZoneId</code><code class="o">.</code><code class="na">of</code><code class="o">(</code><code class="s">"America/Denver"</code><code class="o">);</code>
+<code class="lineno">2 </code><code class="n">ZoneId</code> <code class="n">myZone</code> <code class="o">=</code> <code class="n">ZoneId</code><code class="o">.</code><code class="na">systemDefault</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>To print out all available IDs, use <code>getAvailableZoneIds()</code>:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">System</code><code class="o">.</code><code class="na">out</code><code class="o">.</code><code class="na">println</code><code class="o">(</code><code class="n">ZoneId</code><code class="o">.</code><code class="na">getAvailableZoneIds</code><code class="o">());</code>
+</pre></div>
+
+</figure>
+
+<h3 id="leanpub-auto-backwards-compatibility">
+<span class="section-number">7.9 </span>Backwards Compatibility</h3>
+
+<p>The original Date and Calendar objects have the <code>toInstant()</code> method to convert them to the new Date-Time API.
+You can then use an <code>ofInstant(Insant,ZoneId)</code> method to get a LocalDateTime or ZonedDateTime object; for example: </p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Date</code> <code class="n">date</code> <code class="o">=</code> <code class="k">new</code> <code class="n">Date</code><code class="o">();</code>
+<code class="lineno">2 </code><code class="n">Instant</code> <code class="n">now</code> <code class="o">=</code> <code class="n">date</code><code class="o">.</code><code class="na">toInstant</code><code class="o">();</code>
+<code class="lineno">3 </code><code class="n">LocalDateTime</code> <code class="n">dateTime</code> <code class="o">=</code> <code class="n">LocalDateTime</code><code class="o">.</code><code class="na">ofInstant</code><code class="o">(</code><code class="n">now</code><code class="o">,</code> <code class="n">myZone</code><code class="o">);</code>
+<code class="lineno">4 </code><code class="n">ZonedDateTime</code> <code class="n">zdt</code> <code class="o">=</code> <code class="n">ZonedDateTime</code><code class="o">.</code><code class="na">ofInstant</code><code class="o">(</code><code class="n">now</code><code class="o">,</code> <code class="n">myZone</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+
+<h2 id="leanpub-auto-no-more-permanent-generation">
+<span class="section-number">8. </span>No More Permanent Generation</h2>
+
+<blockquote>
+  <p>The proposed implementation will allocate class meta-data in native memory and move interned Strings and class statics to the Java heap.
+[http://openjdk.java.net/jeps/122]</p>
+</blockquote>
+
+<p>Most allocations for the class metadata are now allocated out of native memory.
+This means that you won’t have to set the “XX:PermSize” options anymore (they don’t exist).</p>
+
+<p>This also means that you will get a “java.lang.OutOfMemoryError: Metadata space” error message
+instead of “java.lang.OutOfMemoryError: Permgen space” when you run out of memory.</p>
+
+<p>This is part of the convergence of the Oracle JRockit and HotSpot JVMs.</p>
+
+
+<h2 id="leanpub-auto-miscellaneous">
+<span class="section-number">9. </span>Miscellaneous</h2>
+
+<p>Java 8 has tons of new features that you might miss with all of the focus on lambdas.
+Here are some of them:</p>
+
+<ul>
+  <li>java.util.Base64</li>
+  <li>Cryptography upgrades (lots)</li>
+  <li>JDBC 4.2</li>
+  <li>Repeatable Annotations</li>
+  <li>Annotations on types</li>
+</ul>
+
+<p>For a more complete list, please see the <a href="http://openjdk.java.net/projects/jdk8/features/">official list</a>. </p>
+
+<h3 id="leanpub-auto-base64">
+<span class="section-number">9.1 </span>Base64</h3>
+
+<p>Until now, Java developers have had to rely on third-party libraries for encoding and decoding Base-64.
+Since it is such a frequent operation, a large project will typically contain several different implementations of Base64.
+For example: Apache commons-codec, Spring, and Guava all have separate implementations.</p>
+
+<p>For this reason, Java 8 has <code>java.util.Base64</code>.
+It acts like a factory for Base64 encoders and decoders and has the following methods:</p>
+
+<ul>
+  <li><code>getEncoder()</code></li>
+  <li><code>getDecoder()</code></li>
+  <li><code>getUrlEncoder()</code></li>
+  <li><code>getUrlDecoder()</code></li>
+</ul>
+
+<p>Each factory method returns either an Encoder or Decoder.</p>
+
+<p>The URL Base-64 Encoder provides an encoding that is URL and Filename safe (62 is - and 63 is _).</p>
+
+
+<h3 id="leanpub-auto-annotations-on-java-types">
+<span class="section-number">9.2 </span>Annotations on Java Types</h3>
+
+<p>Prior to Java 8, annotations could be used on any declaration.
+In Java 8, annotations can also be applied to the <em>use of types</em>. 
+Here are some examples:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="c1">// Class instance creation:</code>
+<code class="lineno"> 2 </code><code class="k">new</code> <code class="nd">@Interned</code> <code class="n">RocketShip</code><code class="o">();</code>
+<code class="lineno"> 3 </code>
+<code class="lineno"> 4 </code><code class="c1">// Type cast:</code>
+<code class="lineno"> 5 </code><code class="n">notNullString</code> <code class="o">=</code> <code class="o">(</code><code class="nd">@NonNull</code> <code class="n">String</code><code class="o">)</code> <code class="n">str</code><code class="o">;</code>
+<code class="lineno"> 6 </code>
+<code class="lineno"> 7 </code><code class="c1">// implements clause:</code>
+<code class="lineno"> 8 </code><code class="kd">class</code> <code class="nc">ImmutableSet</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="kd">implements</code>
+<code class="lineno"> 9 </code>        <code class="nd">@Readonly</code> <code class="n">Set</code><code class="o">&lt;</code><code class="nd">@Readonly</code> <code class="n">T</code><code class="o">&gt;</code> <code class="o">{</code> <code class="o">...</code> <code class="o">}</code>
+<code class="lineno">10 </code>
+<code class="lineno">11 </code><code class="c1">// Thrown exception declaration:</code>
+<code class="lineno">12 </code><code class="kt">void</code> <code class="nf">launchRocket</code><code class="o">()</code> <code class="kd">throws</code>
+<code class="lineno">13 </code>   	<code class="nd">@Critical</code> <code class="n">FireException</code> <code class="o">{</code> <code class="o">...</code> <code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>This new ability is primarily aimed at supporting type-checking frameworks, such as <a href="http://types.cs.washington.edu/checker-framework/">Checker</a>.
+These frameworks help find errors in your code at compile time.</p>
+
+<h3 id="leanpub-auto-repeating-annotations">
+<span class="section-number">9.3 </span>Repeating Annotations</h3>
+
+<p>Java 8 will allow annotations annotated with <code>@Repeatable</code> to be repeated.</p>
+
+<p>For example, let’s say you’re coding a game and want to use annotations to schedule when methods should be called.
+You can declare multiple schedules using multiple annotations:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// the first of the month and every monday at 7am</code>
+<code class="lineno">2 </code><code class="nd">@Schedule</code><code class="o">(</code><code class="n">dayOfMonth</code><code class="o">=</code><code class="s">"first"</code><code class="o">)</code>
+<code class="lineno">3 </code><code class="nd">@Schedule</code><code class="o">(</code><code class="n">dayOfWeek</code><code class="o">=</code><code class="s">"Monday"</code><code class="o">,</code> <code class="n">hour</code><code class="o">=</code><code class="mi">7</code><code class="o">)</code>
+<code class="lineno">4 </code><code class="kd">public</code> <code class="kt">void</code> <code class="nf">doGoblinInvasion</code><code class="o">()</code> <code class="o">{</code> <code class="o">...</code> <code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>For this to be possible, you need to have the following:</p>
+
+<ul>
+  <li>The <code>Schedule</code> annotation needs to use the meta-annotation <code>@Repeatable</code>.</li>
+  <li>There needs to be another annotation as declared by the @Repeatable annotation.</li>
+</ul>
+
+<p>Due to Java’s emphasis on backwards-compatibility, repeating annotations are actually stored within another annotation (that you provide).
+The <code>@Repeatable</code> annotation takes in a value that is the class of the containing annotation.
+For example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="c1">// Schedule.java</code>
+<code class="lineno">2 </code><code class="nd">@Repeatable</code><code class="o">(</code><code class="n">Schedules</code><code class="o">.</code><code class="na">class</code><code class="o">)</code>
+<code class="lineno">3 </code><code class="kd">public</code> <code class="nd">@interface</code> <code class="n">Schedule</code> <code class="o">{...}</code>
+<code class="lineno">4 </code><code class="c1">// Schedules.java</code>
+<code class="lineno">5 </code><code class="kd">public</code> <code class="nd">@interface</code> <code class="n">Schedules</code> <code class="o">{</code>
+<code class="lineno">6 </code>    <code class="n">Schedule</code><code class="o">[]</code> <code class="n">value</code><code class="o">;</code>
+<code class="lineno">7 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Schedule is now a <em>repeatable annotation</em>.</p>
+
+<p>You can use reflection to access repeatable annotations at runtime.
+To do this there is a new method called <code>getAnnotationsByType(Class annotationClass)</code> on <code>Class</code>, <code>Constructor</code>, <code>Method</code>, etc.
+It returns an array of all such annotations (or an empty array if there are none).</p>
+
+
+<h2 id="leanpub-auto-functional-programming-in-java-8">
+<span class="section-number">10. </span>Functional Programming in Java 8</h2>
+
+<p>Java 8 manages to add many of the features of functional languages without significantly changing the Java language.</p>
+
+<p>When lambda expressions, method-references, the Stream interface, and immutable data-structures are combined, Java enables what could be called “functional programming” (FP).</p>
+
+<p>For the purposes of this book, the three pillars of FP are as follows:</p>
+
+<ul>
+  <li>Functions</li>
+  <li>Immutability</li>
+  <li>Concurrency</li>
+</ul>
+
+<h3 id="leanpub-auto-functions">
+<span class="section-number">10.1 </span>Functions</h3>
+
+<p>Of course, as the name implies, functional programming is based on functions as a first-class feature.
+Java 8 arguably elevates functions to a first-class feature with the Lambda Project and <em>functional interfaces</em>.</p>
+
+<p>The <code>Function</code> interface (and related interfaces IntFunction, DoubleFunction, LongFunction, BiFunction, etc.) 
+represents the compromise made by Java 8 in elevating functions to objects.
+This interface allows functions to be passed as arguments, stored as variables, and be returned by methods.</p>
+
+<p>The <code>Function</code> interface has the following default methods:</p>
+
+<ul>
+  <li>
+<code>andThen(Function)</code>: Returns a composed function that first applies this function to its input, and then applies the given function to the result.</li>
+  <li>
+<code>compose(Function)</code>: Similar to <code>andThen</code> but in reversed order (first applies the given function to its input, and then this function).</li>
+  <li>
+<code>identity()</code>: Returns a function that always returns its input argument.</li>
+</ul>
+
+<p>You can use these methods to create a chain for creating a function; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">Function</code><code class="o">&lt;</code><code class="n">Integer</code><code class="o">,</code><code class="n">String</code><code class="o">&gt;</code> <code class="n">f</code> <code class="o">=</code> <code class="n">Function</code><code class="o">.&lt;</code><code class="n">Integer</code><code class="o">&gt;</code><code class="n">identity</code><code class="o">()</code>
+<code class="lineno">2 </code>        <code class="o">.</code><code class="na">andThen</code><code class="o">(</code><code class="n">i</code> <code class="o">-&gt;</code> <code class="mi">2</code><code class="o">*</code><code class="n">i</code><code class="o">).</code><code class="na">andThen</code><code class="o">(</code><code class="n">i</code> <code class="o">-&gt;</code> <code class="s">"str"</code> <code class="o">+</code> <code class="n">i</code><code class="o">);</code>
+</pre></div>
+
+</figure>
+
+<p>The resulting function would take an Integer, multiply it by two, and then prepend “str” to it.</p>
+
+<p>You can use <code>andThen</code> any number of times to create a single function. 
+Also, remember that functions can be passed and returned from methods.
+Here’s an example involving the new Date-Time API:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">public</code> <code class="n">Function</code><code class="o">&lt;</code><code class="n">LocalDate</code><code class="o">,</code><code class="n">LocalDateTime</code><code class="o">&gt;</code> <code class="nf">dateTimeFunction</code><code class="o">(</code>
+<code class="lineno">2 </code>    <code class="kd">final</code> <code class="n">Function</code><code class="o">&lt;</code><code class="n">LocalDate</code><code class="o">,</code><code class="n">LocalDate</code><code class="o">&gt;</code> <code class="n">f</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">3 </code>    
+<code class="lineno">4 </code>    <code class="k">return</code> <code class="n">f</code><code class="o">.</code><code class="na">andThen</code><code class="o">(</code><code class="n">d</code> <code class="o">-&gt;</code> <code class="n">d</code><code class="o">.</code><code class="na">atTime</code><code class="o">(</code><code class="mi">2</code><code class="o">,</code> <code class="mi">2</code><code class="o">));</code>
+<code class="lineno">5 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>This method would take in a function that operates on a <code>LocalDate</code> and convert it into a function that returns a <code>LocalDateTime</code> (with a time of 2:02am).</p>
+
+<h4 id="leanpub-auto-tuples">Tuples</h4>
+
+<p>If you need a functional interface for a method with more than two parameters (eg. “TriFunction”) you need to make it yourself or use a library.
+Another way to handle this issue is to use a data structure called a <em>Tuple</em>.</p>
+
+<p>A Tuple is a typed data structure for holding a number of elements.
+Some languages, such as Scala, have built-in support for Tuples. 
+Tuples are useful whenever you are handling multiple related values, but don’t want all of the overhead of creating a new class.</p>
+
+<p>Here’s a very simple example of implementing a Tuple with two elements:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">public</code> <code class="kd">class</code> <code class="nc">Tuple2</code><code class="o">&lt;</code><code class="n">A</code><code class="o">,</code> <code class="n">B</code><code class="o">&gt;</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>    <code class="kd">public</code> <code class="kd">final</code> <code class="n">A</code> <code class="n">_1</code><code class="o">;</code>
+<code class="lineno"> 3 </code>    <code class="kd">public</code> <code class="kd">final</code> <code class="n">B</code> <code class="n">_2</code><code class="o">;</code>
+<code class="lineno"> 4 </code>
+<code class="lineno"> 5 </code>    <code class="kd">public</code> <code class="nf">Tuple2</code><code class="o">(</code><code class="n">A</code> <code class="n">a</code><code class="o">,</code> <code class="n">B</code> <code class="n">b</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>            <code class="k">this</code><code class="o">.</code><code class="na">_1</code> <code class="o">=</code> <code class="n">a</code><code class="o">;</code>
+<code class="lineno"> 7 </code>            <code class="k">this</code><code class="o">.</code><code class="na">_2</code> <code class="o">=</code> <code class="n">b</code><code class="o">;</code>
+<code class="lineno"> 8 </code>    <code class="o">}</code>
+<code class="lineno"> 9 </code>
+<code class="lineno">10 </code>    <code class="nd">@Override</code>
+<code class="lineno">11 </code>    <code class="kd">public</code> <code class="n">A</code> <code class="nf">get_1</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">12 </code>            <code class="k">return</code> <code class="n">_1</code><code class="o">;</code>
+<code class="lineno">13 </code>    <code class="o">}</code>
+<code class="lineno">14 </code>
+<code class="lineno">15 </code>    <code class="nd">@Override</code>
+<code class="lineno">16 </code>    <code class="kd">public</code> <code class="n">B</code> <code class="nf">get_2</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">17 </code>            <code class="k">return</code> <code class="n">_2</code><code class="o">;</code>
+<code class="lineno">18 </code>    <code class="o">}</code>
+<code class="lineno">19 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Tuples also allow you to approximate returning multiple values.</p>
+
+<aside class="tip blurb">
+    <p>There are several implementations of Tuples available in Java, such as <a href="http://www.javatuples.org/">javatuples</a> and <a href="https://code.google.com/p/totallylazy/">totallylazy</a>.</p>
+
+</aside>
+
+<h3 id="leanpub-auto-immutability">
+<span class="section-number">10.2 </span>Immutability</h3>
+
+<p>In functional programming, state is considered harmful and avoided whenever possible.
+Instead, <em>immutable</em> (unchangeable) data structures are preferred.
+For example, <code>String</code> is an immutable type in Java.</p>
+
+<p>As you may have learned, Java 8’s new Date-Time classes are immutable.
+What you may not have realized is that <em>almost everything</em> added in Java 8 is immutable (Optional and Streams for example).</p>
+
+<p>However, you need to be careful when using Java 8’s new functional patterns to not accidentally fall back into the <em>mutable</em> mind-set.
+For example, the following type of code should be avoided:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kt">int</code><code class="o">[]</code> <code class="n">myCount</code> <code class="o">=</code> <code class="k">new</code> <code class="kt">int</code><code class="o">[</code><code class="mi">1</code><code class="o">];</code>
+<code class="lineno">2 </code><code class="n">list</code><code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">dragon</code> <code class="o">-&gt;</code> <code class="o">{</code>
+<code class="lineno">3 </code>    <code class="k">if</code> <code class="o">(</code><code class="n">dragon</code><code class="o">.</code><code class="na">isGreen</code><code class="o">())</code> <code class="n">myCount</code><code class="o">[</code><code class="mi">0</code><code class="o">]++;</code>
+<code class="lineno">4 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>You may think you are being clever, but this kind of thing can cause problems. 
+Instead, you should do something like the following:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="n">list</code><code class="o">.</code><code class="na">stream</code><code class="o">().</code><code class="na">filter</code><code class="o">(</code><code class="n">Dragon</code><code class="o">::</code><code class="n">isGreen</code><code class="o">).</code><code class="na">count</code><code class="o">();</code>
+</pre></div>
+
+</figure>
+
+<p>If you ever find yourself resorting to mutability, consider if you could use some combination of “filter”, “map”, “reduce” or “collect” instead.</p>
+
+<h3 id="leanpub-auto-concurrency">
+<span class="section-number">10.3 </span>Concurrency</h3>
+
+<p>With the increasing popularity of multi-core processors, concurrent programming has become more important.
+Functional programming forms a solid basis for concurrent programming and Java 8 supports concurrency in many different ways.</p>
+
+<p>One of those ways is the <code>parallelStream()</code> method on Collection.
+It provides a very quick way to use a Stream concurrently.
+However, like all optimizations, you should test to make sure that your code is actually faster, and it should be used sparingly.
+Too much concurrency could actually cause your application to slow down.</p>
+
+<p>Another way Java 8 supports concurrency is with the new <code>CompletableFuture</code> class.
+It has the <code>supplyAsync</code> static method that takes in the functional interface <code>Supplier</code>.
+It also has the method <code>thenAccept</code> which takes in a <code>Consumer</code> that handles completion of the task.
+The CompletableFuture calls on the given supplier in a different thread and executes the consumer when complete.</p>
+
+<p>When used in conjunction with things like the <code>CountDownLatch</code>, <code>AtomicInteger</code>, <code>AtomicLong</code>, <code>AtomicReference</code>, …
+you can implement thread-safe, concurrent FP-like code; for example:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">public</code> <code class="n">Dragon</code> <code class="nf">closestDragon</code><code class="o">(</code><code class="n">Location</code> <code class="n">location</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>    <code class="n">AtomicReference</code><code class="o">&lt;</code><code class="n">DragonDistance</code><code class="o">&gt;</code> <code class="n">closest</code> <code class="o">=</code> 
+<code class="lineno"> 3 </code>        <code class="k">new</code> <code class="n">AtomicReference</code><code class="o">&lt;&gt;(</code><code class="n">DragonDistance</code><code class="o">.</code><code class="na">worstMatch</code><code class="o">());</code>
+<code class="lineno"> 4 </code>    <code class="n">CountDownLatch</code> <code class="n">latch</code> <code class="o">=</code> <code class="k">new</code> <code class="n">CountDownLatch</code><code class="o">(</code><code class="n">dragons</code><code class="o">.</code><code class="na">size</code><code class="o">());</code>
+<code class="lineno"> 5 </code>    <code class="n">dragons</code><code class="o">.</code><code class="na">forEach</code><code class="o">(</code><code class="n">dragon</code> <code class="o">-&gt;</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>        <code class="n">CompletableFuture</code><code class="o">.</code><code class="na">supplyAsync</code><code class="o">(()</code> <code class="o">-&gt;</code> <code class="n">dragon</code><code class="o">.</code><code class="na">distance</code><code class="o">(</code><code class="n">location</code><code class="o">))</code>
+<code class="lineno"> 7 </code>          <code class="o">.</code><code class="na">thenAccept</code><code class="o">(</code><code class="n">result</code> <code class="o">-&gt;</code> <code class="o">{</code>
+<code class="lineno"> 8 </code>            <code class="n">closest</code><code class="o">.</code><code class="na">accumulateAndGet</code><code class="o">(</code><code class="n">result</code><code class="o">,</code> <code class="n">DragonDistance</code><code class="o">::</code><code class="n">closest</code><code class="o">);</code>
+<code class="lineno"> 9 </code>            <code class="n">latch</code><code class="o">.</code><code class="na">countDown</code><code class="o">();</code>
+<code class="lineno">10 </code>            <code class="o">});</code>
+<code class="lineno">11 </code>        <code class="o">});</code>
+<code class="lineno">12 </code>    <code class="k">try</code> <code class="o">{</code>
+<code class="lineno">13 </code>        <code class="n">latch</code><code class="o">.</code><code class="na">await</code><code class="o">();</code>
+<code class="lineno">14 </code>    <code class="o">}</code> <code class="k">catch</code> <code class="o">(</code><code class="n">InterruptedException</code> <code class="n">e</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">15 </code>        <code class="k">throw</code> <code class="k">new</code> <code class="n">RuntimeException</code><code class="o">(</code><code class="s">"Interrupted during calculations"</code><code class="o">,</code> <code class="n">e</code><code class="o">);</code>
+<code class="lineno">16 </code>    <code class="o">}</code>
+<code class="lineno">17 </code>    <code class="k">return</code> <code class="n">closest</code><code class="o">.</code><code class="na">get</code><code class="o">().</code><code class="na">getDragon</code><code class="o">();</code>
+<code class="lineno">18 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>This example finds the closest dragon to a certain Location (assume that Dragon’s <code>distance</code> method involves a time-consuming calculation).</p>
+
+<p>However, this could be simplified using the <code>parallelStream()</code> default method (since only one type of calculation is going on) in the following way: </p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno">1 </code><code class="kd">public</code> <code class="n">Dragon</code> <code class="nf">closestDragon</code><code class="o">(</code><code class="n">Location</code> <code class="n">location</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno">2 </code>    <code class="k">return</code> <code class="n">dragons</code><code class="o">.</code><code class="na">parallelStream</code><code class="o">()</code>
+<code class="lineno">3 </code>      <code class="o">.</code><code class="na">map</code><code class="o">(</code><code class="n">dragon</code> <code class="o">-&gt;</code> <code class="n">dragon</code><code class="o">.</code><code class="na">distance</code><code class="o">(</code><code class="n">location</code><code class="o">))</code>
+<code class="lineno">4 </code>      <code class="o">.</code><code class="na">reduce</code><code class="o">(</code><code class="n">DragonDistance</code><code class="o">.</code><code class="na">worstMatch</code><code class="o">(),</code> <code class="n">DragonDistance</code><code class="o">::</code><code class="n">closest</code><code class="o">)</code>
+<code class="lineno">5 </code>      <code class="o">.</code><code class="na">getDragon</code><code class="o">();</code>
+<code class="lineno">6 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>This performs essentially the same task as the previous example but in a more concise (and functional) way.</p>
+
+<h3 id="leanpub-auto-tail-call-optimization">
+<span class="section-number">10.4 </span>Tail-Call Optimization</h3>
+
+<p>One of the hallmarks of functional programming is <em>tail-call recursion</em><sup id="fnref-tcr"><a href="#fn-tcr" rel="footnote">5</a></sup>.
+It solves the same problem as iteration (which does not exist in FP).
+Unfortunately, it can cause stack-overflows if not properly optimized by the compiler.</p>
+
+<p><em>Tail-Call optimization</em> refers to when a compiler converts a recursive function call into a loop to avoid using the call stack.
+For example, a function that uses tail-call recursion in Lisp will be automatically optimized this way.</p>
+
+<p>Java 8 does not support tail-call optimization like some other languages (yet).
+However, it is possible to approximate it using something like the following interface:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="nd">@FunctionalInterface</code>
+<code class="lineno"> 2 </code><code class="kd">public</code> <code class="kd">interface</code> <code class="nc">Tail</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>
+<code class="lineno"> 4 </code>    <code class="n">Tail</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="nf">apply</code><code class="o">();</code>
+<code class="lineno"> 5 </code>
+<code class="lineno"> 6 </code>    <code class="k">default</code> <code class="kt">boolean</code> <code class="nf">isDone</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 7 </code>        <code class="k">return</code> <code class="kc">false</code><code class="o">;</code>
+<code class="lineno"> 8 </code>    <code class="o">}</code>
+<code class="lineno"> 9 </code>
+<code class="lineno">10 </code>    <code class="k">default</code> <code class="n">T</code> <code class="nf">result</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">11 </code>        <code class="k">throw</code> <code class="k">new</code> <code class="n">UnsupportedOperationException</code><code class="o">(</code><code class="s">"Not done yet."</code><code class="o">);</code>
+<code class="lineno">12 </code>    <code class="o">}</code>
+<code class="lineno">13 </code>
+<code class="lineno">14 </code>    <code class="k">default</code> <code class="n">T</code> <code class="nf">invoke</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">15 </code>        <code class="k">return</code> <code class="n">Stream</code><code class="o">.</code><code class="na">iterate</code><code class="o">(</code><code class="k">this</code><code class="o">,</code> <code class="n">Tail</code><code class="o">::</code><code class="n">apply</code><code class="o">)</code>
+<code class="lineno">16 </code>                <code class="o">.</code><code class="na">filter</code><code class="o">(</code><code class="n">Tail</code><code class="o">::</code><code class="n">isDone</code><code class="o">)</code>
+<code class="lineno">17 </code>                <code class="o">.</code><code class="na">findFirst</code><code class="o">()</code>
+<code class="lineno">18 </code>                <code class="o">.</code><code class="na">get</code><code class="o">()</code>
+<code class="lineno">19 </code>                <code class="o">.</code><code class="na">result</code><code class="o">();</code>
+<code class="lineno">20 </code>    <code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>The <code>Tail</code> interface has three default methods and one abstract-method (apply).
+The <code>invoke()</code> method contains the meat of the “tail-call optimization”:</p>
+
+<ul>
+  <li>It takes advantage of Stream’s <code>iterate</code> method to create an infinite Stream which will continuously call Tail’s <code>apply</code> method.</li>
+  <li>Then it uses <code>filter</code> and <code>findFirst</code> to stop the Stream when <code>isDone()</code> returns true.</li>
+  <li>Finally, it returns the result.</li>
+</ul>
+
+<p>To implement the “done” condition, there is the following additional static method on Tail:</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">static</code> <code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="n">Tail</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="nf">done</code><code class="o">(</code><code class="kd">final</code> <code class="n">T</code> <code class="n">value</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>    <code class="k">return</code> <code class="k">new</code> <code class="n">Tail</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;()</code> <code class="o">{</code>
+<code class="lineno"> 3 </code>        <code class="nd">@Override</code>
+<code class="lineno"> 4 </code>        <code class="kd">public</code> <code class="n">T</code> <code class="nf">result</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 5 </code>          <code class="k">return</code> <code class="n">value</code><code class="o">;</code>
+<code class="lineno"> 6 </code>        <code class="o">}</code>  
+<code class="lineno"> 7 </code>        <code class="nd">@Override</code>
+<code class="lineno"> 8 </code>        <code class="kd">public</code> <code class="kt">boolean</code> <code class="nf">isDone</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno"> 9 </code>          <code class="k">return</code> <code class="kc">true</code><code class="o">;</code>
+<code class="lineno">10 </code>        <code class="o">}</code>
+<code class="lineno">11 </code>        <code class="nd">@Override</code>
+<code class="lineno">12 </code>        <code class="kd">public</code> <code class="n">Tail</code><code class="o">&lt;</code><code class="n">T</code><code class="o">&gt;</code> <code class="nf">apply</code><code class="o">()</code> <code class="o">{</code>
+<code class="lineno">13 </code>          <code class="k">throw</code> <code class="k">new</code> <code class="n">UnsupportedOperationException</code><code class="o">(</code><code class="s">"Not supported."</code><code class="o">);</code>
+<code class="lineno">14 </code>        <code class="o">}</code>
+<code class="lineno">15 </code>    <code class="o">};</code>
+<code class="lineno">16 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>With the <code>Tail</code> interface you can mimic tail-call recursion quite easily in Java 8.
+Here’s an example of calculating <em>factorial</em> using this interface (using BigInteger so that very large factorials can be computed):</p>
+
+<figure class="code">
+<div class="highlight"><pre><code></code><code class="lineno"> 1 </code><code class="kd">public</code> <code class="kd">static</code> <code class="n">BigInteger</code> <code class="nf">factorial</code><code class="o">(</code><code class="kt">int</code> <code class="n">n</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 2 </code>    <code class="k">return</code> <code class="n">streamFactorial</code><code class="o">(</code><code class="n">BigInteger</code><code class="o">.</code><code class="na">ONE</code><code class="o">,</code> <code class="n">n</code><code class="o">).</code><code class="na">invoke</code><code class="o">();</code>
+<code class="lineno"> 3 </code><code class="o">}</code>
+<code class="lineno"> 4 </code><code class="kd">private</code> <code class="kd">static</code> <code class="n">Tail</code><code class="o">&lt;</code><code class="n">BigInteger</code><code class="o">&gt;</code> <code class="nf">streamFactorial</code><code class="o">(</code><code class="n">BigInteger</code> <code class="n">x</code><code class="o">,</code> <code class="kt">int</code> <code class="n">n</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 5 </code>    <code class="k">return</code> <code class="o">()</code> <code class="o">-&gt;</code> <code class="o">{</code>
+<code class="lineno"> 6 </code>      <code class="k">switch</code> <code class="o">(</code><code class="n">n</code><code class="o">)</code> <code class="o">{</code>
+<code class="lineno"> 7 </code>        <code class="k">case</code> <code class="mi">1</code><code class="o">:</code>
+<code class="lineno"> 8 </code>          <code class="k">return</code> <code class="n">Tail</code><code class="o">.</code><code class="na">done</code><code class="o">(</code><code class="n">x</code><code class="o">);</code>
+<code class="lineno"> 9 </code>        <code class="k">default</code><code class="o">:</code>
+<code class="lineno">10 </code>          <code class="k">return</code> <code class="n">streamFactorial</code><code class="o">(</code><code class="n">x</code><code class="o">.</code><code class="na">multiply</code><code class="o">(</code><code class="n">BigInteger</code><code class="o">.</code><code class="na">valueOf</code><code class="o">(</code><code class="n">n</code><code class="o">)),</code> <code class="n">n</code> <code class="o">-</code> <code class="mi">1</code><code class="o">);</code>
+<code class="lineno">11 </code>      <code class="o">}</code>
+<code class="lineno">12 </code>    <code class="o">};</code>
+<code class="lineno">13 </code><code class="o">}</code>
+</pre></div>
+
+</figure>
+
+<p>Using this method, you can make extremely fast programs while still maintaining the functional style.</p>
+
+<p>Of course the JVM does a lot optimization by itself, so this may not always be the best course.
+However, it is something to keep in mind.</p>
+
+<aside>
+  <p>In this particular case, a simple recursive factorial is faster than the code above, however it causes a <em>StackOverflowError</em> for sufficiently large numbers whereas <code>streamFactorial</code> does not.</p>
+
+</aside>
+
+
+<h2 id="leanpub-auto-conclusion">
+<span class="section-number">11. </span>Conclusion</h2>
+
+<p>Thank you for reading this short introduction to Java 8. 
+Hopefully you learned a lot and are ready to starting using it yourself.</p>
+
+<p>To recap, Java 8 includes the following:</p>
+
+<ul>
+  <li>Lambda expressions</li>
+  <li>Method references</li>
+  <li>Default Methods (Defender methods)</li>
+  <li>A new Stream API.</li>
+  <li>Optional</li>
+  <li>A new Date/Time API.</li>
+  <li>Nashorn, the new JavaScript engine</li>
+  <li>Removal of the Permanent Generation</li>
+</ul>
+
+<p>To keep track of possible future features of Java, you might want to look at <a href="http://openjdk.java.net/jeps/0">JEPS</a>.</p>
+
+
+
+<h2 id="leanpub-auto-backports">Backports</h2>
+
+<p>If for some reason you can’t immediately upgrade to Java 8, there are some ways to backport some Java 8 features to previous versions.</p>
+
+<p>For each of the following features, here is the backport or similar library:</p>
+
+<ul>
+  <li>Lambdas – <a href="https://github.com/orfjackal/retrolambda">Retrolambda</a>
+</li>
+  <li>Lazily Evaluated Sequences – <a href="https://code.google.com/p/totallylazy/">totallylazy</a>
+</li>
+  <li>Optional – <a href="https://code.google.com/p/guava-libraries/">guava</a>
+</li>
+  <li>Date/Time – <a href="http://www.threeten.org/">ThreeTen</a>
+</li>
+  <li>Nashorn – <a href="https://bitbucket.org/ramonza/nashorn-backport">nashorn-backport</a>
+</li>
+</ul>
+
+<p>Use the backports with caution.</p>
+
+<h1 id="leanpub-endnotes">Notes</h1>
+<div class="footnotes">
+        <h2></h2>  <p id="fn-not">    </p>
+<p><span class="endnote-number">1</span>A lambda expression is <em>not</em> an anonymous class; it actually uses <code>invokedynamic</code> in the byte-code.<a href="#fnref-not" rel="rev-footnote">↩</a></p>
+
+  <p id="fn-fi">    </p>
+<p><span class="endnote-number">2</span>We will explain what “functional interface” means in a later section.<a href="#fnref-fi" rel="rev-footnote">↩</a></p>
+
+  <p id="fn-catch">    </p>
+<p><span class="endnote-number">3</span>Of course you should add a catch statement to this for error handling.<a href="#fnref-catch" rel="rev-footnote">↩</a></p>
+
+  <p id="fn-walk">    </p>
+<p><span class="endnote-number">4</span>The actual method signature is <code>walk(Path start, FileVisitOption... options)</code> but you will probably just use <code>walk(Path)</code>.<a href="#fnref-walk" rel="rev-footnote">↩</a></p>
+
+  <p id="fn-tcr">    </p>
+<p><span class="endnote-number">5</span>Tail call recursion is when a function call happens inside a function as its final action.<a href="#fnref-tcr" rel="rev-footnote">↩</a></p>
+
+
+</div>
+
+</div>
+</body>
+</html>

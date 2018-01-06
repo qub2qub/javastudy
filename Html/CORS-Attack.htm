@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>CORS-Attack</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">src</a>
+<h2>Cross-Origin Resource Sharing (CORS)</h2>
+<article id="wikiArticle">
+                
+<p><span class="seoSummary">Cross-Origin Resource Sharing (<a href="/en-US/docs/Glossary/CORS" title="CORS: CORS&nbsp;(Cross-Origin Resource Sharing) is a system, consisting of transmitting HTTP headers, that&nbsp;determines&nbsp;whether to block or fulfill requests for restricted resources on a web page from another domain outside the domain from which the resource originated." class="glossaryLink">CORS</a>) is a mechanism that uses additional <a href="/en-US/docs/Glossary/HTTP" title="HTTP: HTTP (HyperText Transfer Protocol) is the basic protocol that enables file transfer on the Web. HTTP is textual (all communication is done in plain text) and stateless (no communication is aware of previous communications)." class="glossaryLink">HTTP</a> headers to let a <a href="/en-US/docs/Glossary/user_agent" title="user agent: A user agent is a computer program representing a person, for example, a browser in a Web context." class="glossaryLink">user agent</a> gain permission to access selected resources from a server on a different origin (domain) than the site currently in use.</span> A user agent makes a <strong>cross-origin HTTP request</strong> when it requests a resource from a different domain, protocol, or port than the one from which the current document originated.</p>
+
+<p>An example of a cross-origin request: A HTML page served from http://domain-a.com makes an <code><a href="/en-US/docs/Web/HTML/Element/Img#Attributes">&lt;img&gt; src</a></code> request for http://domain-b.com/image.jpg. Many pages on the web today load resources like CSS stylesheets, images, and scripts from separate domains, such as content delivery networks (CDNs).</p>
+
+<p>For security reasons, browsers restrict cross-origin HTTP&nbsp;requests initiated from within scripts. For example, <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> and the <a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a> follow the <a href="/en-US/docs/Web/Security/Same-origin_policy">same-origin policy</a>. This means that a web application using those APIs can only request HTTP resources from the same domain the application was loaded from unless CORS headers are used.</p>
+
+<p><img src="pics/CORS_principle.png"></p>
+
+<p>The CORS mechanism supports secure cross-domain requests and data transfers between browsers and web servers. Modern browsers use CORS in an API container such as <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> or <a href="/en-US/docs/Web/API/Fetch_API">Fetch</a> to help mitigate the risks of cross-origin HTTP requests.</p>
+
+<h2 id="Who_should_read_this_article">Who should read this article?</h2>
+
+<p>Everyone, really.</p>
+
+<p>More specifically, this article is for web administrators, server developers, and front-end developers. Modern browsers handle the client-side components of cross-origin sharing, including headers and policy enforcement. But this new standard means servers have to handle new request and response headers. Another article for server developers discussing <a href="/en-US/docs/Web/HTTP/Server-Side_Access_Control">cross-origin sharing from a server perspective (with PHP code snippets)</a> is supplementary reading.</p>
+
+<h2 id="What_requests_use_CORS">What requests use CORS?</h2>
+
+<p>This <a href="https://fetch.spec.whatwg.org/#http-cors-protocol" class="external external-icon" rel="noopener">cross-origin sharing standard</a> is used to enable cross-site HTTP requests for:</p>
+
+<ul>
+ <li>Invocations of the <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> or <a href="/en-US/docs/Web/API/Fetch_API">Fetch</a> APIs in a cross-site manner, as discussed above.</li>
+ <li>Web Fonts (for cross-domain font usage in <code>@font-face</code> within CSS), <a href="https://www.w3.org/TR/css-fonts-3/#font-fetching-requirements" class="external external-icon" rel="noopener">so that servers can deploy TrueType fonts that can only be cross-site loaded and used by web sites that are permitted to do so.</a></li>
+ <li><a href="/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL">WebGL textures</a>.</li>
+ <li>Images/video frames drawn to a canvas using <code><a href="/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage">drawImage</a></code>.</li>
+ <li>Stylesheets (for <a href="/en-US/docs/Web/CSS/CSSOM_View">CSSOM</a> access).</li>
+ <li>Scripts (for unmuted exceptions).</li>
+</ul>
+
+<p>This article is a general discussion of Cross-Origin Resource Sharing and includes a discussion of the necessary HTTP headers.</p>
+
+<h2 id="Functional_overview">Functional overview</h2>
+
+<p>The Cross-Origin Resource Sharing standard works by adding new <a href="/en-US/docs/Web/HTTP/Headers">HTTP headers</a> that allow servers to describe the set of origins that are permitted to read that information using a web browser.&nbsp; Additionally, for HTTP request methods that can cause side-effects on server's&nbsp;data (in particular, for HTTP&nbsp;methods other than <a href="/en-US/docs/Web/HTTP/Methods/GET" title="The HTTP GET method requests a representation of the specified resource. Requests using GET should only retrieve data."><code>GET</code></a>, or for <a href="/en-US/docs/Web/HTTP/Methods/POST" title="The HTTP POST method sends data to the server. The type of the body of the request is indicated by the Content-Type header."><code>POST</code></a> usage with certain <a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MIME types</a>), the specification mandates that browsers "preflight" the request, soliciting supported methods from the server with an HTTP <a href="/en-US/docs/Web/HTTP/Methods/OPTIONS" title="The HTTP OPTIONS method is used to describe the communication options for the target resource. The client can specify a specific URL for the OPTIONS method, or an asterisk (*) to refer to the entire server."><code>OPTIONS</code></a> request method, and then, upon "approval" from the server, sending the actual request with the actual HTTP request method. Servers can also notify clients whether "credentials" (including <a href="/en-US/docs/Web/HTTP/Cookies">Cookies</a> and HTTP Authentication data) should be sent with requests.</p>
+
+<p>Subsequent sections discuss scenarios, as well as provide a breakdown of the HTTP headers used.&nbsp;</p>
+
+<h2 id="Examples_of_access_control_scenarios">Examples of access control scenarios</h2>
+
+<p>Here, we present three scenarios that illustrate how Cross-Origin Resource Sharing works. All of these examples use the <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> object, which can be used to make cross-site invocations in any supporting browser.</p>
+
+<p>The JavaScript snippets included in these sections (and running instances of the server-code that correctly handles these cross-site requests) can be found "in action" at <a href="http://arunranga.com/examples/access-control/" class="external external-icon" rel="noopener">http://arunranga.com/examples/access-control/</a>, and will work in browsers that support cross-site <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a>.</p>
+
+<p>A discussion of Cross-Origin Resource Sharing from a server perspective (including PHP code snippets) can be found in the <a href="/en-US/docs/Web/HTTP/Server-Side_Access_Control" class="internal">Server-Side Access Control (CORS)</a> article.</p>
+
+<h3 id="Simple_requests" class="highlight-spanned"><span class="highlight-span">Simple requests</span></h3>
+
+<p>Some requests don’t trigger a <a href="/en-US/docs/Web/HTTP/Access_control_CORS#Preflighted_requests">CORS preflight</a>. Those are called&nbsp;“simple requests” in this article, though the <a rel="noopener" hreflang="en" href="https://fetch.spec.whatwg.org/" title="The 'Fetch' specification" class="external external-icon" lang="en">Fetch</a> spec (which defines CORS) doesn’t use that term. A request that doesn’t trigger a <a href="/en-US/docs/Web/HTTP/Access_control_CORS#Preflighted_requests">CORS preflight</a>—a so-called “simple request”—is one that meets all the following conditions:</p>
+
+<ul>
+ <li>The only allowed methods are:
+  <ul>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/GET" title="The HTTP GET method requests a representation of the specified resource. Requests using GET should only retrieve data."><code>GET</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/HEAD" title="The HTTP HEAD method requests the headers that are returned if the specified resource would be requested with an HTTP GET method. Such a request can be done before deciding to download a large resource to save bandwidth, for example."><code>HEAD</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/POST" title="The HTTP POST method sends data to the server. The type of the body of the request is indicated by the Content-Type header."><code>POST</code></a></li>
+  </ul>
+ </li>
+ <li>Apart from the headers set automatically by the user agent (for example, <a href="/en-US/docs/Web/HTTP/Headers/Connection" title="The Connection general header controls whether or not the network connection stays open after the current transaction finishes. If the value sent is keep-alive, the connection is persistent and not closed, allowing for subsequent requests to the same server to be done."><code>Connection</code></a>, <a href="/en-US/docs/Web/HTTP/Headers/User-Agent" title="The User-Agent request header contains a characteristic string that allows the network protocol peers to identify the application type, operating system, software vendor or software version of the requesting software user agent."><code>User-Agent</code></a>, or <a href="https://fetch.spec.whatwg.org/#forbidden-header-name" class="external external-icon" rel="noopener">any of the other headers with names defined in the Fetch spec as a “forbidden header name”</a>), the only headers which are allowed to be manually set are <a href="https://fetch.spec.whatwg.org/#cors-safelisted-request-header" class="external external-icon" rel="noopener">those which the Fetch spec defines as being a “CORS-safelisted request-header”</a>, which are:
+  <ul>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Accept" title="The Accept request HTTP header advertises which content types, expressed as MIME types, the client is able to understand. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Type response header. Browsers set adequate values for this header depending of the context where the request is done: when fetching a CSS stylesheet a different value is set for the request than when fetching an image,&nbsp;video or a script."><code>Accept</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Accept-Language" title="The Accept-Language request HTTP header advertises which languages the client is able to understand, and which locale variant is preferred. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Language response header. Browsers set adequate values for this header according their user interface language and even if a user can change it, this happens rarely (and is frowned upon as it leads to fingerprinting)."><code>Accept-Language</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Content-Language" title="The Content-Language entity header is used to describe the language(s) intended for the audience, so that it allows a user to differentiate according to the users' own preferred language."><code>Content-Language</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Content-Type" title="The Content-Type entity header is used to indicate the media type of the resource."><code>Content-Type</code></a> (but note the additional requirements below)</li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Last-Event-ID" title="The documentation about this has not yet been written; please consider contributing!" class="new" rel="nofollow"><code>Last-Event-ID</code></a></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#dpr" class="external external-icon" rel="noopener">DPR</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#save-data" class="external external-icon" rel="noopener">Save-Data</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#viewport-width" class="external external-icon" rel="noopener">Viewport-Width</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#width" class="external external-icon" rel="noopener">Width</a></code></li>
+  </ul>
+ </li>
+ <li>The only allowed values for the <a href="/en-US/docs/Web/HTTP/Headers/Content-Type" title="The Content-Type entity header is used to indicate the media type of the resource."><code>Content-Type</code></a> header are:
+  <ul>
+   <li><code>application/x-www-form-urlencoded</code></li>
+   <li><code>multipart/form-data</code></li>
+   <li><code>text/plain</code></li>
+  </ul>
+ </li>
+ <li>No event listeners are registered on any <a href="/en-US/docs/Web/API/XMLHttpRequestUpload" title="The documentation about this has not yet been written; please consider contributing!" class="new" rel="nofollow"><code>XMLHttpRequestUpload</code></a> object used in the request; these are accessed using the <a href="/en-US/docs/Web/API/XMLHttpRequest/upload" title="The XMLHttpRequest.upload property returns an XMLHttpRequestUpload object, representing the upload process. It is an opaque object, but being an XMLHttpRequestEventTarget, event listeners can be set on it to track its process."><code>XMLHttpRequest.upload</code></a> property.</li>
+ <li>No <a href="/en-US/docs/Web/API/ReadableStream" title="The ReadableStream interface of the&nbsp;Streams API&nbsp;represents a readable stream of byte data. It can be used to handle response streams of the&nbsp;Fetch API.&nbsp;"><code>ReadableStream</code></a> object is used in the request.</li>
+</ul>
+
+<div class="note"><strong>Note:</strong> These are the same kinds of cross-site requests that web content can already issue, and no response data is released to the requester unless the server sends an appropriate header. Therefore, sites that prevent cross-site request forgery have nothing new to fear from HTTP access control.</div>
+
+<div class="note"><strong>Note:</strong> WebKit Nightly and Safari Technology Preview place additional restrictions on the values allowed in the <a href="/en-US/docs/Web/HTTP/Headers/Accept" title="The Accept request HTTP header advertises which content types, expressed as MIME types, the client is able to understand. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Type response header. Browsers set adequate values for this header depending of the context where the request is done: when fetching a CSS stylesheet a different value is set for the request than when fetching an image,&nbsp;video or a script."><code>Accept</code></a>, <a href="/en-US/docs/Web/HTTP/Headers/Accept-Language" title="The Accept-Language request HTTP header advertises which languages the client is able to understand, and which locale variant is preferred. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Language response header. Browsers set adequate values for this header according their user interface language and even if a user can change it, this happens rarely (and is frowned upon as it leads to fingerprinting)."><code>Accept-Language</code></a>, and <a href="/en-US/docs/Web/HTTP/Headers/Content-Language" title="The Content-Language entity header is used to describe the language(s) intended for the audience, so that it allows a user to differentiate according to the users' own preferred language."><code>Content-Language</code></a> headers. If any of those headers have ”non-standard” values, WebKit/Safari does not consider the request to meet the conditions for a “simple request”. What WebKit/Safari considers “non-standard” values for those headers&nbsp;is not documented except in the following WebKit bugs: <a href="https://bugs.webkit.org/show_bug.cgi?id=165178" class="external external-icon" rel="nofollow noopener noreferrer">Require preflight for non-standard CORS-safelisted request headers Accept, Accept-Language, and Content-Language</a>, <a href="https://bugs.webkit.org/show_bug.cgi?id=165566" class="external external-icon" rel="nofollow noopener noreferrer">Allow commas in Accept, Accept-Language, and Content-Language request headers for simple CORS</a>, and&nbsp;<a href="https://bugs.webkit.org/show_bug.cgi?id=166363" class="external external-icon" rel="nofollow noopener noreferrer">Switch to a blacklist model for restricted Accept headers in simple CORS requests</a>. No other browsers implement those extra restrictions, because they’re not part of the spec.</div>
+
+<p>For example, suppose web content on domain <code class="plain">http://foo.example</code> wishes to invoke content on domain <code class="plain">http://bar.other</code>. Code of this sort might be used within JavaScript deployed on foo.example:</p>
+
+<pre class="brush: js line-numbers  language-js" id="line1"><code class=" language-js"><span class="token keyword">var</span> invocation <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XMLHttpRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> url <span class="token operator">=</span> <span class="token string">'http://bar.other/resources/public-data/'</span><span class="token punctuation">;</span>
+   
+<span class="token keyword">function</span> <span class="token function">callOtherDomain</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>invocation<span class="token punctuation">)</span> <span class="token punctuation">{</span>    
+    invocation<span class="token punctuation">.</span><span class="token function">open</span><span class="token punctuation">(</span><span class="token string">'GET'</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> <span class="token keyword">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    invocation<span class="token punctuation">.</span>onreadystatechange <span class="token operator">=</span> handler<span class="token punctuation">;</span>
+    invocation<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>This will lead to a simple exchange between the client and the server, using CORS headers to handle the privileges:</p>
+
+<p><img src="pics/simple_req.png"></p>
+
+<p>Let us look at what the browser will send to the server in this case, and let's see how the server responds:</p>
+
+<pre class="brush: shell;highlight:[10,16] line-numbers  language-shell" data-line="10,16"><code class=" language-shell">GET /resources/public-data/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+Referer: http://foo.example/examples/access-control/simpleXSInvocation.html
+Origin: http://foo.example
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 00:23:53 GMT
+Server: Apache/2.0.61 
+Access-Control-Allow-Origin: *
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Transfer-Encoding: chunked
+Content-Type: application/xml
+
+[XML Data]<span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code><div class=" line-highlight" style="top: 216px;"> 
+</div><div class=" line-highlight" style="top: 360px;"> 
+</div></pre>
+
+<p>Lines 1 - 10 are headers sent. The main HTTP&nbsp;request header of note here is the <a href="/en-US/docs/Web/HTTP/Headers/Origin" title="The Origin request header indicates where a fetch originates from. It doesn't include any path information, but only the server name. It is sent with CORS requests, as well as with POST requests. It is similar to the Referer header, but, unlike this header, it doesn't disclose the whole path."><code>Origin</code></a> header on line 10 above, which shows that the invocation is coming from content on the domain <code class="plain">http://foo.example</code>.</p>
+
+<p>Lines 13 - 22 show the HTTP response from the server on domain <code class="plain">http://bar.other</code>. In response, the server sends back an <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin" title="The Access-Control-Allow-Origin response header indicates whether the response can be shared with resources with the given origin."><code>Access-Control-Allow-Origin</code></a> header, shown above in line 16. The use of the <a href="/en-US/docs/Web/HTTP/Headers/Origin" title="The Origin request header indicates where a fetch originates from. It doesn't include any path information, but only the server name. It is sent with CORS requests, as well as with POST requests. It is similar to the Referer header, but, unlike this header, it doesn't disclose the whole path."><code>Origin</code></a> header and of <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin" title="The Access-Control-Allow-Origin response header indicates whether the response can be shared with resources with the given origin."><code>Access-Control-Allow-Origin</code></a> show the access control protocol in its simplest use. In this case, the server responds with a <code>Access-Control-Allow-Origin: *</code> which means that the resource can be accessed by <strong>any</strong> domain in a cross-site manner. If the resource owners at <code class="plain">http://bar.other</code> wished to restrict access to the resource to requests only from <code class="plain">http://foo.example</code>, they would send back:</p>
+
+<p><code class="plain">Access-Control-Allow-Origin: http://foo.example</code></p>
+
+<p>Note that now, no domain other than <code class="plain">http://foo.example</code> (identified by the ORIGIN:&nbsp;header in the request, as in line 10 above) can access the resource&nbsp; in a cross-site manner.&nbsp; The <code>Access-Control-Allow-Origin</code> header should contain the value that was sent in the request's <code>Origin</code> header.&nbsp;</p>
+
+<h3 id="Preflighted_requests" class="highlight-spanned"><span class="highlight-span">Preflighted requests</span></h3>
+
+<p>Unlike <a href="/en-US/docs/Web/HTTP/Access_control_CORS#Simple_requests">“simple requests” (discussed above)</a>, "preflighted" requests first send an HTTP request by the <a href="/en-US/docs/Web/HTTP/Methods/OPTIONS" title="The HTTP OPTIONS method is used to describe the communication options for the target resource. The client can specify a specific URL for the OPTIONS method, or an asterisk (*) to refer to the entire server."><code>OPTIONS</code></a> method to the resource on the other domain, in order to determine whether the actual request is safe to send. Cross-site requests are preflighted like this since they may have implications to user data.</p>
+
+<p>In particular, a request is preflighted if <strong>any of the following conditions</strong> is true:</p>
+
+<ul>
+ <li><strong>If</strong> the request uses any of the following methods:
+
+  <ul>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/PUT" title="The HTTP PUT request method creates a new resource or replaces a representation of the target resource with the request payload."><code>PUT</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/DELETE" title="The HTTP DELETE request method deletes the specified resource."><code>DELETE</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/CONNECT" title="The HTTP CONNECT method&nbsp;method starts two-way communications with the requested resource. It can be used to open a tunnel."><code>CONNECT</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/OPTIONS" title="The HTTP OPTIONS method is used to describe the communication options for the target resource. The client can specify a specific URL for the OPTIONS method, or an asterisk (*) to refer to the entire server."><code>OPTIONS</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/TRACE" title="The documentation about this has not yet been written; please consider contributing!" class="new" rel="nofollow"><code>TRACE</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Methods/PATCH" title="The HTTP PATCH request method applies partial modifications to a resource."><code>PATCH</code></a></li>
+  </ul>
+ </li>
+ <li><strong>Or if</strong>, apart from the headers set automatically by the user agent (for example, <a href="/en-US/docs/Web/HTTP/Headers/Connection" title="The Connection general header controls whether or not the network connection stays open after the current transaction finishes. If the value sent is keep-alive, the connection is persistent and not closed, allowing for subsequent requests to the same server to be done."><code>Connection</code></a>, <a href="/en-US/docs/Web/HTTP/Headers/User-Agent" title="The User-Agent request header contains a characteristic string that allows the network protocol peers to identify the application type, operating system, software vendor or software version of the requesting software user agent."><code>User-Agent</code></a>, or&nbsp;<a href="https://fetch.spec.whatwg.org/#forbidden-header-name" class="external external-icon" rel="noopener">any of the other header&nbsp;with a name&nbsp;defined in the Fetch spec as a “forbidden header name”</a>), the request includes any headers other than <a href="https://fetch.spec.whatwg.org/#cors-safelisted-request-header" class="external external-icon" rel="noopener">those which the Fetch spec defines as being a “CORS-safelisted request-header”</a>, which are the following:
+  <ul>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Accept" title="The Accept request HTTP header advertises which content types, expressed as MIME types, the client is able to understand. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Type response header. Browsers set adequate values for this header depending of the context where the request is done: when fetching a CSS stylesheet a different value is set for the request than when fetching an image,&nbsp;video or a script."><code>Accept</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Accept-Language" title="The Accept-Language request HTTP header advertises which languages the client is able to understand, and which locale variant is preferred. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Language response header. Browsers set adequate values for this header according their user interface language and even if a user can change it, this happens rarely (and is frowned upon as it leads to fingerprinting)."><code>Accept-Language</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Content-Language" title="The Content-Language entity header is used to describe the language(s) intended for the audience, so that it allows a user to differentiate according to the users' own preferred language."><code>Content-Language</code></a></li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Content-Type" title="The Content-Type entity header is used to indicate the media type of the resource."><code>Content-Type</code></a> (but note the additional requirements below)</li>
+   <li><a href="/en-US/docs/Web/HTTP/Headers/Last-Event-ID" title="The documentation about this has not yet been written; please consider contributing!" class="new" rel="nofollow"><code>Last-Event-ID</code></a></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#dpr" class="external external-icon" rel="noopener">DPR</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#save-data" class="external external-icon" rel="noopener">Save-Data</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#viewport-width" class="external external-icon" rel="noopener">Viewport-Width</a></code></li>
+   <li><code><a href="http://httpwg.org/http-extensions/client-hints.html#width" class="external external-icon" rel="noopener">Width</a></code></li>
+  </ul>
+ </li>
+ <li><strong>Or if</strong> the <a href="/en-US/docs/Web/HTTP/Headers/Content-Type" title="The Content-Type entity header is used to indicate the media type of the resource."><code>Content-Type</code></a> header has a value other than the following:
+  <ul>
+   <li><code>application/x-www-form-urlencoded</code></li>
+   <li><code>multipart/form-data</code></li>
+   <li><code>text/plain</code></li>
+  </ul>
+ </li>
+ <li><strong>Or if</strong> one or more event listeners are registered on an <a href="/en-US/docs/Web/API/XMLHttpRequestUpload" title="The documentation about this has not yet been written; please consider contributing!" class="new" rel="nofollow"><code>XMLHttpRequestUpload</code></a> object used in the request.</li>
+ <li><strong>Or if</strong> a <a href="/en-US/docs/Web/API/ReadableStream" title="The ReadableStream interface of the&nbsp;Streams API&nbsp;represents a readable stream of byte data. It can be used to handle response streams of the&nbsp;Fetch API.&nbsp;"><code>ReadableStream</code></a> object is used in the request.</li>
+</ul>
+
+<div class="note"><strong>Note:</strong> WebKit Nightly and Safari Technology Preview place additional restrictions on the values allowed in the <a href="/en-US/docs/Web/HTTP/Headers/Accept" title="The Accept request HTTP header advertises which content types, expressed as MIME types, the client is able to understand. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Type response header. Browsers set adequate values for this header depending of the context where the request is done: when fetching a CSS stylesheet a different value is set for the request than when fetching an image,&nbsp;video or a script."><code>Accept</code></a>, <a href="/en-US/docs/Web/HTTP/Headers/Accept-Language" title="The Accept-Language request HTTP header advertises which languages the client is able to understand, and which locale variant is preferred. Using content negotiation, the server then selects one of the proposals, uses it and informs the client of its choice with the Content-Language response header. Browsers set adequate values for this header according their user interface language and even if a user can change it, this happens rarely (and is frowned upon as it leads to fingerprinting)."><code>Accept-Language</code></a>, and <a href="/en-US/docs/Web/HTTP/Headers/Content-Language" title="The Content-Language entity header is used to describe the language(s) intended for the audience, so that it allows a user to differentiate according to the users' own preferred language."><code>Content-Language</code></a> headers. If any of those headers have ”non-standard” values, WebKit/Safari preflights the request. What WebKit/Safari considers “non-standard” values for those headers&nbsp;is not documented except in the following WebKit bugs: <a href="https://bugs.webkit.org/show_bug.cgi?id=165178" class="external external-icon" rel="nofollow noopener noreferrer">Require preflight for non-standard CORS-safelisted request headers Accept, Accept-Language, and Content-Language</a>, <a href="https://bugs.webkit.org/show_bug.cgi?id=165566" class="external external-icon" rel="nofollow noopener noreferrer">Allow commas in Accept, Accept-Language, and Content-Language request headers for simple CORS</a>, and&nbsp;<a href="https://bugs.webkit.org/show_bug.cgi?id=166363" class="external external-icon" rel="nofollow noopener noreferrer">Switch to a blacklist model for restricted Accept headers in simple CORS requests</a>. No other browsers implement those extra restrictions, because they’re not part of the spec.</div>
+
+<p>The following is an example of a request&nbsp;that will be preflighted.</p>
+
+<pre class="brush: js line-numbers  language-js" id="line1"><code class=" language-js"><span class="token keyword">var</span> invocation <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XMLHttpRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> url <span class="token operator">=</span> <span class="token string">'http://bar.other/resources/post-here/'</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> body <span class="token operator">=</span> <span class="token string">'&lt;?xml version="1.0"?&gt;&lt;person&gt;&lt;name&gt;Arun&lt;/name&gt;&lt;/person&gt;'</span><span class="token punctuation">;</span>
+    
+<span class="token keyword">function</span> <span class="token function">callOtherDomain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>invocation<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+      invocation<span class="token punctuation">.</span><span class="token function">open</span><span class="token punctuation">(</span><span class="token string">'POST'</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> <span class="token keyword">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      invocation<span class="token punctuation">.</span><span class="token function">setRequestHeader</span><span class="token punctuation">(</span><span class="token string">'X-PINGOTHER'</span><span class="token punctuation">,</span> <span class="token string">'pingpong'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      invocation<span class="token punctuation">.</span><span class="token function">setRequestHeader</span><span class="token punctuation">(</span><span class="token string">'Content-Type'</span><span class="token punctuation">,</span> <span class="token string">'application/xml'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      invocation<span class="token punctuation">.</span>onreadystatechange <span class="token operator">=</span> handler<span class="token punctuation">;</span>
+      invocation<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span>body<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>In the example above, line 3 creates an XML body to send with the <code>POST</code> request in line 8.&nbsp; Also, on line 9, a "customized" (non-standard) HTTP request header is set (<code>X-PINGOTHER: pingpong</code>).&nbsp; Such headers are not part of the HTTP/1.1 protocol, but are generally useful to web applications.&nbsp; Since the request uses a Content-Type of <code>application/xml</code>, and since a custom header is set, this request is preflighted.</p>
+
+<p><img src="pics/prelight.png"></p>
+
+<p>(Note: as described below, the actual POST request does not include the Access-Control-Request-* headers; they are needed only for the OPTIONS request.)</p>
+
+<p>Let's take a look at the full exchange between client and server. The first exchange is the <em>preflight request/response</em>:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">OPTIONS /resources/post-here/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+Origin: http://foo.example
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: X-PINGOTHER, Content-Type
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:39 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://foo.example
+Access-Control-Allow-Methods: POST, GET, OPTIONS
+Access-Control-Allow-Headers: X-PINGOTHER, Content-Type
+Access-Control-Max-Age: 86400
+Vary: Accept-Encoding, Origin
+Content-Encoding: gzip
+Content-Length: 0
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain<span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Once the preflight request is complete, the real request is sent:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">POST /resources/post-here/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+X-PINGOTHER: pingpong
+Content-Type: text/xml; charset=UTF-8
+Referer: http://foo.example/examples/preflightInvocation.html
+Content-Length: 55
+Origin: http://foo.example
+Pragma: no-cache
+Cache-Control: no-cache
+
+&lt;?xml version="1.0"?&gt;&lt;person&gt;&lt;name&gt;Arun&lt;/name&gt;&lt;/person&gt;
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:40 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://foo.example
+Vary: Accept-Encoding, Origin
+Content-Encoding: gzip
+Content-Length: 235
+Keep-Alive: timeout=2, max=99
+Connection: Keep-Alive
+Content-Type: text/plain
+
+[Some GZIP'd payload]<span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Lines 1 - 12 above represent the preflight request with the <a href="/en-US/docs/Web/HTTP/Methods/OPTIONS" title="The HTTP OPTIONS method is used to describe the communication options for the target resource. The client can specify a specific URL for the OPTIONS method, or an asterisk (*) to refer to the entire server."><code>OPTIONS</code></a> method. The browser determines that it needs to send this based on the request parameters that the JavaScript code snippet above was using, so that the server can respond whether it is acceptable to send the request with the actual request parameters. OPTIONS is an HTTP/1.1 method that is used to determine further information from servers, and is a <a href="/en-US/docs/Glossary/safe" title="safe: An HTTP method is safe if it doesn't alter the state of the server. In other words, a method is safe if it leads to a read-only operation. Several common HTTP methods are safe: GET, HEAD, or OPTIONS. All safe methods are also idempotent as well as some, but not all, unsafe methods like PUT, or DELETE." class="glossaryLink">safe</a> method, meaning that it can't be used to change the resource. Note that along with the OPTIONS request, two other request headers are sent (lines 10&nbsp;and 11&nbsp;respectively):</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Request-Method: POST
+Access-Control-Request-Headers: X-PINGOTHER, Content-Type<span class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Method" title="The Access-Control-Request-Method request header is used when issuing a preflight request to let the server know which HTTP method will be used when the actual request is made. This header is necessary as the preflight request is always an OPTIONS and doesn't use the same method as the actual request."><code>Access-Control-Request-Method</code></a> header notifies the server as part of a preflight request that when the actual request is sent, it will be sent with a <code>POST</code> request method. The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers" title="The Access-Control-Request-Headers request header is used when issuing a preflight request to let the server know which HTTP headers will be used when the actual request is made."><code>Access-Control-Request-Headers</code></a> header notifies the server that when the actual request is sent, it will be sent with a&nbsp;<code>X-PINGOTHER</code>&nbsp;and Content-Type custom headers. The server now has an opportunity to determine whether it wishes to accept a request under these circumstances.</p>
+
+<p>Lines 14&nbsp;- 26&nbsp;above are the response that the server sends back indicating that the request method (<code>POST</code>) and request headers (<code>X-PINGOTHER</code>) are acceptable. In particular, let's look at lines 17-20:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Origin: http://foo.example
+Access-Control-Allow-Methods: POST, GET, OPTIONS
+Access-Control-Allow-Headers: X-PINGOTHER, Content-Type
+Access-Control-Max-Age: 86400<span class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>The server responds with <code>Access-Control-Allow-Methods</code> and says that <code>POST</code>, <code>GET</code>, and <code>OPTIONS</code> are viable methods to query the resource in question. Note that this header is similar to the <a href="/en-US/docs/Web/HTTP/Headers/Allow" title="The Allow header lists the set of methods support by a resource."><code>Allow</code></a> response header, but used strictly within the context of access control.</p>
+
+<p>The server also sends <code>Access-Control-Allow-Headers</code> with a value of "<code>X-PINGOTHER, Content-Type</code>", confirming that these are&nbsp;permitted headers to be used with the actual request. Like <code>Access-Control-Allow-Methods</code>, <code>Access-Control-Allow-Headers</code> is a comma separated list of acceptable headers.</p>
+
+<p>Finally, <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age" title="The Access-Control-Max-Age response header indicates how long the results of a preflight request (that is the information contained in the Access-Control-Allow-Methods and Access-Control-Allow-Headers headers) can be cached."><code>Access-Control-Max-Age</code></a> gives the value in seconds for how long the response to the preflight request can be cached for without sending another preflight request. In this case, 86400 seconds is 24 hours. Note that each browser has&nbsp;a<a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age"> maximum internal value</a> that takes precedence when the&nbsp;<code>Access-Control-Max-Age</code>&nbsp;is greater.</p>
+
+<h4 id="Preflighted_requests_and_redirects">Preflighted requests and redirects</h4>
+
+<p>Most browsers currently don’t support following redirects for preflighted requests. If a redirect occurs for a preflighted request, most current browsers will report an error message such as the following.</p>
+
+<blockquote>
+<p>The request was redirected to 'https://example.com/foo', which is disallowed for cross-origin requests that require preflight</p>
+</blockquote>
+
+<blockquote>
+<p>Request requires preflight, which is disallowed to follow cross-origin redirect</p>
+</blockquote>
+
+<p>The CORS protocol originally required that behavior but <a href="https://github.com/whatwg/fetch/commit/0d9a4db8bc02251cc9e391543bb3c1322fb882f2" class="external external-icon" rel="noopener">was subsquently changed to no longer require it</a>. However, most browsers have not yet implemented the change and still exhibit the behavior that was originally required.</p>
+
+<p>So until browsers catch up with the spec, you may be able to work around this limitation by doing one or both of the following:</p>
+
+<ul>
+ <li>change the server-side behavior to avoid the preflight and/or to avoid the redirect—if you have control over the server the request is being made to</li>
+ <li>change the request such that it is a <a href="#Simple_requests">simple request</a> that doesn’t cause a preflight</li>
+</ul>
+
+<p>But if it’s not possible to make those changes, then another way that may be possible is to this:</p>
+
+<ol>
+ <li>Make a <a href="/en-US/docs/Web/HTTP/Access_control_CORS#Simple_requests">simple request</a> to determine (using <a href="/en-US/docs/Web/API/Response/url">Response.url</a> for the Fetch API, or <a href="/en-US/docs/Web/API/XMLHttpRequest/responseURL">XHR.responseURL</a> to determine what URL the real preflighted request would end up at).</li>
+ <li>Make another request (the “real” request) using the URL you obtained from <a href="/en-US/docs/Web/API/Response/url">Response.url</a> or <a href="/en-US/docs/Web/API/XMLHttpRequest/responseURL">XMLHttpRequest.responseURL</a> in the first step.</li>
+</ol>
+
+<p>However, if the request is one that triggers a preflight due to the presence of the `Authorization` header in the request, you won’t be able to work around the limitation using the steps above. And you won’t be able to work around it at all unless you have control over the server the request is being made to.</p>
+
+<h3 id="Requests_with_credentials" class="highlight-spanned"><span class="highlight-span">Requests with credentials</span></h3>
+
+<p>The most interesting capability exposed by both <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> or <a href="/en-US/docs/Web/API/Fetch_API">Fetch</a> and CORS is the ability to make "credentialed"&nbsp;requests that are aware of <a href="/en-US/docs/Web/HTTP/Cookies">HTTP cookies</a> and HTTP&nbsp;Authentication information. By default, in cross-site <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> or <a href="/en-US/docs/Web/API/Fetch_API">Fetch</a> invocations, browsers will <strong>not</strong> send credentials. A specific flag has to be set on the <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> object or the <a href="/en-US/docs/Web/API/Request" title="The Request interface of the Fetch API represents a resource request."><code>Request</code></a> constructor when it is invoked.</p>
+
+<p>In this example, content originally loaded from <code class="plain">http://foo.example</code> makes a simple GET request to a resource on <code class="plain">http://bar.other</code> which sets Cookies. Content on foo.example might contain JavaScript like this:</p>
+
+<pre class="brush: js line-numbers  language-js" id="line1"><code class=" language-js"><span class="token keyword">var</span> invocation <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XMLHttpRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> url <span class="token operator">=</span> <span class="token string">'http://bar.other/resources/credentialed-content/'</span><span class="token punctuation">;</span>
+    
+<span class="token keyword">function</span> <span class="token function">callOtherDomain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>invocation<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    invocation<span class="token punctuation">.</span><span class="token function">open</span><span class="token punctuation">(</span><span class="token string">'GET'</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> <span class="token keyword">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    invocation<span class="token punctuation">.</span>withCredentials <span class="token operator">=</span> <span class="token keyword">true</span><span class="token punctuation">;</span>
+    invocation<span class="token punctuation">.</span>onreadystatechange <span class="token operator">=</span> handler<span class="token punctuation">;</span>
+    invocation<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Line 7 shows the flag on <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> that has to be set in order to make the invocation with Cookies, namely the <code>withCredentials</code> boolean value. By default, the invocation is made without Cookies. Since this is a simple <code>GET</code> request, it is not preflighted, but the browser will <strong>reject</strong> any response that does not have the <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials" title="The Access-Control-Allow-Credentials response header indicates whether or not the response to the request can be exposed to the page. It can be exposed when the true value is returned."><code>Access-Control-Allow-Credentials</code></a><code>: true</code> header, and <strong>not</strong> make the response available to the invoking web content.</p>
+
+<p><img src="pics/cred-req.png"></p>
+
+<p>Here is a sample exchange between client and server:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">GET /resources/access-control-with-credentials/ HTTP/1.1
+Host: bar.other
+User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1b3pre) Gecko/20081130 Minefield/3.1b3pre
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Connection: keep-alive
+Referer: http://foo.example/examples/credential.html
+Origin: http://foo.example
+Cookie: pageAccess=2
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:34:52 GMT
+Server: Apache/2.0.61 (Unix) PHP/4.4.7 mod_ssl/2.0.61 OpenSSL/0.9.7e mod_fastcgi/2.4.2 DAV/2 SVN/1.4.2
+X-Powered-By: PHP/5.2.6
+Access-Control-Allow-Origin: http://foo.example
+Access-Control-Allow-Credentials: true
+Cache-Control: no-cache
+Pragma: no-cache
+Set-Cookie: pageAccess=3; expires=Wed, 31-Dec-2008 01:34:53 GMT
+Vary: Accept-Encoding, Origin
+Content-Encoding: gzip
+Content-Length: 106
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain
+
+
+[text/plain payload]<span class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Although line 11 contains the Cookie destined for the content on <code class="plain">http://bar.other</code>, if bar.other did not respond with an <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials" title="The Access-Control-Allow-Credentials response header indicates whether or not the response to the request can be exposed to the page. It can be exposed when the true value is returned."><code>Access-Control-Allow-Credentials</code></a><code>: true</code> (line 19) the response would be ignored and not made available to web content.</p>
+
+<h4 id="Credentialed_requests_and_wildcards">Credentialed requests and wildcards</h4>
+
+<p>When responding to a credentialed request, the server <strong>must</strong> specify an origin in the value of the <code>Access-Control-Allow-Origin</code> header, instead of specifying the "<code>*</code>" wildcard.</p>
+
+<p>Because the request headers in the above example include a <code>Cookie</code> header, the request would fail if the value of the <code>Access-Control-Allow-Origin</code> header were "*". But it does not fail: Because the value of the <code>Access-Control-Allow-Origin</code> header is "<code class="plain">http://foo.example</code>" (an actual origin) rather than the "<code>*</code>" wildcard, the credential-cognizant content is returned to the invoking web content.</p>
+
+<p>Note that the <code>Set-Cookie</code> response header in the example above also sets a further cookie. In case of failure, an exception—depending on the API used—is raised.</p>
+
+<h2 id="The_HTTP_response_headers">The HTTP response headers</h2>
+
+<p>This section lists the HTTP response headers that servers send back for access control requests as defined by the Cross-Origin Resource Sharing specification. The previous section gives an overview of these in action.</p>
+
+<h3 id="Access-Control-Allow-Origin" class="highlight-spanned"><span class="highlight-span">Access-Control-Allow-Origin</span></h3>
+
+<p>A returned resource may have one <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin" title="The Access-Control-Allow-Origin response header indicates whether the response can be shared with resources with the given origin."><code>Access-Control-Allow-Origin</code></a> header, with the following syntax:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Origin: &lt;origin&gt; |&nbsp;*<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>The <code>origin</code> parameter specifies a URI that may access the resource. The browser must enforce this. For requests <strong>without</strong> credentials, the server may specify "*" as a wildcard, thereby allowing any origin to access the resource.</p>
+
+<p>For example, to allow http://mozilla.org to access the resource, you can specify:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Origin: http://mozilla.org<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>If the server specifies an origin host rather than "*", then it could also include Origin in the Vary response header to indicate to clients that server responses will differ based on the value of the Origin request header.</p>
+
+<h3 id="Access-Control-Expose-Headers" class="highlight-spanned"><span class="highlight-span">Access-Control-Expose-Headers</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers" title="The Access-Control-Expose-Headers response header indicates which headers can be exposed as part of the response by listing their names."><code>Access-Control-Expose-Headers</code></a> header lets a server whitelist headers that browsers are allowed to access. For example:</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Expose-Headers: X-My-Custom-Header, X-Another-Custom-Header<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>This allows the <code>X-My-Custom-Header</code> and <code>X-Another-Custom-Header</code> headers to be exposed to the browser.</p>
+
+<h3 id="Access-Control-Max-Age" class="highlight-spanned"><span class="highlight-span">Access-Control-Max-Age</span></h3>
+
+<p>The&nbsp; <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age" title="The Access-Control-Max-Age response header indicates how long the results of a preflight request (that is the information contained in the Access-Control-Allow-Methods and Access-Control-Allow-Headers headers) can be cached."><code>Access-Control-Max-Age</code></a> header indicates how long the results of a preflight request can be cached. For an example of a preflight request, see the above examples.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Max-Age: &lt;delta-seconds&gt;<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>The <code>delta-seconds</code> parameter indicates the number of seconds the results can be cached.</p>
+
+<h3 id="Access-Control-Allow-Credentials" class="highlight-spanned"><span class="highlight-span">Access-Control-Allow-Credentials</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials" title="The Access-Control-Allow-Credentials response header indicates whether or not the response to the request can be exposed to the page. It can be exposed when the true value is returned."><code>Access-Control-Allow-Credentials</code></a> header Indicates whether or not the response to the request can be exposed when the <code>credentials</code> flag is true.&nbsp; When used as part of a response to a preflight request, this indicates whether or not the actual request can be made using credentials. Note that simple <code>GET</code> requests are not preflighted, and so if a request is made for a resource with credentials, if this header is not returned with the resource, the response is ignored by the browser and not returned to web content.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Credentials: true<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><a href="#Requests_with_credentials" class="internal">Credentialed requests</a> are discussed above.</p>
+
+<h3 id="Access-Control-Allow-Methods" class="highlight-spanned"><span class="highlight-span">Access-Control-Allow-Methods</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods" title="The Access-Control-Allow-Methods response header specifies the method or methods allowed when accessing the resource in response to a preflight request."><code>Access-Control-Allow-Methods</code></a> header specifies the method or methods allowed when accessing the resource. This is used in response to a preflight request. The conditions under which a request is preflighted are discussed above.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Methods: &lt;method&gt;[, &lt;method&gt;]*<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>An example of a <a href="#Preflighted_requests" class="internal">preflight request is given above</a>, including an example which sends this header to the browser.</p>
+
+<h3 id="Access-Control-Allow-Headers" class="highlight-spanned"><span class="highlight-span">Access-Control-Allow-Headers</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers" title="The Access-Control-Allow-Headers response header is used in response to a preflight request to indicate which HTTP&nbsp;headers will be available via Access-Control-Expose-Headers when making the actual request."><code>Access-Control-Allow-Headers</code></a> header is used in response to a <a href="#Preflighted_requests" class="internal">preflight request</a> to indicate which HTTP&nbsp;headers can be used when making the actual request.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Allow-Headers:&nbsp;&lt;field-name&gt;[, &lt;field-name&gt;]*<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<h2 id="The_HTTP_request_headers">The HTTP request headers</h2>
+
+<p>This section lists headers that clients may use when issuing HTTP&nbsp;requests in order to make use of the cross-origin sharing feature. Note that these headers are set for you when making invocations to servers. Developers using cross-site <a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a> capability do not have to set any cross-origin sharing request headers programmatically.</p>
+
+<h3 id="Origin" class="highlight-spanned"><span class="highlight-span">Origin</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Origin" title="The Origin request header indicates where a fetch originates from. It doesn't include any path information, but only the server name. It is sent with CORS requests, as well as with POST requests. It is similar to the Referer header, but, unlike this header, it doesn't disclose the whole path."><code>Origin</code></a> header indicates the origin of the cross-site access request or preflight request.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Origin: &lt;origin&gt;<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>The origin is a URI&nbsp;indicating the server from which the request initiated.&nbsp; It does not include any path information, but only the server name.</p>
+
+<div class="note"><strong>Note:</strong> The <code>origin</code> can be the empty string; this is useful, for example, if the source is a <code>data</code> URL.</div>
+
+<p>Note that in any access control request, the <a href="/en-US/docs/Web/HTTP/Headers/Origin" title="The Origin request header indicates where a fetch originates from. It doesn't include any path information, but only the server name. It is sent with CORS requests, as well as with POST requests. It is similar to the Referer header, but, unlike this header, it doesn't disclose the whole path."><code>Origin</code></a> header is <strong>always</strong> sent.</p>
+
+<h3 id="Access-Control-Request-Method" class="highlight-spanned"><span class="highlight-span">Access-Control-Request-Method</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Method" title="The Access-Control-Request-Method request header is used when issuing a preflight request to let the server know which HTTP method will be used when the actual request is made. This header is necessary as the preflight request is always an OPTIONS and doesn't use the same method as the actual request."><code>Access-Control-Request-Method</code></a> is used when issuing a preflight request to let the server know what HTTP&nbsp;method will be used when the actual request is made.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Request-Method:&nbsp;&lt;method&gt;<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>Examples of this usage can be <a href="#Preflighted_requests" class="internal">found above.</a></p>
+
+<h3 id="Access-Control-Request-Headers" class="highlight-spanned"><span class="highlight-span">Access-Control-Request-Headers</span></h3>
+
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers" title="The Access-Control-Request-Headers request header is used when issuing a preflight request to let the server know which HTTP headers will be used when the actual request is made."><code>Access-Control-Request-Headers</code></a> header is used when issuing a preflight request to let the server know what HTTP&nbsp;headers will be used when the actual request is made.</p>
+
+<pre class="brush: none line-numbers  language-none"><code class=" language-none">Access-Control-Request-Headers:&nbsp;&lt;field-name&gt;[, &lt;field-name&gt;]*<span class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>Examples of this usage can be <a href="#Preflighted_requests" class="internal">found above</a>.</p>
+
+<h2 id="Specifications">Specifications</h2>
+
+<table class="standard-table">
+ <tbody>
+  <tr>
+   <th scope="col">Specification</th>
+   <th scope="col">Status</th>
+   <th scope="col">Comment</th>
+  </tr>
+  <tr>
+   <td><a href="https://fetch.spec.whatwg.org/#cors-protocol" hreflang="en" lang="en" class="external external-icon" rel="noopener">Fetch<br><small lang="en-US">The definition of 'CORS' in that specification.</small></a></td>
+   <td><span class="spec-Living">Living Standard</span></td>
+   <td>New definition; supplants <a href="https://www.w3.org/TR/cors/" class="external external-icon" rel="noopener">W3C CORS</a> specification.</td>
+  </tr>
+ </tbody>
+</table>
+
+<h2 id="Browser_compatibility">Browser compatibility</h2>
+
+<p class="hidden">The compatibility table in this page is generated from structured data. If you'd like to contribute to the data, please check out <a href="https://github.com/mdn/browser-compat-data" class="external external-icon" rel="noopener">https://github.com/mdn/browser-compat-data</a> and send us a pull request.</p>
+
+<p></p><div class="bc-old"><div class="htab">
+    <a id="AutoCompatibilityTable" name="AutoCompatibilityTable"></a>
+    <ul>
+    <li class="selected">
+    <a>Desktop</a>
+    </li>
+    <li>
+    <a>Mobile</a>
+    </li>
+    </ul>
+    <div id="compat-desktop" style="display: block;"><table class="compat-table"><thead><tr><th>Feature</th><th>Chrome</th><th>Edge</th><th>Firefox</th><th>Internet Explorer</th><th>Opera</th><th>Safari</th></tr></thead><tbody><tr><td><a href="https://developer.mozilla.org/docs/Web/HTTP/Headers/Access-Control-Allow-Origin">Basic support</a></td><td class="full-support">4</td><td class="full-support">12</td><td class="full-support">3.5</td><td class="full-support">10</td><td class="full-support">12</td><td class="full-support">4</td></tr></tbody></table></div><div id="compat-mobile" style="display: none;"><table class="compat-table"><thead><tr><th>Feature</th><th>Android webview</th><th>Chrome for Android</th><th>Edge mobile</th><th>Firefox for Android</th><th>IE mobile</th><th>Opera Android</th><th>iOS Safari</th></tr></thead><tbody><tr><td><a href="https://developer.mozilla.org/docs/Web/HTTP/Headers/Access-Control-Allow-Origin">Basic support</a></td><td class="full-support">2.1</td><td class="full-support"><span title="Please update this with the earliest version of support.">
+      Yes</span></td><td class="full-support"><span title="Please update this with the earliest version of support.">
+      Yes</span></td><td class="full-support">4</td><td class="full-support"><span title="Please update this with the earliest version of support.">
+      Yes</span></td><td class="full-support">12</td><td class="full-support">3.2</td></tr></tbody></table></div></div></div><div class="bc-data hidden"><table class="bc-table bc-table-web"><thead><tr class="bc-platforms"><td></td><th colspan="6" class="bc-platform-desktop"><abbr class="only-icon" title="Desktop"><span>Desktop</span><i class="ic-desktop"></i></abbr></th><th colspan="7" class="bc-platform-mobile"><abbr class="only-icon" title="Mobile"><span>Mobile</span><i class="ic-mobile"></i></abbr></th></tr><tr class="bc-browsers"><td></td><th class="bc-browser-chrome"><abbr class="only-icon" title="Chrome"><span>Chrome</span><i class="ic-chrome"></i></abbr></th><th class="bc-browser-edge"><abbr class="only-icon" title="Edge"><span>Edge</span><i class="ic-edge"></i></abbr></th><th class="bc-browser-firefox"><abbr class="only-icon" title="Firefox"><span>Firefox</span><i class="ic-firefox"></i></abbr></th><th class="bc-browser-ie"><abbr class="only-icon" title="Internet Explorer"><span>Internet Explorer</span><i class="ic-ie"></i></abbr></th><th class="bc-browser-opera"><abbr class="only-icon" title="Opera"><span>Opera</span><i class="ic-opera"></i></abbr></th><th class="bc-browser-safari"><abbr class="only-icon" title="Safari"><span>Safari</span><i class="ic-safari"></i></abbr></th><th class="bc-browser-webview_android"><abbr class="only-icon" title="Android webview"><span>Android webview</span><i class="ic-webview_android"></i></abbr></th><th class="bc-browser-chrome_android"><abbr class="only-icon" title="Chrome for Android"><span>Chrome for Android</span><i class="ic-chrome_android"></i></abbr></th><th class="bc-browser-edge_mobile"><abbr class="only-icon" title="Edge Mobile"><span>Edge Mobile</span><i class="ic-edge_mobile"></i></abbr></th><th class="bc-browser-firefox_android"><abbr class="only-icon" title="Firefox for Android"><span>Firefox for Android</span><i class="ic-firefox_android"></i></abbr></th><th class="bc-browser-ie_mobile"><abbr class="only-icon" title="IE mobile"><span>IE mobile</span><i class="ic-ie_mobile"></i></abbr></th><th class="bc-browser-opera_android"><abbr class="only-icon" title="Opera for Android"><span>Opera for Android</span><i class="ic-opera_android"></i></abbr></th><th class="bc-browser-safari_ios"><abbr class="only-icon" title="iOS Safari"><span>iOS Safari</span><i class="ic-safari_ios"></i></abbr></th></tr></thead><tbody><tr><th scope="row">Basic support</th><td class="bc-supports-yes bc-browser-chrome"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              4</td><td class="bc-supports-yes bc-browser-edge"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              12</td><td class="bc-supports-yes bc-browser-firefox"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              3.5</td><td class="bc-supports-yes bc-browser-ie"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              10</td><td class="bc-supports-yes bc-browser-opera"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              12</td><td class="bc-supports-yes bc-browser-safari"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              4</td><td class="bc-supports-yes bc-browser-webview_android"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              2.1</td><td class="bc-supports-yes bc-browser-chrome_android"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              Yes</td><td class="bc-supports-yes bc-browser-edge_mobile"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              Yes</td><td class="bc-supports-yes bc-browser-firefox_android"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              4</td><td class="bc-supports-yes bc-browser-ie_mobile"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              Yes</td><td class="bc-supports-yes bc-browser-opera_android"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              12</td><td class="bc-supports-yes bc-browser-safari_ios"><abbr class="bc-level-yes only-icon" title="Full support">
+                <span>Full support</span>
+              </abbr>
+              3.2</td></tr></tbody></table></div><p></p>
+
+<h3 id="Compatibility_notes" class="highlight-spanned"><span class="highlight-span">Compatibility notes</span></h3>
+
+<ul>
+ <li>Internet Explorer 8 and 9 expose CORS via the <code>XDomainRequest</code> object, but have a full implementation in IE 10.&nbsp;</li>
+ <li>While Firefox 3.5 introduced support for cross-site XMLHttpRequests and Web Fonts, certain requests were limited until later versions. Specifically, Firefox 7 introduced the ability for cross-site HTTP requests for WebGL Textures, and Firefox 9 added support for Images drawn on a canvas using <code>drawImage</code>.</li>
+</ul>
+
+<h2 id="See_also">See also</h2>
+
+<ul>
+ <li><a href="https://arunranga.com/examples/access-control/" class="external external-icon" rel="noopener">Code Samples Showing <code>XMLHttpRequest</code> and Cross-Origin Resource Sharing</a></li>
+ <li><a href="/en-US/docs/Web/HTTP/Server-Side_Access_Control" class="internal">Cross-Origin&nbsp;Resource Sharing From a Server-Side Perspective (PHP, etc.)</a></li>
+ <li><a href="http://www.w3.org/TR/cors/" class="external external-icon" rel="noopener">Cross-Origin Resource Sharing specification</a></li>
+ <li><a href="/en-US/docs/Web/API/XMLHttpRequest" title="XMLHttpRequest objects to&nbsp;interact with servers.&nbsp;You can&nbsp;retrieve data from a URL without having to do a full page refresh. This enables a Web page to update just part of&nbsp;a page without disrupting what the user is doing."><code>XMLHttpRequest</code></a></li>
+ <li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+ <li><a href="http://www.kendoui.com/blogs/teamblog/posts/11-10-03/using_cors_with_all_modern_browsers.aspx" class="external external-icon" rel="noopener">Using CORS with All (Modern) Browsers</a></li>
+ <li><a href="http://www.html5rocks.com/en/tutorials/cors/" class="external external-icon" rel="noopener">Using CORS - HTML5 Rocks</a></li>
+ <li><a href="https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141" class="external external-icon" rel="noopener">Stack Overflow answer with “how to” info for dealing with common problems</a>:
+  <ul>
+   <li>How to avoid the CORS preflight</li>
+   <li>How to use a CORS proxy to get around <em>“No Access-Control-Allow-Origin header”</em></li>
+   <li>How to fix <em>“Access-Control-Allow-Origin header must not be the wildcard”</em></li>
+  </ul>
+ </li>
+</ul>
+</article>
+
+<br><hr>
+<a href="https://haacked.com/archive/2009/04/02/anatomy-of-csrf-attack.aspx/">src2</a>
+<h2>Anatomy of a Cross-site Request Forgery Attack</h2>
+<div class="entry-content" itemprop="articleBody"><p>A <a href="http://en.wikipedia.org/wiki/CSRF" title="Cross-site requset forgery">Cross-site request
+forgery</a>
+attack, also known as CSRF or XSRF (pronounced sea-surf) is the less
+well known, but equally dangerous, cousin of the Cross Site Scripting
+(XSS) attack. Yeah, they come from a rough family.</p>
+
+<p>CSRF is a form of <a href="http://en.wikipedia.org/wiki/Confused_Deputy" title="Confused Deputy Problem">confused deputy
+attack</a>.
+Imagine you’re a malcontent who wants to harm another person in a
+maximum security jail. You’re probably going to have a tough time
+reaching that person due to your lack of proper credentials. A
+potentially easier approach to accomplish your misdeed is to confuse a
+deputy to misuse his authority to commit the dastardly act on your
+behalf. That’s a much more effective strategy for causing mayhem!</p>
+
+<p>In the case of a CSRF attack, the confused deputy is your browser. After
+logging into a typical website, the website will issue your browser an
+authentication token within a cookie. Each subsequent request to sends
+the cookie back to the site to let the site know that you are authorized
+to take whatever action you’re taking.</p>
+
+<p>Suppose you visit a malicious website soon after visiting your bank
+website. Your session on the previous site might still be valid (though
+most bank websites guard against this carefully). Thus, visiting a
+carefully crafted malicious website (perhaps you clicked on a spam link)
+could cause a form post to the previous website. Your browser would send
+the authentication cookie back to that site and appear to be making a
+request on your behalf, even though you did not intend to do so.</p>
+
+<p>Let’s take a look at a concrete example to make this clear. This example
+is the same one I demonstrated as part of my <a href="http://sessions.visitmix.com/MIX09/T44F" title="Ninjas on Fire Presentation">ASP.NET MVC Ninjas on Fire
+Black Belt
+Tips</a>
+talk at Mix in Las Vegas. Feel free to <a href="http://code.haacked.com/mvc-2/CsrfDemo.zip" title="Bank Transfer Demo"><strong>download the
+source</strong></a>
+for this sample and follow along.</p>
+
+<p>Here’s a simple banking website I wrote. If your banking site looks like
+this one, I recommend running away.</p>
+
+<p><img src="pics/banking-login-page_thumb.png"/></p>
+<p>Thesite properly blocks anonymous users from taking any action. You can see
+that in the code for the controller:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">[Authorize]</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">HomeController</span> <span class="p">:</span> <span class="n">Controller</span>
+<span class="p">{</span>
+  <span class="c1">//...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Notice that we use the <code class="highlighter-rouge">AuthorizeAttribute</code> on the controller (without
+specifying any roles) to specify that all actions of this controller
+require the user to be authentication.</p>
+
+<p>After logging in, we get a simple form that allows us to transfer money
+to another account in the bank. Note that for the sake of the demo, I’ve
+included an information disclosure vulnerability by allowing you to see
+the balance for other bank members. ;)</p>
+
+<p><img src="pics/bank-transfer-screen_5.png"/></p>
+
+<p>To transfer money to my Bookie, for example, I can enter an amount of
+$1000, select the Bookie account, and then click Transfer. The
+following shows the HTTP POST that is sent to the website (slightly
+edited for brevity):</p>
+
+<blockquote>
+  <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>POST /Home/Transfer HTTP/1.1
+Referer: http://localhost:54607/csrf-mvc.html
+User-Agent: ...
+Content-Type: application/x-www-form-urlencoded
+Host: 127.0.0.1:54607
+Content-Length: 34
+Cookie: .ASPXAUTH=98A250...03BB37
+
+Amount=1000&amp;destinationAccountId=3
+</code></pre></div>  </div>
+</blockquote>
+
+<p>There are three important things to notice here. We are posting to a
+well known URL, /Home/Transfer, we are sending a cookie, <code class="highlighter-rouge">.ASPXAUTH</code>,
+which lets the site know we are already logged in, and we are posting
+some data (<code class="highlighter-rouge">Amount=1000&amp;destinationAccountId=3</code>), namely the amount we
+want to transfer and the account id we want to transfer to. Let’s
+briefly look at the code that executes the transfer.</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">[AcceptVerbs(HttpVerbs.Post)]</span>
+<span class="k">public</span> <span class="n">ActionResult</span> <span class="nf">Transfer</span><span class="p">(</span><span class="kt">int</span> <span class="n">destinationAccountId</span><span class="p">,</span> <span class="kt">double</span> <span class="n">amount</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kt">string</span> <span class="n">username</span> <span class="p">=</span> <span class="n">User</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">Name</span><span class="p">;</span>
+  <span class="n">Account</span> <span class="n">source</span> <span class="p">=</span> <span class="n">_context</span><span class="p">.</span><span class="n">Accounts</span><span class="p">.</span><span class="nf">First</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Username</span> <span class="p">==</span> <span class="n">username</span><span class="p">);</span>
+  <span class="n">Account</span> <span class="n">destination</span> <span class="p">=</span> <span class="n">_context</span><span class="p">.</span><span class="n">Accounts</span><span class="p">.</span><span class="nf">FirstOrDefault</span><span class="p">(</span>
+    <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">destinationAccountId</span><span class="p">);</span>
+            
+  <span class="n">source</span><span class="p">.</span><span class="n">Balance</span> <span class="p">-=</span> <span class="n">amount</span><span class="p">;</span>
+  <span class="n">destination</span><span class="p">.</span><span class="n">Balance</span> <span class="p">+=</span> <span class="n">amount</span><span class="p">;</span>
+  <span class="n">_context</span><span class="p">.</span><span class="nf">SubmitChanges</span><span class="p">();</span>
+  <span class="k">return</span> <span class="nf">RedirectToAction</span><span class="p">(</span><span class="s">"Index"</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><em><strong>Disclaimer: Do not write code like this</strong>. This code is for
+demonstration purposes only. For example, I don’t ensure that amount
+non-negative, which means you can enter a negative value to transfer
+money from another account. Like I said, if you see a bank website like
+this, run!</em></p>
+
+<p>The code is straightforward. We simply transfer money from one account
+to another. At this point, everything looks fine. We’re making sure the
+user is logged in before we transfer money. And we are making sure that
+this method can only be called from a POST request and not a GET request
+(this last point is important. <strong>Never allow changes to data via a GET
+request</strong>).So what could go wrong?</p>
+
+<p>Well <em>BadGuy</em>, another bank user has an idea. He sets up a website that
+has a page with the following code:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">&lt;</span><span class="n">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="n">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="n">title</span><span class="p">&gt;&lt;/</span><span class="n">title</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="n">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="n">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="n">form</span> <span class="n">name</span><span class="p">=</span><span class="s">"badform"</span> <span class="n">method</span><span class="p">=</span><span class="s">"post"</span>
+     <span class="n">action</span><span class="p">=</span><span class="s">"http://localhost:54607/Home/Transfer"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="n">input</span> <span class="n">type</span><span class="p">=</span><span class="s">"hidden"</span> <span class="n">name</span><span class="p">=</span><span class="s">"destinationAccountId"</span> <span class="k">value</span><span class="p">=</span><span class="s">"2"</span> <span class="p">/&gt;</span>
+        <span class="p">&lt;</span><span class="n">input</span> <span class="n">type</span><span class="p">=</span><span class="s">"hidden"</span> <span class="n">name</span><span class="p">=</span><span class="s">"amount"</span> <span class="k">value</span><span class="p">=</span><span class="s">"1000"</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;/</span><span class="n">form</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="n">script</span> <span class="n">type</span><span class="p">=</span><span class="s">"text/javascript"</span><span class="p">&gt;</span>
+        <span class="n">document</span><span class="p">.</span><span class="n">badform</span><span class="p">.</span><span class="nf">submit</span><span class="p">();</span>
+    <span class="p">&lt;/</span><span class="n">script</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="n">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="n">html</span><span class="p">&gt;</span>
+</code></pre></div></div>
+
+<p>What he’s done here is create an HTML page that replicates the fields in
+bank transfer form as hidden inputs and then runs some JavaScript to
+submit the form. The form has its <code class="highlighter-rouge">action</code> set to post to the bank’s
+URL.</p>
+
+<p>When you visit this page it makes a form post back to the bank site. If
+you want to try this out, I am hosting <a href="http://demo.haacked.com/security/csrf-mvc.html" title="CSRF Attack Demo">this HTML
+here</a>.
+You have to make sure the website sample code is running on your machine
+before you click that link to see it working.</p>
+
+<p>Let’s look at the contents of that form post.</p>
+
+<blockquote>
+  <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>POST /Home/Transfer HTTP/1.1
+Referer: https://haacked.com/demos/csrf-mvc.html
+User-Agent: ...
+Content-Type: application/x-www-form-urlencoded
+Host: 127.0.0.1:54607
+Content-Length: 34
+Cookie: .ASPXAUTH=98A250...03BB37
+
+Amount=1000&amp;destinationAccountId=2
+</code></pre></div>  </div>
+</blockquote>
+
+<p>It looks exactly the same as the one before, except the <code class="highlighter-rouge">Referer</code> is
+different. When the unsuspecting bank user visited the bad guy’s
+website, it recreated a form post to transfer funds, and the browser
+unwittingly sent the still active session cookie containing the user’s
+authentication information.</p>
+
+<p>The end result is that I’m out of $1000 and <em>BadGuy</em> has his bank
+account increased by $1000. Drat!</p>
+
+<p>It might seem that you could rely on the checking the <code class="highlighter-rouge">Referer</code> to
+prevent this attack, but some proxy servers etc… will strip out the
+<code class="highlighter-rouge">Referer</code> field in order to maintain privacy. Also, there may be ways to
+spoof the <em>Referer</em> field. Another mitigation is to constantly change
+the URL used for performing sensitive operations like this.</p>
+
+<p>In general, the standard approach to mitigating CSRF attacks is to
+render a “canary” in the form (typically a hidden input) that the
+attacker couldn’t know or compute. When the form is submitted, the
+server validates that the submitted canary is correct. Now this assumes
+that the browser is trusted since the point of the attack is to get the
+general public to misuse their own browser’s authority.</p>
+
+<p>It turns out this is mostly a reasonable assumption since browsers do
+not allow using <code class="highlighter-rouge">XmlHttp</code> to make a cross-domain GET request. This makes
+it difficult for the attacker to obtain the canary using the current
+user’s credentials. However, a bug in an older browser, or in a browser
+plugin, might allow alternate means for the bad guy’s site to grab the
+current user’s canary.</p>
+
+<p>The mitigation in ASP.NET MVC is to use the AntiForgery helpers. Steve
+Sanderson has <a href="http://blog.codeville.net/2008/09/01/prevent-cross-site-request-forgery-csrf-using-aspnet-mvcs-antiforgerytoken-helper/" title="Anti-Forgery helpers">a great post detailing their
+usage</a>.</p>
+
+<p>The first step is to add the <code class="highlighter-rouge">ValidateAntiForgeryTokenAttribute</code> to the
+action method. This will validate the “canary”.</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">[ValidateAntiForgeryToken]</span>
+<span class="k">public</span> <span class="n">ActionResult</span> <span class="nf">Transfer</span><span class="p">(</span><span class="kt">int</span> <span class="n">destinationAccountId</span><span class="p">,</span> <span class="kt">double</span> <span class="n">amount</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">///... code you've already seen ...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The next step is to add the canary to the form in your view via the
+<code class="highlighter-rouge">Html.AntiForgeryToken()</code> method.</p>
+
+<p>The following shows the relevant section of the view.</p>
+
+<pre><code class="language-aspx-cs">&lt;% using (Html.BeginForm("Transfer", "Home")) { %&gt;
+&lt;p&gt;
+    &lt;label for="Amount"&gt;Amount:&lt;/legend&gt;
+    &lt;%= Html.TextBox("Amount")%&gt;
+&lt;/p&gt;
+&lt;p&gt;
+    &lt;label for="destinationAccountId"&gt;
+      Destination Account:
+    &lt;/legend&gt;
+    &lt;%= Html.DropDownList("destinationAccountId", "Select an Account") %&gt;
+&lt;/p&gt;
+&lt;p&gt;
+    &lt;%= Html.AntiForgeryToken() %&gt;
+    &lt;input type="submit" value="transfer" /&gt;
+&lt;/p&gt;
+&lt;% } %&gt;
+</code></pre>
+
+<p>When you view source, you’ll see the following hidden input.</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">&lt;</span><span class="n">input</span> <span class="n">name</span><span class="p">=</span><span class="s">"__RequestVerificationToken"</span> 
+  <span class="n">type</span><span class="p">=</span><span class="s">"hidden"</span> 
+  <span class="k">value</span><span class="p">=</span><span class="s">"WaE634+3jjeuJFgcVB7FMKNzOxKrPq/WwQmU7iqD7PxyTtf8H8M3hre+VUZY1Hxf"</span> <span class="p">/&gt;</span>
+</code></pre></div></div>
+
+<p>At the same time, we also issue a cookie with that value encrypted. When
+the form post is submitted, we compare the cookie value to the submitted
+verification token and ensure that they match.</p>
+
+<h3 id="should-you-be-worried">Should you be worried?</h3>
+
+<p>The point of this post is not to be alarmist, but to raise awareness.
+Most sites will never really have to worry about this attack in the
+first place. If your site is not well known or doesn’t manage valuable
+resources that can be transferred to others, then it’s not as likely to
+be targeted by a mass phishing attack by those looking to make a buck.</p>
+
+<p>Of course, financial gain is not the only motivation for a CSRF attack.
+Some people are just a-holes and like to grief large popular sites. For
+example, a bad guy might use this attack to try and post stories on a
+popular link aggregator site like Digg.</p>
+
+<p>One point I would like to stress is that it is very important to never
+allow any changes to data via GET requests. To understand why, <a href="https://haacked.com/archive/2009/01/30/simple-jquery-delete-link-for-asp.net-mvc.aspx" title="Delete Link">check
+out this
+post</a>
+as well as this story about the <a href="http://radar.oreilly.com/archives/2005/05/google-web-acce-1.html" title="Google Web Accelerator">Google Web
+Accelerator</a>.</p>
+
+<h3 id="what-about-web-forms">What about Web Forms?</h3>
+
+<p>It turns out Web Forms are not immune to this attack by default. I have
+a <a href="https://haacked.com/archive/2009/04/02/csrf-webforms.aspx" title="CSRF and Web Forms">follow-up
+post</a>
+that talks about this and the mitigation.</p>
+
+<p>If you missed the link to the sample code before, you can <a href="http://code.haacked.com/mvc-2/CsrfDemo.zip" title="Bank Transfer CSRF Demo">download the
+source
+here</a>
+(<em>compiled against ASP.NET MVC 2</em>).</p>
+
+</div>
+</body>
+</html>
