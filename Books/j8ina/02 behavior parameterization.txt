@@ -1,5 +1,7 @@
 BEHAVIOR PARAMETERIZATION
-Behavior parameterization is a software development pattern that lets you handle frequent requirement changes. In a nutshell, it means taking a block of code and making it available without executing it. This block of code can be called later by other parts of your programs, which means that you can defer the execution of that block of code. For instance, you could pass the block of code as an argument to another method that will execute it later. As a result, the method’s behavior is parameterized based on that block of code. For example, if you process a collection, you may want to write a method that:
+Behavior parameterization is a software development pattern that lets you handle frequent requirement changes. In a nutshell, it means taking a block of code and making it available without executing it. 
+This block of code can be called later by other parts of your programs, which means that you can defer the execution of that block of code. For instance, you could pass the block of code as an argument to another method that will execute it later. As a result, the method’s behavior is parameterized based on that block of code. 
+For example, if you process a collection, you may want to write a method that:
  - Can do “something” for every element of a list
  - Can do “something else” when you finish processing the list
  - Can do “yet something else” if you encounter an error
@@ -12,9 +14,11 @@ This solution is extremely bad. First, the client code looks terrible. What do t
 *************************
 2.2. Behavior parameterization
 
- PREDICATE - (that is, a function that returns a boolean)
+PREDICATE - (that is, a function that returns a boolean)
 
 STRATEGY DESIGN PATTERN, which lets you define a family of algorithms, encapsulate each algorithm (called a strategy), and select an algorithm at run-time.
+!!! Стратегия - сначала надо определить семейство алгоритмов, а потом выбрать конкретный при запуске.
+
 In this case the family of algorithms is ApplePredicate and the different strategies are AppleHeavyWeightPredicate and AppleGreenColorPredicate.
 
 But how can you make use of the different implementations of ApplePredicate? You need your filterApples method to accept ApplePredicate objects to test a condition on an Apple. This is what behavior parameterization means: the ability to tell a method to take multiple behaviors (or strategies) as parameters and use them internally to accomplish different behaviors.
@@ -22,3 +26,60 @@ But how can you make use of the different implementations of ApplePredicate? You
 To achieve this in the running example, you add a parameter to the filterApples method to take an ApplePredicate object. This has a great software engineering benefit: you can now separate the logic of iterating the collection inside the filterApples method with the behavior you want to apply to each element of the collection (in this case a predicate).
 
 2.2.1. Fourth attempt: filtering by abstract criteria
+// добавили предикат и теперь в метод "фильтр" можно передавать различные его реализации
+// In other words, you’ve parameterized the behavior of the filterApples method!
+the only code that really matters is the implementation of the test method,  this is what defines the new behaviors for the filterApples method. 
+Unfortunately, because the filterApples method can only take objects, you have to wrap that code inside an ApplePredicate object. What you’re doing is similar to “passing code” inline, because you’re passing a boolean expression through an object that implements the test method.
+
+Multiple behaviors, one parameter
+As we explained earlier, behavior parameterization is great because it enables you to separate the [logic of iterating the collection to filter] and [the behavior to apply on each element of that collection]. As a consequence, you can reuse the same method and give it different behaviors to achieve different things.
+!!! Т.Е. РАЗДЕЛИЛИ ЛОГИКУ ПРОБЕГАНИЯ ПО КОЛЛЕКЦИИ ОТ ПОВЕДЕНИЯ, КОТОРОЕ НУЖНО ПРИМЕНЯТЬ К ЕЁ ЭЛЕМЕНТАМ. 
+
+2.3. Tackling verbosity
+We all know that a feature or concept that’s cumbersome to use will be avoided.
+
+Java has a mechanism called anonymous classes, which let you declare and instantiate a class at the same time. 
+
+Anonymous classes are like the local classes (a class defined in a block) that you’re already familiar with in Java. But anonymous classes don’t have a name. They allow you to declare and instantiate a class at the same time. In other words, they allow you to create ad hoc implementations.
+
+!!! Good code should be easy to comprehend at a glance.
+
+Even though anonymous classes somewhat tackle the verbosity associated with declaring multiple concrete classes for an interface, they’re still unsatisfactory. 
+In the context of passing a simple piece of code you still have to create an object and explicitly implement a method to define a new behavior
+
+Ideally we’d like to encourage programmers to use the behavior parameterization pattern, because as you’ve just seen, it makes your code more adaptive to requirement changes.
+
+2.4. Real-world examples
+You’ve now seen that behavior parameterization is a useful pattern to easily adapt to changing requirements. This pattern lets you encapsulate a behavior (a piece of code) and parameterize the behavior of methods by passing and using these behaviors you create (for example, different predicates for an Apple). We mentioned earlier that this approach is similar to the strategy design pattern. You may have already used this pattern in practice. Many methods in the Java API can be parameterized with different behaviors. These methods are often used together with anonymous classes. We show three examples, which should solidify the idea of passing code for you: sorting with a Comparator, executing a block of code with Runnable, and GUI event handling.
+
+2.4.1. Sorting with a Comparator
+Sorting a collection is a recurring programming task. For example, say your farmer wants you to sort the inventory of apples based on their weight. Or perhaps he changes his mind and wants you to sort the apples by color. Sound familiar? Yes, you need a way to represent and use different sorting behaviors to easily adapt to changing requirements.
+// java.util.Comparator
+public interface Comparator<T> {
+    public int compare(T o1, T o2);
+}
+inventory.sort((Apple a1, Apple a2) -> a1.getWeight().compareTo(a2.getWeight()));
+
+2.4.2. Executing a block of code with Runnable
+Threads are like a lightweight process: they execute a block of code on their own. But how can you tell a thread what block of code to run? Several threads may run different code. What you need is a way to represent a piece of code to be executed later. In Java, you can use the Runnable interface to represent a block of code to be executed; note that the code will return no result (that is, void):
+// java.lang.Runnable
+public interface Runnable{
+    public void run();
+}
+Thread t = new Thread(() -> System.out.println("Hello world"));
+
+2.4.3. GUI event handling
+A typical pattern in GUI programming is to perform an action in response to a certain event such as clicking or hovering over text. For example, if the user clicks the Send button, you may wish to display a popup or perhaps log the action in a file. Again, you need a way to cope with changes; you should be able to perform any response. In JavaFX you can use an EventHandler to represent a response to an event by passing it to setOnAction:
+button.setOnAction((ActionEvent event) -> label.setText("Sent!!"));
+
+2.5. Summary
+Following are the key concepts you should take away from this chapter:
+
+1) Behavior parameterization is the ability for a method to take multiple different behaviors as parameters and use them internally to accomplish different behaviors.
+Параметризация поведения - это возможность метода получать много разных поведений из параметров, и использовать их внутри чтобы выполнить эти разные поведения.
+
+2) Behavior parameterization lets you make your code more adaptive to changing requirements and saves on engineering efforts in the future.
+Делает код более приспособленным к изменению требований в будущем.
+
+3) Passing code is a way to give new behaviors as arguments to a method. But it’s verbose prior to Java 8. Anonymous classes helped a bit before Java 8 to get rid of the verbosity associated with declaring multiple concrete classes for an interface that are needed only once.
+4) The Java API contains many methods that can be parameterized with different behaviors, which include sorting, threads, and GUI handling.

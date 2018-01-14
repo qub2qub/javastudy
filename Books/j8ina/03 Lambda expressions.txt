@@ -1,0 +1,211 @@
+In the previous chapter, you saw that passing code with behavior parameterization is useful for coping with frequent requirement changes in your code. It lets you define a block of code that represents a behavior and then pass it around.
+But you saw that using anonymous classes to represent different behaviors is unsatisfying: it’s verbose, which doesn’t encourage programmers to use behavior parameterization in practice
+
+For now you can think of lambda expressions as anonymous functions, basically methods without declared names, but which can also be passed as arguments to a method as you can with an anonymous class.
+
+3.1. Lambdas in a nutshell
+A lambda expression can be understood as a concise representation of an anonymous function that can be passed around: it doesn’t have a name, but it has a list of parameters, a body, a return type, and also possibly a list of exceptions that can be thrown. That’s one big definition; let’s break it down:
+
+1) Anonymous— We say anonymous because it doesn’t have an explicit name like a method would normally have: less to write and think about!
+2) Function— We say function because a lambda isn’t associated with a particular class like a method is. But like a method, a lambda has a list of parameters, a body, a return type, and a possible list of exceptions that can be thrown.
+3) Passed around— A lambda expression can be passed as argument to a method or stored in a variable.
+4) Concise— You don’t need to write a lot of boilerplate like you do for anonymous classes.
+
+If you’re wondering where the term lambda comes from, it originates from a system developed in academia called lambda calculus, which is used to describe computations.
+
+The lambda we just showed you has three parts:
+1 Lambda parameters (A list of parameters)
+2 Arrow
+3 Lambda body
+
+3.2.1. Functional interface
+ A functional interface is any interface that contains only one abstract method. 
+ (A functional interface may contain one or more default methods or static methods.) 
+ Because a functional interface contains only one abstract method, you can omit the name of that method when you implement it. 
+ To do this, instead of using an anonymous class expression, you use a lambda expression.
+
+DEFAULT METHODS (that is, a method within interface with a body that provides some default implementation for a method in case it isn’t implemented by a class).
+
+Lambda expressions let you provide the implementation of the abstract method of a functional interface directly inline and treat the whole expression as an instance of a functional interface (more technically speaking, an instance of a concrete implementation of the functional interface).
+
+3.2.2. Function descriptor
+The signature of the abstract method of the functional interface essentially describes the signature of the lambda expression. 
+We call this abstract method a FUNCTION DESCRIPTOR. 
+
+METHOD SIGNATURE — это THE METHOD'S NAME AND THE PARAMETER TYPES.
+
+For example, the Runnable interface can be viewed as the signature of a function that accepts nothing and returns nothing (void) because it has only one abstract method called run, which accepts nothing and returns nothing (void).
+
+a lambda expression can be assigned to a variable or passed to a method expecting a functional interface as argument, provided the lambda expression has the same signature as the abstract method of the functional interface. 
+
+3.3. Putting lambdas into practice: the execute around pattern
+EXECUTE AROUND PATTERN --- The setup and cleanup phases are always similar and surround the important code doing the processing.
+
+PASSING BEHAVIOR IS EXACTLY WHAT LAMBDAS ARE FOR. 
+
+Any lambdas of the form BufferedReader -> String can be passed as arguments, because they match the signature of the process method defined in the Buffered-ReaderProcessor interface.
+You now need only a way to execute the code represented by the lambda inside the body of processFile. Remember, lambda expressions let you provide the implementation of the abstract method of a functional interface directly inline, and they treat the whole expression as an instance of a functional interface. You can therefore call the method process on the resulting BufferedReaderProcessor object inside the processFile body to perform the processing
+
+3.4. Using functional interfaces
+a functional interface specifies exactly one abstract method. 
+Functional interfaces are useful because the signature of the abstract method can describe the signature of a lambda expression. 
+
+The signature of the abstract method of a functional interface is called a FUNCTION DESCRIPTOR. 
+So in order to use different lambda expressions, you need a set of functional interfaces that can describe common function descriptors. 
+There are several functional interfaces already available in the Java API such as Comparable, Runnable, and Callable
+
+3.4.1. Predicate
+The java.util.function.Predicate<T> interface defines an abstract method named test that accepts an object of generic type T and returns a boolean. 
+You might want to use this interface when you need to represent a boolean expression that uses an object of type T. For example, you can define a lambda that accepts String objects, as shown in the following listing.
+
+3.4.2. Consumer
+The java.util.function.Consumer<T> interface defines an abstract method named accept that takes an object of generic type T and returns no result (void). 
+You might use this interface when you need to access an object of type T and perform some operations on it. 
+For example, you can use it to create a method forEach, which takes a list of Integers and applies an operation on each element of that list. In the following listing you use this forEach method combined with a lambda to print all the elements of the list.
+
+3.4.3. Function
+The java.util.function.Function<T, R> interface defines an abstract method named apply that takes an object of generic type T as input and returns an object of generic type R. You might use this interface when you need to define a lambda that maps information from an input object to an output (for example, extracting the weight of an apple or mapping a string to its length). In the listing that follows we show how you can use it to create a method map to transform a list of Strings into a list of Integers containing the length of each String.
+
+But this comes with a performance cost. Boxed values are essentially a wrapper around primitive types and are stored on the heap. Therefore, boxed values use more memory and require additional memory lookups to fetch the wrapped primitive value.
+
+1.  Function<T, R> is a good candidate. It’s typically used for converting an object of type T into an object of type R (for example, Function<Apple, Integer> to extract the weight of an apple).
+
+2.  IntBinaryOperator has a single abstract method called applyAsInt representing a function descriptor (int, int) -> int.
+
+3.  Consumer<T> has a single abstract method called accept representing a function descriptor T -> void.
+
+4.  Supplier<T> has a single abstract method called get representing a function descriptor () -> T. Alternatively, Callable<T> also has a single abstract method called call representing a function descriptor () -> T.
+
+5.  BiFunction<T, U, R> has a single abstract method called apply representing a function descriptor (T, U) -> R.
+
+***************************************
+What about exceptions, lambdas, and functional interfaces?
+Note that none of the functional interfaces allow for a checked exception to be thrown. You have two options if you need a lambda expression to throw an exception: define your own functional interface that declares the checked exception, or wrap the lambda with a try/catch block.
+***************************************
+
+3.5. Type checking, type inference, and restrictions
+The type of a lambda is deduced from the context in which the lambda is used. The type expected for the lambda expression inside the context (for example, a method parameter that it’s passed to or a local variable that it’s assigned to) is called the target type.
+
+Note that if the lambda expression were throwing an exception, then the declared throws clause of the abstract method would also have to match.
+
+3.5.2. Same lambda, different functional interfaces
+Because of the idea of target typing, the same lambda expression can be associated with different functional interfaces if they have a compatible abstract method signature. For example, both interfaces Callable and PrivilegedAction described earlier represent functions that accept nothing and return a generic type T. The following two assignments are therefore valid:
+
+Callable<Integer> c = () -> 42;
+PrivilegedAction<Integer> p = () -> 42;
+
+SPECIAL VOID-COMPATIBILITY RULE
+If a lambda has a statement expression as its body, it’s compatible with a function descriptor that returns void (provided the parameter list is compatible too). 
+For example, both of the following lines are legal even though the method add of a List returns a boolean and not void as expected in the Consumer context (T -> void):
+
+// Predicate has a boolean return
+Predicate<String> p = s -> list.add(s);
+// Consumer has a void return
+Consumer<String> b = s -> list.add(s);
+
+3.5.3. Type inference
+You can simplify your code one step further. The Java compiler deduces what functional interface to associate with a lambda expression from its surrounding context (the target type), meaning it can also deduce an appropriate signature for the lambda because the function descriptor is available through the target type. The benefit is that the compiler has access to the types of the parameters of a lambda expression, and they can be omitted in the lambda syntax.
+
+Note that sometimes it’s more readable to include the types explicitly and sometimes more readable to exclude them. There’s no rule for which way is better; developers must make their own choices about what makes their code more readable.
+
+3.5.4. Using local variables
+ But lambda expressions are also allowed to use free variables (variables that aren’t the parameters and defined in an outer scope) just like anonymous classes can. They’re called capturing lambdas. For example, the following lambda captures the variable portNumber:
+
+int portNumber = 1337;
+Runnable r = () -> System.out.println(portNumber);
+
+Nonetheless, there’s a small twist: there are some restrictions on what you can do with these variables. Lambdas are allowed to capture (that is, to reference in their bodies) instance variables and static variables without restrictions. But local variables have to be explicitly declared final or are effectively final. In other words, lambda expressions can capture local variables that are assigned to them only once. (Note: capturing an instance variable can be seen as capturing the final local variable this.) 
+
+You may be asking yourself why local variables have these restrictions. First, there’s a key difference in how instance and local variables are implemented behind the scenes. 
+
+!!! INSTANCE VARIABLES ARE STORED ON THE HEAP, WHEREAS LOCAL VARIABLES LIVE ON THE STACK. 
+
+If a lambda could access the local variable directly and the lambda were used in a thread, then the thread using the lambda could try to access the variable after the thread that allocated the variable had deallocated it. 
+Hence, Java implements access to a free local variable as ACCESS TO A COPY OF IT rather than access to the original variable. This makes no difference if the local variable is assigned to only once—hence the restriction.
+
+Second, this restriction also discourages typical imperative programming patterns (which, as we explain in later chapters, prevent easy parallelization) that mutate an outer variable.
+
+CLOSURE
+To put it scientifically, a closure is an instance of a function that can reference nonlocal variables of that function with no restrictions. For example, a closure could be passed as argument to another function. It could also access and modify variables defined outside its scope.
+Now Java 8 lambdas and anonymous classes do something similar to closures: they can be passed as argument to methods and can access variables outside their scope. But they have a restriction: they can’t modify the content of local variables of a method in which the lambda is defined. Those variables have to be implicitly final. It helps to think that lambdas close over values rather than variables. As explained previously, this restriction exists because local variables live on the stack and are implicitly confined to the thread they’re in. Allowing capture of mutable local variables opens new thread-unsafe possibilities, which are undesirable (instance variables are fine because they live on the heap, which is shared across threads).
+---------------------------------------
+3.6. Method references
+Method references can be seen as shorthand for lambdas calling only a specific method. The basic idea is that if a lambda represents “call this method directly,” it’s best to refer to the method by name rather than by a description of how to call it. Indeed, a method reference lets you create a lambda expression from an existing method implementation. But by referring to a method name explicitly, your code can gain better readability.
+
+the target reference is placed before the delimiter :: and the name of the method is provided after it. For example, Apple::getWeight is a method reference to the method getWeight defined in the Apple class. Remember that no brackets are needed because you’re not actually calling the method. The method reference is shorthand for the lambda expression (Apple a) -> a.getWeight().
+
+You can think of method references as syntactic sugar for lambdas that refer only to a single method because you write less to express the same thing.
+
+There are three main kinds of method references:
+
+
+1.  A method reference to a static method (for example, the method parseInt of Integer, written Integer::parseInt)
+
+2.  A method reference to an instance method of an arbitrary type (for example, the method length of a String, written String::length)
+
+3.  A method reference to an instance method of an existing object (for example, suppose you have a local variable expensiveTransaction that holds an object of type Transaction, which supports an instance method getValue; you can write expensiveTransaction::getValue)
+
+The second and third kinds of method references may be a bit overwhelming at first. The idea with the second kind of method references such as String::length is that you’re referring to a method to an object that will be supplied as one of the parameters of the lambda. For example, the lambda expression (String s) -> s.toUpperCase() can be rewritten as String::toUpperCase. But the third kind of method references refers to a situation when you’re calling a method in a lambda to an external object that already exists. For example, the lambda expression () -> expensiveTransaction.getValue() can be rewritten as expensiveTransaction::getValue.
+
+Note that there are also special forms of method references for constructors, array constructors, and super-calls.
+The lambda expression has a signature compatible with the function descriptor of Comparator.
+
+List<String> str = Arrays.asList("a","b","A","B");
+str.sort((s1, s2) -> s1.compareToIgnoreCase(s2));
+str.sort(String::compareToIgnoreCase);
+
+Note that the compiler goes through a similar type-checking process as for lambda expressions to figure out whether a method reference is valid with a given functional interface: the signature of the method reference has to match the type of the context.
+
+3.6.2. Constructor references
+You can create a reference to an existing constructor using its name and the keyword new as follows: ClassName::new.
+It works similarly to a reference to a static method. For example, suppose there’s a zero-argument constructor. This fits the signature () -> Apple of Supplier; 
+
+Supplier<Apple> c1 = Apple::new; 
+Apple a1 = c1.get();
+----------- which is equivalent to
+Supplier<Apple> c1 = () -> new Apple(); 
+Apple a1 = c1.get();
+
+If you have a constructor with signature Apple(Integer weight), it fits the signature
+of the Functioninterface, so you can do this,
+Function<Integer, Apple> c2 = Apple::new; 
+Apple a2 = c2.apply(110);
+--------
+Function<Integer, Apple> c2 = (weight) -> new Apple(weight); 
+Apple a2 = c2.apply(110);
+
+-------------
+List<Integer> weights = Arrays.asList(7, 3, 4, 10);
+List<Apple> apples = map(weights, Apple::new); 
+public static List<Apple> map(List<Integer> weights, Function<Integer, Apple> f) {
+	List<Apple> result = new ArrayList<>();
+	for(Integer w: weights){
+		result.add(f.apply(w));
+	}
+	return result;
+}
+
+If you have a two-argument constructor, Apple(String color, Integer weight), it fits
+the signature of the BiFunctioninterface, so you can do this,
+BiFunction<String, Integer, Apple> c3 = Apple::new; 
+Apple c3 = c3.apply("green", 110);
+-----
+BiFunction<String, Integer, Apple> c3 = 
+(color, weight) -> new Apple(color, weight); 
+Apple c3 = c3.apply("green", 110);
+
+
+The capability of referring to a constructor without instantiating it enables interesting applications. For example, you can use a Map to associate constructors with a string value. You can then create a method giveMeFruit that, given a String and an Integer, can create different types of fruits with different weights:
+
+static Map<String, Function<Integer, Fruit>> map = new HashMap<>();
+static {
+	map.put("apple", Apple::new);
+	map.put("orange", Orange::new);
+	// etc...
+}
+
+public static Fruit giveMeFruit(String fruit, Integer weight){
+	return map.get(fruit.toLowerCase()).apply(weight); 
+}
+
+3.7. Putting lambdas and method references into practice!
