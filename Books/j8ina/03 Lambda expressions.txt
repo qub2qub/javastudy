@@ -210,3 +210,55 @@ public static Fruit giveMeFruit(String fruit, Integer weight){
 }
 
 3.7. Putting lambdas and method references into practice!
+This is how you can pass different strategies in Java: they have to be wrapped in an object. 
+We say that the behavior of sort is parameterized: its behavior will be different based on different ordering strategies passed to it.
+
+Java 8 introduces lambda expressions, which provide a lightweight syntax to achieve the same goal: passing code. You saw that a LAMBDA EXPRESSION CAN BE USED WHERE A FUNCTIONAL INTERFACE IS EXPECTED. 
+As a reminder, a functional interface is an interface defining only one abstract method. 
+The signature of the abstract method (called function descriptor) can describe the signature of a lambda expression. In this case, the Comparator represents a function descriptor (T, T) -> int. Because you’re using apples, it represents more specifically (Apple, Apple) -> int. 
+
+method references are syntactic sugar for lambda expressions that forwards their arguments. You can use a method reference to make your code slightly less verbose (assuming a static import of java.util.Comparator.comparing)
+
+3.8. Useful methods to compose lambda expressions
+Several functional interfaces in the Java 8 API contain convenient methods. Specifically, many functional interfaces such as Comparator, Function, and Predicate that are used to pass lambda expressions provide methods that allow composition
+
+static method Comparator.comparing() to return a Comparator based on a Function that extracts a key for comparison.
+The interface includes a default method reverse that imposes the reverse ordering of a given comparator.
+--------- inventory.sort(comparing(Apple::getWeight).reversed());
+
+You may want to provide a second Comparator to further refine the comparison. For example, after two apples are compared based on their weight, you may want to sort them by country of origin.
+--------- inventory.sort(comparing(Apple::getWeight)
+				.reversed() 
+				.thenComparing(Apple::getCountry));
+
+3.8.2. Composing Predicates
+NEGATE, AND, OR.
+Predicate<Apple> redAndHeavyAppleOrGreen = redApple.and(a -> a.getWeight() > 150)
+			.or(a -> "green".equals(a.getColor()));
+
+Why is this great? From simpler lambda expressions you can represent more complicated lambda expressions that still read like the problem statement! 
+
+!!! Note that the precedence of methods AND and OR is managed from left to right using their positions in the chain. So a.or(b).and(c) can be seen as (a || b) && c.
+
+3.8.3. Composing Functions
+The method "andThen" returns a function that first applies a given function to an input and then applies another function to the result of that application.
+
+"compose" -- first apply the function given as argument to compose and then apply the function to the result. 
+For example, in the previous example using compose, it would mean f(g(x)) instead of g(f(x)) using andThen
+
+3.9. Similar ideas from mathematics
+
+3.10. Summary
+Following are the key concepts you should take away from this chapter:
+
+1) A lambda expression can be understood as a kind of anonymous function: it doesn’t have a name, but it has a list of parameters, a body, a return type, and also possibly a list of exceptions that can be thrown.
+2) Lambda expressions let you pass code concisely.
+3) A functional interface is an interface that declares exactly one abstract method.
+4) Lambda expressions can be used only where a functional interface is expected.
+5) Lambda expressions let you provide the implementation of the abstract method of a functional interface directly inline and treat the whole expression as an instance of a functional interface.
+6) Java 8 comes with a list of common functional interfaces in the java.util .function package, which includes Predicate<T>, Function<T, R>, Supplier<T>, Consumer<T>, and BinaryOperator<T>, described in table 3.2.
+7) There are primitive specializations of common generic functional interfaces such as Predicate<T> and Function<T, R> that can be used to avoid boxing operations: IntPredicate, IntToLongFunction, and so on.
+8) The execute around pattern (that is, you need to execute a bit of behavior in the middle of code that’s always required in a method, for example, resource allocation and cleanup) can be used with lambdas to gain additional flexibility and reusability.
+9) The type expected for a lambda expression is called the target type.
+10) Method references let you reuse an existing method implementation and pass it around directly.
+11) Functional interfaces such as Comparator, Predicate, and Function have several default methods that can be used to combine lambda expressions.

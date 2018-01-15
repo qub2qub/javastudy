@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>MVC Patterns N RxPM</title>
+    <link rel="stylesheet" href="grey.css">
+	<style type="text/css">
+		pre, div.note {
+			font-family: "Trebuchet MS",Tahoma,Arial;
+			font-size: 18px;
+			font-weight: bold;
+			border: 1px solid #000;
+			background-color: #999;
+			padding: 5px;
+			display: block;
+			overflow: auto;
+		}
+		/*code {
+			background-color: #999;
+		}*/
+		div.comment-container {
+			border: 1px solid #920000;
+		}
+		td.code {
+			font-family: "Trebuchet MS",Tahoma,Arial;
+			font-size: 18px;
+			font-weight: bold;
+			border: 1px solid #000;
+			background-color: #999;
+			padding: 5px;
+		}
+		body {
+			font-family: Arial,Tahoma,"Trebuchet MS";
+			font-size: 22px;
+			background-color: #c0c0c0;
+		}
+		table {
+			table-layout: fixed;
+			border-collapse: collapse;
+			border-spacing: 0;
+		}
+		td, th {
+			border: 1px solid black;
+			word-wrap: break-word;
+		}
+		th {
+			background-color: #99CCFF;
+		}
+	</style>
+</head>
+<body>
+<a href="https://habrahabr.ru/company/mobileup/blog/313538/" title="article_1">src1</a>
+
+<h2>Различия между MVVM и остальными MV*-паттернами</h2>
+<div class="post__text post__text-html js-mediator-article cye-lm-tag">
+<blockquote><em>От переводчика</em>:
+<em>Уже опубликовано много материалов по MVC и его производным паттернам, но каждый понимает их по-своему. На этой почве возникают разногласия и холивары. Даже опытные разработчики спорят о том, в чем отличие между MVP, MVVM и Presentation Model и что должен делать тот или иной компонент в каждом паттерне. Ситуация усугубляется еще и тем, что многие не знают истинную роль контроллера в классическом варианте MVC. Предлагаю вашему вниманию перевод <a href="https://blogs.msdn.microsoft.com/erwinvandervalk/2009/08/14/the-difference-between-model-view-viewmodel-and-other-separated-presentation-patterns/">хорошей обзорной статьи</a>, которая многое проясняет и расставляет всё по своим местам</em>.<a name="habracut"></a></blockquote><p class="cye-lm-tag">Прежде чем мы начнем погружаться в детали паттерна Model-View-ViewModel (MVVM), я думаю, будет полезно описать сходства и различия между MVVM и другими шаблонами проектирования для разделения модели и представления (MV*-паттерны).</p>
+<p class="cye-lm-tag">Существует довольно много MV*-паттернов: Model-View-Controller, Model-View-Presenter, Presentation Model, Passive View, Supervising Controller, Model-View-ViewModel и многие другие:</p>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/image_5.png" alt="mv_patterns_img"></p>
+<p class="cye-lm-tag">Глядя на схемы, вы, конечно же, видите, что стрелки показывают отношения между компонентами. Но только ли в этом различие? Является ли Controller тем же, что и Presenter или PresentationModel? Как бы вы сравнили между собой Model-View-Presenter и Model-View-ViewModel? В данной статье я собираюсь описать сходства и различия между наиболее распространенными MV*-паттернами.</p>
+
+<h2 id="postroenie-ui-bez-ispolzovaniya-mv-patternov">Построение UI без использования MV*-паттернов</h2>
+<p class="cye-lm-tag">Как бы вы построили пользовательский интерфейс (UI), не используя вышеперечисленные паттерны? Взяли бы форму, добавили на нее виджеты, а логику написали бы в коде.
+<div class="note">Typically, you’d create a form or user control, drag your controls on it and put the logic in the code behind. </div>
+Такой код, описывающий логику View, жёстко связан с пользовательским интерфейсом, так как он напрямую взаимодействует с элементами на экране. Это хороший, но прямолинейный подход. Он применим только для очень простых интерфейсов. Когда логика становится более сложной, поддержка такого UI может превратиться в кошмар!</p>
+<p class="cye-lm-tag">Корень проблемы заключается в том, что построение UI таким способом нарушает принцип единственной ответственности (<a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">single responsibility principle</a>), который гласит: «<em>У класса должна быть только одна причина для изменения</em>». Если UI-компонент содержит код для отображения, логики и данных, 
+<div class="note">If a UI component has code for visualization, logic and data, it effectively has several reasons for changing.</div>
+то у него есть несколько причин для изменения. Например, если вы хотите поменять тип пользовательского элемента, который используется для отображения данных, то изменения не должны повлиять на логику. Однако поскольку логика так тесно связана с элементами управления, ее тоже придется менять. Это так называемый «код с душком» (<a href="http://en.wikipedia.org/wiki/Code_smell">code smell</a>), который сигнализирует, что нарушен принцип единственной ответственности.</p>
+<p class="cye-lm-tag">Таким образом, если форма содержит код для отображения элементов управления, логику интерфейса (что происходит при нажатии кнопки) и данные для отображения на экране, вы столкнетесь со следующими проблемами:</p>
+<ul>
+<li><strong>Усложнение поддержки (Decreased Maintainability)</strong><br>
+Изменения в UI, логике или данных, скорее всего, повлекут за собой изменения в остальных частях. Поэтому вносить правки гораздо сложнее, что затрудняет поддержку.</li>
+<li><strong>Ухудшение тестируемости (Decreased Testability)</strong><br>
+Логика и данные приложения могут быть написаны таким образом, чтобы каждый компонент мог быть протестирован отдельно. Однако код, связанный с пользовательским интерфейсом, плохо поддается модульному тестированию, потому что для этого часто требуется участие пользователя для запуска логики в UI. Кроме того, любая визуализация часто требует оценки со стороны человека, что всё «выглядит правильно». <em>Отметим, что существуют решения для автоматизации тестирования пользовательского интерфейса. Однако они только имитируют взаимодействие с пользователем. Как правило, они сложнее в настройке и обслуживании, чем unit-тесты, и чаще всего используются при интеграционном тестировании, так как для этого требуется запуск всего приложения</em>. </li>
+<li><strong>Уменьшение возможности переиспользования (Decreased Reusability)</strong><br>
+Если ваш UI-код смешан с кодом логики и данных, то его становится гораздо сложнее переиспользовать.</li>
+</ul>
+
+<h2 id="celi-mv-patternov">Цели MV*-паттернов (The goals of separated presentation patterns)</h2>
+<p class="cye-lm-tag">Хотя каждый из паттернов имеет довольно много отличий, их цели похожи: отделить UI-код (View) от кода логики (Presenter, Controller, ViewModel и т. д.) и кода обработки данных (Model). Это позволяет каждому из них развиваться самостоятельно. Например, вы сможете изменить внешний вид и стиль приложения, не затрагивая логику и данные.</p>
+<p><ol>
+	<li>M - код обработки данных (Model) </li>
+	<li>V - UI-код (View)</li>
+	<li>C - код логики (Presenter, Controller, ViewModel и т. д.)</li>
+</ol></p>
+<p class="cye-lm-tag">Кроме того, так как логика и данные отделены от отображения, то они могут быть протестированы отдельно. Для простых приложений это может быть не так важно. Например, если ваше приложение является простым редактором данных. Однако, если у вас более сложная логика интерфейса, то возможность автоматически проверить, что она работает правильно, будет очень ценной.</p>
+
+<h2 id="model-view-controller">Model-View-Controller</h2>
+<p class="cye-lm-tag">Одним из самых первых паттернов для отделения представления от логики и модели стал <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">Model-View-Controller</a> (MVC). Эта концепция была описана <a href="https://en.wikipedia.org/wiki/Trygve_Reenskaug">Трюгве Реенскаугом</a>.</p>
+<blockquote><strong>В 1979 году!</strong> (Я тогда ещё даже не родился).</blockquote><p class="cye-lm-tag">Этот паттерн был разработан для написания приложений на Smalltalk. Но в те дни, программирование было не таким, как сегодня. Не было Windows. Не было графического интерфейса пользователя. Не было библиотек виджетов. Если вы хотите пользовательский интерфейс, его нужно отрисовать самостоятельно. Или если вы хотите взаимодействовать с устройствами ввода, такими как клавиатура.</p>
+<p class="cye-lm-tag">Но то, что сделал Трюгве было весьма революционным. Там, где все смешивали код отображения, логики и данных, он применил паттерн, чтобы разделить эти обязанности между отдельными классами. </p>
+<p class="cye-lm-tag">Проблема паттерна MVC состоит в том, что это, вероятно, один из самых неправильно понятых паттернов в мире. И я думаю, это из-за названия. Трюгве сначала назвал паттерн Model-View-Editor, но позже остановился на Model-View-Controller. Понятно, что такое Model (данные) и что такое View (то, что я вижу на экране). Но что такое Сontroller? Является ли <a href="http://www.martinfowler.com/eaaCatalog/applicationController.html">Application Controller</a> таким же, как в паттерне MVC? (<em>Нет, но вы можете увидеть, откуда взялась путаница</em>).</p>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/image_10.png" alt="mvc_img"></p>
+<p class="cye-lm-tag">Что же представляют собой эти Model, View и Controller:</p>
+<ul>
+	
+<li><strong>Model</strong><br>
+Модель – это данные вашего приложения, логика их получения и сохранения. Зачастую это модель предметной области (<em>domain model</em>), основанная на базе данных или на результатах от веб-сервисов. В некоторых случаях <em>domain model</em> хорошо проецируется на то, что вы видите на экране. Но иногда перед использованием ее необходимо адаптировать, изменить или расширить.
+</li>
+<li><strong>View</strong><br>
+Представление отвечает за отображение UI на экране. Без библиотек виджетов, это означало самостоятельную отрисовку блоков, кнопок, полей ввода и т. п. View также может наблюдать за моделью и отображать данные из неё.
+</li>
+<li><strong>Controller</strong><br>
+Контроллер обрабатывает действия пользователя и затем обновляет Model или View. Если пользователь взаимодействует с приложением (нажимает кнопки на клавиатуре, передвигает курсор мыши), контроллер получает уведомление об этих действиях и решает, что с ними делать: игнорить, или обновлять модель, или обновлять UI. </li>
+</ul>
+<ul style="border: 1px solid black;">
+<li><strong>Model</strong>		<br>The model typically is the data of your application and the logic to retrieve and persist that data. Often, this is a domain model that can be based on a database or the results from web services. In some cases, that domain model maps perfectly to what you see on the screen, but in other cases it has to be adapted, aggregated or extended to be usable.       </li>
+<li><strong>View</strong>       <br>The View was responsible for drawing the UI on the screen. Without windows or controls, that meant drawing, boxes, buttons, input fields, etc on the screen. The View can also monitor the model and display any data in it or update itself if the data changes.       </li>
+<li><strong>Controller</strong>       <br>The controller is responsible for handling the User Input and then updating the Model or the View. So if the user is interacts with the application, IE: presses a button on the keyboard, moves the mouse, the controller is notified of that user gesture and decides what to do with it. Maybe it should update the view, maybe it should update the model. </li>
+</ul>
+<blockquote><em>Примечание от переводчика:</em>
+<em>Следует отметить, что Controller получает события ввода напрямую, а не через View. Контроллер интерпретирует пользовательский ввод от клавиатуры или мыши, и посылает команды модели и/или представлению внести соответствующие изменения.</em></blockquote><p class="cye-lm-tag">Я написал пример на скорую руку для иллюстрации того, как будет выглядеть контроллер в «чистой» реализации MVC. Я его реализовал на обычном asp.net (не asp.net MVC), но без применения каких-либо пользовательских элементов управления. Так что это более традиционный asp стиль. (<em>Да, это не очень удачный пример, но я надеюсь, что он станет отправной точкой к пониманию истинной роли контроллера</em>).</p>
+<pre><code class="cs hljs">  <span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">Controller</span>
+  {
+      <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-keyword cye-lm-tag">readonly</span> IView _view;
+      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-title cye-lm-tag">Controller</span>(<span class="hljs-params cye-lm-tag">IView view</span>)
+      </span>{
+          _view = view;
+          HttpRequest request = HttpContext.Current.Request;
+          <span class="hljs-keyword cye-lm-tag">if</span> (request.Form[<span class="hljs-string cye-lm-tag">"ShowPerson"</span>] == <span class="hljs-string cye-lm-tag">"1"</span>)
+          {
+              <span class="hljs-keyword cye-lm-tag">if</span> (<span class="hljs-keyword cye-lm-tag">string</span>.IsNullOrEmpty(request.Form[<span class="hljs-string cye-lm-tag">"Id"</span>]))
+              {
+                  ShowError(<span class="hljs-string cye-lm-tag">"The ID was missing"</span>);
+                  <span class="hljs-keyword cye-lm-tag">return</span>;
+              }
+              ShowPerson(Convert.ToInt32(request.Form[<span class="hljs-string cye-lm-tag">"Id"</span>]));
+          }
+      }
+      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">ShowError</span>(<span class="hljs-params cye-lm-tag"><span class="hljs-keyword cye-lm-tag">string</span> s</span>)
+      </span>{
+          _view.ShowError(s);
+      }
+      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">ShowPerson</span>(<span class="hljs-params cye-lm-tag"><span class="hljs-keyword cye-lm-tag">int</span> Id</span>)
+      </span>{
+          <span class="hljs-keyword cye-lm-tag">var</span> model = <span class="hljs-keyword cye-lm-tag">new</span> Repository().GetModel(Id);
+          _view.ShowPerson(model);
+      }
+  }</code></pre>
+<p class="cye-lm-tag">После многих лет парадигма программирования несколько изменилась – появились пользовательские элементы управления (<a href="https://en.wikipedia.org/wiki/Widget_(GUI)">виджеты</a>). Виджеты как отрисовывают самих себя, так и интерпретируют пользовательский ввод. Кнопка знает, что делать, если вы кликните по ней. Поле ввода знает, что делать, если вы вводите текст в нём. Это уменьшает потребность в контроллере, и паттерн MVC стал менее актуальным. Однако так как по-прежнему существует необходимость отделения логики приложения от представления и от данных, набрал популярность другой паттерн под названием <strong>Model-View-Presenter (MVP)</strong>.</p>
+<p class="cye-lm-tag">Большинство примеров паттерна MVC фокусируются на очень небольших компонентах, таких как реализация текстового окна или реализация кнопки. При использовании более современных технологий пользовательского интерфейса (Visual Basic 3 является современным по сравнению со Smalltalk 1979), как правило, нет необходимости в этом паттерне. Но он может помочь, если вы разрабатываете свой виджет, используя очень низкий уровень API (например, Direct X).</p>
+<p class="cye-lm-tag">Последние пару лет паттерн MVC стал снова актуальным, но уже по другой причине, в связи с появлением <a href="https://www.asp.net/mvc">ASP.NET MVC</a>. Фреймворк ASP.NET MVC не использует концепцию виджетов в отличии от ASP.NET. В ASP.NET MVC View представляет собой элемент управления ASPX, который отрисовывает HTML. И контроллер снова обрабатывает действия пользователя, так как он принимает HTTP запросы. На основании <em>http</em>-запроса он определяет, что делать (обновить Model или отобразить конкретную View).</p>
+
+<h2 id="model-view-presenter">Model-View-Presenter</h2>
+<p class="cye-lm-tag">С развитием среды визуального программирования и внедрения виджетов, которые инкапсулирует отрисовку и обработку пользовательского ввода, отпала необходимость в создании отдельного класса контроллера. Но разработчики всё ещё нуждаются в отделении логики от представления, только теперь на более высоком уровне абстракции. Потому что оказалось, что если вы создаете форму из нескольких пользовательских элементов, она также содержит и логику интерфейса и данных<i>(UI logic and the data)</i>. Паттерн MVP описывает, как отделить UI от логики интерфейса (что происходит при взаимодействии с виджетами) и от данных (какие данные отображать на экране).</p>
+<div class="note">The Model View Presenter pattern describes a way to separate out the visual elements (Controls) from the Logic (What happens when you interact with the controls) and the Data (what data is displayed in the view).</div>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/0ca52744b20f4d54bee49198af906f57.png" alt="mvp_img"></p>
+<ul>
+<li><strong>Model</strong><br>
+Это данные вашего приложения, логика их получения и сохранения. Зачастую она основана на базе данных или на результатах от веб-сервисов. В некоторых случаях потребуется ее адаптировать, изменить или расширить перед использованием во View.
+</li>
+<li><strong>View</strong><br>
+ВИД обычно это пользовательский элемент управления или форма, которая объединяет более мелкие виджеты в интерфейс пользователя. Пользователь может взаимодействовать с элементами управления на UI, но когда какое-нибудь действие пользователя потребует выполнение какой-либо логики, то View будет направит его обработку к презентеру.
+</li>
+<li><strong>Presenter</strong><br>
+Презентер содержит всю логику, необходимую для пользовательского интерфейса, и отвечает за синхронизацию модели и представления. Когда представление уведомляет презентер, что пользователь что-то сделал (например, нажал кнопку), презентер принимает решение об обновлении модели и синхронизирует все изменения между моделью и представлением.</li>
+</ul>
+<ul style="border: 1px solid black;">
+<li><strong>Model<br></strong>The model typically is the data of your application and the logic to retrieve and persist that data. Often, this is a domain model that can be based on a database or the results from web services. In some cases, that domain model maps perfectly to what you see on the screen, but in other cases it has to be adapted, aggregated or extended to be usable. </li>
+<li><strong>View</strong><br>
+The View is typically a user control or form that combines several (smaller grained controls) into a (part of a) user interface. The user can interact with the controls in the View, but when some logic needs to be started, the view will delegate this to the presenter.</li>
+<li><strong>Presenter<br></strong>The presenter holds all the logic for the view and is responsible for synchronizing the model and the View. When the view notifies the presenter that the user has done something (for example, clicked a button), the presenter will then update the model and synchronize any changes between the Model and the View. </li>
+</ul>
+<p class="cye-lm-tag">Стоит отметить одну важную вещь, что презентер не общается с представлением напрямую. Вместо этого, он общается через интерфейс. Благодаря этому презентер и модель могут быть протестированы по отдельности.</p>
+<div class="note">One important thing to mention is that the Presenter doesn’t communicate directly to the view. In stead, it communicates through an interface. This way, the presenter and the model can be tested in isolation.</div>
+<p class="cye-lm-tag">Существует два варианта этого паттерна: Passive View и Supervising Controller.</p>
+
+<h3 id="passive-view">__________ Passive View __________ (Model View Presenter pattern)</h3>
+<p class="cye-lm-tag">В этом варианте представление(VIEW) <strong>ничего не знает</strong> о модели, но вместо этого предоставляет простые свойства для всей информации, которую необходимо отобразить на экране. Презентер будет считывать информацию из модели и обновлять свойства во View.</p>
+<DIV class="note">the view knows nothing about the model, but instead exposes simple properties for all the information it wants to display on the screen.  The presenter will read information from the Model and update the properties from the model.</DIV>
+<p class="cye-lm-tag">Это было бы примером PassiveView:</p>
+<pre><code class="cs hljs">  <span class="hljs-keyword cye-lm-tag">public</span> PersonalDataView : UserControl, IPersonalDataView {
+      TextBox _firstNameTextBox;
+      <span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">string</span> FirstName {
+          <span class="hljs-keyword cye-lm-tag">get</span> {
+              <span class="hljs-keyword cye-lm-tag">return</span> _firstNameTextBox.Value;
+          }
+          <span class="hljs-keyword cye-lm-tag">set</span> {
+              _firstNameTextBox.Value = <span class="hljs-keyword cye-lm-tag">value</span>;
+          }
+      }
+  }</code></pre>
+<p class="cye-lm-tag">Как вы можете видеть, требуется писать довольно много кода как во View, так и в презентере. Тем не менее, это сделает взаимодействие между ними более тестируемым.</p>
+
+<h3 id="supervising-controller">__________ Supervising Controller __________ (Model View Presenter pattern)</h3>
+<p class="cye-lm-tag">Тут представление (VIEW) <strong>знает</strong> о модели и отвечает за связывание данных с отображением. Это делает общение между презентером и View более лаконичным, но в ущерб тестируемости взаимодействия View-Presenter. 
+<div class="note"> the View DOES know about the Model and is responsible for databinding the model to the view. This makes the interaction between the Presenter and the View a lot less chatty, but at the expense of testability of the View-Presenter interaction.</div>
+Лично я ненавижу тот факт, что этот паттерн содержит в названии «Controller». Потому что контроллер снова не тот, что в MVC и не такой, как Application Controller.</p>
+<p class="cye-lm-tag">Это было бы примером представления в паттерне Supervising Controller:</p>
+<pre><code class="cs hljs">  <span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">PersonalDataView</span> : <span class="hljs-title cye-lm-tag">UserControl</span>, <span class="hljs-title cye-lm-tag">IPersonalDataView</span> {
+      <span class="hljs-keyword cye-lm-tag">protected</span> TextBox _firstNameTextBox;
+
+      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">SetPersonalData</span>(<span class="hljs-params cye-lm-tag">PersonalData data</span>) </span>{
+          _firstNameTextBox.Value = data.FirstName;
+      }
+      <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">public</span> <span class="hljs-keyword cye-lm-tag">void</span> <span class="hljs-title cye-lm-tag">UpdatePersonalData</span>(<span class="hljs-params cye-lm-tag">PersonalData data</span>) </span>{
+          data.FirstName = _firstNameTextBox.Value;
+      }
+  }</code></pre>
+<p class="cye-lm-tag">Как вы можете видеть, этот интерфейс является менее детальным и возлагает больше ответственности на View. </p>
+
+<hr>
+<h2 id="presentation-model">Presentation Model _________ (PM)</h2>
+<p class="cye-lm-tag">Мартин Фаулер описывает на своем сайте другой подход для достижения разделения ответственности, который называется <a href="http://martinfowler.com/eaaDev/PresentationModel.html">Presentation Model</a>. PresentationModel представляет собой <strong>логическое представление</strong> пользовательского интерфейса, не опираясь на какие-либо визуальные элементы.</p>
+<div class="note">The Presentation Model is a logical representation of the User Interface, without relying on any visual elements.</div>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/fa65fd04305e4fc6895f44e5d76d4c92.png" alt="presentation_model_img"></p>
+<p class="cye-lm-tag">PresentationModel имеет несколько обязанностей:</p>
+<ol>
+<li><strong>Содержит логику пользовательского интерфейса:</strong><br>
+Так же, как и презентер, PresentationModel содержит логику пользовательского интерфейса. Когда вы нажимаете на кнопку, это событие направляется в PresentationModel, которая затем решает, что с ним делать.</li>
+<li><strong>Предоставляет данные из модели для отображения на экране</strong><br>
+PresentationModel может преобразовывать данные из модели так, чтобы они были легко отображены на экране. Часто информация, содержащаяся в модели, не может непосредственно использоваться на экране. Вам, возможно, сначала потребуется преобразовать данные, дополнить их или собрать вместе из нескольких источников. Это наиболее вероятно, когда у вас нет полного контроля над моделью. Например, если вы получаете данные от сторонних веб-сервисов или же из базы данных существующего приложения.</li>
+<li><strong>Хранит состояние пользовательского интерфейса</strong><br>
+Зачастую пользовательский интерфейс должен хранить дополнительную информацию, которая не имеет ничего общего с моделью. Например, какой элемент выбран в данный момент на экране? Какие ошибки валидации произошли? PresentationModel может хранить эту информацию в свойствах.</li>
+</ol>
+<ol style="border: 1px solid black;">
+<li><strong>Hold the logic of the UI:</strong><br>
+Same as the Presenter, the Presentation Model holds the logic of the UI. When you click a button, that click is forwarded to the Presentation Model, which then decides what to do with it.</li>
+<li><strong>Massage the data from the model to be displayed on the screen:
+      <br></strong>The presentation model can convert the data in the model so it can more easily be displayed on the screen. Often, the information contained in the model cannot directly be used on the screen. You might need to alter the information (IE: convert data types),&nbsp; enrich the information (IE: summations) or aggregate information from several sources. This is especially likely if you don’t have full control over the model. For example, you get information from an 3rd party web service, or from a database of an existing application. </li>
+<li><strong>Store the state of the UI:
+      <br></strong>Often, the UI needs to store additional information that has nothing to do with the domain model. For example, which item is currently selected on the screen? What validation errors have occurred? The presentation model can store this information in properties.&nbsp; </li>
+</ol>
+<p class="cye-lm-tag">View может легко извлекать данные из PresentationModel и получать всю необходимую информацию для отображения на экране. Одно из преимуществ такого подхода заключается в том, что вы можете создать логическое и полностью тестируемое представление вашего UI, не полагаясь на тестирование визуальных элементов.</p>
+<p class="cye-lm-tag">Паттерн Presentation Model никак не описывает, каким образом View использует данные из модели (PresentationModel).</p>
+<div class="note">The Presentation Model pattern doesn’t really describe how the view then uses the data in the Presentation Model.</div>
+
+<hr>
+<h2 id="model-view-viewmodel">Model-View-ViewModel</h2>
+<p class="cye-lm-tag">Наконец, паттерн Model-View-ViewModel также известный, как MVVM или просто шаблон ViewModel. Он очень похож на паттерн Presentation Model:</p>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/77c6f670eaa245d191b958a20841fbd0.png" alt="mvvm_img"></p>
+<p class="cye-lm-tag">В действительности едва ли не единственным отличием является явное использование возможностей связывания данных (<em>databinding</em>) в WPF и Silverlight. Не удивительно, потому что <a href="http://blogs.msdn.com/johngossman/archive/2005/10/08/478683.aspx">Джон Госсман</a> был одним из первых, кто упомянул об этом паттерне в своем блоге.</p>
+<p class="cye-lm-tag">ViewModel не может общаться со View напрямую. Вместо этого она представляет легко связываемые свойства и методы в виде <a href="http://msdn.microsoft.com/en-us/library/system.windows.input.icommand.aspx">команд</a>. View может привязываться к этим свойствам, чтобы получать информацию из ViewModel и вызывать на ней команды (методы). Это не требует того, чтобы View знала о ViewModel. XAML Databinding использует рефлексию, чтобы связать View и ViewModel. Таким образом, вы можете использовать любую ViewModel для View, которая предоставляет нужные свойства.</p>
+<p class="cye-lm-tag">Некоторые из вещей, которые мне действительно нравится в этом паттерне, когда он применяется к Silverlight или WPF:</p>
+<ul>
+<li>Вы получаете полностью тестируемую логическую модель вашего приложения.</li>
+<li>Поскольку ViewModel предоставляет View всю необходимую информацию в удобном виде, то само представление может быть довольно простым. А дизайнер может экспериментировать с внешним видом и стилем в редакторе Expression Blend и изменять его, не влияя на пользовательский интерфейс.</li>
+<li>И, наконец, вы можете избежать написания кода для View (<em>code behind</em>). Теперь это повод для споров среди поклонников паттерна MVVM. Я лично считаю, что, как правило, вам не нужно писать дополнительный код для View, и найдется решение лучше. Да, иногда нужно проделать некоторые трюки (<em>такие как создание attached behaviors</em>), но они обеспечивают хорошие и переиспользуемые решения. Тем не менее я также признаю, что не все любят XAML разметку и связывание данных в XAML. Паттерн ViewModel не заставляет вас использовать или избегать <em>code behind</em>. Делайте то, что кажется вам правильным.</li>
+</ul>
+
+<h2 id="zaklyuchenie">Заключение</h2>
+<p class="cye-lm-tag">Я надеюсь, что это описание наиболее распространенных MV*-паттернов поможет вам понять их различия.</p>
+<blockquote>Комментарий переводчика: 
+
+Как и автор, я надеюсь, что это описание поможет вам понять сходства и различия MV*-паттернов. Разобравшись в них, вам будет легче принять решение, какой из паттернов применить в своем приложении. 
+
+Основные выводы, которые можно сделать из статьи: 
+<ul>
+<li>Модель во всех паттернах выглядит одинаково и имеет одну и ту же цель – получение, обработка, а также сохранение данных.</li>
+<li>В классическом MVC пользовательский ввод обрабатывает Controller, а не View.</li>
+<li>Современные ОС и библиотеки виджетов берут на себя обработку пользовательского ввода, поэтому у вас больше нет нужды в контроллере из паттерна MVC.</li>
+<li>Цель MV*-паттернов: отделить друг от друга отображение UI, логику интерфейса и данные (их получение и обработку).</li>
+<li>Используя MV*-паттерн в своем приложении, вы упрощаете его поддержку и тестирование, отделяете данные от способа их визуализации.</li>
+<li>MVP достаточно универсальный паттерн и подойдет во многих случаях (это мое личное мнение). Какой вариант использовать: Passive View или Supervising Controller – решать вам. Руководствуйтесь тем, что вам нужно: больше контроля и тестируемости либо лаконичности и краткости кода. Лавируйте между задачами и применяйте тот или другой подход.</li>
+<li>Если в системе присутствует хорошая реализация автоматического связывания данных (databinding), то MVVM – это ваш выбор.</li>
+<li>Presentation Model – хорошая альтернатива MVVM, и будет полезна там, где нет автоматического связывания. Но вам придется писать код связывания самостоятельно (это несложный, но рутинный код). Есть идеи, как это элегантно реализовать, но об этом мы поговорим в следующей <a href="https://habrahabr.ru/company/mobileup/blog/326962/">статье</a>.</li>
+</ul>
+
+<em>P.S. Отдельно хочу поблагодарить своего коллегу <a href="https://habrahabr.ru/users/jeevuz/" class="user_link">Jeevuz</a> за помощь при подготовке перевода</em>.</blockquote></div>
+<hr>
+<a href="https://habrahabr.ru/company/mobileup/blog/326962/" title="article_2">src2</a>
+
+<h2>Реактивные приложения с паттерном RxPM. Прощайте​ MVP и MVVM</h2>
+<div class="post__text post__text-html js-mediator-article cye-lm-tag"><p class="cye-lm-tag">Уже продолжительное время я размышляю над паттерном RxPM и даже успешно применяю его в «продакшене». Я планировал сначала выступить с этой темой на <a href="https://mobiusconf.com/">Mobius</a>, но программный комитет отказал, поэтому публикую статью сейчас, чтобы поделиться с Android-сообществом своим видением нового паттерна. </p>
+<p class="cye-lm-tag">Все знакомы с MVP и MVVM, но мало кто знает, что MVVM является логическим развитием паттерна <a href="https://www.martinfowler.com/eaaDev/PresentationModel.html">Presentation Model</a>. Ведь единственное отличие MVVM от PM – это автоматическое связывание данных (<em>databinding</em>). </p>
+<p class="cye-lm-tag">В этой статье речь пойдет о паттерне Presentation Model с реактивной реализацией биндинга. Некоторые ошибочно называют его RxMVVM, но корректно будет называть его RxPM, потому что это модификация шаблона Presentation Model.</p>
+<p class="cye-lm-tag">Этот паттерн удобно использовать в проектах с <a href="http://reactivex.io/">Rx</a>, так как он позволяет сделать приложение по-настоящему реактивным. Кроме того, он не имеет многих проблем других паттернов. На диаграмме ниже представлены различные варианты и классификации шаблонов представления:</p>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/1f22c16bd5ab47f5b317d1cae555a170.jpg"> </p>
+<a name="habracut"></a>
+<p class="cye-lm-tag">Прежде, чем перейти к описанию паттерна RxPM, давайте рассмотрим самые популярные из них — MVP (Passive View) и MVVM. Подробное описание всех паттернов и их различий вы можете прочитать в предыдущей <a href="https://habrahabr.ru/company/mobileup/blog/313538/">статье</a>.</p>
+<h1 id="mvp-vs-pm-vs-mvvm">MVP vs PM vs MVVM</h1>
+<p class="cye-lm-tag">Общую схему паттернов можно представить в виде диаграммы:</p>
+<p class="cye-lm-tag"><img src="./MVCPatternsNRxPM_files/db9da52a10774616a3bcc03495ebf2e1.jpg"></p>
+<p class="cye-lm-tag">С первого взгляда может показаться, что принципиальной разницы между ними нет. Но это только на первый взгляд. Различия заключаются в обязанностях посредника и его способе связи со View. Модель же выглядит во всех паттернах одинаково. Ее проектирование – это сложная и обширная тема, не будем сейчас останавливаться на ней. Начнем с самого популярного паттерна – MVP в варианте Passive View. Рассмотрим его основные проблемы.</p>
+
+<hr>
+<h3 id="mvp">Model View Presenter _____________ (MVP)</h3>
+<p class="cye-lm-tag">В классическом MVP ответственность за <u>сохранение и восстановление состояния UI лежит на <b>View</b></u>. 
+<BR><b>Presenter</b> только <u>отслеживает изменения в модели</u>, <u>обновляет View через интерфейс</u> и, наоборот, <u>принимает команды от View и изменяет Model</u>. </p>
+<p class="cye-lm-tag">Однако при реализации сложных интерфейсов, помимо состояния данных в модели, есть дополнительные состояния UI, которые никак не связаны с данными. Например, какой элемент списка выделен на экране или какими данными заполнены форма ввода, информация о ходе процесса загрузки или запросов в сеть. Восстановление и сохранение UI-состояния во View доставляет большие проблемы, так как View имеет обыкновение «умирать». А информацию о сетевых запросах View в принципе не способна сохранить. Пока View отсоединена от презентера, запрос, скорее всего, завершится с каким-нибудь результатом. </p>
+<p class="cye-lm-tag">Поэтому работу восстановления состояния UI выносят в презентер. Для этого требуется хранить в презентере дополнительные данные и флаги о текущем состоянии и воспроизводить его при каждом присоединении View. </p>
+<p class="cye-lm-tag">Вторая проблема вытекает из того же условия, что View может быть в любой момент отсоединена от презентера, например, при повороте экрана. Соответственно, ссылка на интерфейс View в презентере будет обнулена. Поэтому нужно всегда делать проверку на <code>null</code>, когда требуется обновить View. Это довольно утомительно и захламляет код.</p>
+<p class="cye-lm-tag">Третья проблема: необходимо довольно детально описывать интерфейс View, так как она должна быть как можно более «тупой». А презентеру приходится вызывать множество методов, чтобы привести View в нужное состояние. Это увеличивает количество кода.</p>
+
+<hr>
+<h3 id="pm">Presentation Model ___________ (PM)</h3>
+<p class="cye-lm-tag">Существует другой паттерн под названием Presentation Model, который <a href="https://www.martinfowler.com/eaaDev/PresentationModel.html">описал</a> Martin Fowler. Суть этого паттерна заключается в том, что вводится специальная модель, называемая «моделью представления», которая хранит состояние UI и содержит UI-логику. <b>PresentationModel</b> следует рассматривать как <u>абстрактное представление, которое не зависит от какого-либо GUI-фреймворка</u>. <br>PresentationModel хранит состояние в виде свойств (<em>property</em>), которые затем считывает View и отображает на экране. Основная проблема паттерна – это синхронизация состояния PresentationModel и View. Вам придется об этом позаботиться самостоятельно, применив паттерн <a href="https://ru.wikipedia.org/wiki/%D0%9D%D0%B0%D0%B1%D0%BB%D1%8E%D0%B4%D0%B0%D1%82%D0%B5%D0%BB%D1%8C_(%D1%88%D0%B0%D0%B1%D0%BB%D0%BE%D0%BD_%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F)">«Наблюдатель»</a>. Скорее всего, потребуется отслеживать изменения каждого свойства, чтобы не обновлять UI целиком. Получится довольно много скучного и повторяющегося кода. </p>
+
+<hr>
+<h3 id="mvvm">Model View ViewModel ______________ (MVVM)</h3>
+<p class="cye-lm-tag">Как вы могли заметить, MVVM очень похож на Presentation Model. Не удивительно, ведь он является его развитием. Только PresentationModel называется ViewModel, а синхронизация состояния ViewModel и View осуществляется с помощью автоматического связывания данных, т. е. датабиндинга. Но и этот паттерн не лишен недостатков. Например, в нем проблематично «чисто» реализовать какие-нибудь анимации или что-либо сделать со View из кода. Об этом подробнее можно почитать в <a href="https://habrahabr.ru/company/mobileup/blog/312548/">статье</a> моего коллеги <a href="https://habrahabr.ru/users/jeevuz/" class="user_link">Jeevuz</a>.</p>
+<div class="spoiler"><b class="spoiler_title">Немного забегая вперед, вот его комментарий из наших обсуждений MVVM и RxPM</b><div class="spoiler_text"><blockquote><em>Начав обсуждать и обдумывать RxPM я понял, что этот паттерн объединяет в себе то, что мне нравилось в MVVM — понятие ViewModel'и как интерфейса над View, но в то же время не содержит в себе основного недостатка — двойственности. Что логично, ведь нет databinding'a. Но при этом биндинг при помощи Rx не намного сложнее автоматического биндинга c Databinding Library, и при этом очень хорошо подходит для применения в реактивных приложениях.
+Как следствие, RxPM решает и проблему состояний. Помните про кубик рубик из моей статьи? Я описывал, что состояние можно описать либо набором полей, либо набором действий… Так вот, RxPM интересным способом объединяет в себе эти два способа: PresentationModel хранит состояния View как набор полей, но так как эти поля представлены BehaviorSubject'ами (которые испускают последнее событие при подписке), то они одновременно являются и «действиями». И получается, что любое событие произошедшее в фоне (пока не было View) прилетит во время подписки. Отлично!</em></blockquote></div></div>
+<p class="cye-lm-tag">Но самым главным и решающим недостатком всех вышеперечисленных паттернов является то, что взаимодействие View и посредника осуществляется в императивном стиле. Тогда как наша цель – это написание реактивных приложений. UI-слой – это довольной большой источник потока данных, особенно в динамичных интерфейсах, и было бы опрометчиво использовать Rx только для асинхронной работы с моделью.</p>
+
+<hr>
+<h1 id="reaktivnyy-presentation-model">Реактивный Presentation Model ___________ (RxPM)</h1>
+<p class="cye-lm-tag">Мы уже выяснили, что основная проблема паттерна Presentation Model – это синхронизация состояния между PresentationModel и View. Очевидно, что необходимо использовать <em>observable property</em> – свойство, которое умеет уведомлять о своих изменениях. В решении этой задачи нам как раз и поможет RxJava, а заодно мы получим все плюсы реактивного подхода. </p>
+<p class="cye-lm-tag">Для начала посмотрим на схему паттерна и далее будем разбираться в деталях реализации:
+<img src="./MVCPatternsNRxPM_files/58ff9ee3a76f4f2e9aebed8520e93abb.jpg"></p>
+<p class="cye-lm-tag">Итак, ключевым элементом RxPM является реактивное <em>property</em>. Первым кандидатом на роль Rx-property напрашивается <a href="http://reactivex.io/documentation/subject.html"><strong>BehaviorSubject</strong></a>. Он хранит последнее значение и отдает его каждый раз при подписке. </p>
+<p class="cye-lm-tag">Вообще <strong>Subject</strong>’ы уникальны по своей природе: с одной стороны, они являются расширением Observable, а с другой, реализуют интерфейс Observer. То есть мы можем использовать <strong>Subject</strong> как исходящий поток данных для View, а в PresentationModel он будет потребителем входящего потока данных. </p>
+<p class="cye-lm-tag">Однако у <strong>Subject</strong>’ов есть недостатки, которые для нас неприемлемы. По контракту Observable они могут завершаться с событиями <strong>onComplete</strong> и <strong>onError</strong>. Соответственно, если <strong>Subject</strong> будет подписан на что-то, что завершится с ошибкой, то вся цепочка будет остановлена. View перестанет получать события и придется подписываться заново. Кроме того, Rx-property по определению не может посылать события <strong>onComplete</strong> и <strong>onError</strong>, так как является всего лишь источником данных (состояния) для View. Тут нам на помощь приходит Jake Wharton со своей библиотекой <a href="https://github.com/JakeWharton/RxRelay">RxRelay</a>. <em>Что бы мы без него делали?</em> <strong>Relay</strong>’и лишены описанных недостатков.</p>
+<p class="cye-lm-tag">В арсенале у нас несколько подклассов:</p>
+<ul>
+<li><strong>BehaviorRelay</strong> – хранит последнее полученное значение и рассылает его каждый раз при подписке. Лучше всего подходит для хранения и изменения состояний.</li>
+<li><strong>PublishRelay</strong> – просто горячий Observable. Подойдет для каких-нибудь команд или событий для View. Например, чтобы показать диалог или запустить анимацию. Также используется для получения команд (событий) от View.</li>
+<li><strong>ReplayRelay</strong> – сохраняет все полученные элементы в буфер и воспроизводит их все при подписке. Крайне редко используется, но может помочь для составных состояний. На ум приходит пример с рисованием: нарисовать линию, потом круг и т. д. </li>
+</ul>
+<p class="cye-lm-tag">Но мы не можем предоставить доступ View к <strong>Relay</strong>’ям напрямую. Так как она может случайно положить значение в property или подписаться на <strong>Relay</strong>, который предназначен для получения команд от View. Поэтому требуется представить свойства в виде <a href="https://github.com/ReactiveX/RxJava/blob/2.x/src/main/java/io/reactivex/Observable.java">Observable</a>, а слушатели событий от View как <a href="https://github.com/ReactiveX/RxJava/blob/2.x/src/main/java/io/reactivex/functions/Consumer.java">Consumer</a>. Да, инкапсуляция потребует больше кода, но с другой стороны будет сразу понятно, где свойства, а где команды. Пример с прогрессом загрузки в PresentationModel (pm):</p>
+<pre><code class="hljs kotlin"><span class="hljs-comment cye-lm-tag">//State</span>
+<span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> progress</span> = BehaviorRelay.create<span class="hljs-type cye-lm-tag">&lt;Int&gt;</span>()
+<span class="hljs-comment cye-lm-tag">// можно в виде property</span>
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> progressState</span>: Observable<span class="hljs-type cye-lm-tag">&lt;Int&gt;</span> = progress.hide()
+<span class="hljs-comment cye-lm-tag">// или в виде функции, если хочется такое же название</span>
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">progress</span><span class="hljs-params cye-lm-tag">()</span>: Observable<span class="hljs-type cye-lm-tag">&lt;Int&gt;</span> = progress.<span class="hljs-title cye-lm-tag">hide</span><span class="hljs-params cye-lm-tag">()</span></span>
+
+<span class="hljs-comment cye-lm-tag">//Action</span>
+<span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> downloadClicks</span> = PublishRelay.create<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span>()
+<span class="hljs-comment cye-lm-tag">// можно в виде property</span>
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> downloadClicksConsumer</span>: Consumer<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span> = downloadClicks
+<span class="hljs-comment cye-lm-tag">// или в виде функции, если хочется такое же название</span>
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">downloadClicks</span><span class="hljs-params cye-lm-tag">()</span>: Consumer<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span> = downloadClicks</span></code></pre>
+<p class="cye-lm-tag">Теперь, когда мы определили стейты и экшены, нам остается только привязаться к ним во View. Для этого нам нужна еще одна библиотека Джейка Вортона — <a href="https://github.com/JakeWharton/RxBinding">RxBinding</a>. <em>Когда он спит вообще?</em> </p>
+<pre><code class="hljs dts">pm.progressState.<span class="hljs-class cye-lm-tag">subscribe </span>{ progressBar.progress() } <span class="hljs-comment cye-lm-tag">// привязываем состояние прогресса</span>
+downloadButton.clicks().<span class="hljs-class cye-lm-tag">subscribe </span>{ pm.downloadClicksConsumer } <span class="hljs-comment cye-lm-tag">// прокидываем клики в PM</span></code></pre>
+<p class="cye-lm-tag">Если нет подходящего Observable, то можно вызывать <code>consumer.accept()</code> – напрямую из слушателя виджета.</p>
+<pre><code class="hljs stylus">pm<span class="hljs-selector-class cye-lm-tag">.downloadClicksConsumer</span><span class="hljs-selector-class cye-lm-tag">.accept</span>(Unit)</code></pre>
+<h3 id="a-teper-na-praktike">А теперь на практике</h3>
+<p class="cye-lm-tag">Теперь соберем все вышесказанное в кучу и разберем на примере. Проектирование PresentationModel можно разбить на следующие шаги:</p>
+<ol>
+<li>Определить, какие состояния будет хранить PresentationModel, которые потребуются для View: данные, состояние загрузки, ошибки, которые нужно отобразить и т. п. </li>
+<li>Определить, какие события могут происходить во View: клики на кнопки, заполнение полей ввода и т. д.</li>
+<li>При создании PresentationModel связать состояния, команды и модель в декларативном стиле, как это позволяет нам Rx.</li>
+<li>Привязать View к PresentationModel.</li>
+</ol>
+<p class="cye-lm-tag">Возьмем для примера задачу поиска слов в тексте:</p>
+<ul>
+<li>Есть поле ввода для текста, в котором будем искать.</li>
+<li>Есть поле ввода для слова/части, которое будем искать.</li>
+<li>По клику на кнопку мы запускаем поиск.</li>
+<li>Отображаем прогресс во время поиска, на это время блокируем кнопку.</li>
+<li>После получения ответа отображаем список найденных слов.</li>
+</ul>
+<p class="cye-lm-tag">Алгоритм поиска скроем за фасадом интерактора:</p>
+<pre><code class="hljs kotlin">data <span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">SearchParams</span></span>(<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> text</span>: String, <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> query</span>: String)
+
+interface Interactor {
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">findWords</span><span class="hljs-params cye-lm-tag">(params: <span class="hljs-type cye-lm-tag">SearchParams</span>)</span>: Single<span class="hljs-type cye-lm-tag">&lt;List&lt;String&gt;</span>&gt;</span>
+}
+
+<span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">InteractorImpl</span> : <span class="hljs-type cye-lm-tag">Interactor {</span></span>
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">findWords</span><span class="hljs-params cye-lm-tag">(params: <span class="hljs-type cye-lm-tag">SearchParams</span>)</span>: Single<span class="hljs-type cye-lm-tag">&lt;List&lt;String&gt;</span>&gt; {</span>
+        <span class="hljs-keyword cye-lm-tag">return</span> Single
+                .just(params)
+                .map { (text, query) -&gt;
+                    text
+                            .split(<span class="hljs-string cye-lm-tag">" "</span>, <span class="hljs-string cye-lm-tag">","</span>, <span class="hljs-string cye-lm-tag">"."</span>, <span class="hljs-string cye-lm-tag">"?"</span>, <span class="hljs-string cye-lm-tag">"!"</span>, ignoreCase = <span class="hljs-literal cye-lm-tag">true</span>)
+                            .filter { it.contains(query, ignoreCase = <span class="hljs-literal cye-lm-tag">true</span>) }
+                }
+                .subscribeOn(Schedulers.computation())
+    }
+}</code></pre>
+<p class="cye-lm-tag">В конкретном примере можно было бы обойтись вообще без Single и Rx, но мы сохраним однообразность интерфейсов. Тем более в реальных приложениях мог быть запрос в сеть через <a href="http://square.github.io/retrofit/">Retrofit</a>. </p>
+<p class="cye-lm-tag">Далее спроектируем PresentationModel. </p>
+<p class="cye-lm-tag">Состояния для View: список найденых слов, состояние загрузки, флаг активности кнопки поиска. Состояние enabled для кнопки мы можем привязать к флагу загрузки в PresentationModel, но для View мы должны предоставить отдельное свойство. Почему бы просто не привязаться к флагу загрузки во View? Тут мы должны определить, что состояния у нас два: loading и enabled, но в данном случае так совпало, что PresentationModel их связывает. Хотя в общем случае они могут быть независимыми. Например, если бы понадобилось блокировать кнопку до тех пор, пока пользователь не введет минимальное количество символов.</p>
+<p class="cye-lm-tag">События от View: ввод текста, ввод поискового запроса и клик по кнопке. Тут все просто: фильтруем тексты, объединяем текст и строку поиска в один объект — SearchParams. По клику на кнопку делаем поисковый запрос.</p>
+<p class="cye-lm-tag">Вот как это выглядит в коде:</p>
+<pre><code class="hljs kotlin"><span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">TextSearchPresentationModel</span> </span>{
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> interactor</span>: Interactor = InteractorImpl()
+
+    <span class="hljs-comment cye-lm-tag">// --- States ---</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> foundWords</span> = BehaviorRelay.create<span class="hljs-type cye-lm-tag">&lt;List&lt;String&gt;</span>&gt;()
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> foundWordState</span>: Observable<span class="hljs-type cye-lm-tag">&lt;List&lt;String&gt;</span>&gt; = foundWords.hide()
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> loading</span> = BehaviorRelay.createDefault<span class="hljs-type cye-lm-tag">&lt;Boolean&gt;</span>(<span class="hljs-literal cye-lm-tag">false</span>)
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> loadingState</span>: Observable<span class="hljs-type cye-lm-tag">&lt;Boolean&gt;</span> = loading.hide()
+
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchButtonEnabledState</span>: Observable<span class="hljs-type cye-lm-tag">&lt;Boolean&gt;</span> = loading.map { !it }.hide()
+    <span class="hljs-comment cye-lm-tag">// --------------</span>
+
+    <span class="hljs-comment cye-lm-tag">// --- UI-events ---</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchQuery</span> = PublishRelay.create<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchQueryConsumer</span>: Consumer<span class="hljs-type cye-lm-tag">&lt;String&gt;</span> = searchQuery
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inputTextChanges</span> = PublishRelay.create<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inputTextChangesConsumer</span>: Consumer<span class="hljs-type cye-lm-tag">&lt;String&gt;</span> = inputTextChanges
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchButtonClicks</span> = PublishRelay.create<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span>()
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchButtonClicksConsumer</span>: Consumer<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span> = searchButtonClicks
+
+    <span class="hljs-comment cye-lm-tag">// ---------------</span>
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> disposable</span>: Disposable? = <span class="hljs-literal cye-lm-tag">null</span>
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onCreate</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+
+        <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> filteredText</span> = inputTextChanges.filter(String::isNotEmpty)
+        <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> filteredQuery</span> = searchQuery.filter(String::isNotEmpty)
+
+        <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> combine</span> = Observable.combineLatest(filteredText, filteredQuery, BiFunction(::SearchParams))
+
+        <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> requestByClick</span> = searchButtonClicks.withLatestFrom(combine,
+                BiFunction<span class="hljs-type cye-lm-tag">&lt;Unit, SearchParams, SearchParams&gt;</span> { _, params: SearchParams -&gt; params })
+
+        disposable = requestByClick
+                .filter { !isLoading() }
+                .doOnNext { showProgress() }
+                .delay(<span class="hljs-number cye-lm-tag">3</span>, TimeUnit.SECONDS) <span class="hljs-comment cye-lm-tag">// делаем задержку чтобу увидеть прогресс</span>
+                .flatMap { interactor.findWords(it).toObservable() }
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnEach { hideProgress() }
+                .subscribe(foundWords)
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onDestroy</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+        disposable?.dispose()
+    }
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">isLoading</span><span class="hljs-params cye-lm-tag">()</span> = loading.value</span>
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">showProgress</span><span class="hljs-params cye-lm-tag">()</span> = loading.<span class="hljs-title cye-lm-tag">accept</span><span class="hljs-params cye-lm-tag">(true)</span></span>
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">hideProgress</span><span class="hljs-params cye-lm-tag">()</span> = loading.<span class="hljs-title cye-lm-tag">accept</span><span class="hljs-params cye-lm-tag">(false)</span></span>
+}</code></pre>
+<p class="cye-lm-tag">В роли View у нас будет выступать фрагмент:</p>
+<pre><code class="hljs kotlin"><span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">TextSearchFragment</span> : <span class="hljs-type cye-lm-tag">Fragment</span></span>() {
+
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> pm</span> = TextSearchPresentationModel()
+    <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> composite</span> = CompositeDisposable()
+
+    <span class="hljs-keyword cye-lm-tag">private</span> lateinit <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> inputText</span>: EditText
+    <span class="hljs-keyword cye-lm-tag">private</span> lateinit <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> queryEditText</span>: EditText
+    <span class="hljs-keyword cye-lm-tag">private</span> lateinit <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> searchButton</span>: Button
+    <span class="hljs-keyword cye-lm-tag">private</span> lateinit <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> progressBar</span>: ProgressBar
+    <span class="hljs-keyword cye-lm-tag">private</span> lateinit <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> resultText</span>: TextView
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onCreate</span><span class="hljs-params cye-lm-tag">(savedInstanceState: <span class="hljs-type cye-lm-tag">Bundle?</span>)</span> {</span>
+        super.onCreate(savedInstanceState)
+        retainInstance = <span class="hljs-literal cye-lm-tag">true</span> <span class="hljs-comment cye-lm-tag">//не умираем при поворотах экрана</span>
+        pm.onCreate()
+    }
+
+    <span class="hljs-comment cye-lm-tag">// ... onCreateView</span>
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onViewCreated</span><span class="hljs-params cye-lm-tag">(view: <span class="hljs-type cye-lm-tag">View, savedInstanceState: Bundle?</span>)</span> {</span>
+        super.onViewCreated(view, savedInstanceState)
+
+        <span class="hljs-comment cye-lm-tag">// ... init widgets</span>
+
+        onBindPresentationModel()
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onBindPresentationModel</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+
+        <span class="hljs-comment cye-lm-tag">// --- States ---</span>
+        pm.foundWordState
+                .subscribe {
+                    <span class="hljs-keyword cye-lm-tag">if</span> (it.isNotEmpty()) {
+                        resultText.text = it.joinToString(separator = <span class="hljs-string cye-lm-tag">"\n"</span>)
+                    } <span class="hljs-keyword cye-lm-tag">else</span> {
+                        resultText.text = <span class="hljs-string cye-lm-tag">"Nothing found"</span>
+                    }
+                }
+                .addTo(composite)
+
+        pm.searchButtonEnabledState
+                .subscribe(searchButton.enabled())
+                .addTo(composite)
+
+        pm.loadingState
+                .subscribe(progressBar.visibility())
+                .addTo(composite)
+        <span class="hljs-comment cye-lm-tag">// ---------------</span>
+
+        <span class="hljs-comment cye-lm-tag">// --- Ui-events ---</span>
+        queryEditText
+                .textChanges()
+                .map { it.toString() }
+                .subscribe(pm.searchQueryConsumer)
+                .addTo(composite)
+
+        inputText
+                .textChanges()
+                .map { it.toString() }
+                .subscribe(pm.inputTextChangesConsumer)
+                .addTo(composite)
+
+        searchButton.clicks()
+                .subscribe(pm.searchButtonClicksConsumer)
+                .addTo(composite)
+        <span class="hljs-comment cye-lm-tag">//------------------</span>
+    }
+
+    <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onUnbindPresentationModel</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+        composite.clear()
+    }
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onDestroyView</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+        super.onDestroyView()
+        onUnbindPresentationModel()
+    }
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onDestroy</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+        super.onDestroy()
+        pm.onDestroy()
+    }
+}
+
+<span class="hljs-comment cye-lm-tag">// Расширение из RxKotlin</span>
+<span class="hljs-comment cye-lm-tag">/**
+ * Add the disposable to a CompositeDisposable.
+ * <span class="hljs-doctag cye-lm-tag">@param</span> compositeDisposable CompositeDisposable to add this disposable to
+ * <span class="hljs-doctag cye-lm-tag">@return</span> this instance
+ */</span>
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> Disposable.<span class="hljs-title cye-lm-tag">addTo</span><span class="hljs-params cye-lm-tag">(compositeDisposable: <span class="hljs-type cye-lm-tag">CompositeDisposable</span>)</span>: Disposable</span>
+        = apply { compositeDisposable.add(this) }</code></pre>
+<p class="cye-lm-tag">Полный пример вы можете посмотреть на <a href="https://github.com/dmdevgo/RxPM-Demo">GitHub</a>.</p>
+<h1 id="podvedem-itogi">Подведем итоги</h1>
+<p class="cye-lm-tag">Мы познакомились c новым паттерном RxPM и разобрали минусы других шаблонов представления. Но я не хочу однозначно сказать, что MVP и MVVM хуже или лучше RxPM. Я также, как и многие люблю MVP за его простоту и прямолинейность. А MVVM хорош наличием автоматического датабиндинга, хотя код в верстке – это на любителя. </p>
+<p class="cye-lm-tag">Но в современных приложениях с динамичным UI очень много событийного и асинхронного кода. Поэтому мой выбор склоняется в сторону реактивного подхода и RxPM. Приведу слова из <a href="https://speakerdeck.com/jakewharton/exploring-rxjava-2-for-android-gotocph-october-2016?slide=34">презентации</a> Джейка Вортона, почему наши приложения должны быть реактивными:</p>
+<blockquote><em>Unless you can model your entire system synchronously, a single asynchronously source breaks imperative programming.</em>
+<em>Если вы не можете смоделировать всю систему синхронно, то даже один асинхронный источник ломает императивное программирование.</em></blockquote>
+<h5 id="razumeetsya-u-rxpm-est-kak-plyusy-tak-i-minusy">Разумеется, у RxPM есть как плюсы, так и минусы.</h5>
+<p class="cye-lm-tag">Плюсы:</p>
+<ul>
+<li>Позволяет не разрывать реактивные цепочки Observable и протягивать их от модели до View и наоборот. Это избавляет от императивного взаимодействия со View.</li>
+<li>Декларативное описание логики в PresentationModel.</li>
+<li>PresentationModel представляет собой абстракцию View, не завязана на конкретные виджеты.</li>
+<li>Не нужно беспокоиться о том, присоединена View или нет. Просто меняем значение Rx-property. View автоматически получит стейт, когда подпишется.</li>
+<li>События от View получаем в реактивном стиле, удобно применять операторы Rx, чтобы фильтровать, объединять и т. д.</li>
+</ul>
+<p class="cye-lm-tag">Минусы:</p>
+<ul>
+<li>Необходимо писать код связывания, но c Rx это легко.</li>
+<li>Требуется инкапсулировать Relay’и, представлять их для View в виде Observable и Consumer. Это пока единственное, что напрягает меня.</li>
+<li>Обилие Rx. Можно рассматривать и как минус, и как плюс. Реактивность – это другая парадигма, поэтому не удивительно, что начав использовать Rx, приходится использовать его повсюду. Никто же не трубит по поводу множества объектов при программировании на Java – это парадигма ООП.</li>
+</ul>
+<p class="cye-lm-tag">Это, наверное, не полный список. Напишите в комментариях, какие вы видите плюсы и минусы, будет интересно узнать ваше мнение.</p>
+<p class="cye-lm-tag">Итак, если вы чувствуете себя уверенно c Rx и хотите писать реактивные приложения, если вы устали от MVP и MVVM c <em>databinding</em>, то вам стоит попробовать RxPM. Ну а если вам и так комфортно, то не буду вас уговаривать <em>;)</em></p>
+<h1 id="p-s">P. S.</h1>
+<p class="cye-lm-tag">Искушенный Android-разработчик, скорее всего, заметил, что я ничего не говорил о жизненном цикле и о сохранении PresentationModel во время поворота. Эта проблема не специфична для данного паттерна и заслуживает отдельного рассмотрения. В своей статье я хотел сосредоточиться на самой сути паттерна: его плюсах и минусах в сравнении с MVP и MVVM. Также не были затронуты такие важные темы, как двусторонний <em>databinding</em>, навигация между экранами в контексте RxPM и некоторые другие. В следующей <a href="https://habrahabr.ru/company/mobileup/blog/342850/">статье</a> мы c <a href="https://habrahabr.ru/users/jeevuz/" class="user_link">Jeevuz</a> постараемся рассказать о том, как начать использовать RxPM в реальном проекте и представим некоторое библиотечное решение, упрощающее его применение.</p></div>
+<hr>
+<a href="https://habrahabr.ru/company/mobileup/blog/342850/" title="article_3">src3</a>
+
+<h2>RxPM — реактивная реализация паттерна Presentation Model</h2>
+<div class="post__text post__text-html js-mediator-article cye-lm-tag"><img src="./MVCPatternsNRxPM_files/bsspduk6c_cyqko1jsbxefafbzg.png">
+<p class="cye-lm-tag">Через полгода после выхода прошлой <a href="https://habrahabr.ru/company/mobileup/blog/326962/">статьи</a> о сравнении RxPM c другими презентационными паттернами мы с <a href="https://habrahabr.ru/users/jeevuz/" class="user_link">Jeevuz</a>, наконец, готовы представить библиотеку <strong>RxPM</strong> — реактивную реализацию паттерна <a href="https://martinfowler.com/eaaDev/PresentationModel.html">Presentation Model</a>. Давайте сделаем небольшой обзор основных компонентов библиотеки и покажем, как их использовать.</p>
+<a name="habracut"></a>
+<p class="cye-lm-tag">Для начала посмотрим на общую схему:</p>
+<img src="./MVCPatternsNRxPM_files/rznbrht-4vw_74h6wzrjrui8upk.png" width="960">
+<p class="cye-lm-tag">&nbsp;</p>
+<ul>
+<li>PresentationModel хранит состояние для View, реагирует на UI-события, изменяя модель и состояние View.</li>
+<li>View подписывается на изменения состояния и отправляет действия пользователя в PresentationModel. </li>
+<li>Model — это слой, за которым скрывается бизнес-логика, хранение и получение данных.</li>
+</ul>
+<p class="cye-lm-tag">Перейдем к рассмотрению основных компонентов библиотеки.</p>
+<h1 id="state">State</h1>
+<p class="cye-lm-tag">Основная задача RxPM — описать все состояния в PresentationModel и предоставить возможность взаимодействовать с ними в реактивном стиле. Зачастую нам необходимо не только получать доступ к состоянию, но и реагировать на его изменения для синхронизации представления (View). Для этого в библиотеке есть класс <strong>State</strong>, который реализует реактивное свойство.</p>
+<p class="cye-lm-tag"><em>Реактивное свойство — это разновидность свойства, которое уведомляет о своих изменениях и предоставляет реактивные интерфейсы для взаимодействия с ним.</em></p>
+<p class="cye-lm-tag">В <a href="https://habrahabr.ru/company/mobileup/blog/326962">статье</a> про паттерн мы говорили что, нужно описать два свойства, чтобы скрыть от View доступ к изменению состояния:</p>
+<pre><code class="hljs kotlin"><span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inProgressRelay</span> = BehaviorRelay.create()
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inProgressObservable</span> = inProgressRelay.hide()</code></pre>
+<p class="cye-lm-tag">Это был один из раздражающих моментов в паттерне, поэтому мы решили обернуть <a href="https://github.com/JakeWharton/RxRelay"><code>BehaviorRelay</code></a> в <strong>State</strong> и предоставить <code>observable</code> и <code>consumer</code> для взаимодействия с ним. Теперь можем писать в одну строчку:</p>
+<pre><code class="hljs kotlin"><span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inProgress</span> = State<span class="hljs-type cye-lm-tag">&lt;Boolean&gt;</span>(initialValue = <span class="hljs-literal cye-lm-tag">false</span>)</code></pre>
+<p class="cye-lm-tag">Во View подписываемся на изменения состояния:</p>
+<pre><code class="hljs stylus">pm<span class="hljs-selector-class cye-lm-tag">.inProgress</span><span class="hljs-selector-class cye-lm-tag">.observable</span><span class="hljs-selector-class cye-lm-tag">.bindTo</span>(progressBar.<span class="hljs-attribute cye-lm-tag">visibility</span>()) </code></pre>
+<p class="cye-lm-tag"><em><code>bindTo</code> — расширение в библиотеке для привязки к реактивным свойствам</em></p>
+<p class="cye-lm-tag">Изменить состояние можно через <a href="https://github.com/ReactiveX/RxJava/blob/2.x/src/main/java/io/reactivex/functions/Consumer.java">consumer</a>, который доступен только внутри PresentationModel:</p>
+<pre><code class="hljs stylus">inProgress<span class="hljs-selector-class cye-lm-tag">.consumer</span><span class="hljs-selector-class cye-lm-tag">.accept</span>(true)</code></pre>
+<p class="cye-lm-tag">Так же как и у обычного свойства мы можем взять текущее значение состояния:</p>
+<pre><code class="hljs cs">inProgress.<span class="hljs-keyword cye-lm-tag">value</span></code></pre>
+<p class="cye-lm-tag"><strong>Преимущество реактивного свойства</strong> не только в том, что можно наблюдать за его изменением, но также связывать и компоновать с другими реактивными свойствами. Так мы получаем новое состояние, которое будет зависеть и реагировать на изменения других. Например, можно блокировать кнопку на время выполнения запроса в сеть:</p>
+<pre><code class="hljs nix">val <span class="hljs-attr cye-lm-tag">inProgress</span> = State(<span class="hljs-attr cye-lm-tag">initialValue</span> = <span class="hljs-literal cye-lm-tag">false</span>)
+val <span class="hljs-attr cye-lm-tag">buttonEnabled</span> = State(<span class="hljs-attr cye-lm-tag">initialValue</span> = <span class="hljs-literal cye-lm-tag">true</span>)
+
+inProgress.observable
+        .<span class="hljs-built_in cye-lm-tag">map</span> { progress -&gt; !progress }
+        .subscribe(buttonEnabled.consumer)
+        .untilDestroy()</code></pre>
+<p class="cye-lm-tag"><em><code>untilDestroy</code> — расширение в PresentationModel, которое добавляет <code>Disposable</code> в <code>CompositeDisposable</code></em>.</p>
+<p class="cye-lm-tag">Ещё один пример — включать и отключать кнопку в зависимости от заполненности полей в форме:</p>
+<pre><code class="hljs kotlin"><span class="hljs-comment cye-lm-tag">// Реактивные свойства для получения событий от View:</span>
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> nameChanges</span> = Action<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> phoneChanges</span> = Action<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> buttonEnabled</span> = State(initialValue = <span class="hljs-literal cye-lm-tag">false</span>)
+
+Observable.combineLatest(nameChanges.observable,
+                         phoneChanges.observable,
+                         BiFunction { name: String, phone: String -&gt;
+                             name.isNotEmpty() &amp;&amp; phone.isNotEmpty()
+                         })
+        .subscribe(buttonEnabled.consumer)
+        .untilDestroy()</code></pre>
+<blockquote>Таким образом, мы можем декларативно связывать одни реактивные свойства (состояния) и получать другие — зависимые. В этом и есть суть реактивного программирования. </blockquote>
+<h1 id="action">Action</h1>
+<p class="cye-lm-tag">Аналогично <strong>State</strong> этот класс инкапсулирует доступ к <code>PublishRelay</code> и предназначен для описания пользовательских действий, таких как нажатия на кнопки, переключения и т. п.</p>
+<pre><code class="hljs armasm"><span class="hljs-symbol cye-lm-tag">val</span> <span class="hljs-keyword cye-lm-tag">buttonClicks </span>= Action&lt;Unit&gt;()
+
+<span class="hljs-keyword cye-lm-tag">buttonClicks.observable
+</span>        .<span class="hljs-keyword cye-lm-tag">subscribe </span>{
+            // handle click
+        }
+        .untilDestroy()</code></pre>
+<p class="cye-lm-tag">Логичным вопросом будет, а не легче описать метод в PresentationModel, зачем объявлять свойство и подписываться на него? В некоторых случаях это справедливо. Например, если действие очень простое, такое как открытие следующего экрана или прямой вызов модели. Однако если нужно по клику сделать запрос в сеть, и при этом фильтровать нажатия во время прогресса, то в этом случае взаимодействие через <strong>Action</strong> предпочтительнее. Основное преимущество <strong>Action</strong> — это то, что он не разрывает Rx-цепочку. Объясню на примере.</p>
+<p class="cye-lm-tag">Вариант с методом:</p>
+<pre><code class="hljs kotlin"><span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">var</span> requestDisposable</span>: Disposable? = <span class="hljs-literal cye-lm-tag">null</span>
+
+<span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">sendRequest</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+    requestDisposable?.dispose()
+    requestDisposable = model.sendRequest().subscribe()
+}
+
+<span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onDestroy</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+    super.onDestroy()
+    requestDisposable?.dispose()
+}</code></pre>
+<p class="cye-lm-tag">Как видно из примера выше, необходимо на каждый запрос объявлять переменную <code>Disposable</code>, чтобы при каждом новом клике завершать предыдущий запрос. А также не забыть отписаться в <code>onDestroy</code>. Это следствие того, что каждый раз когда вызывается метод <code>sendRequest</code> по клику на кнопку, создается новая Rx-цепочка.</p>
+<p class="cye-lm-tag">Вариант с <strong>Action</strong>:</p>
+<pre><code class="hljs sml">buttonClicks.observable
+        .switchMapSingle {
+            model.sendRequest<span class="hljs-literal cye-lm-tag">()</span>
+        }
+        .subscribe<span class="hljs-literal cye-lm-tag">()</span>
+        .untilDestroy<span class="hljs-literal cye-lm-tag">()</span></code></pre>
+<p class="cye-lm-tag">Используя <strong>Action</strong>, нужно только один раз инициализировать Rx-цепочку и подписаться на нее. Кроме того, мы можем использовать многочисленные полезные Rx-операторы, такие как <code>debounce</code>, <code>filter</code>, <code>map</code> и т. д. </p>
+<p class="cye-lm-tag">Для примера рассмотрим задержку запроса при вводе строки для поиска:</p>
+<pre><code class="hljs kotlin"><span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchResult</span> = State<span class="hljs-type cye-lm-tag">&lt;List&lt;Item&gt;</span>&gt;()
+<span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> searchQuery</span> = Action<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+
+searchQuery.observable
+        .debounce(<span class="hljs-number cye-lm-tag">100</span>, TimeUnit.MILLISECONDS)
+        .switchMapSingle {
+            <span class="hljs-comment cye-lm-tag">// send request</span>
+        }
+        .subscribe(searchResult.consumer)
+        .untilDestroy()</code></pre>
+<p class="cye-lm-tag">А в сочетании с <a href="https://github.com/JakeWharton/RxBinding%5D">RxBinding</a> связывать View и PresentationModel ещё удобнее:</p>
+<pre><code class="hljs stylus"><span class="hljs-selector-tag cye-lm-tag">button</span>.clicks().bindTo(pm<span class="hljs-selector-class cye-lm-tag">.buttonClicks</span><span class="hljs-selector-class cye-lm-tag">.consumer</span>)</code></pre>
+<h1 id="command">Command</h1>
+<p class="cye-lm-tag">Ещё одна важная проблема — это отображение ошибок и диалогов, либо других команд. Они не являются состоянием, так как должны выполниться один раз. Например, чтобы показать диалог, нам <strong>State</strong> не подойдет, так как при каждой подписке к <strong>State</strong> будет получено последнее значение, соответственно, каждый раз будет показываться новый диалог. Для решения этой проблемы был создан класс <strong>Command</strong>, который реализует желаемое поведение, инкапсулируя <code>PublishRelay</code>.</p>
+<p class="cye-lm-tag">Но что же произойдет, если послать команду в тот момент, когда View ещё не привязана к PresentationModel? Мы потеряем эту команду. Чтобы не допустить этого, мы предусмотрели <strong>буфер</strong>, который накапливает команды, пока View отсутствует, и посылает их когда View привязывается. Когда View привязана к PresentationModel, то <strong>Command</strong> работает так же, как <code>PublishRelay</code>.</p>
+<p class="cye-lm-tag">По умолчанию буфер накапливает неограниченное количество команд, но можно задать конкретный размер буфера:</p>
+<pre><code class="hljs nginx"><span class="hljs-attribute cye-lm-tag">val</span> <span class="hljs-literal cye-lm-tag">error</span>Message = Command&lt;String&gt;(bufferSize = <span class="hljs-number cye-lm-tag">3</span>)</code></pre>
+<p class="cye-lm-tag">Если нужно сохранять только последнюю команду:</p>
+<pre><code class="hljs nginx"><span class="hljs-attribute cye-lm-tag">val</span> <span class="hljs-literal cye-lm-tag">error</span>Message = Command&lt;String&gt;(bufferSize = <span class="hljs-number cye-lm-tag">1</span>)</code></pre>
+<p class="cye-lm-tag">Если указать 0, то <strong>Command</strong> будет работать как <code>PublishRelay</code>:</p>
+<pre><code class="hljs nginx"><span class="hljs-attribute cye-lm-tag">val</span> <span class="hljs-literal cye-lm-tag">error</span>Message = Command&lt;String&gt;(bufferSize = <span class="hljs-number cye-lm-tag">0</span>)</code></pre>
+<p class="cye-lm-tag">Привязываемся во View:</p>
+<pre><code class="hljs puppet">errorMessage.observable().<span class="hljs-keyword cye-lm-tag">bindTo</span> { <span class="hljs-literal cye-lm-tag">message</span> -&gt;
+    Toast.makeText(<span class="hljs-literal cye-lm-tag">context</span>, <span class="hljs-literal cye-lm-tag">message</span>, Toast.LENGTH_SHORT).show()
+}</code></pre>
+<p class="cye-lm-tag">Наиболее наглядно работу <strong>Command</strong> демонстрирует marble-диаграмма:</p>
+<img src="./MVCPatternsNRxPM_files/u3nw7fi8jjxi6lpvkvvasrt-p6k.png" width="950">
+<p class="cye-lm-tag">По умолчанию буфер включается при привязке View к PresentationModel. Но можно реализовать свой механизм, задав открывающий/закрывающий <code>observable</code>. </p>
+<img src="./MVCPatternsNRxPM_files/bococtb-1wod0aduw200c8mjlks.png" width="950">
+<p class="cye-lm-tag">Так, например, при работе с Google Maps, признаком готовности View является не только привязка к PresentationModel, но и готовность карты. В библиотеке уже есть готовая команда для работы с картой:</p>
+<pre><code class="hljs sml"><span class="hljs-keyword cye-lm-tag">val</span> moveToLocation = mapCommand&lt;<span class="hljs-type cye-lm-tag">LatLng</span>&gt;<span class="hljs-literal cye-lm-tag">()</span></code></pre>
+<h1 id="presentationmodel">PresentationModel</h1>
+<p class="cye-lm-tag">Мы описали основные примитивы RxPM: <strong>State</strong>, <strong>Action</strong> и <strong>Command</strong>, из которых строится PresentationModel. Теперь разберём базовый класс <code>PresentationModel</code>. В нём ведётся вся основная работа с жизненным циклом. Всего у нас имеется 4 callback-а:</p>
+<ul>
+<li><code>onCreate</code> — вызывается при первом создании, это хорошее место для инициализации Rx-цепочек и связывания состояний.</li>
+<li><code>onBind</code> — вызывается, когда View привязывается к PresentationModel.</li>
+<li><code>onUnbind</code> — вызывается, когда View отвязывается от PresentationModel.</li>
+<li><code>onDestroy</code> — PresentationModel завершает свою работу. Подходящее место для освобождения ресурсов.</li>
+</ul>
+<p class="cye-lm-tag">Также можно отслеживать жизненный цикл через <code>lifecycleObservable</code>.</p>
+<p class="cye-lm-tag">Для удобной отписки есть расширения <code>Disposable</code>, доступные в <code>PresentationModel</code>:</p>
+<pre><code class="hljs crystal"><span class="hljs-keyword cye-lm-tag">protected</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">Disposable</span></span>.untilUnbind() {
+    compositeUnbind.add(this)
+}
+
+<span class="hljs-keyword cye-lm-tag">protected</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">Disposable</span></span>.untilDestroy() {
+    compositeDestroy.add(this)
+}</code></pre>
+<p class="cye-lm-tag">На <code>onBind</code> и <code>onDestroy</code> очищаются <code>compositeUnbind</code> и <code>compositeDestroy</code> соответственно.</p>
+<p class="cye-lm-tag">Давайте рассмотрим пример работы с <code>PresentationModel</code>:
+Необходимо по <em>Pull To Refresh</em> посылать запрос в сеть и обновлять данные на экране, во время запроса отображать прогресс, а в случае ошибки показывать пользователю диалог с сообщением.</p>
+<p class="cye-lm-tag">Для начала нужно определить, какие состояния и команды нужны для View и какие пользовательские события мы можем получать от View:</p>
+<pre><code class="hljs kotlin"><span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">DataPresentationModel</span></span>(
+        <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> dataModel</span>: DataModel
+) : PresentationModel() {
+
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> data</span> = State<span class="hljs-type cye-lm-tag">&lt;List&lt;Item&gt;</span>&gt;(emptyList())
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> inProgress</span> = State(<span class="hljs-literal cye-lm-tag">false</span>)
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> errorMessage</span> = Command<span class="hljs-type cye-lm-tag">&lt;String&gt;</span>()
+    <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> refreshAction</span> = Action<span class="hljs-type cye-lm-tag">&lt;Unit&gt;</span>()
+
+    <span class="hljs-comment cye-lm-tag">// ...</span>
+}</code></pre>
+<p class="cye-lm-tag">Теперь нужно связать свойства и модель в методе <code>onCreate</code>:</p>
+<pre><code class="hljs kotlin"><span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">DataPresentationModel</span></span>(
+        <span class="hljs-keyword cye-lm-tag">private</span> <span class="hljs-variable cye-lm-tag"><span class="hljs-keyword cye-lm-tag">val</span> dataModel</span>: DataModel
+) : PresentationModel() {
+
+    <span class="hljs-comment cye-lm-tag">// ...</span>
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onCreate</span><span class="hljs-params cye-lm-tag">()</span> {</span>
+        super.onCreate()
+
+        refreshAction.observable
+                <span class="hljs-comment cye-lm-tag">// расширение в библиотеке</span>
+                .skipWhileInProgress(inProgress.observable)
+                .flatMapSingle {
+                    dataModel.loadData()
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            <span class="hljs-comment cye-lm-tag">// расширение в библиотеке</span>
+                            .bindProgress(inProgress.consumer)
+                            .doOnError {
+                                errorMessage.consumer.accept(<span class="hljs-string cye-lm-tag">"Loading data error"</span>)
+                            }
+                }
+                .retry()
+                .subscribe(data.consumer)
+                .untilDestroy()
+
+                <span class="hljs-comment cye-lm-tag">// обновляем данные при входе на экран</span>
+                refreshAction.consumer.accept(<span class="hljs-keyword cye-lm-tag">Unit</span>)
+    }
+}</code></pre>
+<blockquote>Обратите внимание на оператор <code>retry</code>, он тут необходим, так как при получении ошибки, цепочка завершит свою работу и экшены больше не будут обрабатываться. Оператор <code>retry</code> переподпишет цепочку в случае ошибки. Но будьте осторожны и не используйте его, если начинаете цепочку от <strong>State</strong>. </blockquote>
+<h1 id="pmview">PmView</h1>
+<p class="cye-lm-tag">Когда PresentationModel спроектирована, то остается только привязать её ко View.
+В библиотеке уже реализованы базовые классы для реализации <strong>PmView</strong>: <code>PmSupportActivity</code>, <code>PmSupportFragment</code> и <code>PmController</code> (для пользователей фреймворка <a href="https://github.com/bluelinelabs/Conductor/">Conductor</a>). Каждый из них реализует интерфейс <code>AndroidPmView</code> и прокидывает нужные callback-и в соответствующий делегат, который управляет жизненным циклом PresentationModel и обеспечивает корректное сохранение её во время поворота экрана.</p>
+<p class="cye-lm-tag">Наследуемся от <code>PmSupportFragment</code> и реализуем всего два обязательных метода:</p>
+<ul>
+<li><code>providePresentationModel</code> — вызывается при создании PresentationModel. </li>
+<li><code>onBindPresentationModel</code> — в этом методе нужно привязаться к свойствам PresentationModel (используйте <a href="https://github.com/JakeWharton/RxBinding">RxBinding</a> и расширение <code>bindTo</code>).</li>
+</ul>
+<pre><code class="hljs kotlin"><span class="hljs-class cye-lm-tag"><span class="hljs-keyword cye-lm-tag">class</span> <span class="hljs-title cye-lm-tag">DataFragment</span> : <span class="hljs-type cye-lm-tag">PmSupportFragment</span>&lt;<span class="hljs-type cye-lm-tag">DataPresentationModel</span>&gt;</span>() {
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">providePresentationModel</span><span class="hljs-params cye-lm-tag">()</span> = <span class="hljs-title cye-lm-tag">DataPresentationModel</span><span class="hljs-params cye-lm-tag">(DataModel()</span>)</span>
+
+    <span class="hljs-keyword cye-lm-tag">override</span> <span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onBindPresentationModel</span><span class="hljs-params cye-lm-tag">(pm: <span class="hljs-type cye-lm-tag">DataPresentationModel</span>)</span> {</span>
+
+        pm.inProgress.observable.bindTo(swipeRefreshLayout.refreshing())
+
+        pm.data.observable.bindTo {
+            <span class="hljs-comment cye-lm-tag">// adapter.setItems(it)</span>
+        }
+
+        pm.errorMessage.observable.bindTo {
+            <span class="hljs-comment cye-lm-tag">// show alert dialog</span>
+        }
+
+        swipeRefreshLayout.refreshes().bindTo(pm.refreshAction.consumer)
+
+    }
+}</code></pre>
+<p class="cye-lm-tag"><strong><code>bindTo</code></strong> — это удобное расширение в <code>AndroidPmView</code>. Используя его, вам не нужно беспокоится об отписке от свойств из PresentationModel и переключении на главный поток.</p>
+<p class="cye-lm-tag">Для работы с Google Maps в библиотеке есть дополнительные базовые классы: <code>MapPmSupportActivity</code>, <code>MapPmSupportFragment</code> и <code>MapPmController</code>. В них добавляется отдельный метод для привязки <code>GoogleMap</code>:</p>
+<pre><code class="hljs crystal"><span class="hljs-function cye-lm-tag"><span class="hljs-keyword cye-lm-tag">fun</span> <span class="hljs-title cye-lm-tag">onBindMapPresentationModel</span></span>(<span class="hljs-symbol cye-lm-tag">pm:</span> PM, <span class="hljs-symbol cye-lm-tag">googleMap:</span> GoogleMap)</code></pre>
+<p class="cye-lm-tag">В этом методе мы можем отображать пины на карте, передвигать и анимировать местоположение и т. п.</p>
+<h1 id="two-way-data-binding">Two-way Data Binding</h1>
+<p class="cye-lm-tag">Пока мы рассматривали только одностороннее изменение <strong>State</strong>, когда PresentationModel изменяет состояние, а View подписывается на него. Но достаточно часто возникает потребность изменять состояние с двух сторон. Классический пример — это поле ввода: его значение может изменить как пользователь так и PresentationModel, инициализируя начальным значением или форматируя ввод. Такая связка носит название двустороннего датабиндинга. Покажем на схеме, как она реализуется в RxPM:</p>
+<img src="./MVCPatternsNRxPM_files/8w5fw3lmyhc2poeqqopjps2nzd8.png" width="400">
+
+<p class="cye-lm-tag">Пользователь вводит текст ➔ срабатывает слушатель ➔ изменение передается в Action ➔ PresentationModel фильтрует и форматирует текст и подставляет его в State ➔ измененное состояние получает View ➔ текст подставляется в поле ввода ➔ срабатывает слушатель ➔ круг замыкается и система впадает в бесконечный цикл.</p>
+<p class="cye-lm-tag">Мы написали класс <code>InputControl</code>, который реализует эту двустороннюю связку для полей ввода и решает проблему зацикливания.</p>
+<p class="cye-lm-tag">Объявляем в PresentationModel:</p>
+<pre><code class="hljs sml"><span class="hljs-keyword cye-lm-tag">val</span> name = inputControl<span class="hljs-literal cye-lm-tag">()</span></code></pre>
+<p class="cye-lm-tag">Привязываемся во View через привычный <code>bindTo</code></p>
+<pre><code class="hljs stylus">pm<span class="hljs-selector-class cye-lm-tag">.name</span> bindTo editText</code></pre>
+<p class="cye-lm-tag">Также можно задать форматтер: </p>
+<pre><code class="hljs lisp">val name = inputControl(
+        <span class="hljs-name cye-lm-tag">formatter</span> = {
+            it.take(<span class="hljs-number cye-lm-tag">50</span>).capitalize().replace(<span class="hljs-string cye-lm-tag">"[^a-zA-Z- ]"</span>.toRegex(), <span class="hljs-string cye-lm-tag">""</span>)
+        }
+)</code></pre>
+<p class="cye-lm-tag">Аналогичную проблему зацикливания и двустороннего связывания для <code>CheckBox</code> решает <code>CheckControl</code>. </p>
+<h1 id="rxpm">RxPM</h1>
+<p class="cye-lm-tag">Мы рассмотрели основные классы и особенности библиотеки. Вот далеко не полный список фич, которые есть в RxPM: </p>
+<ul>
+<li>Базовая реализация <code>PresentationModel</code>.</li>
+<li>Сохранение <code>PresentationModel</code> во время поворота экрана.</li>
+<li>Обработка жизненного цикла, подписка и отписка.</li>
+<li>Базовые классы для реализации <code>PmView</code>, в том числе и для Conductor.</li>
+<li><code>State</code>, <code>Action</code>, <code>Command</code>.</li>
+<li><code>InputControl</code>, <code>CheckContol</code>, <code>ClickControl</code>.</li>
+<li>Связывание свойств через <code>bindTo</code> и другие полезные расширения.</li>
+<li>Базовые классы для работы с Google Maps.</li>
+</ul>
+<p class="cye-lm-tag">Библиотека написана на Kotlin и использует RxJava2.
+RxPM используется уже в нескольких приложениях в продакшне и показала стабильность в своей работе. Но мы продолжаем над ней работать, есть много идей для дальнейшего развития и улучшения. Недавно вышла версия 1.1 с очень полезной фичей для навигации, но об этом мы поговорим в следующей статье. </p>
+<p class="cye-lm-tag">Только одной статьи будет недостаточно, чтобы понять возможности RxPM. Поэтому пробуйте, смотрите исходники и примеры, задавайте свои вопросы. Мы будем рады обратной связи.</p>
+<p class="cye-lm-tag">RxPM: <a href="https://github.com/dmdevgo/RxPM">https://github.com/dmdevgo/RxPM</a>
+Sample: <a href="https://github.com/dmdevgo/RxPM/tree/develop/sample">https://github.com/dmdevgo/RxPM/tree/develop/sample</a>
+Чат в телеграм: <a href="https://t.me/Rx_PM">https://t.me/Rx_PM</a></p>
+<h6 id="p-s">P. S.</h6>
+<p class="cye-lm-tag">24 ноября (в эту пятницу) я выступлю с мини-докладом про RxPM на <a href="http://droidcon.moscow/">Droidcon Moscow 2017</a>. Приходите — пообщаемся.</p></div>
+<hr>
+</body>
+</html>
