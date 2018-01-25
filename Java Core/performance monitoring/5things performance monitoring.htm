@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Java performance monitoring</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="https://www.ibm.com/developerworks/java/library/j-5things7/index.html">src1</a>
+<a href="https://www.ibm.com/developerworks/java/library/j-5things8/index.html">src2</a>
+<h2>Java performance monitoring</h2>
+<div class="ibm-col-6-4">
+                                            <p class="dw-article-series-head">5 things you didn't know about ...</p>
+                                        <h1 id="ibm-pagetitle-h1" class="ibm-h1">Java performance monitoring, Part 1</h1><p class="dw-article-subhead">Java performance profiling with JConsole and VisualVM</p>
+                                        
+                                        
+                                        <p>When application performance suffers, most developers panic, and with good
+                reason. Tracking the source of Java application bottlenecks has
+                historically been a major pain, both because the Java virtual machine has
+                a black-box effect, and because profiling tools for the Java platform have
+                traditionally fallen short. </p><p>All of that changed with the introduction of JConsole, however. JConsole is
+                a built-in Java performance profiler that works from the command-line and
+                in a GUI shell. It's not perfect, but it's a more than adequate first line
+                of defense when pointy-head boss comes at you with a performance problem
+                — and it's a whole lot better than consulting Papa Google.</p><p>In this edition of the <em>5 things</em> series, I'll show you five easy
+                ways to use JConsole (or its visually sophisticated cousin, VisualVM) to
+                monitor Java application performance and track bottlenecks in your Java
+                code.</p><h2 id="N10077" class="ibm-h2">1. The JDK ships with a
+                profiler</h2><div class="dw-article-sidebar ibm-background-cool-white-20"><h5>About this series</h5><p>So you think you know about Java programming? The fact is, most
+                    developers scratch the surface of the Java platform, learning just
+                    enough to get the job done. In this series, Ted Neward digs beneath
+                    the core functionality of the Java platform to uncover little-known
+                    facts that could help you solve even the stickiest programming
+                    challenges.</p></div><p>JConsole (or, for more recent Java platform releases, VisualVM) is a
+                built-in profiler that is as easy to launch as the Java compiler. From a
+                command prompt that has the JDK on the <code>PATH</code>, just run
+                <code>jconsole</code>. From a GUI shell, navigate to the JDK installation
+                directory, open the bin folder, and double-click
+                <strong>jconsole</strong>.</p><p>When the profiler tool pops up (depending on which version of Java is
+                running and how many other Java programs are running at the moment), it
+                either presents a dialog box asking for a URL of a process to connect to,
+                or lists a number of different local Java processes to connect to —
+                sometimes, including the JConsole process itself.</p><h3 id="N10092" class="ibm-h3">Working with JConsole</h3><p>Java processes are set up by default to be profiled. It is not necessary to
+                pass the command-line argument
+                —<code>-Dcom.sun.management.jmxremote</code>— at startup.
+                You only need to start the application and it will automatically be
+                available for monitoring. Once a process is picked up by JConsole, you can
+                just double-click it to start profiling.</p><p>Profilers have their own overhead, so it's a good idea to spend a few
+                minutes figuring out what that is. The easiest way to discover JConsole's
+                overhead is to first run an application by itself, then run it under the
+                profiler, and measure the difference. (The app shouldn't be too large or
+                too small; my favorite is the SwingSet2 demo app that ships with the JDK.)
+                So, for instance, I tried running SwingSet2 with <code>-verbose:gc</code>
+                to see garbage collection sweeps, then ran the same app and connected the
+                JConsole profiler to it. When JConsole was connected, a steady stream of
+                GC sweeps happened that didn't occur otherwise. That was the performance
+                overhead of the profiler.</p><h2 id="N100A3" class="ibm-h2">2. Remotely connect to
+                processes</h2><p>Because Web application profilers assume connectivity across a socket for
+                profiling, you only need a little configuration to set up JConsole (or any
+                JVMTI-based profiler, for that matter) to monitor/profile applications
+                running remotely. </p><p>For example, if Tomcat were running on a machine named "webserver" and that
+                JVM had JMX enabled and listening on port 9004, connecting to it from
+                JConsole (or any other JMX client) would require a JMX URL of
+                "service:jmx:rmi:///jndi/rmi://webserver:9004/jmxrmi".</p><p>In essence, all you need to profile an application server running in a
+                remote data center is the JMX URL. (See <a href="#artrelatedtopics">Related topics</a> for more about remote monitoring and management
+                with JMX and JConsole.)</p><h2 id="N100B2" class="ibm-h2">3. Track statistics</h2><div class="dw-article-sidebar ibm-background-cool-white-20"><h5>Don't be typical</h5><p>Common responses to discovering a performance problem in application
+                    code vary, but they're predictable, too. Developers who have been
+                    programming since the early days of Java are likely to fire up the old
+                    IDE and start doing code reviews of major parts of the code base,
+                    looking for familiar "red flags" in the source like synchronized
+                    blocks, object allocations, and the like. With fewer years of
+                    programming, a developer will probably pore over the <code>-X</code>
+                    flags that the JVM supports, looking for ways to optimize the garbage
+                    collector. And newbies, of course, go straight to Google, hoping that
+                    somebody else out there has found the JVM's magical "make it go fast"
+                    switch, so that they can avoid having to rewrite any code.</p><p>There's nothing intrinsically wrong with any of these approaches, but
+                    they're all a crapshoot. The most effective response to a performance
+                    problem is to use a profiler — and now that they're built in to
+                    the Java platform, we really have no excuse not to!</p></div><p>JConsole has a number of tabs that are useful for collecting statistics,
+                including:</p><ul class="ibm-bullet-list"><li><strong>Memory</strong>: For tracking activity against the various
+                    heaps in the JVM's garbage collector.</li><li><strong>Threads</strong>: For examining the current thread activity in
+                    the targeted JVM.</li><li><strong>Classes</strong>: For watching the total loaded class count
+                    for a VM.</li></ul><p>These tabs (and the associated graphs) are all courtesy of the JMX objects
+                that every Java VM registers with the JMX server, which is built-in to the
+                JVM. The complete list of beans available within a given JVM is listed in
+                the MBeans tab, complete with some metadata and a limited user interface
+                for seeing that data or executing those operations. (Registering for
+                notifications is beyond the JConsole user interface, however.)</p><h3 id="N100D6" class="ibm-h3">Using statistics</h3><p>Say a Tomcat process keeps dying from <code>OutOfMemoryError</code>s. If
+                you want to find out what's going on, open JConsole, click the Classes
+                tab, and keep a lazy eye on the class count as time goes by. If the count
+                steadily rises, then you can assume that either the app server or your
+                code has a <code>ClassLoader</code> leak somewhere and will run out of
+                <code>PermGen</code> space before long. Check the Memory tab if you need
+                to further confirm the problem.</p><h2 id="N100E6" class="ibm-h2">4. Create a heap dump for offline
+                analysis</h2><p>Things often move quickly in a production environment, and you may not have
+                quality time to spend with your application profiler. Instead, you can
+                take a snapshot of everything in your Java environment and save it to look
+                at later. You can do this in JConsole, and do it even better in
+                VisualVM.</p><p>Start by navigating to the MBeans tab, where you'll open the
+                <code>com.sun.management</code> node, followed by the
+                <code>HotSpotDiagnostic</code> node. Now select <code>Operations</code>,
+                and note the "dumpHeap" button that appears in the right-hand pane. If you
+                pass dumpHeap a filename to dump to in the first ("String") input box, it
+                will take a snapshot of the entire JVM heap and dump it to that file. </p><p>Later, you can use a variety of different commercial profilers to analyze
+                the file, or use VisualVM to analyze the snapshot. (Remember that VisualVM
+                is available as a stand-alone download.)</p><h2 id="N100FA" class="ibm-h2">5. JConsole isn't rocket
+                science</h2><p>As a profiler utility, JConsole is nice, but other tools are nicer. Some
+                profilers come with analysis add-ons or a slick user interface, and some
+                track more data by default than JConsole does.</p><p>What's truly fascinating about JConsole is that the entire program is
+                written in "plain old Java," meaning that any Java developer could write a
+                utility like it. In fact, the JDK even includes an example of how to
+                customize JConsole by creating a new plug-in for it (see <a href="#artrelatedtopics">Related topics</a>). VisualVM, being built on
+                top of NetBeans, takes the plug-in concept much further.</p><p>If JConsole (or VisualVM, or any other tool) doesn't quite do what you
+                want, or track what you're looking to track, or track in quite the way you
+                want to track, you could write your own. And if Java code seems too
+                cumbersome, there's always Groovy or JRuby or any of a dozen other JVM
+                languages to help you get it done faster.</p><p>All you really need is a quick-and-dirty command-line tool connected via
+                JMX, and you can track exactly the data you're interested in, exactly the
+                way you want to.</p><h2 id="N1010B" class="ibm-h2">Conclusion</h2><p>Java performance monitoring doesn't end with JConsole or VisualVM —
+                there's a whole raft of tools hiding out in the JDK that most developers
+                don't know about. The next article in the series will dig into some
+                experimental command-line tools that could help you dig out more of the
+                performance data you need. Because these tools are generally focused on
+                specific data, they're smaller and more lightweight than a complete
+                profiler, and so they don't incur the same performance overhead.</p><!--CMA ID: 498392--><!--Site ID: 1--><!--XSLT stylesheet used to transform this file: dw-document-html-8.0.xsl-->
+                                        <!-- Article Quiz -->
+                                        
+                                        <!-- Article Resources -->
+                                        <div class="ibm-alternate-rule"><hr></div><h4 id="artdownload" class="ibm-h4">Downloadable resources</h4><ul class="ibm-link-list"><li><a class="ibm-document-link" href="j-5things7-pdf.pdf">PDF of this content</a></li></ul><div class="ibm-alternate-rule"><hr></div><h4 id="artrelatedtopics" class="ibm-h4">Related topics</h4><ul><li>Develop and deploy your next app on the <a href="https://console.bluemix.net/?cm_sp=dw-bluemix-_-j-5things7-_-article">IBM Bluemix cloud
+                    platform</a>.</li><li>"<a href="http://docs.oracle.com/javase/8/docs/technotes/guides/management/agent.html">Monitoring and management using JMX</a>" Learn more about using
+                    JMX and the JVM's built-in instrumentation tools to monitor and manage
+                    Java application performance.</li><li>"<a href="https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr009.html">JConsole Documentation</a>" Oracles official documentation for
+                    the JConsole tool.</li><li>"<a href="https://community.oracle.com/blogs/mandychung/2006/05/04/mustang-jconsole">Mustang JConsole</a>" (Mandy Chung, Java.net, May 2008): A quick
+                    introduction to using the JConsole Plugin API to build custom
+                    plugins.</li><li>"<a href="http://marxsoftware.blogspot.com/2009/06/acquiring-jvm-runtime-information.html">Acquiring JVM Runtime Information</a>" (Dustin Marx, Dustin's
+                    Software Development Cogitations and Speculations, June 2009):
+                    Demonstrates the JDK's built-in monitoring and management tools,
+                    including JConsole and VisualVM.</li><li><a href="http://www.ibm.com/developerworks/java/jdk/tools/healthcenter/">IBM Monitoring and Diagnostic Tools for Java</a>: Health Center
+                    is a low-overhead diagnostic tool for monitoring a running IBM Java
+                    Virtual Machine.</li></ul>
+                                       
+                                    </div>
+<br><hr>
+<div class="ibm-col-6-4">
+                                            <p class="dw-article-series-head">5 things you didn't know about ...</p>
+                                        <h1 id="ibm-pagetitle-h1" class="ibm-h1">Java performance monitoring, Part
+            2</h1><p class="dw-article-subhead">Java process monitoring with the JDK's built-in profilers</p>
+                                        
+                                        
+                                        <p>Full-featured, built-in profilers like JConsole and VisualVM sometimes cost
+                more than they're worth in performance overhead — particularly in
+                systems running on production hardware. So, in this second article
+                focusing on Java performance monitoring, I'll introduce five command-line
+                profiling tools that enable developers to focus on just one aspect of a
+                running Java process.</p><p>The JDK includes many command-line utilities that can be used to monitor
+                and manage Java application performance. Although most of them are labeled
+                "experimental" and therefore technically unsupported, they're still
+                useful. Some might even be seed material for special-purpose tools that
+                could be built using JVMTI or JDI (see <a href="#artrelatedtopics">Related
+                    topics</a>).</p><h2 id="N10076" class="ibm-h2">1. jps (sun.tools.jps)</h2><div class="dw-article-sidebar ibm-background-cool-white-20"><h5>About this series</h5><p>So you think you know about Java programming? The fact is, most
+                    developers scratch the surface of the Java platform, learning just
+                    enough to get the job done. In this series, Ted Neward digs beneath the core functionality of the
+                    Java platform to uncover little-known facts that could help you solve
+                    even the stickiest programming challenges.</p></div><p>Many command-line tools require that you identify the Java process that you
+                want to monitor. This isn't so different from similar tools that monitor
+                native-operating-system processes and also require a process identifier to
+                work. </p><p>The "VMID" identifier is not always the same as the native operating system
+                process identifier ("pid"), which is why we need the JDK's
+                <code>jps</code> utility.</p><div class="dw-article-sidebar ibm-background-cool-white-20"><h5>Using jps within a Java process</h5><p>As with most of the tools shipped with the JDK, and all of the tools
+                    mentioned in this article, the <code>jps</code> executable is actually
+                    a thin wrapper around the Java class or set of classes that carry out
+                    the vast majority of the work. Under Windows®, the tools are .exe
+                    files that use the JNI Invocation API to call directly to the class in
+                    question; under UNIX®, most of the tools are symbolic links to a
+                    shell script that kicks off a generic Java launcher with the right
+                    class name specified.</p><p>If you want to use <code>jps</code>'s (or any other tool's)
+                    functionality from within a Java process — such as an Ant
+                    script — it's relatively easy to just call <code>main()</code>
+                    on the class that is the "main" class for each tool. For easy
+                    reference, that class name appears in parentheses after each tool's
+                    name. </p></div><p><code>jps</code>— whose name reflects the <code>ps</code> utility
+                found on most UNIX systems — tells us the JVMID of a running Java
+                application. As its name implies, <code>jps</code> returns the VMIDs for
+                all discoverable Java processes running on a given machine. If
+                <code>jps</code> doesn't discover a process, it doesn't mean that the Java
+                process can't be attached or spelunked. It just means that it isn't
+                advertising itself as available.</p><p>If the Java process can be found, <code>jps</code> will list the
+                command-line used to launch it. This way of differentiating between Java
+                processes is important because, as far as the operating system is
+                concerned, all Java programs are "<code>java</code>." For most purposes,
+                the VMID is the important number to note.</p><h3 id="N100BB" class="ibm-h3">Getting started with profilers</h3><p>The easiest way to get started with profiling utilities is to use a demo
+                program like the SwingSet2 demo found at <code>demo/jfc/SwingSet2</code>.
+                Doing this avoids potential hangups with processes running as
+                background/daemon processes. Once you're familiar with the tool and its
+                overhead, you can try it on your actual programs.</p><p>After you load up your demo app, run <code>jps</code> and note the returned
+                <code>vmid</code>. For best effect, launch the Java program with the
+                <code>-Dcom.sun.management.jmxremote</code> property set. If you don't use
+                this setting, some data gathered by some of the tools below will be
+                unavailable.</p><h2 id="N100CF" class="ibm-h2">2. jstat (sun.tools.jstat)</h2><p>The <code>jstat</code> utility can be used to gather a variety of different
+                statistics. <code>jstat</code> statistics are sorted into "options" that
+                are specified at the command-line as the first parameter. You can view the list of options available by running <code>jstat</code>
+                with the command <code>-options</code>. Some options are shown in Listing
+                1:</p><h5 id="N100E4" class="ibm-h5">Listing 1. jstat
+                options</h5><span class="dw-code-nohighlight"><div class="ibm-syntax-container"><div><div id="highlighter_328355" class="syntaxhighlighter  htmlscript"><table border="0" cellpadding="0" cellspacing="0" role="none"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div><div class="line number7 index6 alt2">7</div><div class="line number8 index7 alt1">8</div><div class="line number9 index8 alt2">9</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="htmlscript plain">-class</code></div><div class="line number2 index1 alt1"><code class="htmlscript plain">-compiler</code></div><div class="line number3 index2 alt2"><code class="htmlscript plain">-gc</code></div><div class="line number4 index3 alt1"><code class="htmlscript plain">-gccapacity</code></div><div class="line number5 index4 alt2"><code class="htmlscript plain">-gccause</code></div><div class="line number6 index5 alt1"><code class="htmlscript plain">-gcnew</code></div><div class="line number7 index6 alt2"><code class="htmlscript plain">-gcnewcapacity</code></div><div class="line number8 index7 alt1"><code class="htmlscript plain">-gcold</code></div><div class="line number9 index8 alt2"><code class="htmlscript plain">-gcoldcapacity</code></div><div class="line number10 index9 alt1"><code class="htmlscript plain">-gcpermcapacity</code></div><div class="line number11 index10 alt2"><code class="htmlscript plain">-gcutil</code></div><div class="line number12 index11 alt1"><code class="htmlscript plain">-printcompilation</code></div></div></td></tr></tbody></table></div></div></div></span><p>The utility's JDK documentation (see <a href="#artrelatedtopics">Related
+                    topics</a>) will tell you what each of the options in Listing 1
+                returns, but the majority of them are used to gather performance
+                information about the garbage collector, or just parts of it. The
+                <code>-class</code> option reveals loaded and unloaded classes (making it
+                a great utility for detecting <code>ClassLoader</code> leaks within the
+                app server or your code), and both <code>-compiler</code> and
+                <code>-printcompilation</code> display information about the Hotspot JIT
+                compiler. </p><p>By default, <code>jstat</code> will display the information at the moment
+                you check it. If you want snapshots taken at regular intervals, specify
+                the intervals in milliseconds following the <code>-options</code> command.
+                <code>jstat</code> will continuously display snapshots of the monitored
+                process's information. If you want <code>jstat</code> to take a specific
+                number of snapshots before terminating, specify that number after the
+                interval/period value.</p><p>If 5756 were the VMID for a running SwingSet2 process started a few minutes
+                ago, then the following command would tell <code>jstat</code> to produce a
+                gc snapshot dump every 250 milliseconds for 10 iterations, then quit:</p><span class="dw-code-nohighlight"><div class="ibm-syntax-container"><div><div id="highlighter_774011" class="syntaxhighlighter  htmlscript"><table border="0" cellpadding="0" cellspacing="0" role="none"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="htmlscript plain">jstat -gc 5756 250 10</code></div></div></td></tr></tbody></table></div></div></div></span><p>Note that Sun (now Oracle) reserved the right to change the output of the
+                various options, or even the options themselves, without warning. That's
+                the downside of using unsupported utilities. See the Javadocs for complete
+                details about each of the columns in the <code>jstat</code> output.</p><h2 id="N10118" class="ibm-h2">3. jstack (sun.tools.jstack)</h2><p>Knowing what's happening inside of a Java process <em>vis-a-vis</em> the
+                executing threads is a common diagnostic challenge. For example, when an
+                application has suddenly stopped processing, it's obvious that some kind
+                of starvation has been reached, but it isn't obvious just by looking at
+                the code where the starvation has occurred, or why.</p><p><code>jstack</code> is a utility that returns a complete dump of the
+                various threads running in an app, which you can then use to pinpoint the
+                problem.</p><p>Running <code>jstack</code> with the VMID of the desired process will
+                generate a stack dump. In this regard, <code>jstack</code> works the same
+                as pressing Ctrl-Break within the console window in which a Java program
+                is running, or calling <code>Thread.getAllStackTraces()</code> or
+                <code>Thread.dumpStack()</code> on each of the <code>Thread</code> objects
+                in the VM. A <code>jstack</code> call also dumps information about
+                non-Java threads running within the VM, which aren't always available as
+                <code>Thread</code> objects. </p><p><code>jstack</code>'s <code>-l</code> parameter offers up a slightly longer
+                dump that includes more detailed information about the locks held by each
+                of the Java threads, and can thus be invaluable in finding (and
+                squashing!) deadlock or scalability bugs.</p><h2 id="N10144" class="ibm-h2">4. jmap (sun.tools.jmap)</h2><p>Sometimes, the problem you're dealing with is an object leak, such as an
+                <code>ArrayList</code> (which could hold thousands of objects) that just
+                isn't getting released when it should. Another problem that is more
+                general would be an expanding heap that never seems to shrink, despite
+                active garbage collection.</p><p>When you're trying to locate an object leak, it's incredibly helpful to
+                take a picture of the heap at a given moment in time, and then look
+                through what's there. <code>jmap</code> provides the first part of that
+                functionality by taking a snapshot picture of the heap. You can then
+                analyze the heap data using the <code>jhat</code> utility described in the
+                next section.</p><p>Using <code>jmap</code> is straightforward, like all the other utilities
+                described here. Simply point <code>jmap</code> at the VMID of the Java
+                process you want to snapshot, and give it some parameters to describe the
+                resulting file produced. The options you'll pass to <code>jmap</code>
+                consist of the name of the file to dump to and whether to use a text file
+                or binary file. A binary file is the most useful option, but only when
+                combined with some kind of indexing tool — manually slogging
+                through several megabytes of text filled with hexadecimal values is not
+                the best way to spend your day.</p><p>For a more casual glance at the Java heap, <code>jmap</code> also supports
+                a <code>-histo</code> option. <code>-histo</code> produces a text
+                histogram of the objects currently strongly referenced in the heap, sorted
+                by the total number of bytes consumed by that particular type. It also
+                gives the total number of instances of that particular type, which allows
+                for some primitive calculations and guesses about relative cost per
+                instance.</p><p>Unfortunately, <code>jmap</code> doesn't have a period-and-max-count option
+                like <code>jstat</code> does, but it's relatively easy to put calls to
+                <code>jmap</code> (or to <code>jmap.main()</code>) into a loop in either a
+                shell script or other class to take snapshots periodically. (In fact, this
+                would be a good extension to add to <code>jmap</code>, either as a source
+                patch to the OpenJDK itself or as an extension to another utility.)</p><h2 id="N1017F" class="ibm-h2">5. jhat
+                (com.sun.tools.hat.Main)</h2><p>Once you've dumped the heap into a binary file, you can use
+                <code>jhat</code> to analyze the binary heap dump file. <code>jhat</code>
+                creates an HTTP/HTML server that can be surfed in a browser, giving an
+                object-by-object view of the heap, frozen in time. While it could be
+                amusing to walk through the heap, object reference by object reference,
+                you're probably better served by doing some kind of automated analysis of
+                the whole mess. Fortunately, <code>jhat</code> supports an OQL syntax for
+                doing that analysis.</p><p>For example, running an OQL query for all <code>String</code>s with more
+                than 100 characters would look like this:</p><span class="dw-code-nohighlight"><div class="ibm-syntax-container"><div><div id="highlighter_681995" class="syntaxhighlighter  htmlscript"><table border="0" cellpadding="0" cellspacing="0" role="none"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="htmlscript plain">select s from java.lang.String s where s.count &gt;= 100</code></div></div></td></tr></tbody></table></div></div></div></span><p>The results are displayed as links to the objects, which then display the
+                complete contents of that object, the field references to other objects as
+                additional links that can be dereferenced. OQL queries can also invoke
+                methods on the objects themselves, use regular expressions as part of the
+                query, and use built-in query tools. One query tool, the
+                <code>referrers()</code> function, displays all the referrers that refer
+                to an object of a given type. Here's the query to find all the referrers
+                to <code>File</code> objects:</p><span class="dw-code-nohighlight"><div class="ibm-syntax-container"><div><div id="highlighter_941903" class="syntaxhighlighter  htmlscript"><table border="0" cellpadding="0" cellspacing="0" role="none"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="htmlscript plain">select referrers(f) from java.io.File f</code></div></div></td></tr></tbody></table></div></div></div></span><p>You can find the full syntax of OQL and its features under the "OQL Help"
+                page inside the <code>jhat</code> browser environment. Combining
+                <code>jhat</code> with OQL is a powerful way to do a targeted
+                investigation of a misbehaving heap.</p><h2 id="N101AC" class="ibm-h2">Conclusion</h2><p>The JDK's profiling extensions can be very useful when you need to get a
+                closer look at what's going on inside a Java process. All of the tools
+                introduced in this article can be used by themselves from the command
+                line. They also can be powerfully combined with JConsole or VisualVM.
+                Whereas JConsole and VisualVM provide an overarching view of the Java
+                virtual machine, specifically focused tools like <code>jstat</code> and
+                <code>jmap</code> let you fine-tune your investigation.</p><p>Although these tools are still commonly used, Java 7 introduced JCMD, a
+                single utility that handles many of things that the other utilities do.
+You can use it to identify Java processes IDs (similar to <code>jps</code>), obtain heap dumps (like <code>jmap</code>), make thread dumps (as does <code>jstack</code>), and generate garbage collection statistics (just like <code>jstat</code>).</p><!--CMA ID: 500144--><!--Site ID: 1--><!--XSLT stylesheet used to transform this file: dw-document-html-8.0.xsl-->
+                                        <!-- Article Quiz -->
+                                        
+                                        <!-- Article Resources -->
+                                        <div class="ibm-alternate-rule"><hr></div><h4 id="artdownload" class="ibm-h4">Downloadable resources</h4><ul class="ibm-link-list"><li><a class="ibm-document-link" href="j-5things8-pdf.pdf">PDF of this content</a></li></ul><div class="ibm-alternate-rule"><hr></div><h4 id="artrelatedtopics" class="ibm-h4">Related topics</h4><ul><li>Develop and deploy your next app on the <a href="https://console.bluemix.net/?cm_sp=dw-bluemix-_-j-5things8-_-article">IBM Bluemix cloud
+                    platform</a>.</li><li><a href="https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html">The jcmd Utility</a>: Java 7's swiss-army knife of untilities. It does the job of all and more of the utilities mentioned in this article.
+                </li><li><a href="http://java.sun.com/javase/6/docs/technotes/tools/index.html">JDK Tools and Utilities</a>: Learn about the experimental
+                    monitoring and troubleshooting tools discussed in this article:
+                    <code>jps</code>, <code>jstat</code>, <code>jstack</code>,
+                    <code>jmap</code>, and <code>jhat</code>. </li><li>"<a href="http://marxsoftware.blogspot.com/2009/06/acquiring-jvm-runtime-information.html">Acquiring JVM Runtime Information</a>" (Dustin Marx, Dustin's
+                    Software Development Cogitations and Speculations, June 2009): More
+                    ways to combine the JDK's built-in monitoring and management tools
+                    such as <code>jps</code>, <code>jinfo</code> and
+                    <code>JConsole</code>.</li><li>"<a href="http://www.ibm.com/developerworks/java/library/j-jtp04223.html"><em>Java theory and practice</em>: Urban performance
+                        legends</a>" (Brian Goetz, developerWorks, April 2003): Brian
+                    investigates three well-known "facts" about Java
+                    performance.</li><li>"<a href="http://www.ibm.com/developerworks/java/library/j-jtp11225/"><em>Java theory and practice</em>: Plugging memory leaks with
+                        weak references</a>" (Brian Goetz, developerWorks, November 2005):
+                    How to detect and resolve a common cause of unintentional object
+                    retention.</li><li><a href="http://java.sun.com/j2se/1.5.0/docs/guide/jvmti/index.html">JVMTI (JVM Tool Interface)</a>: Learn more about the the Java
+                    platform-native programming interface that supports profiling,
+                    debugging, monitoring, thread analysis, and coverage analysis tools.
+                        <a href="http://java.sun.com/j2se/1.5.0/docs/guide/jpda/jdi/">JDI
+                        (Java Debug Interface)</a> provides information for debuggers that
+                    need to remotely access the running state of VM.</li></ul>
+                                        
+                                    </div>
+</body>
+</html>

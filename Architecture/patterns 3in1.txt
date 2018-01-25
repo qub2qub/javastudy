@@ -1,0 +1,65 @@
+patterns
+algorithms - sorting
+data structures
+------------------------------------- BEHAVIORAL
+STATE Design Pattern
+Можно передать разные состояния в один и тот же объект, и в зависимости от состояния, он будет делать данное действие разными способами.
+Allow an object to alter its behavior when its internal state changes. The object will appear to change its class.
+A monolithic object's behavior is a function of its state, and it must change its behavior at run-time depending on that state. Or, an application is characterized by large and numerous case statements that vector flow of control based on the state of the application.
+-some operations may not be possible when the context is in certain states
+
+STRATEGY Design Pattern
+Есть заданное действие, но его можно выполнить разными способами.
+Define a family of algorithms, encapsulate each one, and make them interchangeable. Strategy lets the algorithm vary independently from the clients that use it.
+One of the dominant strategies of object-oriented design is the "open-closed principle".
+Clients of the algorithm couple themselves to the interface.
+
+OBSERVER Design Pattern
+Define a one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically.
+Define an object that is the "keeper" of the data model and/or business logic (the Subject). Delegate all "view" functionality to decoupled and distinct Observer objects. Observers register themselves with the Subject as they are created. Whenever the Subject changes, it broadcasts to all registered Observers that it has changed, and each Observer queries the Subject for that subset of the Subject's state that it is responsible for monitoring.
+
+------------------------------------- STRUCTURAL
+DECORATOR Design Pattern
+Attach additional responsibilities to an object dynamically. Decorators provide a flexible alternative to subclassing for extending functionality.
+--- You want to add behavior or state to individual objects at run-time. Inheritance is not feasible because it is static and applies to an entire class.
+--Decorator implements same interface; use composition to store original object.
+
+ADAPTER Design Pattern
+Помогает двум разным интерфейсам работать вместе.
+Реализуется композицией или наследованием. !!! Т.е. АДАПТЕР СОВМЕЩАЕТ ЖЕЛАНИЯ КЛИЕНТА И ВОЗМОЖНОСТИ БИБЛИОТЕКИ.
+Convert the interface of a class into another interface clients expect. Adapter lets classes work together that couldn't otherwise because of incompatible interfaces.
+Wrap an existing class with a new interface.
+Impedance[ɪmˈpiːdəns] match an old component to a new system
+
+FACADE Design Pattern
+-Provide a unified interface to a set of interfaces in a subsystem. Facade defines a higher-level interface that makes the subsystem easier to use.
+(a simplified interface to the overall functionality of a complex subsystem.)
+-Wrap a complicated subsystem with a simpler interface.
+Например, для составных действий, чтобы юзер не создавал/вызывал каждое действие самостоятельно, а вызвал 1 метод из фасада, который всё это сделает.
+This reduces the learning curve necessary to successfully leverage the subsystem. It also promotes decoupling the subsystem from its potentially many clients. On the other hand, if the Facade is the only access point for the subsystem, it will limit the features and flexibility that "power users" may need.
+
+------------------------------------- CREATIONAL
+FACTORY METHOD
+Т.е. есть "Цех(специализированный на автомобилях) по созданию всех видов авто", и "у него есть метод", который их непосредственно и создаёт, В ЗАВИСИМОСТИ ОТ ВХОДНЫХ ПАРАМЕТРОВ.
+Сам цех -- "типа синглтон". Т.е. 1 экземпляр на всю прилагу.
+--Define an interface for creating an object, but let subclasses decide which class to instantiate. 
+--Defining a "virtual" constructor. // The new operator considered harmful.
+"A framework needs to standardize the architectural model for a range of applications, but allow for individual applications to define their own domain objects and provide for their instantiation."
+Т.е. если для данного параметра нужно будет возвращать другой тип объектов - то нужно будет ТОЛЬКО В ФАБРИЧНОМ МЕТОДЕ поменять возвращаемый объект.
+--factory methods can have different and more descriptive names
+--the actual object it returns might be an instance of a subclass.
+
+Factory Method is similar to Abstract Factory but without the emphasis on families
+
+ABSTRACT FACTORY Design Pattern
+1) Provide an interface for creating families of related or dependent objects without specifying their concrete classes.
+2) A hierarchy that encapsulates: many possible "platforms", and the construction of a suite of "products".
+3) The new operator considered harmful.
+__Какая фабрика будет выбрана -- зависит от конфига при старте прилаги.
+Т.е. какие ИМЕННО объекты будут созданы -- зависит от фабрики.
+
+BUILDER Design Pattern
+-Separate the construction of a complex object from its representation so that the same construction process can create different representations.
+-Parse a complex representation, create one of several targets.
+-the same construction process can create different representations. 
+-The Reader encapsulates the parsing of the common input. The Builder hierarchy makes possible the polymorphic creation of many peculiar representations or targets.
