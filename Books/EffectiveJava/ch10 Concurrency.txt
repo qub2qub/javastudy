@@ -11,11 +11,11 @@ The language specification guarantees that READING OR WRITING A VARIABLE IS ATOM
 
 You may hear it said that to improve performance, you should avoid synchronization when reading or writing atomic data. 
 					!!!! THIS ADVICE IS DANGEROUSLY WRONG. !!!
-While the language specification guarantees that a thread will not see an arbitrary value when reading a field, it does not guarantee that a value written by one thread will be visible to another. 
+While the language specification guarantees that a thread will not see an arbitrary value when reading a field, IT DOES NOT GUARANTEE THAT A VALUE WRITTEN BY ONE THREAD WILL BE VISIBLE TO ANOTHER. 
 !!! SYNCHRONIZATION IS REQUIRED FOR RELIABLE COMMUNICATION BETWEEN THREADS AS WELL AS FOR MUTUAL EXCLUSION. !!!
-This is due to a part of the language specification known as the memory model, which specifies when and how changes made by one thread become visible to others
+This is due to a part of the language specification known as the MEMORY MODEL, WHICH SPECIFIES WHEN AND HOW CHANGES MADE BY ONE THREAD BECOME VISIBLE TO OTHERS
 
-The consequences of failing to synchronize access to shared mutable data can be dire even if the data is atomically readable and writable. Consider the task of stopping one thread from another. The libraries provide the Thread.stop() method, but this method was deprecated long ago because it is inherently unsafe—its use CAN RESULT IN DATA CORRUPTION. 
+The consequences of failing to synchronize access to shared mutable data can be dire even if the data is ATOMICALLY READABLE AND WRITABLE. Consider the task of stopping one thread from another. The libraries provide the Thread.stop() method, but this method was deprecated long ago because it is inherently unsafe—its use CAN RESULT IN DATA CORRUPTION. 
 !!!! Do not use Thread.stop(). !!!
 A recommended way to stop one thread from another is to have the first thread poll a boolean field that is initially false but can be set to true by the second thread to indicate that the first thread is to stop itself. Because reading and writing a boolean field is atomic, some programmers dispense with synchronization when accessing the field: просто какую-то булеан переменную можно создать и в потоке проверять её while(boolNotInterupted).
 
@@ -53,7 +53,7 @@ IF YOU NEED ONLY INTER-THREAD COMMUNICATION, AND NOT MUTUAL EXCLUSION, the VOLAT
 
 excessive synchronization can cause reduced performance, может вызвать deadlock, or even непредсказуемое-nondeterministic behavior.
 
-To avoid LIVENESS AND SAFETY FAILURES, never cede control to the client within a synchronized method or block. 
+To avoid LIVENESS AND SAFETY FAILURES, never cede(сдавать, передавать) control to the client within a synchronized method or block. 
 In other words, inside a synchronized region, do not invoke a method that is designed to be overridden, or one provided by a client in the form of a function object (Item 21). 
 From the perspective of the class with the synchronized region, such methods are alien.
  !!! The class has no knowledge of what the method does and has no control over it. 
@@ -66,20 +66,24 @@ Depending on what an alien method does, calling it from a synchronized region ca
   The background thread calls s.removeObserver(), which attempts to lock observers, but it can’t acquire the lock, because the main thread already has the lock.
 All the while, the main thread is waiting for the background thread to finish removing the observer, which explains the deadlock.
 
-This example is contrived because there is no reason for the observer to use a background thread, but the problem is real. Invoking alien methods from synchronized regions has caused many deadlocks in real systems, such as GUI toolkits.
+This example is contrived[kənˈtraɪvd](неестественный, напускной, натянутый) 
+because there is no reason for the observer to use a background thread, but the problem is real. Invoking alien methods from synchronized regions has caused many deadlocks in real systems, such as GUI toolkits.
 
 In both of the previous examples (the exception and the deadlock) we were lucky. The resource that was guarded by the synchronized region (observers) was in a consistent state when the alien method (added) was invoked. 
 Suppose you were to invoke an alien method from within a synchronized region while the invariant protected by the synchronized region was temporarily invalid. 
 Because locks in the Java programming language are reentrant, such calls won’t deadlock. As in the first example, which resulted in an exception, the calling thread already holds the lock, so the thread will succeed when it tries to reacquire the lock, even though another conceptually unrelated operation is in progress on the data guarded by the lock. 
 The consequences of such a failure can be CATASTROPHIC. In essence, the lock has failed to do its job. Reentrant locks simplify the construction of multithreaded object-oriented programs, but they can TURN LIVENESS FAILURES INTO SAFETY FAILURES.
-при первом вызове объект уже в поломенно состоянии, поэтому нельзя разрешать получать второй лок из другого метода.
+при первом вызове объект уже в поломонном состоянии, поэтому нельзя разрешать получать второй лок из другого метода.
 
 Luckily, it is usually not too hard to fix this sort of problem by MOVING ALIEN METHOD INVOCATIONS OUT OF SYNCHRONIZED BLOCKS. 
 For the notifyElementAdded() method, this involves taking a “snapshot” of the observers list that can then be safely traversed without a lock.
 
 CopyOnWriteArrayList ==>  It is a variant of ArrayList in which all write operations are implemented by making a fresh copy of the entire underlying array.	
-Because the internal array is never modified, iteration requires no locking and is very fast. For most uses, the performance of CopyOnWriteArrayList would be atrocious, but it’s perfect for observer lists, which are rarely modified and often traversed.
+Because the internal array is never modified, iteration requires no locking and is very fast. For most uses, the performance of CopyOnWriteArrayList would be atrocious,
 
+but it’s perfect for observer lists, which are rarely modified and often traversed.
+
+OPEN CALL -->>
 !!! An alien method invoked outside of a synchronized region is known as an OPEN CALL !!!
 Besides preventing failures, OPEN CALLS CAN GREATLY INCREASE CONCURRENCY. 
 An alien method might run for an arbitrarily long period. If the alien method were invoked from a synchronized region, other threads would be denied access to the protected resource unnecessarily.
@@ -118,15 +122,16 @@ Executor Framework is a flexible interface-based task execution facility.
 
 You can do many more things with an executor service. For example, you can wait for a particular task to complete (as in the “background thread SetObserver” in Item 67, page 267), you can wait for any or all of a collection of tasks to complete (using the invokeAny() or invokeAll() methods), you can wait for the executor service’s graceful termination to complete (using the awaitTermination() method), you can retrieve the results of tasks one by one as they complete (using an ExecutorCompletionService), and so on.
 
-Choosing the executor service for a particular application can be tricky. 
+CHOOSING THE EXECUTOR SERVICE FOR A PARTICULAR APPLICATION CAN BE TRICKY. 
 
-Choosing the executor service for a particular application can be tricky. If you’re writing a small program, or a lightly loaded server, using Executors.newCachedThreadPool() is generally a good choice, as it demands no configuration and generally “does the right thing.” But a cached thread pool is not a good choice for a heavily loaded production server! 
-In a cached thread pool, submitted tasks are not queued but immediately handed off to a thread for execution. If no threads are available, a new one is created. 
+If you’re writing a small program, or a lightly loaded server, using Executors.newCachedThreadPool() is generally a good choice, as it demands no configuration and generally “does the right thing.” But a cached thread pool is not a good choice for a heavily loaded production server! 
+IN A CACHED THREAD POOL, SUBMITTED TASKS ARE NOT QUEUED BUT IMMEDIATELY HANDED OFF TO A THREAD FOR EXECUTION. 
+If no threads are available, a new one is created. 
 If a server is so heavily loaded that all of its CPUs are fully utilized, and more tasks arrive, more threads will be created, which will only make matters worse. 
-Therefore, in a heavily loaded production server, you are much better off using Executors.newFixedThreadPool, which gives you a pool with a fixed number of threads, or using the ThreadPoolExecutor class directly, for maximum control.
+Therefore, in a heavily loaded production server, you are much better off using Executors.newFixedThreadPool(), which gives you a pool with a fixed number of threads, or using the ThreadPoolExecutor class directly, for maximum control.
 
-Not only should you refrain from writing your own work queues, but you should generally refrain from working directly with threads. The key abstraction is no longer Thread, which served as both the unit of work and the mechanism for executing it. 
-Now the unit of work and mechanism are separate. 
+Not only should you refrain from writing your own work queues, but you should generally refrain from working directly with threads. The key abstraction is no longer THREAD, WHICH SERVED AS BOTH THE UNIT OF WORK AND THE MECHANISM FOR EXECUTING IT. 
+NOW THE UNIT OF WORK AND MECHANISM ARE SEPARATE. 
 THE KEY ABSTRACTION IS THE UNIT OF WORK, WHICH IS CALLED A TASK. 
 There are two kinds of tasks: Runnable and its close cousin, Callable (which is like Runnable, except that it returns a value). 
 THE GENERAL MECHANISM FOR EXECUTING TASKS IS THE EXECUTOR SERVICE. 

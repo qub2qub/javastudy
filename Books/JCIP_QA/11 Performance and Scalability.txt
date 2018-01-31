@@ -185,7 +185,7 @@ And because the cost of synchronization is nonzero, breaking one synchronized bl
 МОжет быть лучше взять разные объекты для лока.
 
 **11.4.2 Reducing lock granularity(степень разбиения, модульность)**
-granularity -- глубина [степень] детализации, крупность разбиения (напр., программы на модули),  уровень модульности (системы), степень дробления программы
+granularity -- модульность, глубина [степень] детализации, крупность разбиения (напр., программы на модули),  уровень модульности (системы), степень дробления программы
 
 The other way to reduce the fraction of time that a lock is held (and therefore the likelihood that it will be contended) is to have threads ask for it LESS OFTEN. 
 This can be accomplished by LOCK SPLITTING and LOCK STRIPING, 
@@ -202,7 +202,7 @@ Lock splitting can sometimes be extended to partition locking on a variablesized
 В ConcurrentHashMap ис-ся массив из 16 locks, каждый из которых охраняет 1/16 (одну шестнадцатую) всех бакетов. (bucket N is guarded by lock N mod 16)
 
 One of the downsides of lock striping is that locking the collection for exclusive access is more difficult and costly than with a single lock. 
-Т.е. когда надо залочить всю коллекцию целиком. (например когда надо сделать рехэш)
+Т.е. когда надо залочить ВСЮ коллекцию ЦЕЛИКОМ. (например когда надо сделать рехэш)
 Usually an operation can be performed by acquiring at most one lock, but occasionally you need to lock the entire collection.
 И есть только единственный способ это сделать:
 The only way to acquire an arbitrary set of intrinsic locks is via recursion.
@@ -211,6 +211,7 @@ The only way to acquire an arbitrary set of intrinsic locks is via recursion.
 **11.4.4    Avoiding hot fields**
 Lock splitting and lock striping can improve scalability because they enable different threads to operate on different data (or different portions of the same data structure) without interfering with each other. 
 A program that would benefit from lock splitting necessarily exhibits contention for a lock more often than for the data guarded by that lock.
+(Программа выиграет от разбаения лока в том случае, когда у неё в текущем состоянии больше времени тратиться чтобы посоревноваться за получение лока, чем время на получение реальных данных.)
 
 Lock granularity cannot be reduced when there are VARIABLES that are REQUIRED FOR EVERY OPERATION. 
 This is yet another area where raw performance and scalability are often at odds with each other; 
