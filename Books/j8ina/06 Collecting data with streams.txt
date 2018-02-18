@@ -1,0 +1,168 @@
+pages 123-158 = 33
+You learned in the previous chapter that streams help you process collections with database-like operations. You can view Java 8 streams as fancy lazy iterators of sets of data. 
+They support two types of operations: INTERMEDIATE OPERATIONS such as filter or map and TERMINAL OPERATIONS such as count, findFirst, forEach, and reduce. 
+INTERMEDIATE OPERATIONS can be chained to convert a stream into another stream. 
+These operations DON’T CONSUME from a stream; their purpose is to set up a pipeline of streams. 
+By contrast, TERMINAL OPERATIONS DO CONSUME from a stream — to produce a final result (for example, returning the largest element in a stream). They can often shorten computations by optimizing the pipeline of a stream.
+
+"collect()" is a REDUCTION OPERATION, just like "reduce()", that takes as argument various recipes for accumulating the elements of a stream into a summary result. These recipes are defined by a new Collector interface
+
+Here are some example queries of what you’ll be able to do using collect() and collectors:
+(1) Group a list of transactions by currency to obtain the sum of the values of all transactions with that currency (returning a Map<Currency, Integer>)
+(2) Partition a list of transactions into two groups: expensive and not expensive (returning a Map<Boolean, List<Transaction>>)
+(3) Create multilevel groupings such as grouping transactions by cities and then further categorizing by whether they’re expensive or not (returning a Map<String, Map<Boolean, List<Transaction>>>)
+
+Listing 6.1 GROUPING TRANSACTIONS bycurrency in IMPERATIVE style
+it’s a lot of code for such a simple task. Even worse, this is probably harder to read than to write! The purpose of the code isn’t immediately evident at first glance, even though it can be expressed in a straightforward manner in plain English: “Group a list of transactions by their currency.” 
+
+6.1. Collectors in a nutshell
+The previous example clearly shows one of the main advantages of functional-style programming over an imperative approach: 
+you just have to formulate the result you want to obtain the “WHAT” and not the steps you need to perform to obtain it—the “HOW.” 
+In the previous example, the argument passed to the collect method is an implementation of the Collector interface, which is a recipe for how to build a summary of the elements in the Stream. 
+In the previous chapter, the toList() recipe just said “Make a list of each element in turn”; in this example, the groupingBy recipe says “Make a Map whose keys are (currency) buckets and whose values are a list of elements in those buckets.”
+
+The difference between the imperative and functional versions of this example is even more pronounced if you perform multilevel groupings: 
+in this case the imperative code quickly becomes harder to read, maintain, and modify due to the number of deeply nested loops and conditions required. 
+In comparison, the functional-style version, as you’ll discover in section 6.3, can be easily enhanced with an additional collector
+
+6.1.1. Collectors as advanced reductions
+
+This last observation brings up another typical benefit of a well-designed FUNCTIONAL API: its HIGHER DEGREE OF COMPOSABILITY AND REUSABILITY. 
+
+Collectors are extremely useful because they provide a concise yet flexible way to define the criteria that collect uses to produce the resulting collection. 
+More specifically, invoking the collect() method on a stream triggers a reduction operation (parameterized by a Collector) on the elements of the stream itself. 
+This reduction operation internally does for you what you had to code imperatively. It traverses each element of the stream and lets the Collector process them.
+
+Typically, the Collector applies a transforming function to the element (quite often this is the IDENTITY TRANSFORMATION, which has no effect [ı`fekt], for example, as in toList()), and accumulates the result in a data structure that forms the final output of this process. 
+For instance, in our transaction-grouping example shown previously, the transformation function extracts the currency from each transaction, and subsequently the transaction itself is accumulated in the resulting Map, using the currency as key.
+
+6.1.2. Predefined collectors
+1) Reducing and summarizing stream elements to a single value
+2) Grouping elements
+3) Partitioning elements
+
+6.2. Reducing and summarizing
+СOLLECTORS are typically used in cases where it’s necessary to reorganize the stream’s items into a collection. But more generally, they can be used every time you want to COMBINE ALL THE ITEMS IN THE STREAM INTO A SINGLE RESULT. 
+This result can be of any type, as complex as a multilevel map representing a tree or as simple as a single integer — perhaps representing the sum of all the calories in the menu.
+
+6.2.1. Finding maximum and minimum in a stream of values
+Suppose you want to find the highest-calorie dish in the menu. You can use two collectors, Collectors.maxBy() and Collectors.minBy(), to calculate the maximum or minimum value in a stream.
+
+Java 8 introduces Optional, which is a container that may or may not contain a value. Here it perfectly represents the idea that there may or may not be a dish returned. 
+
+summingInt() -- accepts a function that maps an object into the int that has to be summed and returns a collector that, when passed to the usual collect method, performs the requested summarization.
+While traversing the stream each dish is mapped into its number of calories, and this number is added to an accumulator starting from an initial value (in this case the value is 0).
+
+The Collectors.summingLong() and Collectors.summingDouble() methods behave exactly the same way and can be used where the field to be summed is respectively a long or a double.
+
+Collectors.averagingInt(), together with its averagingLong() and averagingDouble() counterparts, to calculate the average of the same set of numeric values
+
+Quite often, though, you may want to retrieve two or more of these results, and possibly you’d like to do it in a single operation. In this case, you can use the collector returned by the summarizingInt() FACTORY METHOD. For example, you can count the elements in the menu and obtain the sum, average, maximum, and minimum of the calories contained in each dish with a single SUMMARIZING operation
+This collector gathers all that information in a class called IntSummaryStatistics that provides convenient getter methods to access the results. 
+As usual, there are corresponding summarizingLong() and summarizingDouble() factory methods with associated types LongSummaryStatistics and DoubleSummaryStatistics; these are used when the property to be collected is a primitive-type long or a double.
+----------------------------------------
+6.2.3. Joining Strings
+The collector returned by the joining FACTORY METHOD concatenates into a single string all strings resulting from invoking the toString() method on each object in the stream. 
+This means you can concatenate the names of all the dishes in the menu.
+Note that joining internally makes use of a StringBuilder to append the generated strings into one. 
+Also note that if the Dish class had a toString method returning the dish’s name, you’d obtain the same result without needing to map over the original stream with a function extracting the name from each dish:
+
+String shortMenu = menu.stream().collect(joining());
+
+6.2.4. Generalized summarization with reduction
+it’s possible to calculate the total calories in your menu with a collector created from the reducing method as follows:
+
+int totalCalories = menu.stream().collect(reducing(
+                                   0, Dish::getCalories, (i, j) -> i + j));
+It takes three arguments:
+1) The first argument is the starting value of the reduction operation and will also be the value returned in the case of a stream with no elements, so clearly 0 is the appropriate value in the case of a numeric sum.
+2) The second argument is the same function you used in section 6.2.2 to transform a dish into an int representing its calorie content.
+3) The third argument is a BinaryOperator that aggregates two items into a single value of the same type. Here, it just sums two ints
+
+Similarly, you could find the highest-calorie dish using the one-argument version of reducing as follows:
+Optional<Dish> mostCalorieDish =
+    menu.stream().collect(reducing(
+        (d1, d2) -> d1.getCalories() > d2.getCalories() ? d1 : d2));
+You can think of the collector created with the one-argument reducing() factory method as a particular case of the three-argument method, which uses the first item in the stream as a starting point and an identity function (that is, a function doing nothing more than returning its input argument as is) as a transformation function. This also implies that the one-argument reducing() collector won’t have any starting point when passed to the collect method of an empty stream and, as we explained in section 6.2.1, for this reason it returns an Optional<Dish> object.
+
+------------- Collect vs. reduce -----------------
+the REDUCE method is meant to combine two values and produce a new one; it’s an IMMUTABLE REDUCTION. 
+In contrast, the COLLECT method is designed to mutate a CONTAINER TO ACCUMULATE the result it’s supposed to produce. 
+This means that the previous snippet of code is misusing the reduce method because it’s mutating in place the List used as accumulator. 
+As you’ll see in more detail in the next chapter, using the reduce() method with the wrong semantic is also the cause of a PRACTICAL PROBLEM: 
+this reduction process can’t work in parallel because the concurrent modification of the same data structure operated by multiple threads can corrupt the List itself. 
+In this case, if you want THREAD SAFETY, you’ll need to allocate a new List every time, which would impair performance by object allocation. 
+This is the main reason why the collect() method is useful for expressing reduction working on a mutable container but crucially in a parallel-friendly way,
+-----------------------------------
+
+public static <T> Collector<T, ?, Long> counting() {
+    return reducing(0L, e -> 1L, Long::sum);
+}
+"?" wildcard is used as the second generic type in the signature of the collector returned by the counting factory method. 
+Here it means only that the type of the collector’s ACCUMULATOR IS UNKNOWN, or in other words, the accumulator itself can be of any type.
+
+Once again, this demonstrates how functional programming in general (and the new API based on functional-style principles added to the Collections framework in Java 8 in particular) often provides multiple ways to perform the same operation. This example also shows that collectors are somewhat more complex to use than the methods directly available on the Streams interface, but in exchange they offer higher levels of abstraction and generalization and are more reusable and customizable.
+
+!! ALWAYS CHOOSE THE MOST SPECIALIZED ONE THAT’S GENERAL ENOUGH TO SOLVE IT. !!
+This is often the best decision for both readability and performance reasons. 
+For instance, to calculate the total calories in our menu, we’d prefer the last solution (using IntStream) because it’s the most concise and likely also the most readable one. At the same time, it’s also the one that performs best, because IntStream lets us avoid all the auto-unboxing operations, or implicit conversions from Integer to int, that are useless in this case
+
+***************************************
+6.3. Grouping
+A common database operation is to group items in a set, based on one or more properties.
+As a second example of how this feature works, suppose you want to classify the dishes in the menu according to their type, putting the ones containing meat in a group, the ones with fish in another group, and all others in a third group.
+
+you pass to the groupingBy() method a Function (expressed in the form of a method reference) extracting the corresponding Dish.Type for each Dish in the stream. We call this Function a CLASSIFICATION FUNCTION because it’s used to classify the elements of the stream into different groups. 
+The result of this grouping operation is a Map having as map key the value returned by the classification function and as corresponding map value a list of all the items in the stream having that classified value. In the menu-classification example a key is the type of dish, and its value is a list containing all the dishes of that type.
+
+6.3.1. Multilevel grouping
+You can achieve multilevel grouping by using a collector created with a two-argument version of the Collectors.groupingBy() factory method, which accepts a second argument of type collector besides the usual classification function. So to perform a two-level grouping, you can pass an inner groupingBy to the outer groupingBy, defining a second-level criterion to classify the stream’s items.
+
+This multilevel grouping operation can be extended to any number of levels, and an n-level grouping has as a result an n-level Map modeling an n-level tree structure.
+
+In general, it helps to think that groupingBy works in terms of “BUCKETS.” The first groupingBy() creates a bucket for each key. 
+You then collect the elements in each bucket with the downstream collector and so on to achieve n-level groupings!
+
+6.3.2. Collecting data in subgroups
+the second collector passed to the first groupingBy can be any type of collector, not just another groupingBy(). 
+regular one-argument groupingBy(f), where f is the classification function, is in reality just shorthand for groupingBy(f, toList()).
+
+--------------------
+menu.stream().collect(groupingBy(Dish::getType,
+  reducing((d1, d2) -> d1.getCalories() > d2.getCalories() ? d1 : d2))));
+______ Note _______
+The values in this Map are Optionals because this is the resulting type of the collector generated by the maxBy factory method, but in reality if there’s no Dish in the menu for a given type, that type won’t have an Optional.empty() as value; it won’t be present at all as a key in the Map. 
+The groupingBy collector lazily adds a new key in the grouping Map only the first time it finds an element in the stream, producing that key when applying on it the grouping criteria being used. 
+This means that in this case, the Optional wrapper isn’t very useful, because it’s not modeling a value that could be eventually absent but is there incidentally, only because this is the type returned by the reducing collector.
+--------------------
+
+collectingAndThen():
+This factory method takes two arguments, the collector to be adapted and a transformation function, and returns another collector. 
+This additional collector acts as a wrapper for the old one and maps the value it returns using the transformation function as the last step of the collect operation.
+
+It’s quite common to use multiple nested collectors, and at first the way they interact may not always be obvious. Figure 6.6 helps you visualize how they work together. From the outermost layer and moving inward, note the following:
+
+(1) The collectors are represented by the dashed lines, so groupingBy is the outermost one and groups the menu stream into three substreams according to the different dishes’ types.
+(2) The groupingBy collector wraps the collectingAndThen collector, so each substream resulting from the grouping operation is further reduced by this second collector.
+(3) The collectingAndThen collector wraps in turn a third collector, the maxBy one.
+(4) The reduction operation on the substreams is then performed by the reducing collector, but the collectingAndThen collector containing it applies the Optional::get transformation function to its result.
+(5) The three transformed values, being the highest-calorie Dishes for a given type (resulting from the execution of this process on each of the three substreams), will be the values associated with the respective classification keys, the types of Dishes, in the Map returned by the groupingBy collector.
+
+MAPPING collector == нихуя не понял что они написали
+
+Yet another collector, commonly used in conjunction with groupingBy, is one generated by the mapping() method. 
+This method takes two arguments: 
+- a function transforming the elements in a stream 
+- and a further collector accumulating the objects resulting from this transformation.
+      Its purpose is to adapt a collector accepting elements of a given type to one working on objects of a different type, by applying a mapping function to each input element before accumulating them. 
+ To see a practical example of using this collector, suppose you want to know which CaloricLevels are available in the menu for each type of Dish.
+
+------------------------------------------------
+6.4. Partitioning
+Partitioning is a special case of grouping: having a predicate (a function returning a boolean), called a partitioning function, as a classification function. The fact that the partitioning function returns a boolean means the resulting grouping Map will have a Boolean as a key type and therefore there can be at most two different groups—one for true and one for false.
+
+Note that you could achieve the same result by just filtering the stream created from the menu List with the same predicate used for partitioning and then collecting the result in an additional List:
+
+menu.stream().filter(Dish::isVegetarian).collect(toList());
+
+6.4.1. Advantages of partitioning

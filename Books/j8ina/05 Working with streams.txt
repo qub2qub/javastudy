@@ -1,0 +1,230 @@
+pages 92-122 = 30
+Streams API can work out several optimizations behind the scenes. In addition, using internal iteration, the Streams API can decide to run your code in parallel. Using external iteration, this isn’t possible because you’re committed to a single-threaded step-by-step sequential iteration.
+
+5.1.1. Filtering with a predicate
+The Streams interface supports a filter method (which you should be familiar with by now). This operation takes as argument a predicate (a function returning a boolean) and returns a stream including all elements that match the predicate. 
+
+5.1.2. Filtering unique elements
+Streams also support a method called distinct() that returns a stream with unique elements (according to the implementation of the hashCode() and equals() methods of the objects produced by the stream).
+
+5.1.3. Truncating a stream
+Streams support the limit(n) method, which returns another stream that’s no longer than a given size. The requested size is passed as argument to limit. If the stream is ordered, the first elements are returned up to a maximum of n. 
+
+Note that limit also works on unordered streams (for example, if the source is a Set). In this case you shouldn’t assume any order on the result produced by limit.
+
+5.1.4. Skipping elements
+Streams support the skip(n) method to return a stream that discards the first n elements. If the stream has fewer elements than n, then an empty stream is returned. Note that limit(n) and skip(n) are COMPLEMENTARY!
+
+5.2.1. Applying a function to each element of a stream
+Streams support the method map(), which takes a function as argument. 
+The FUNCTION IS APPLIED TO EACH ELEMENT, MAPPING IT INTO A NEW ELEMENT (the word mapping is used because it has a meaning similar to transforming but with the nuance of “creating a new version of” rather than “modifying”).
+
+Because the method getName returns a String, the stream outputted by the map method is of type Stream<String>.
+
+5.2.2. Flattening streams
+You saw how to return the length for each word in a list using the method map. Let’s extend this idea a bit further: how could you return a list of all the unique characters for a list of words? For example, given the list of words ["Hello", "World"] you’d like to return the list ["H", "e", "l", "o", "W", "r", "d"].
+
+The problem with this approach is that the lambda passed to the map() method returns a String[] (an array of String) for each word. So the stream returned by the map method is actually of type Stream<String[]>. What you really want is Stream<String> to represent a stream of characters.
+Luckily there’s a solution to this problem using the method flatMap! 
+
+ATTEMPT USING MAP() AND ARRAYS.STREAM()
+First, you need a stream of characters instead of a stream of arrays. There’s a method called Arrays.stream() that takes an array and produces a stream.
+-------------
+Using the flatMap() method has the effect of MAPPING EACH ARRAY NOT WITH A STREAM BUT WITH THE CONTENTS OF THAT STREAM. All the separate streams that were generated when using map(Arrays::stream) get amalgamated — flattened into a single stream.
+
+In a nutshell, the flatMap() method lets you REPLACE EACH VALUE OF A STREAM WITH ANOTHER STREAM AND THEN CONCATENATES ALL THE GENERATED STREAMS INTO A SINGLE STREAM.
+
+---------------------------****************************************************
+5.3. Finding and matching
+Another common data processing idiom is finding whether some elements in a set of data match a given property. The Streams API provides such facilities through the allMatch, anyMatch, noneMatch, findFirst, and findAny methods of a stream.
+
+5.3.1. Checking to see if a predicate matches at least one element
+The anyMatch method can be used to answer the question “Is there an element in the stream matching the given predicate?” For example, you can use it to find out whether the menu has a vegetarian option:
+
+if(menu.stream().anyMatch(Dish::isVegetarian)){
+    System.out.println("The menu is (somewhat) vegetarian friendly!!");
+}
+The anyMatch method returns a boolean and is therefore a terminal operation.
+
+5.3.2. Checking to see if a predicate matches all elements
+The allMatch method works similarly to anyMatch but will check to see if all the elements of the stream match the given predicate. For example, you can use it to find out whether the menu is healthy (that is, all dishes are below 1000 calories):
+
+boolean isHealthy = menu.stream()
+             .allMatch(d -> d.getCalories() < 1000);
+---------------------
+noneMatch
+The opposite of allMatch is noneMatch. It ensures that no elements in the stream match the given predicate. For example, you could rewrite the previous example as follows using noneMatch:
+
+boolean isHealthy = menu.stream()
+                .noneMatch(d -> d.getCalories() >= 1000);
+These three operations, anyMatch, allMatch, and noneMatch, make use of what we call short-circuiting, a stream version of the familiar Java short-circuiting && and || operators.
+
+***************
+SHORT-CIRCUITING EVALUATION
+Some operations don’t need to process the whole stream to produce a result. For example, say you need to evaluate a large boolean expression chained with and operators. You need only find out that one expression is false to deduce that the whole expression will return false, no matter how long the expression is; there’s no need to evaluate the entire expression. This is what short-circuiting refers to.
+
+In relation to streams, certain operations such as allMatch, noneMatch, findFirst, and findAny don’t need to process the whole stream to produce a result. As soon as an element is found, a result can be produced.
+Similarly, limit() is also a short-circuiting operation: the operation only needs to create a stream of a given size without processing all the elements in the stream. Such operations are useful, for example, when you need to deal with streams of infinite size, because they can turn an infinite stream into a stream of finite size.
+***************
+
+5.3.3. Finding an element
+The findAny method returns an arbitrary element of the current stream. It can be used in conjunction with other stream operations. For example, you may wish to find a dish that’s vegetarian. You can combine the filter method and findAny to express this query:
+
+Optional<Dish> dish =
+  menu.stream()
+      .filter(Dish::isVegetarian)
+      .findAny();
+The stream pipeline will be optimized behind the scenes to perform a single pass and finish as soon as a result is found by using short-circuiting.
+
+***************
+Optional in a nutshell
+The Optional<T> class (java.util.Optional) is a container class to represent the existence or absence of a value. In the previous code, it’s possible that findAny() doesn’t find any element. Instead of returning null, which is well known for being error prone, the Java 8 library designers introduced Optional<T>. 
+     there are a few methods available in Optional that force you to explicitly check for the presence of a value or deal with the absence of a value:
+(1) isPresent() returns true if Optional contains a value, false otherwise.
+(2) ifPresent(Consumer<T> block) executes the given block if a value is present. We introduced the Consumer functional interface in chapter 3; it lets you pass a lambda that takes an argument of type T and returns void.
+(3) T get() returns the value if present; otherwise it throws a NoSuchElement-Exception.
+(4) T orElse(T other) returns the value if present; otherwise it returns a default value.
+***************
+
+5.3.4. Finding the first element
+Some streams have an encounter order that specifies the order in which items logically appear in the stream (for example, a stream generated from a List or from a sorted sequence of data). For such streams you may wish to find the first element. There’s the findFirst method for this, which works similarly to findAny.
+
+5.4. Reducing
+So far, the terminal operations you’ve seen return a boolean (allMatch and so on), void (forEach), or an Optional object (findAny and so on). You’ve also been using collect to combine all elements in a stream into a List.
+
+“Calculate the sum of all calories in the menu,” or “What is the highest calorie dish in the menu?”
+Such queries combine all the elements in the stream repeatedly to produce a single value such as an Integer. These queries can be classified as reduction operations (a stream is reduced to a value). In functional programming-language jargon, this is referred to as a FOLD because you can view this operation as repeatedly folding a long piece of paper (your stream) until it forms a small square, which is the result of the fold operation.
+
+5.4.1. Summing the elements
+Before we investigate how to use the reduce method, it helps to first see how you’d sum the elements of a list of numbers using a for-each loop:
+
+int sum = 0;
+for (int x : numbers) {
+    sum += x;
+}
+Each element of numbers is combined iteratively with the addition operator to form a result. You reduce the list of numbers into one number by repeatedly using addition. There are two parameters in this code:
+1) The initial value of the sum variable, in this case 0
+2) The operation to combine all the elements of the list, in this case +
+OR
+int sum = numbers.stream().reduce(0, (a, b) -> a + b);
+
+REDUCE takes two arguments:
+1) An initial value, here 0.
+2) A BinaryOperator<T> to combine two elements and produce a new value; here you use the lambda (a, b) -> a + b.
+
+There’s also an overloaded variant of reduce that doesn’t take an initial value, but it returns an Optional object:
+
+Optional<Integer> sum = numbers.stream().reduce((a, b) -> (a + b));
+Why does it return an Optional<Integer>? Consider the case when the stream contains no elements. The reduce operation can’t return a sum because it doesn’t have an initial value. This is why the result is wrapped in an Optional object to indicate that the sum may be absent.
+
+5.4.2. Maximum and minimum
+
+
+!! A CHAIN of map() and reduce() is commonly known as the MAP-REDUCE PATTERN, made famous by Google’s use of it for web searching because it can be easily parallelized.
+
+-----------------------------------
+Benefit of the reduce method and parallelism
+The benefit of using reduce compared to the step-by-step iteration summation that you wrote earlier is that the iteration is abstracted using internal iteration, which enables the internal implementation to choose to perform the reduce operation in parallel. 
+The iterative summation example involves shared updates to a sum variable, which doesn’t parallelize gracefully. 
+If you add in the needed synchronization, you’ll likely discover that THREAD CONTENTION ROBS YOU OF ALL THE PERFORMANCE that parallelism was supposed to give you! Parallelizing this computation requires a different approach: PARTITION THE INPUT, sum the partitions, and combine the sums. But now the code is starting to look really different. 
+But for now it’s important to realize that the MUTABLE ACCUMULATOR PATTERN is a dead end for parallelization. You need a new pattern, and this is what reduce provides you.
+But there’s a price to pay to execute this code in parallel, as we explain later: the LAMBDA PASSED TO REDUCE CAN’T CHANGE STATE (for example, instance variables), and the OPERATION NEEDS TO BE ASSOCIATIVE so it can be executed in any order.
+
+-----------------------------------
+STREAM OPERATIONS: STATELESS VS. STATEFUL
+You’ve seen a lot of stream operations. An initial presentation can make them seem a panacea; everything just works, and you get parallelism for free when you use parallelStream instead of stream to get a stream from a collection.
+
+Certainly for many applications this is the case, as you’ve seen in the previous examples. You can turn a list of dishes into a stream, filter to select various dishes of a certain type, then map down the resulting stream to add on the number of calories, and then reduce to produce the total number of calories of the menu. You can even do such stream calculations in parallel. But these operations have different characteristics. There are issues about what internal state they need to operate.
+
+Operations like map() and filter() take each element from the input stream and produce zero or one result in the output stream. These operations are thus in general STATELESS: they don’t have an internal state (assuming the user-supplied lambda or method reference has no internal mutable state).
+
+But operations like reduce(), sum(), and max() need to have internal state to accumulate the result. In this case the internal state is small. In our example it consisted of an int or double. The INTERNAL STATE IS OF BOUNDED SIZE no matter how many elements are in the stream being processed.
+
+By contrast, some operations such as sorted() or distinct() seem at first to behave like filter or map—all take a stream and produce another stream (an intermediate operation), but there’s a crucial difference. 
+Both sorting and removing duplicates from a stream require knowing the previous history to do their job. For example, sorting requires all the elements to be buffered before a single item can be added to the output stream; THE STORAGE REQUIREMENT OF THE OPERATION IS UNBOUNDED. This can be problematic if the data stream is large or infinite. (What should reversing the stream of all prime numbers do? It should return the largest prime number, which mathematics tells us doesn’t exist.) We call these operations STATEFUL OPERATIONS.
+-----------------------------------
+
+5.5. Putting it all into practice
+
+5.6. Numeric streams
+
+You saw earlier that you could use the reduce method to calculate the sum of the elements of a stream.
+The problem with this code is that there’s an INSIDIOUS BOXING COST. Behind the scenes each Integer needs to be unboxed to a primitive before performing the summation. In addition, wouldn’t it be nicer if you could call a sum method directly.
+
+But this isn’t possible. The problem is that the method map() generates a Stream<T>. Even though the elements of the stream are of type Integer, the Streams interface doesn’t define a sum() method. Why not? Say you had only a Stream<Dish> like the menu; it wouldn’t make any sense to be able to sum dishes. But don’t worry; the Streams API also supplies primitive stream specializations that support specialized methods to work with streams of numbers.
+
+5.6.1. Primitive stream specializations
+Java 8 introduces three primitive specialized stream interfaces to tackle this issue, IntStream, DoubleStream, and LongStream, that respectively specialize the elements of a stream to be int, long, and double—and thereby avoid hidden boxing costs.
+
+In addition, they have methods to CONVERT BACK TO A STREAM OF OBJECTS when necessary. The thing to remember is that these specializations aren’t more complexity about streams but instead more complexity caused by boxing—the (efficiency-based) difference between int and Integer and so on.
+
+Mapping to a numeric stream
+The most common methods you’ll use to convert a stream to a specialized version are mapToInt(), mapToDouble(), and mapToLong(). These methods work exactly like the method map()
+
+To convert from a primitive stream to a general stream (each int will be boxed to an Integer) you can use the method boxed()
+
+Default values: OptionalInt
+The sum example was convenient because it has a default value: 0. But if you want to calculate the maximum element in an IntStream, you need something different because 0 is a wrong result. How can you differentiate that the stream has no element and that the real maximum is 0? Earlier we introduced the Optional class, which is a container that indicates the presence or absence of a value. Optional can be parameterized with reference types such as Integer, String, and so on. There’s a primitive specialized version of Optional as well for the three primitive stream specializations: OptionalInt, OptionalDouble, and OptionalLong.
+
+5.6.2. Numeric ranges
+
+PYTHAGOREAN TRIPLES
+
+5.7. Building streams
+5.7.1. Streams from values
+You can create a stream with explicit values by using the static method Stream.of(), which can take any number of parameters.
+
+Stream<String> emptyStream = Stream.empty();
+
+You can create a stream from an array using the static method Arrays.stream(), which takes an array as parameter.
+
+5.7.3. Streams from files
+Java’s NIO API (non-blocking I/O), which is used for I/O operations such as processing a file, has been updated to take advantage of the Streams API. Many static methods in java.nio.file.Files return a stream. For example, a useful method is Files.lines(), which returns a stream of lines as strings from a given file. 
+
+5.7.4. Streams from functions: creating infinite streams!
+The Streams API provides two static methods to generate a stream from a function: Stream.iterate() and Stream.generate(). These two operations let you create what we call an infinite stream: a stream that doesn’t have a fixed size like when you create a stream from a fixed collection. 
+Streams produced by iterate and generate create values on demand given a function and can therefore calculate values forever! It’s generally sensible to use limit(n) on such streams to avoid printing an infinite number of values.
+
+------------- Iterate --------------
+Let’s look at a simple example of how to use iterate before we explain it:
+		Stream.iterate(0, n -> n + 2)
+      		.limit(10)
+      		.forEach(System.out::println);
+The iterate method takes an initial value, here 0, and a lambda (of type Unary-Operator<T>) to apply successively on each new value produced. 
+   This iterate operation is fundamentally sequential because the result depends on the previous application. Note that this operation produces an infinite stream—the stream doesn’t have an end because values are computed on demand and can be computed forever.
+We say the stream is unbounded. As we discussed earlier, this is a key difference between a stream and a collection. You’re using the limit method to explicitly limit the size of the stream. Here you select only the first 10 even numbers. You then call the forEach terminal operation to consume the stream and print each element individually.
+
+In general, you should use iterate when you need to produce a sequence of successive values, for example, a date followed by its next date: January 31, February 1, and so on
+
+------------- Generate --------------
+Similarly to the method iterate, the method generate lets you produce an infinite stream of values computed on demand. BUT GENERATE DOESN’T APPLY SUCCESSIVELY A FUNCTION ON EACH NEW PRODUCED VALUE. It takes a lambda of type Supplier<T> to provide new values. 
+
+Stream.generate(Math::random)
+      .limit(5)
+      .forEach(System.out::println);
+
+You may be wondering if there’s anything else useful you can do using the method generate. The supplier we used (a method reference to Math.random) was stateless: it wasn’t recording any values somewhere that can be used in later computations. 
+But a supplier doesn’t have to be stateless. You can create a supplier that stores state that it can modify and use when generating the next value of the stream.
+!!! But it’s important to note that a supplier that’s stateful isn’t safe to use in parallel code. So what follows is shown just for completeness but should be avoided! 
+
+But the difference between the ANONYMOUS CLASS used here and a LAMBDA is that the anonymous class can define state via fields, which the getAsInt method can modify. This is an example of a side effect. All lambdas you’ve seen so far were side-effect free; they didn’t change any state.
+
+-------- Fibonnaci Generator -------
+This object has mutable state: it tracks the previous Fibonacci element and the current Fibonacci element in two instance variables. The getAsInt() method changes the state of the object when it’s called so that it produces new values on each call. 
+  In comparison, our approach using iterate was purely IMMUTABLE: you didn’t modify existing state but were creating new tuples at each iteration. You’ll learn in chapter 7 that you should always prefer an immutable approach in order to process a stream in parallel and expect a correct result.
+
+Note that because you’re dealing with a stream of infinite size, you have to limit its size explicitly using the operation limit; otherwise, the terminal operation (in this case forEach) will compute forever. 
+Similarly, you can’t sort() or reduce() an infinite stream because all elements need to be processed, but this would take forever because the stream is infinite!
+
+5.8. Summary
+
+(1) The Streams API lets you express complex data processing queries. Common stream operations are summarized in table 5.1.
+(2) You can filter and slice a stream using the filter, distinct, skip, and limit methods.
+(3) You can extract or transform elements of a stream using the map and flatMap methods.
+(4) You can find elements in a stream using the findFirst and findAny methods. You can match a given predicate in a stream using the allMatch, noneMatch, and anyMatch methods.
+(5) These methods make use of short-circuiting: a computation stops as soon as a result is found; there’s no need to process the whole stream.
+(6) You can combine all elements of a stream iteratively to produce a result using the REDUCE method, for example, to calculate the sum or find the maximum of a stream.
+(7) Some operations such as filter and map are stateless; they don’t store any state. Some operations such as reduce store state to calculate a value. Some operations such as sorted and distinct also store state because they need to buffer all the elements of a stream before returning a new stream. Such operations are called stateful operations.
+(8) There are three primitive specializations of streams: IntStream, DoubleStream, and LongStream. Their operations are also specialized accordingly.
+(9) Streams can be created not only from a collection but also from values, arrays, files, and specific methods such as iterate and generate.
+(10) An infinite stream is a stream that has no fixed size.

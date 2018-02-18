@@ -1,0 +1,101 @@
+Streams are an update to the Java API that lets you manipulate collections of data in a declarative way (you express a query rather than code an ad hoc implementation for it). 
+
+In addition, streams can be processed in parallel transparently, without you having to write any multithreaded code!
+
+intermediate throwaway container - временная вспомогатьльная коллекция
+
+1) The code is written in a declarative way: you specify what you want to achieve (that is, filter dishes that are low in calories) as opposed to specifying how to implement an operation (using control-flow blocks such as loops and if conditions). 
+2) You chain together several building-block operations to express a complicated data processing pipeline (you chain the filter by linking sorted, map, and collect operations)
+
+Because operations such as filter (or sorted, map, and collect) are available as high-level building blocks that don’t depend on a specific threading model, their internal implementation could be single-threaded or potentially maximize your multicore architecture transparently!
+
+Streams API in Java 8 lets you write code that’s:
+- Declarative — More concise and readable
+- Composable — Greater flexibility
+- Parallelizable — Better performance
+
+**********************************************************
+STREAM == “a sequence of elements from a source that supports data processing operations.”
+
+(1) Sequence of elements— Like a collection, a stream provides an interface to a sequenced set of values of a specific element type. Because collections are data structures, they’re mostly about storing and accessing elements with specific time/space complexities (for example, an ArrayList vs. a LinkedList).
+  But streams are about expressing computations such as filter, sorted, and map that you saw earlier. COLLECTIONS ARE ABOUT DATA; STREAMS ARE ABOUT COMPUTATIONS. 
+
+(2) Source— Streams consume from a data-providing source such as collections, arrays, or I/O resources. Note that generating a stream from an ordered collection preserves the ordering. The elements of a stream coming from a list will have the same order as the list.
+(3) Data processing operations— Streams support database-like operations and common operations from functional programming languages to manipulate data, such as filter, map, reduce, find, match, sort, and so on. Stream operations can be executed either sequentially or in parallel.
+
+In addition, stream operations have two important characteristics:
+
+(4) Pipelining — Many stream operations return a stream themselves, allowing operations to be chained and form a larger pipeline. This enables certain optimizations that we explain in the next chapter, such as laziness and short-circuiting. A pipeline of operations can be viewed as a database-like query on the data source.
+(5) Internal iteration — In contrast to collections, which are iterated explicitly using an iterator, stream operations do the iteration behind the scenes for you. We briefly mentioned this idea in chapter 1 and return to it later in the next section.
+----------------------------
+
+No result is produced, and indeed no element from menu is even selected, until collect() is invoked. You can think of it as if the method invocations in the chain are queued up until collect is called.
+
+the Streams API has more flexibility to decide how to optimize this pipeline. For example, the filtering, extracting, and truncating steps could be merged into a single pass and stop as soon as three dishes are found. 
+----------------------------
+
+4.3. Streams vs. collections
+
+Оба предоставляют интерфейс для: 
+data structures representing a sequenced set of values of the element type.
+By sequenced, we mean that we commonly step through the values in turn rather than randomly accessing them in any order. 
+
+In coarsest terms, the difference between collections and streams has to do with when things are computed. 
+
+A collection is an in-memory data structure that holds all the values the data structure currently has—every element in the collection has to be computed before it can be added to the collection.
+(You can add things to, and remove them from, the collection, but at each moment in time, every element in the collection is stored in memory; elements have to be computed before becoming part of the collection.)
+
+By contrast, a stream is a conceptually FIXED DATA STRUCTURE (you can’t add or remove elements from it) whose elements are computed on demand. This gives rise to significant programming benefits.
+The idea is that a user will extract only the values they require from a stream, and these elements are produced—invisibly to the user—only as and when required. 
+This is a form of a producer-consumer relationship. 
+Another view is that a stream is like a LAZILY CONSTRUCTED COLLECTION: values are computed when they’re solicited by a consumer (in management speak this is demand-driven, or even just-in-time, manufacturing).
+
+In contrast, a collection is EAGERLY CONSTRUCTED (supplier-driven: fill your warehouse before you start selling, like a Christmas novelty that has a limited life).
+
+4.3.1. Traversable only once
+Note that, similarly to iterators, a stream can be traversed only once. After that a stream is said to be CONSUMED. You can get a new stream from the initial data source to traverse it again just like for an iterator (assuming it’s a repeatable source like a collection; if it’s an I/O channel, you’re out of luck).
+
+4.3.2. External vs. internal iteration
+Using the Collection interface requires iteration to be done by the user (for example, using for-each); this is called external iteration. The Streams library by contrast uses internal iteration—it does the iteration for you and takes care of storing the resulting stream value somewhere; you merely provide a function saying what’s to be done.
+
+using an internal iteration, the processing of items could be transparently done in parallel or in a different order that may be more optimized. These optimizations are difficult if you iterate the collection externally as you’re used to doing in Java.
+---
+the internal iteration in the Streams library can automatically choose a data representation and implementation of PARALLELISM to match your HARDWARE. 
+
+By contrast, once you’ve chosen external iteration by writing for-each, then you’ve essentially committed to self-manage any parallelism. (Self-managing in practice means either “one fine day we’ll parallelize this” or “starting the long and arduous battle involving tasks and synchronized”.) 
+
+Specifically, streams make use of internal iteration: iteration is taken care of for you. But this is useful only if you have a list of predefined operations to work with (for example, filter or map) that hide the iteration.
+
+The Java language designers shipped the Streams API with an extensive list of operations you can use to express complicated data processing queries.
+
+4.4. Stream operations
+
+You can see two groups of operations:
+1 filter, map, and limit can be connected together to form a pipeline.
+2 collect causes the pipeline to be executed and closes it.
+
+Stream operations that can be connected are called INTERMEDIATE OPERATIONS, and operations that close a stream are called TERMINAL OPERATIONS. 
+
+INTERMEDIATE OPERATIONS such as filter or sorted return another stream as the return type. This allows the operations to be connected to form a query. What’s important is that intermediate operations don’t perform any processing until a terminal operation is invoked on the stream pipeline — they’re lazy. This is because intermediate operations can usually be merged and processed into a single pass by the terminal operation.
+
+LIMIT operation and a technique called SHORT-CIRCUITING, as we’ll explain in the next chapter. Second, despite the fact that filter and map are two separate operations, they were merged into the same pass (we call this technique LOOP FUSION).
+
+TERMINAL OPERATIONS produce a result from a stream pipeline. A result is any nonstream value such as a List, an Integer, or even void. For example, in the following pipeline, forEach is a terminal operation that returns void and applies a lambda to each dish in the source. 
+
+************
+To summarize, working with streams in general involves three items:
+(1) A data source (such as a collection) to perform a query on
+(2) A chain of intermediate operations that form a stream pipeline
+(3) A terminal operation that executes the stream pipeline and produces a result
+
+The idea behind a stream pipeline is similar to the BUILDER PATTERN. 
+In the builder pattern, there’s a chain of calls to set up a configuration (for streams this is a chain of intermediate operations), followed by a call to a build method (for streams this is a terminal operation).
+
+4.5. Summary
+Here are some key concepts to take away from this chapter:
+(1) A stream is a sequence of elements from a source that supports data processing operations.
+(2) Streams make use of internal iteration: the iteration is abstracted away through operations such as filter, map, and sorted.
+(3) There are two types of stream operations: intermediate and terminal operations.
+(4) Intermediate operations such as filter and map return a stream and can be chained together. They’re used to set up a pipeline of operations but don’t produce any result.
+(5) Terminal operations such as forEach and count return a nonstream value and process a stream pipeline to return a result.
+(6) The elements of a stream are computed on demand.
