@@ -166,3 +166,89 @@ Note that you could achieve the same result by just filtering the stream created
 menu.stream().filter(Dish::isVegetarian).collect(toList());
 
 6.4.1. Advantages of partitioning
+Partitioning has the advantage of keeping both lists of the stream elements, for which the application of the partitioning function returns true or false
+
+Also, as you already saw for grouping, the partitioningBy factory method has an overloaded version to which you can pass a second collector
+
+Here the grouping of the dishes by their type is applied individually to both of the substreams of vegetarian and nonvegetarian dishes resulting from the partitioning, producing a two-level Map that’s similar to the one you obtained when you performed the two-level grouping
+
+We started this section by saying that you can think of partitioning as a special case of grouping. The analogies between the groupingBy and partitioningBy collectors don’t end here; as you’ll see in the next quiz, you can also perform multilevel partitioning in a way similar to what you did for grouping
+
+-----------------QUIZ-----------------
+As you’ve seen, like the groupingBy collector, the partitioningBy collector can be used in combination with other collectors. In particular it could be used with a second partitioningBy collector to achieve a multilevel partitioning. 
+--------------------
+
+6.4.2. Partitioning numbers into prime and nonprime
+
+To partition the first n numbers into prime and nonprime, it’s enough to create a stream containing those n numbers and reduce it with a partitioningBy collector using as predicate the isPrime method 
+
+6.5. The Collector interface
+The Collector interface consists of a set of methods that provide a blueprint for how to implement specific reduction operations (that is, collectors). You’ve seen many collectors that implement the Collector interface, such as toList or groupingBy. This also implies that you’re free to create customized reduction operations by providing your own implementation of the Collector interface. 
+
+public interface Collector<T, A, R> {
+    Supplier<A> supplier();
+    BiConsumer<A, T> accumulator();
+    Function<A, R> finisher();
+    BinaryOperator<A> combiner();
+    Set<Characteristics> characteristics();
+}
+
+In this listing, the following definitions apply:
+-- T is the generic type of the items in the stream to be collected.
+-- A is the type of the accumulator, the object on which the partial result will be accumulated during the collection process.
+-- R is the type of the object (typically, but not always, the collection) resulting from the collect operation.
+
+6.5.1. Making sense of the methods declared by Collector interface
+
+The SUPPLIER() method has to return a Supplier of an empty result—a parameterless function that when invoked creates an instance of an empty accumulator used during the collection process. Clearly, for a collector returning the accumulator itself as result, like our ToListCollector, this empty accumulator will also represent the result of the collection process when performed on an empty stream. 
+
+The ACCUMULATOR() method returns the function that performs the reduction operation. When traversing the nth element in the stream, this function is applied with two arguments, the accumulator being the result of the reduction (after having collected the first n–1 items of the stream) and the nth element itself. The function returns void because the accumulator is modified in place, meaning that its internal state is changed by the function application to reflect the effect of the traversed element.
+
+The FINISHER() method has to return a function that’s invoked at the end of the accumulation process, after having completely traversed the stream, in order to transform the accumulator object into the final result of the whole collection operation. Often, as in the case of the ToListCollector, the accumulator object already coincides with the final expected result. As a consequence, there’s no need to perform a transformation, so the finisher method just has to return the identity function.
+
+The COMBINER() method, the last of the four methods that return a function used by the reduction operation, defines how the accumulators resulting from the reduction of different subparts of the stream are combined when the subparts are processed in parallel. In the toList case, the implementation of this method is simple; just add the list containing the items gathered from the second subpart of the stream to the end of the list obtained when traversing the first subpart
+  
+-- The addition of this fourth method allows a parallel reduction of the stream. This uses the fork/join framework introduced in Java 7 and the Spliterator abstraction that you’ll learn about in the next chapter. 
+Как это работает:
+(1) The original stream is recursively split in substreams until a condition defining whether a stream needs to be further divided becomes false (parallel computing is often slower than sequential computing when the units of work being distributed are too small, and it’s pointless to generate many more parallel tasks than you have processing cores).
+(2) At this point all substreams can be processed in parallel, each of them using the sequential reduction algorithm shown in figure 6.7.
+(3) Finally, all the partial results are combined pairwise using the function returned by the combiner method of the collector. This is done by combining results corresponding to substreams associated with each split of the original stream.
+
+The last method, CHARACTERISTICS(), returns an immutable set of Characteristics, defining the behavior of the collector—in particular providing hints about whether the stream can be reduced in parallel and which optimizations are valid when doing so. Characteristics is an enumeration containing three items:
+(1) UNORDERED—The result of the reduction isn’t affected by the order in which the items in the stream are traversed and accumulated.
+(2) CONCURRENT—The accumulator function can be called concurrently from multiple threads, and then this collector can perform a parallel reduction of the stream. If the collector isn’t also flagged as UNORDERED, it can perform a parallel reduction only when it’s applied to an unordered data source.
+(3) IDENTITY_FINISH—This indicates the function returned by the finisher method is the identity one, and its application can be omitted. In this case, the accumulator object is directly used as the final result of the reduction process. This also implies that it’s safe to do an unchecked cast from the accumulator A to the result R.
+
+!! The ToListCollector developed so far is IDENTITY_FINISH, because the List used to accumulate the elements in the stream is already the expected final result and doesn’t need any further transformation, but it isn’t UNORDERED because if you apply it to an ordered stream you want this ordering to be preserved in the resulting List. Finally, it’s CONCURRENT, but following what we just said, the stream will be processed in parallel only if its underlying data source is unordered.
+
+6.5.2. Putting them all together
+In the case of an IDENTITY_FINISH collection operation, there’s a further possibility of obtaining the same result without developing a completely new implementation of the Collector interface. Stream has an overloaded collect method accepting the three other functions—supplier, accumulator, and combiner—having exactly the same semantics as the ones returned by the corresponding methods of the Collector interface. So, for instance, it’s possible to collect in a List all the items in a stream of dishes as follows:
+List<Dish> dishes = menu.stream().collect( ArrayList::new, List::add, List::addAll );
+
+We believe that this second form, even if more compact and concise than the former one, is rather less readable. Also, developing an implementation of your custom collector in a proper class promotes its reuse and helps avoid code duplication. It’s also worth noting that you’re not allowed to pass any Characteristics to this second collect method, so it always behaves as an IDENTITY_FINISH and CONCURRENT but not UNORDERED collector.
+
+-----------------------------------------------
+6.6. Developing your own collector for better performance
+...There you achieved an improvement over the original isPrime method by limiting the number of divisors to be tested against the candidate prime to those not bigger than the candidate’s square root... почему так?
+
+One possible optimization is to test only if the candidate number is divisible by prime numbers. It’s pointless to test it against a divisor that’s not itself prime! So you can limit the test to only the prime numbers found before the current candidate. The problem with the predefined collectors you’ve used so far, and the reason you have to develop a custom one, is that during the collecting process you don’t have access to the partial result. This means that when testing whether a given candidate number is prime or not, you don’t have access to the list of the other prime numbers found so far.
+
+Note that this is an eager implementation of takeWhile. Ideally you’d like a lazy version of takeWhile so it can be merged with the noneMatch operation. Unfortunately, implementing it would be beyond the scope of this chapter because you’d need to get a grip on the Streams API implementation.
+
+With this new isPrime method in hand, you’re now ready to implement your own custom collector. First, you need to declare a new class that implements the Collector interface. Then, you need to develop the five methods required by the Collector interface.
+
+Here you’re not only creating the Map that you’ll use as the accumulator, but you’re also initializing it with two empty lists under the true and false keys. This is where you’ll add respectively the prime and nonprime numbers during the collection process. The most important method of your collector is the accumulator method, because it contains the logic defining how the elements of the stream have to be collected. In this case, it’s also the key to implementing the optimization we described previously. At any given iteration you can now access the partial result of the collection process, which is the accumulator containing the prime numbers found so far:
+
+In this method, you invoke the isPrime method, passing to it (together with the number for which you want to test whether it’s prime or not) the list of the prime numbers found so far (these are the values indexed by the true key in the accumulating Map). The result of this invocation is then used as key to get the list of either the prime or nonprime numbers so you can add the new candidate to the right list.
+
+Note that in reality this collector can’t be used in parallel, because the algorithm is inherently sequential. This means the combiner method won’t ever be invoked, and you could leave its implementation empty (or better, throw an UnsupportedOperation-Exception). We decided to implement it anyway only for completeness.
+
+6.7. Summary
+Following are the key concepts you should take away from this chapter:
+(1) collect is a terminal operation that takes as argument various recipes (called collectors) for accumulating the elements of a stream into a summary result.
+(2) Predefined collectors include reducing and summarizing stream elements into a single value, such as calculating the minimum, maximum, or average. Those collectors are summarized in table 6.1.
+(3) Predefined collectors let you group elements of a stream with groupingBy and partition elements of a stream with partitioningBy.
+(4) Collectors compose effectively to create multilevel groupings, partitions, and reductions.
+(5) You can develop your own collectors by implementing the methods defined in the Collector interface.
+
+
