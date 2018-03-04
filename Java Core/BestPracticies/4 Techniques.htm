@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>4 Techniques</title>
+    <link rel="stylesheet" href="../../Guides/grey.css">
+    <style type="text/css">
+		code {
+			background-color: #9BC2E6;
+		}
+    </style>
+</head>
+<body>
+<a href="https://dzone.com/articles/4-techniques-for-writing-better-java">src1</a>
+<a href="https://dzone.com/articles/4-more-techniques-for-writing-better-java">src2</a>
+<a href="https://dzone.com/articles/yet-4-more-techniques-for-writing-better-java">src3</a>
+<h2>4 Techniques for Writing Better Java</h2>
+<div class="content-html" dz-code-container="" ng-non-bindable="" itemprop="text">
+                    <p pid="7" class="cye-lm-tag">Day-in and day-out, most of the Java we write uses a small fraction of the capability of the language's full suite of possibilities. Each <code>Stream</code> we instantiate and each <code>@Autowired</code> annotation we prefix to our instance variables suffice to accomplish most of our goals. There are times, however, when we must resort to those sparingly used portions of the language: <u>The hidden parts of the language that serves a specific purpose</u>.</p> 
+<p pid="8" class="cye-lm-tag">This article explores four techniques that can be used when caught in a bind and be introduced into a code-base to improve both the ease of development and readability. Not all of these techniques will be applicable in every situation, or even most. For example, there may be only a few methods that will lend themselves to covariant return types or only a few generic classes that fit the pattern for using intersectional generic types, while others, such as final methods and classes and try-with-resources blocks, will improve the readability and clearness of intention of most code-bases. In either case, it is important to not only know that these techniques exist, but know when to judiciously apply them.</p> 
+<h2>1. Covariant Return Types</h2> 
+<p pid="2" class="cye-lm-tag">Even the most introductory Java how-to book will include pages of material on inheritance, interfaces, abstract classes, and method overriding, but rarely do even advanced texts explore the more intricate possibilities when overriding a method. For example, the following snippet will not come as a surprise to even the most novice Java developer:</p> 
+<pre>
+
+public interface Animal {
+    public String makeNoise();
+}
+
+public class Dog implements Animal {
+
+    @Override
+    public String makeNoise() {
+        return "Woof";
+    }
+}
+
+public class Cat implements Animal {
+
+    @Override
+    public String makeNoise() {
+        return "Meow";
+    }
+}</pre>
+<p pid="3" class="cye-lm-tag">This is the fundamental concept of polymorphism: A method on an object can be called according to its interface (<code>Animal::makeNoise</code>), but the actual behavior of the method call depends on the implementation type (<code>Dog::makeNoise</code>). For example, the output of the following method will change depending on if a <code>Dog</code> object or a <code>Cat</code> object is passed to the method:</p> 
+<pre>
+public class Talker {
+
+    public static void talk(Animal animal) {
+        System.out.println(animal.makeNoise());
+    }
+}
+
+Talker.talk(new Dog()); // Output: Woof
+Talker.talk(new Cat()); // Output: Meow</pre>
+  
+<p pid="4" class="cye-lm-tag">While this is a technique commonly used in many Java applications, there is a less well-known action that can be taken when overriding a method: Altering the return type. Although this may appear to be an open-ended way to override a method, there are some serious constraints on the return type of an overridden method. According to the <a href="https://docs.oracle.com/javase/specs/jls/se8/jls8.pdf" target="_blank" rel="nofollow">Java 8 SE Language Specification</a> (pg. 248):</p> 
+<blockquote pid="5">
+  If a method declaration d 
+ <sub>1</sub> with return type R 
+ <sub>1</sub> overrides or hides the declaration of another method d 
+ <sub>2</sub> with return type R 
+ <sub>2</sub>, then d 
+ <sub>1</sub> must be return-type-substitutable for d 
+ <sub>2</sub>, or a compile-time error occurs. 
+</blockquote> 
+<p pid="6" class="cye-lm-tag">where a <em>return-type-substitutable</em> (Ibid., pg. 240) is defined as</p> 
+<ol> 
+ <li>If R<sub>1</sub> is void then R<sub>2</sub> is void</li> 
+ <li>If R<sub>1</sub> is a primitive type then R<sub>2</sub> is identical to R<sub>1</sub></li> 
+ <li>If R<sub>1</sub> is a reference type then one of the following is true: 
+  <ol type="a"> 
+   <li>R<sub>1</sub> adapted to the type parameters of d<sub>2</sub> is a subtype of R<sub>2</sub>.</li> 
+   <li>R<sub>1</sub> can be converted to a subtype of R<sub>2</sub> by unchecked conversion</li> 
+   <li>d<sub>1</sub> does not have the same signature as d<sub>2</sub> and R<sub>1</sub> = |R<sub>2</sub>|</li> 
+  </ol></li> 
+</ol> 
+<p pid="9" class="cye-lm-tag">Arguably the most interesting case is that of Rules 3.a. and 3.b.: When overriding a method, a subtype of the return type can be declared as the overridden return type. For example:</p> 
+<pre>
+public interface CustomCloneable {
+    public Object customClone();
+}
+
+public class Vehicle implements CustomCloneable {
+
+    private final String model;
+
+    public Vehicle(String model) {
+        this.model = model;
+    }
+
+    @Override
+    public Vehicle customClone() {
+        return new Vehicle(this.model);
+    }
+
+    public String getModel() {
+        return this.model;
+    }
+}
+
+Vehicle originalVehicle = new Vehicle("Corvette");
+Vehicle clonedVehicle = originalVehicle.customClone();
+System.out.println(clonedVehicle.getModel());</pre>
+  
+<p pid="10" class="cye-lm-tag">Although the original return type of <code>clone()</code> is <code>Object</code>, we are able to call <code>getModel()</code> on our cloned <code>Vehicle</code> (without an explicit cast) because we have overridden the return type of <code>Vehicle::clone</code> to be <code>Vehicle</code>. This removes the need for messy casts, where we <em>know</em> that the return type we are looking for is a <code>Vehicle</code>, even though it is declared to be an <code>Object</code><span id="_tmp_pre_8" class="cye-lm-tag"></span> (which amounts to a safe cast based on <em>a priori</em> information but is strictly speaking unsafe):</p> 
+<pre>
+Vehicle clonedVehicle = (Vehicle) originalVehicle.customClone();</pre>
+  
+<p pid="11" class="cye-lm-tag">Note that we can still declare the type of the vehicle to be a <code>Object</code><span id="_tmp_pre_12" class="cye-lm-tag"></span> and the return type would revert to its original type of <code>Object</code>:</p> 
+<pre>
+Object clonedVehicle = originalVehicle.customClone();
+System.out.println(clonedVehicle.getModel()); // ERROR: getModel not a method of Object</pre>
+  
+<p pid="12" class="cye-lm-tag">Note that the return type cannot be overloaded with respect to a generic parameter, but it can be with respect to a generic class. For example, if the base class or interface method returns a <code>List&lt;Animal&gt;</code>, the return type of a subclass may be overridden to <code>ArrayList&lt;Animal&gt;</code>, but it <em>may not</em> be overridden to <code>List&lt;Dog&gt;</code>.</p> 
+<h2>2. Intersectional Generic Types</h2> 
+<p pid="13" class="cye-lm-tag">Creating a generic class is an excellent way of creating a set of classes that interact with composed objects in a similar manner. For example, a <code>List&lt;T&gt;</code> simply stores and retrieves objects of type <code>T</code> without an understanding of the nature of the elements it contains. In some cases, we want to constrain our generic type parameter (<code>T</code>) to have specific characteristics. For example, given the following interface</p> 
+<pre>
+public interface Writer {
+    public void write(); 
+}</pre>
+  
+<p pid="14" class="cye-lm-tag">We may want to create a specific collection of <code>Writers</code> in following with the <a href="https://dzone.com/articles/composite-design-pattern-java-0" rel="nofollow">Composite Pattern</a>:</p> 
+<pre>
+public class WriterComposite&lt;T extends Writer&gt; implements Writer {
+
+    private final List&lt;T&gt; writers;
+
+    public WriterComposite(List&lt;T&gt; writers) {
+        this.writers = writer;
+    }
+
+    @Override
+    public void write() {
+        for (Writer writer: this.writers) {
+            writer.write(); 
+        }
+    }
+}</pre>
+  
+<p pid="15" class="cye-lm-tag">We can now traverse a tree of <code>Writers</code>, not knowing whether the specific <code>Writer</code> we encounter is a standalone <code>Writer</code> (a leaf) or a collection of <code>Writers</code> (a composite). What if we also wanted our composite to act as a composite for readers as well as writers? For example, if we had the following interface</p> 
+<pre>
+public interface Reader {
+    public void read(); 
+}</pre>
+  
+<p pid="16" class="cye-lm-tag">How could we modify our <code>WriterComposite</code> to be a <code>ReaderWriterComposite</code>? One technique would be to create a new interface, <code>ReaderWriter</code>, that fuses the <code>Reader</code> and <code>Writer</code> interface together:</p> 
+<pre>
+public interface ReaderWriter implements Reader, Writer {}</pre>
+  
+<p pid="17" class="cye-lm-tag">Then we can modify our existing <code>WriterComposite</code> to be the following:</p> 
+<pre>
+public class ReaderWriterComposite&lt;T extends ReaderWriter&gt; implements ReaderWriter {
+
+    private final List&lt;T&gt; readerWriters;
+
+    public WriterComposite(List&lt;T&gt; readerWriters) {
+        this.readerWriters = readerWriters;
+    }
+
+    @Override
+    public void write() {
+        for (Writer writer: this.readerWriters) {
+            writer.write(); 
+        }
+    }
+
+    @Override
+    public void read() {
+        for (Reader reader: this.readerWriters) {
+            reader.read(); 
+        }
+    }
+}</pre>
+  
+<p pid="18" class="cye-lm-tag">Although this does accomplish our goal, we have created bloat in our code: We created an interface with the sole purpose of merging two existing interfaces together. With more and more interfaces, we can start to see a combinatoric explosion of bloat. For example, if we create a new <code>Modifier</code> interface, we would now need to create <code>ReaderModifier</code>, <code>WriterModifier</code>, and <code>ReaderWriter</code> interfaces. Notice that these interfaces do not add any functionality: They simply merge existing interfaces. </p> 
+<p pid="19" class="cye-lm-tag">To remove this bloat, we would need to be able to specify that our <code>ReaderWriterComposite</code> accepts generic type parameters if and only if they are both <code>Reader</code> and <code>Writer</code>. <u>Intersectional generic types</u> allow us to do just that. In order to specify that the generic type parameter must implement both the <code>Reader</code> and <code>Writer</code> interfaces, we use the <code>&amp;</code> operator between the generic type constraints:</p> 
+<pre>
+public class ReaderWriterComposite&lt;T extends Reader &amp; Writer&gt; implements Reader, Writer {
+
+    private final List&lt;T&gt; readerWriters;
+
+    public WriterComposite(List&lt;T&gt; readerWriters) {
+        this.readerWriters = readerWriters;
+    }
+
+    @Override
+    public void write() {
+        for (Writer writer: this.readerWriters) {
+            writer.write(); 
+        }
+    }
+
+    @Override
+    public void read() {
+        for (Reader reader: this.readerWriters) {
+            reader.read(); 
+        }
+    }
+}</pre>
+  
+<p pid="20" class="cye-lm-tag">Without bloating our inheritance tree, we are now able to constrain our generic type parameter to implement multiple interfaces. Note that the same constraint can be specified if <em>one</em> of the interfaces is an abstract class or concrete class. For example, if we changed our <code>Writer</code> interface into an abstract class resembling the following</p> 
+<pre>
+public abstract class Writer {
+    public abstract void write();
+}</pre>
+  
+<p pid="21" class="cye-lm-tag">We can still constrain our generic type parameter to be both a <code>Reader</code> and a <code>Writer</code>, but the <code>Writer</code> (since it is an abstract class and not an interface) must be specified first (also note that our <code>ReaderWriterComposite</code> now <code>extends</code> the <code>Writer</code> abstract class and <code>implements</code> the <code>Reader</code> interface, rather than implementing both):</p> 
+<pre>
+public class ReaderWriterComposite&lt;T extends Writer &amp; Reader&gt; extends Writer implements Reader {
+    // Same class body as before
+}</pre>
+  
+<p pid="22" class="cye-lm-tag">It is also important to note that this intersectional generic type can be used for more than two interfaces (or one abstract class and more than one interface). For example, if we wanted our composite to also include the <code>Modifier</code> interface, we could write our class definition as follows:</p> 
+<pre>
+public class ReaderWriterComposite&lt;T extends Reader &amp; Writer &amp; Modifier&gt; implements Reader, Writer, Modifier {
+
+    private final List&lt;T&gt; things;
+
+    public ReaderWriterComposite(List&lt;T&gt; things) {
+        this.things = things;
+    }
+
+    @Override
+    public void write() {
+        for (Writer writer: this.things) {
+            writer.write();
+        }
+    }
+
+    @Override
+    public void read() {
+        for (Reader reader: this.things) {
+            reader.read();
+        }
+    }
+
+    @Override
+    public void modify() {
+        for (Modifier modifier: this.things) {
+            modifier.modify();
+        }
+    }
+}</pre>
+  
+<p pid="23" class="cye-lm-tag">Although it is legal to perform the above, this may be a sign of a code smell (an object that is a <code>Reader</code>, a <code>Writer</code>, and a <code>Modifier</code> is likely to be something much more specific, such as a <code>File</code>).</p> 
+<p pid="61" class="cye-lm-tag">For more information on intersectional generic types, see the <a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.9" target="_blank" rel="nofollow">Java 8 language specification</a>.</p> 
+<h2>3. Auto-Closeable Classes</h2> 
+<p pid="24" class="cye-lm-tag">Creating a resource class is a common practice, but maintaining the integrity of that resource can be a challenging prospect, especially when exception handling is involved. For example, suppose we create a resource class, <code>Resource</code>, and want to perform an action on that resource that may throw an exception (the instantiation process may also throw an exception):</p> 
+<pre>
+public class Resource {
+
+    public Resource() throws Exception {
+        System.out.println("Created resource");
+    }
+
+    public void someAction() throws Exception {
+        System.out.println("Performed some action");
+    }
+
+    public void close() {
+        System.out.println("Closed resource");
+    }
+}</pre>
+  
+<p pid="25" class="cye-lm-tag">In either case (if the exception is thrown or not thrown), we want to close our resource to ensure there are no resource leaks. The normal process is to enclose our <code>close()</code> method in a <code>finally</code> block, ensuring that no matter what happens, our resource is closed before the enclosed scope of execution is completed:</p> 
+<pre>
+Resource resource = null;
+
+try {
+    resource = new Resource();
+    resource.someAction();
+} 
+catch (Exception e) {
+    System.out.println("Exception caught");
+}
+finally {
+    resource.close();
+}</pre>
+  
+<p pid="26" class="cye-lm-tag">By simple inspection, there is a lot of boilerplate code that detracts from the readability of the execution of <code>someAction()</code> on our <code>Resource</code> object. To remedy this situation, Java 7 introduced the <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html" target="_blank" rel="nofollow">try-with-resources</a> statement, whereby a resource can be created in the <code>try</code> statement and is automatically closed before the <code>try</code> execution scope is left. For a class to be able to use the try-with-resources, it must implement the <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html" target="_blank" rel="nofollow">AutoCloseable</a></code> interface:</p> 
+<pre>
+public class Resource implements AutoCloseable {
+
+    public Resource() throws Exception {
+        System.out.println("Created resource");
+    }
+
+    public void someAction() throws Exception {
+        System.out.println("Performed some action");
+    }
+
+    @Override
+    public void close() {
+        System.out.println("Closed resource");
+    }
+}</pre>
+  
+<p pid="27" class="cye-lm-tag">With our <code>Resource</code> class now implementing the <code>AutoCloseable</code> interface, we can clean up our code to ensure our resource is closed prior to leaving the try execution scope:</p> 
+<pre>
+try (Resource resource = new Resource()) {
+    resource.someAction();
+} 
+catch (Exception e) {
+    System.out.println("Exception caught");
+}</pre>
+  
+<p pid="28" class="cye-lm-tag">Compared to the non-try-with-resources technique, this process is much less cluttered and maintains the same safety (the resource is <em>always</em> closed upon completion of the <code>try</code> execution scope). If the above try-with-resources statement is executed, we obtain the following output:</p> 
+<pre>
+Created resource
+Performed some action
+Closed resource</pre>
+  
+<p pid="29" class="cye-lm-tag">In order to demonstrate the safety of this try-with-resources technique, we can change our <code>someAction()</code> method to throw an <code>Exception</code>:</p> 
+<pre>
+public class Resource implements AutoCloseable {
+
+    public Resource() throws Exception {
+        System.out.println("Created resource");
+    }
+
+    public void someAction() throws Exception {
+        System.out.println("Performed some action");
+        throw new Exception();
+    }
+
+    @Override
+    public void close() {
+        System.out.println("Closed resource");
+    }
+}</pre>
+  
+<p pid="30" class="cye-lm-tag">If we rerun the try-with-resources statement again, we obtain the following output:</p> 
+<pre>
+Created resource
+Performed some action
+Closed resource
+Exception caught</pre>
+  
+<p pid="31" class="cye-lm-tag">Notice that even though an <code>Exception</code> was thrown while executing the <code>someAction()</code> method, our resource was closed and <em>then</em> the <code>Exception</code> was caught. This ensures that prior to leaving the <code>try</code> execution scope, our resource is guaranteed to be closed. <u>It is also important to note that a resource can implement the</u> <code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html" target="_blank" rel="nofollow"><b>Closeable</b></a></code><u> interface and still use a try-with-resources statement. </u>The difference between implementing the <code>AutoCloseable</code> interface and the <code>Closeable</code> interface is a matter of the type of the exception thrown from the <code>close()</code> method signature: <code>Exception</code> and <code>IOException</code>, respectively. In our case, we have simply changed the signature of the <code>close()</code> method to not throw an exception.</p> 
+<h2>4. Final Classes and Methods</h2> 
+<p pid="32" class="cye-lm-tag">In nearly all cases, the classes we create can be extended by another developer and customized to fit the needs of that developer (we can extend our own classes), even it was not our intent for our classes to be extended. While this suffices for most cases, there may be times when we do not want a method to be overridden, or more generally, have one of our classes extended. For example, if we create a <code>File</code> class that encapsulates the reading and writing of a file on the file system, we may not want any subclasses to override our <code>read(int bytes)</code> and <code>write(String data)</code> methods (if the logic in these methods is changed, it may cause the file system to become corrupted). In this case, we mark our non-extendable methods as <code>final</code>:</p> 
+<pre>
+public class File {
+
+    public final String read(int bytes) {
+        // Execute the read on the file system
+        return "Some read data";
+    }
+
+    public final void write(String data) {
+        // Execute the write to the file system
+    }
+}</pre>
+  
+<p pid="33" class="cye-lm-tag">Now, if another class wishes to override either the read or the write methods, a compilation error is thrown: <code>Cannot override the final method from File</code>. Not only have we documented that our methods should not be overridden, but the compiler has also ensured that this intention is enforced at compile time.</p> 
+<p pid="34" class="cye-lm-tag">Expanding this idea to an entire class, there may be times when we do not want a class we create to be extended. Not only does this make every method of our class non-extendable, but it also ensures that no subtype of our class can ever be created. For example, if we are creating a security framework that consumes a key generator, we may not want any outside developer to extend our key generator and override the generation algorithm (the custom functionality may be cryptographically inferior and compromise the system):</p> 
+<pre>
+public final class KeyGenerator {
+
+    private final String seed;
+
+    public KeyGenerator(String seed) {
+        this.seed = seed;
+    }
+
+    public CryptographicKey generate() {
+        // ...Do some cryptographic work to generate the key...
+    }
+}</pre>
+  
+<p pid="35" class="cye-lm-tag">By making our <code>KeyGenerator</code> class <code>final</code>, the compiler will ensure that no class can extend our class and pass itself to our framework as a valid cryptographic key generator. While it may appear to be sufficient to simply mark the <code>generate()</code> method as <code>final</code>, this does not stop a developer from creating a custom key generator and passing it off as a valid generator. Being that our system is security-oriented, it is a good idea to be as distrustful of the outside world as possible (a clever developer might be able to change the generation algorithm by changing the functionality of other methods in the <code>KeyGenerator</code> class if those methods we present).</p> 
+<p pid="36" class="cye-lm-tag">Although this appears to be a blatant disregard for the <a href="https://en.wikipedia.org/wiki/Open/closed_principle" target="_blank" rel="nofollow">Open/Closed Principle</a> (and it is), there is a good reason for doing so. As can be seen in our security example above, there are many times where we do not have the luxury of allowing the outside world to do what it wants with our application and we must be very deliberate in our decision making about inheritance. This concept is so ubiquitous that languages such as C# default a class as final (it cannot be extended), and it must be specified as open by the developer. Moreover, writers such as Josh Bolch even go so far as to say that a class should either be deliberately designed to be extended or else it should be explicitly closed for extension (<a href="https://www.amazon.com/Effective-Java-2nd-Joshua-Bloch/dp/0321356683" target="_blank" rel="nofollow">Effective Java</a>). Although he purposely overstated this idea (see <a href="http://www.artima.com/intv/blochP.html" target="_blank" rel="nofollow">Documenting for Inheritance or Disallowing It</a>), he makes a great point: We should be very deliberate about which of our classes should be extended, and which of our methods are open for overriding.</p> 
+<h2>Conclusion</h2> 
+<p pid="37" class="cye-lm-tag">While most of the code we write utilizes only a fraction of the capabilities of Java, it suffices to solve most of the problems that we encounter. There are times though that we need to dig a little deeper into the language and dust off those forgotten or unknown parts of the language to solve a specific problem. Some of these techniques, such as covariant return types and intersectional generic types may be used in one-off situations, while others, such as auto-closeable resources and final methods and classes can and should be used to more often to produce more readable and more precise code. Combining these techniques with daily programming practices aids in not only a better understanding of our intentions but also better, more well-written Java.</p>
+                </div>
+<br><hr>
+<div class="content-html" dz-code-container="" ng-non-bindable="" itemprop="text">
+                    <p pid="74">The majority of our day-to-day programming tasks consist of applying the same suite of techniques, and for the majority of cases, these go-to techniques suffice in accomplishing our goals. There are times, however, when we need to go beyond the normal techniques and delve into the toolbox to find the strategy that will solve the problem using the simplest means possible. In <a href="https://dzone.com/articles/4-techniques-for-writing-better-java" rel="nofollow">the previous article</a> in this series, we delved into four particular techniques that can be used in a pinch to create better Java software; in this article, we will delve into some general design strategies and targeted implementation techniques that will help in solving both common and nuanced problems, namely:</p> 
+<ol> 
+ <li>Only perform target optimizations</li> 
+ <li>Favor enums over constants</li> 
+ <li>Define an <code>equals()</code> method</li> 
+ <li>Favor polymorphism over conditionals</li> 
+</ol> 
+<p pid="75">It is important to note that not every technique described in this article will be applicable in all situations. We are not in the business of creating <em>always</em> or <em>never</em> rules. Instead, each of these techniques requires mature and experienced judgment to discern when and where to apply them.</p> 
+<h2 pid="59">1. Only Perform Targeted Optimizations</h2> 
+<p pid="60">Performance concerns are at the core of almost every large-scale software system. While we desire to produce the most efficient code we can, many times it is difficult to find the places in our code where we can perform optimizations that actually make a difference. For example, is the following code a performance bottleneck?</p> 
+<pre>
+public void processIntegers(List&lt;Integer&gt; integers) {
+
+    for (Integer value: integers) {
+        for (int i = integers.size() - 1; i &gt;= 0; i--) {
+            value += integers.get(i);
+        }
+    }
+}</pre>
+<p pid="79"><br></p> 
+<p pid="62"><em>It depends</em>. By inspection, we can see that our processing algorithm is <em>O(n<sup>3</sup>)</em> (using <a href="https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/big-o-notation" target="_blank" rel="nofollow">Big-O notation</a>), where <em>n </em>is the size of the integers list. If <em>n</em> is only 5, there is no real issue, as only 25 logical iterations are performed. If on the other hand, <em>n</em> is 100,000, then we <em>may</em> have a problem on our hands. Notice that we still do not know for sure whether we have a problem. Although this method would require 10,000,000,000 logic iterations, this still does not guarantee that will have a performance issue.</p> 
+<p pid="63">For example, if the client that calls our method above executes it within its own thread and asynchronously waits for the computation to complete, it may very well execute in an acceptable amount of time. Likewise, if no client actually calls this method when the system is deployed in a production environment, then any optimization we make will have been unnecessary and will not have contributed to increasing the overall performance of our system. In fact, we will have made the system more complicated by making our performance optimization, while at the same time, not increasing the performance of the system.</p> 
+<p pid="65">It is important to note that very few optimizations come for free: Instead, we usually implement techniques, such as caching, loop unrolling, or pre-computing values (such as the creation of a look-up table), that adds to the complexity of our system and commonly reduces the readability of our code. If our optimization actually increases the performance of our system, then this increased complexity may pay off, but in order to make an educated decision, we must know two pieces of information first:</p> 
+<ol> 
+ <li>Our performance requirements</li> 
+ <li>Where the performance bottlenecks are located</li> 
+</ol> 
+<p pid="66">In the first case, we need to know the performance envelope that our system is required to operate within. If we are within that envelope and there are no complaints from the end users of the system, there is likely no need to make a performance optimization. There may come a point down the road, though, when new functionality is added or the data size of our system increases and we are forced to make such optimizations.</p> 
+<p pid="67">In that case, we should not go by our gut or even inspection. Even the best software engineers are prone to target the wrong optimizations in a system. Even experienced developers such as Martin Fowler is susceptible to repeating these mistakes, as explained in <a href="https://www.amazon.com/Refactoring-Improving-Design-Existing-Code/dp/0201485672" target="_blank" rel="nofollow">Refactoring</a> (p. 70):</p> 
+<blockquote>
+  The interesting thing about performance is that if you analyze most programs, you find that they waste most of their time in a small fraction of code. If you optimize all the code equally, you end up with 90 percent of the optimizations wasted, because you are optimizing code that isn't run much. The time spent making the program fast, the time lost because of lack of clarity, is all wasted time. 
+</blockquote> 
+<p pid="69">That is a striking bit of wisdom and one that we as mature developers should take seriously. Not only will most of our first guesses at not improve the performance of our system, 90% of them will be a sheer waste of development time. Instead, we should <a href="https://en.wikipedia.org/wiki/Profiling_(computer_programming)" target="_blank" rel="nofollow">profile</a> the system as we execute common use cases in a production environment (or an environment that sufficiently mimics the production environment) and find where the bulk of the system resources are used during execution. If, for example, a majority of the execution time is spent in 10% of the code, then optimizing the other 90% of the code is simply a waste.</p> 
+<p pid="70">Using that knowledge, we should start with the highest culprit, according to the profiling results. This will ensure that we actually increase the performance of our system in a meaningful way. After each optimization, the profiling step should be repeated. This allows us not only to ensure that we have actually improved the performance of our system but also to see where the performance bottlenecks are located after we have improved a portion of the system (since one bottleneck is removed, others may now consume more of the overall resources of the system). It is important to note that the percentage of time spent in the existing bottlenecks will likely increase since remaining bottlenecks are temporally constant and the overall execution time should have decreased with the removal of the targeted bottleneck.</p> 
+<p pid="71">Although a full examination of profiling in a Java system requires volumes, there are some very common tools that can aid in discovering the performance hot-spots of a system, including <a href="http://jmeter.apache.org/" target="_blank" style="background-color: rgb(255, 255, 255);" rel="nofollow">JMeter</a>, <a href="https://www.appdynamics.com" target="_blank" style="background-color: rgb(255, 255, 255);" rel="nofollow">AppDynamics</a>, and <a href="https://www.yourkit.com/java/profiler/features/" target="_blank" rel="nofollow">YourKit</a>. Also, see DZone's own <a href="https://dzone.com/guides/performance-and-monitoring" rel="nofollow">Guide to Performance and Monitoring</a> for more general information on performance and optimizations for Java programs.</p> 
+<p pid="73">While performance is a very important part of any large-scale software system and should be part of the automated suite of tests included in the delivery pipeline of a product, optimizations should not be blind or untargeted. Instead, optimizations should be made to specific portions of code that are known to be performance bottlenecks. Not only does this stop us from adding complexity to our systems with minimal payoffs, it also stops us from misusing our valuable development time.</p> 
+<h2 pid="1">2. Favor Enums Over Constants</h2> 
+<p pid="23">There are many cases where we want to list a set of predefined or constant values, such as the HTTP response codes we may encounter in a web application. One of the most common implementation techniques is to create a class with a series of static final values, each with some descriptive name:</p> 
+<pre>
+public class HttpResponseCodes {
+    public static final int OK = 200;
+    public static final int NOT_FOUND = 404;
+    public static final int FORBIDDEN = 403;
+}
+
+if (getHttpResponse().getStatusCode() == HttpResponseCodes.OK) {
+    // Do something if the response code is OK 
+}</pre>
+<p pid="80"><br></p> 
+<p pid="25">While this suffices, it has some series drawbacks:</p> 
+<ol> 
+ <li>We can pass any int where a response code is expected</li> 
+ <li>We cannot call methods on our status codes since they are primitive values</li> 
+</ol> 
+<p pid="26">In the first case, we are simply creating specific constants to represent special integer values, but this does not restrict a method or variable to use only the status codes we have defined. For example:</p> 
+<pre>
+public class HttpResponseHandler {
+
+    public static void printMessage(int statusCode) {
+        System.out.println("Recieved status of " + statusCode); 
+    }
+}
+
+HttpResponseHandler.printMessage(15000);</pre>
+<p pid="81"><br></p> 
+<p pid="28">Although <code>15000</code>is not a valid HTTP response code, we have not restricted clients from supplying any valid integer. In the second case, we have no way of internally defining methods for our status code. For example, if we wanted to check if a given status code is a success code (a 200-level status code), we have to define a separate function:</p> 
+<pre>
+public class HttpResponseCodes {
+    public static final int OK = 200;
+    public static final int NOT_FOUND = 404;
+    public static final int FORBIDDEN = 403;
+
+    public static boolean isSuccess(int statusCode) {
+        return statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300; 
+    }
+}
+
+if (HttpResponseCodes.isSuccess(getHttpResponse().getStatusCode())) {
+    // Do something if the response code is a success code 
+}</pre>
+<p pid="82"><br></p> 
+<p pid="30">In order to resolve these issues, we would need to change our constant type from a primitive to a custom class and allow only specific objects of our custom class. This exactly the purpose of <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html" target="_blank" rel="nofollow">Java enumerations (enum)</a>. Using an enum, we can solve both these issues with a single stroke:</p> 
+<pre>
+public enum HttpResponseCodes {
+
+    OK(200),
+    FORBIDDEN(403),
+    NOT_FOUND(404);
+
+    private final int code; 
+
+    HttpResponseCodes(int code) {
+        this.code = code;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public boolean isSuccess() {
+        return code &gt;= 200 &amp;&amp; code &lt; 300;
+    }
+}
+
+if (getHttpResponse().getStatusCode().isSuccess()) {
+    // Do something if the response code is a success code 
+}</pre>
+<p pid="83"><br></p> 
+<p pid="32">Likewise, we can now restrict callers to only supply valid status codes in a method call:</p> 
+<pre>
+public class HttpResponseHandler {
+
+    public static void printMessage(HttpResponseCode statusCode) {
+        System.out.println("Recieved status of " + statusCode.getCode()); 
+    }
+}
+
+HttpResponseHandler.printMessage(HttpResponseCode.OK);</pre>
+<p pid="84"><br></p> 
+<p pid="35">It is important to note that this technique suggests that we should <em>favor</em> enumerations over constants, not use enumerations indiscriminately. In some cases, we may wish to use a constant to represent a special value, but allow other values to be supplied. For example, if we have a well-known numeric value, we can capture that value (and reuse it) with a constant:</p> 
+<pre>
+public class NumericConstants {
+    public static final double PI = 3.14;
+    public static final double UNIT_CIRCLE_AREA = PI;
+}
+
+public class Rug {
+
+    private final double area;
+
+    public class Run(double area) {
+        this.area = area;
+    }
+
+    public double getCost() {
+        return area * 2;
+    }
+}
+
+// Create a carpet that is 4 feet in diameter (radius of 2 feet)
+Rug fourFootRug = new Rug(2 * NumericConstants.UNIT_CIRCLE_AREA);</pre>
+<p pid="85"><br></p> 
+<p pid="38">The rule for using enumerations over constants can, therefore, be distilled into:</p> 
+<blockquote>
+  Use enumerations when all possible discrete values are known 
+ <em>a priori</em> 
+</blockquote> 
+<p pid="40">In the case of our HTTP response codes, we know all possible values for HTTP status codes (found in <a href="https://tools.ietf.org/html/rfc7231#page-47" target="_blank" rel="nofollow">RFC 7231</a>, which defines the HTTP 1.1 protocol). Therefore, we used an enumeration. In the case of our area calculation, we do not know all possible values of the area that can be supplied (any possible double is valid), but at the same time, we wished to create a constant for circular rugs that made the calculation easier (and more readable); therefore, we defined a series of constants.</p> 
+<p pid="40">If we did not know all possible values ahead of time but wished to include fields or methods for each value, we could simply create a new class to represent our data. Although there is no <em>always</em> or <em>never</em> rule for using enumerations, the key to knowing when and when not to use enumerations is being aware of all values ahead of time and forbidding the use of any others.</p> 
+<h2 pid="6">3. Define an equals() Method</h2> 
+<p pid="2">Identity can be a difficult issue to solve: Are two objects the same if they occupy the same location in memory? Are they the same if their IDs are the same? Or are they the same if all of their fields are equal? Although each class may have its own identity logic, there is a tendency to proliferate identity checks throughout different places in a system. For example, if we have the following class for a purchase order...</p> 
+<pre>
+public class Purchase {
+
+    private long id;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+}</pre>
+<p pid="86"><br></p> 
+<p pid="6">...there is a common tendency to have conditionals, such as the following, repeated in multiple places through the code:</p> 
+<pre>
+Purchase originalPurchase = new Purchase();
+Purchase updatedPurchase = new Purchase();
+
+if (originalPurchase.getId() == updatedPurchase.getId()) {
+    // Execute some logic for equal purchases 
+}</pre>
+<p pid="87"><br></p> 
+<p pid="8">The more we repeat these calls (and in turn, violate the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself" target="_blank" rel="nofollow">DRY Principle</a>), the more we spread the knowledge of <code>Purchase</code>'s identity. If for some reason, we change the identity logic for our <code>Purchase</code> class (for example, change the type of our identifier), we need to update the plethora of locations that our identity logic is located.</p> 
+<p pid="9">Instead of spreading the identity logic for our <code>Purchase</code> class through our system, we should internalize this logic within our class. At first glance, we could create a new method, such as <code>isSame</code>, that accepts a <code>Purchase</code> object and compares the IDs of each to see if they are the same:</p> 
+<pre>
+public class Purchase {
+
+    private long id;
+
+    public boolean isSame(Purchase other) {
+        return getId() == other.gerId();   
+    }
+}</pre>
+<p pid="88"><br></p> 
+<p pid="11">While this is a valid solution, we are ignoring the built-in functionality of Java: using the <code>equals</code> method. Every class, by nature of implicitly implementing the <code>Object</code> class, inherits the <code>equals</code> method. By default, this method checks for object identity (the same object in memory) against the supplied object, as illustrated in the following snippet from the <code>Object</code> class definition in the JDK (version 1.8.0_131):</p> 
+<pre>
+public boolean equals(Object obj) {
+    return (this == obj);
+}</pre>
+<p pid="89"><br></p> 
+<p pid="11">This equals method serves as a natural place to inject our identity logic (by overriding the default <code>equals</code> implementation):</p> 
+<pre>
+public class Purchase {
+
+    private long id;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+
+        if (this == other) {
+            return true;
+        }
+        else if (!(other instanceof Purchase)) {
+            return false;
+        }
+        else {
+            return ((Purchase) other).getId() == getId();
+        }
+    }
+}</pre>
+<p pid="90"><br></p> 
+<p pid="13">Although this <code>equals</code> method may appear complicated, since the <code>equals</code> method only accepts arguments of type Object, there are only three cases that we must account for:</p> 
+<ol> 
+ <li>The other object is the current object (i.e. <code>originalPurchase.equals(originalPurchase)</code>), which is by definition the same object, and thus we return <code>true</code></li> 
+ <li>The other object is not a <code>Purchase</code> object, in which case we cannot compare the IDs of the purchases, and therefore, the two objects are not equal</li> 
+ <li>The other object is not the same object and it is a <code>Purchase</code>, thus the equality depends on the IDs of the current <code>Purchase</code> and the other <code>Purchase</code> being equal (we much <a href="https://softwareengineering.stackexchange.com/a/148617" target="_blank" rel="nofollow">downcast</a> the other object to a <code>Purchase</code>, but this is a safe cast since we know that the other object is in actuality a <code>Purchase</code> object)</li> 
+</ol> 
+<p pid="14">We can now refactor our previous conditional to the following:</p> 
+<pre>
+Purchase originalPurchase = new Purchase();
+Purchase updatedPurchase = new Purchase();
+
+if (originalPurchase.equals(updatedPurchase)) {
+    // Execute some logic for equal purchases 
+}</pre>
+<p pid="91"><br></p> 
+<p pid="17">Apart from reducing the duplication in our system, there are also some extra advantages to overriding the default <code>equals</code> method. For example, if we construct a list of <code>Purchase</code> objects and check to see if the list contains another <code>Purchase</code> object with the same ID (different object in memory), we receive a value of <code>true</code>, since the two are considered equal:</p> 
+<pre>
+List&lt;Purchase&gt; purchases = new ArrayList&lt;&gt;();
+
+purchases.add(originalPurchase);
+purchases.contains(updatedPurchase); // True</pre>
+<p pid="92"><br></p> 
+<p pid="19">In general, anywhere that the Java language wishes to test the equality of two objects, it will use the equals method that we have overridden. If we wish to use the default object equality check that we have hidden in our overridden implementation, we can still do so by using the <code>==</code> operator as follows:</p> 
+<pre>
+if (originalPurchase == updatedPurchase) {
+    // The two objects are the same objects in memory 
+}</pre>
+<p pid="93"><br></p> 
+<p pid="99">It is also important to note that when the <code>equals</code> method is overridden, the <code>hashCode</code> method should also be overridden. For more information on the relationship between these two methods and how to properly define the hashCode method, see <a href="https://stackoverflow.com/questions/27581/what-issues-should-be-considered-when-overriding-equals-and-hashcode-in-java" target="_blank" rel="nofollow">this thread</a>.</p> 
+<p pid="22">As we have seen, not only does overriding the <code>equals</code> method internalize the identity logic for a class and reduce the proliferation of that logic throughout our system, it also allows the Java language make educated decisions about our classes.</p> 
+<h2 pid="33">4. Favor Polymorphism Over Conditionals</h2> 
+<p pid="34">Conditionals are a ubiquitous part of any programming language and for good reason. Their inclusion allows us to change the behavior of our system based the instantaneous state of a given value or object. For example, if we were to calculate the balance for various bank accounts, we could develop the following:</p> 
+<pre>
+public enum BankAccountType {
+    CHECKING,
+    SAVINGS,
+    CERTIFICATE_OF_DEPOSIT;
+}
+
+public class BankAccount {
+
+    private final BankAccountType type;
+
+    public BankAccount(BankAccountType type) {
+        this.type = type;
+    }
+
+    public double getInterestRate() {
+
+        switch(type) {
+            case CHECKING:
+                return 0.03; // 3%
+            case SAVINGS:
+                return 0.04; // 4%
+            case CERTIFICATE_OF_DEPOSIT:
+                return 0.05; // 5%
+            default:
+                throw new UnsupportedOperationException();
+        }
+    }
+
+    public boolean supportsDeposits() {
+
+        switch(type) {
+            case CHECKING:
+                return true;
+            case SAVINGS:
+                return true;
+            case CERTIFICATE_OF_DEPOSIT:
+                return false;
+            default:
+                throw new UnsupportedOperationException();
+        }
+    }
+}</pre>
+<p pid="94"><br></p> 
+<p pid="42">While this means of calculating earned interest and differentiating if an account supports deposits is sufficient for a simple program, it betrays a noticeable flaw: We are deciding on the behavior of our system based on the type of a given account. Not only does this require that we check the type each time we wish to make a decision, it also requires that we repeat this logic each and every time we need to make that decision. For example, in the above design, we have to make this check in both methods. This can become unruly, especially when we receive a requirement to add a new account type.</p> 
+<p pid="43">Instead of using the account type as the differentiator, we can use polymorphism to implicitly make that decision. In order to do this, we transform the <code>BankAccount</code> concrete class into an interface and push the decision-making into a series of concrete classes that represent each type of bank account:</p> 
+<pre>
+public interface BankAccount {
+    public double getInterestRate();
+    public boolean supportsDeposits();
+}
+
+public class CheckingAccount implements BankAccount {
+
+    @Override
+    public double getIntestRate() {
+        return 0.03;
+    }
+
+    @Override
+    public boolean supportsDeposits() {
+        return true;
+    }
+}
+
+public class SavingsAccount implements BankAccount {
+
+    @Override
+    public double getIntestRate() {
+        return 0.04;
+    }
+
+    @Override
+    public boolean supportsDeposits() {
+        return true;
+    }
+}
+
+public class CertificateOfDepositAccount implements BankAccount {
+
+    @Override
+    public double getIntestRate() {
+        return 0.05;
+    }
+
+    @Override
+    public boolean supportsDeposits() {
+        return false;
+    }
+}</pre>
+<p pid="95"><br></p> 
+<p pid="45">Not only does this decentralize the knowledge of each account into its own class, but it allows our design to vary in two important ways. First, if we wanted to add a new bank account type, we simply create a new concrete class that implements the <code>BankAccount</code> interface and supply implementations for both interface methods. In the conditional design, we would have had to add a new value in our enumeration, add new case statements in both methods, and insert logic for the new account under each case statement.</p> 
+<p pid="46">Second, if we wish to add a new method to the <code>BankAccount</code> interface, we simply add the new method in each of the concrete classes. In the conditional design, we would have to duplicate the existing switch statement and add it to our new method. Furthermore, we then would have to add the logic for each account type within each case statement.</p> 
+<p pid="48">Mathematically, when we create a new method or add a new type, we have to make the same number of logical changes in both the polymorphic and conditional designs. For example, if we add a new method, in the polymorphic design, we have to add the new method to all <em>n </em>bank account concrete classes, while in the conditional design, we have to add <em>n</em> new case statements to our new method. If we add a new account type, in the polymorphic design, we must implement all <em>m</em> number of methods in the <code>BankAccount</code> interface, while in the conditional design, we must add a new case statement to each of the <em>m</em> existing methods.</p> 
+<p pid="49">While the number of changes we must make is equal, the nature of the changes is very different. In the polymorphic design, if we add a new account type and forget to include a method, the compiler will throw an error, since we did not implement all of the methods in our <code>BankAccount</code> interface. In the conditional design, there is no such check to ensure that we have a case statement for each of the types. We can simply forget to update each of the switch statements if a new type is added. This problem is exacerbated the more we duplicate our switch statements. We are humans and we are prone to make mistakes. Thus, anytime we can rely on the compiler to alert us of our mistakes, we would be wise to do so.</p> 
+<p pid="50">A second important note about these two designs is that they are externally equivalent. For example, if we wanted to check the interest rate for a checking account, the conditional design would resemble the following:</p> 
+<pre>
+BankAccount checkingAccount = new BankAccount(BankAccountType.CHECKING);
+System.out.println(checkingAccount.getInterestRate()); // Output: 0.03</pre>
+<p pid="96"><br></p> 
+<p pid="52">Conversely, the polymorphic design would resemble the following:</p> 
+<pre>
+BankAccount checkingAccount = new CheckingAccount();
+System.out.println(checkingAccount.getInterestRate()); // Output: 0.03</pre>
+<p pid="97"><br></p> 
+<p pid="54">From an outside perspective, we are simply calling <code>getInterestRate()</code> on a <code>BankAccount</code> object. This is made even more obvious if we abstract the creation process into a factory class:</p> 
+<pre>
+public class ConditionalAccountFactory {
+
+    public static BankAccount createCheckingAccount() {
+         return new BankAccount(BankAccountType.CHECKING);
+    }
+}
+
+public class PolymorphicAccountFactory {
+
+    public static BankAccount createCheckingAccount() {
+         return new CheckingAccount();
+    }
+}
+
+// In both cases, we create the accounts using a factory
+BankAccount conditionalCheckingAccount = ConditionalAccountFactory.createCheckingAccount();
+BankAccount polymorphicCheckingAccount = PolymorphicAccountFactory.createCheckingAccount();
+
+// In both cases, the call to obtain the interest rate is the same
+System.out.println(conditionalCheckingAccount.getInterestRate()); // Output: 0.03
+System.out.println(polymorphicCheckingAccount.getInterestRate()); // Output: 0.03</pre>
+<p pid="98"><br></p> 
+<p pid="56">The replacement of conditional logic with polymorphic classes is so common that there are published procedures for refactoring conditional statements into polymorphic classes. A simple example can be found <a href="https://refactoring.guru/replace-conditional-with-polymorphism" target="_blank" rel="nofollow">here</a>. In addition, p. 255 of <a href="https://www.amazon.com/Refactoring-Improving-Design-Existing-Code/dp/0201485672" target="_blank" rel="nofollow">Refactoring, by Martin Fowler</a>, describes a detailed process for conducting this refactor.</p> 
+<p pid="58">Just as with the other techniques in this article, there is no hard or fast rule for when to perform the conversion from conditional logic to polymorphic classes. As a matter of fact, it is not suggested in all cases. In <a href="https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530" target="_blank" rel="nofollow">Test Driven Design: By Example</a>, Kent Beck designs a simple currency system with the intent of using polymorphic classes, but finding that this over-complicates the design, he refactors his design to a non-polymorphic style. Experience and sound judgment will dictate when is the right time to make the switch from conditional code to polymorphic code.</p> 
+<h2 pid="77">Conclusion</h2> 
+<p pid="78">Although the normal and daily techniques that we use as programmers suffice for most of the tasks that are laid before us, there are times when we need to leave the beaten path and delve into the toolbox. At times, this may require making a sound performance optimization decision or deciding between polymorphic hierarchies or conditionals. In other cases, this may mean creating restrictions on our constants or explicitly defining the identity of an object using the <code>equals</code> method. Whatever the case, expanding breadth and depth of our knowledge aids in not only making more educated decisions as developers but also making wiser developers.</p>
+                </div>
+<br><hr>
+<div class="content-html" dz-code-container="" ng-non-bindable="" itemprop="text">
+                    <p pid="93">Programming skills are like many other skills in life and require constant improvement: If we are not going forward, we are going backward. Standing still is not an option. In this third installation of the <a href="https://dzone.com/articles/4-techniques-for-writing-better-java" target="_blank" rel="nofollow">4 Techniques for Writing Better Java</a> series, we cover four important topics: (1) Validating arguments using methods provided by the standard Java library, (2) understanding the important <code>Object</code> class, (3) experimenting and learning by playing with jshell, and (4) finding and reading the most well-written code we can, in both books and in the source code of Java itself.</p> 
+<p pid="93">Some of these techniques are purely programming techniques that can help in a specific pinch while others focus on the tools and environment surrounding the Java ecosystem. Regardless of the individual nature of each technique, when applied with diligence and sound judgment, each can help improve the Java code written by developers, both novice and expert.</p> 
+<h2>1. Validate Arguments With Standard Methods</h2> 
+<p pid="2">Validating input is an inevitable part of any program. For example, if we pass an object as an argument to a method and expect to call a method on that object, we must first validate that the supplied object is not null. Additionally, we may pass this object to another method (possibly one that we did not develop) and this second method may expect its arguments to not be null, causing an error if a null argument is passed.</p> 
+<p pid="2">This situation gets more involved when the execution of an invalid statement may cause an error in a different point in the execution of a program than where an object was supplied. Even worse, the error may occur with no evidence of the cause anywhere in the stack trace. For example, if we create an <a href="https://stackoverflow.com/a/3162682/2403253" target="_blank" rel="nofollow">immutable</a> class that stores an object and a method that uses this object is called in another thread, a <code>NullPointerException</code> (NPE) may be thrown in the calling thread, with no sign as to where the assignment of the object occurred. An example of such a class is depicted below.</p> 
+<pre>
+public class Car {
+
+    private final Engine engine;
+
+    public Car(Engine engine) {
+        this.engine = engine;
+    }
+
+    public void setRpm(int rpm) {
+        engine.setRpm(rpm);
+    }
+}</pre>
+<p pid="4"><br></p> 
+<p pid="5">Since the error may occur in a disparate location from the initial assignment, it is imperative that we validate the arguments at the assignment site and <strong>fail-fast</strong> if invalid arguments are supplied. To do this, we can add a <strong>null check</strong> to ensure that if a null argument is passed to the assignment location, it is immediately rejected and results in an NPE being thrown:</p> 
+<pre>
+public class Car {
+
+    private final Engine engine;
+
+    public Car(Engine engine) {
+
+        if (engine == null) {
+            throw new NullPointerException("Engine cannot be null");
+        }
+
+        this.engine = engine;
+    }
+
+    public void setRpm(int rpm) {
+        engine.setRpm(rpm);
+    }
+}</pre>
+<p pid="7"><br></p> 
+<p pid="8">If the supplied argument is not null, no exception is thrown and the class functions as normal. Although this is a simple solution to the problem, its deficiencies are highlighted when more than one argument must be validated. For example, if we supply an <code>Engine</code> and a <code>Transmission</code> object to the <code>Car</code> constructor, our class grows to the following:</p> 
+<pre>
+public class Car {
+
+    private final Engine engine;
+    private final Transmission transmission;
+
+    public Car(Engine engine, Transmission transmission) {
+
+        if (engine == null) {
+            throw new NullPointerException("Engine cannot be null");
+        }
+
+        if (transmission == null) {
+            throw new NullPointerException("Transmission cannot be null");
+        }
+
+        this.engine = engine;
+        this.transmission = transmission;
+    }
+
+    public void setRpm(int rpm) {
+        engine.setRpm(rpm);
+    }
+
+    public void setGear(int gear) {
+        transmission.setGear(gear);
+    }
+}</pre>
+<p pid="10"><br></p> 
+<p pid="11">As the number of null checks grows, the clarity of our code begins to diminish. This is such as a common problem that as of Java Development Kit (JDK) 7, a new class was added (called <code>Objects</code>) which includes the <code>requireNonNull</code> method that allows developers to check that an object is not null. If the object supplied to the <code>requireNonNull</code> method is null, an NPE is thrown. This method also returns the supplied object which allows for compact assignments to be made: If the supplied object is null, an NPE is thrown, but if the supplied object is not null, it is returned and can be assigned to a variable. Using this JDK method, we can reduce the null checking logic of the <code>Car</code> constructor to the following:</p> 
+<pre>
+public class Car {
+
+    private final Engine engine;
+    private final Transmission transmission;
+
+    public Car(Engine engine, Transmission transmission) {
+        this.engine = Objects.requireNonNull(engine, "Engine cannot be null");
+        this.transmission = Objects.requireNonNull(transmission, "Transmission cannot be null");
+    }
+
+    public void setRpm(int rpm) {
+        engine.setRpm(rpm);
+    }
+
+    public void setGear(int gear) {
+        transmission.setGear(gear);
+    }
+}</pre>
+<p pid="13"><br></p> 
+<p pid="14">Using this standard method, the intent of our code is much clearer: Store the supplied <code>Engine</code> and <code>Transmission</code> objects if they are not null. The <code>requireNonNull</code> method is also flexible enough to allow for a customized message to be supplied and has a close cousin, <code>requireNonNullElse</code>, that allows for a default value to be supplied. The <code>requireNonNullElse</code> will return the supplied default value in the event that the supplied object is null, rather than throwing an NPE. In total, there are three overloadings of the <code>requireNotNull</code> method and two overloadings of the <code>requireNotNullElse</code> method:</p> 
+<ol> 
+ <li><code>requireNonNull(T obj)</code>: Throws an NPE if the supplied object is null</li> 
+ <li><code>requireNonNull(T obj, String message)</code>: Throws an NPE with the supplied message if the supplied argument is null</li> 
+ <li><code>requireNonNull(T obj, Supplier&lt;String&gt; messageSupplier)</code>: Throws an NPE with a message generated by the <code>messageSupplier</code> argument if the supplied object is null; the message is generated at the time the NPE is thrown; this method should be used when the message for the exception can be costly to create (and should therefore only be created if an NPE is thrown)</li> 
+ <li><code>requireNonNullElse(T obj, T defaultObj)</code>: Returns the supplied object if it is not null or returns the supplied default value otherwise</li> 
+ <li><code>requireNonNullElseGet(T obj, Supplier&lt;? extends T&gt; supplier)</code>: Returns the supplied object if it is not null or generates a default value and returns it otherwise; the default value is generated only if the supplied object is null; this method should be used when the default value may be costly to create (and should only be generated when the supplied object is null)</li> 
+</ol> 
+<p pid="16">JDK 7 also includes two methods, <code>isNull</code> and <code>nonNull</code>, that are close counterparts to the above methods but instead return <code>true</code> and <code>false</code>, respectively, if the object supplied to them are null. These boolean-based methods should be used whenever an NPE is not desired and some custom exception or handling logic should be used. Note that the customary behavior in the Java environment is to throw an NPE when a supplied argument is null (rather than an <code>IllegalArgumentException</code> or some custom exception) and throwing an exception of a different type should be done with proper diligence and caution.</p> 
+<p pid="17">With the release of JDK 9, three more methods were introduced that allow developers to check that a supplied index or set of indices are within bounds:</p> 
+<ol> 
+ <li><code>checkFromIndexSize(int fromIndex, int size, int length)</code>: Throws an  <code>IndexOutOfBoundsException</code> (IOOBE) if the sum of the supplied <code>fromIndex</code> (inclusive) and <code>size</code> (exclusive) is within the range of <code>0</code> to <code>length</code> (exclusive) or returns <code>fromIndex</code> if valid; this method is useful for validating that accessing <em>n</em> elements (<code>size</code>), starting inclusively at the <code>fromIndex</code>, is valid for a collection or array with a given <code>length</code> </li> 
+ <li><code>checkFromToIndex(int fromIndex, int toIndex, int length)</code>: Throws an IOOBE if the supplied <code>fromIndex</code> (inclusive) to the supplied <code>toIndex</code> (exclusive) is within the range <code>0</code> to <code>length</code> (exclusive) or returns <code>fromIndex</code> if valid; this method is useful for validating that some range, inclusively from <code>fromIndex</code> exclusively to <code>toIndex</code>, is valid for a collection or array of a given <code>length</code> </li> 
+ <li><code>checkIndex(int index, int length)</code>: Throws an IOOBE if the supplied <code>index</code> is less than <code>0</code> or greater than or equal to the supplied <code>length</code>, or returns <code>index</code> if valid; this message is useful for validating that a given <code>index</code> is valid for a collection or array of a given <code>length</code></li> 
+</ol> 
+<p pid="19">We can use these index checking methods to ensure that a supplied index is correct for a given collection of objects, as depicted in the listing below:</p> 
+<pre>
+public class Garage {
+
+    private final List&lt;Car&gt; cars = new ArrayList&lt;&gt;();
+
+    public void addCar(Car car) {
+        cars.add(car);
+    }
+
+    public Car getCar(int index) {
+        int validIndex = Objects.checkIndex(index, cars.size());
+        return cars.get(validIndex);
+    }
+}</pre>
+<p pid="21"><br></p> 
+<p pid="22">Unfortunately, the index checking methods do not allow for a custom exception or even a custom exception message to be supplied. In some cases, the low abstraction level of an IOOBE is ill-suited for an application and a more high-level exception is needed. For example, depending on the context, we may not want clients of the <code>Garage</code> class to know we are storing the <code>Car</code> objects in a list (as opposed to a database or some remote service) and thus, throwing an IOOBE may reveal too much information or tie our interface too closely with its implementation. Instead, a <code>NoSuchElementException</code> may be more appropriate (or a custom exception if needed).</p> 
+<p pid="23">Taking these shortcomings into account, we can devise the following rule with regards to null checking and index checking of method (including constructor) arguments:</p> 
+<blockquote pid="24">
+  Use the JDK standard null checking and index checking methods when possible. Bare in mind that the abstraction level of the exceptions thrown by the standard index checking methods may be inappropriate. 
+</blockquote> 
+<h2 pid="6">2. Get to Know the Object Class</h2> 
+<p pid="60">One of the most common first-day lessons for object-orientation in Java is the default superclass for all classes: <code>Object</code>. This class constitutes the root of the entire Java type hierarchy and includes methods that are common among all Java types, both user-defined and those contained in the standard Java library. While these basics are nearly universal among the repertoire of Java developers, many of the details fall through the cracks. As a matter of fact, many of the details go unlearned, even for intermediate and advanced Java developers.</p> 
+<p pid="61">In total, the <code>Object</code> class has eleven methods that are inherited by all classes in the Java environment. While some of these methods, such as <code>finalize</code>, are deprecated and should never be overridden or explicitly called, other such as <code>equals</code> and <code>hashCode</code> are essential to daily programming in Java. While the depth of intricacies of the <code>Object</code> class are outside the scope of this article, we will focus on two of the most important methods in this ultimate class: <code>equals</code> and <code>hashCode</code>.</p> 
+<h3 pid="62">equals</h3> 
+<p pid="63">The <code>equals</code> method is a simple method in theory and a much more nuanced one in practice. This method allows for equality comparison between two objects, returning <code>true</code> if the objects are equal and <code>false</code> otherwise. Although this concept may sound simple, it is actually far from it. For example, can two objects of a different type be equal? Can two objects that are stored at different locations in memory (i.e. are different instances) be equal if their state is equal? How does equality effect other methods and characteristics of the <code>Object</code> class?</p> 
+<p pid="64">By default, the equals method returns <code>true</code> if two instances are equal. This is obvious if we look at the JDK 9 implementation of the <code>Object#equals</code> method:</p> 
+<pre>
+public boolean equals(Object obj) {
+    return (this == obj);
+}</pre>
+<p pid="65"><br></p> 
+<p pid="66">While this definition is strikingly simple, it hides some important characteristics of the equals method. In general, the entire Java environments makes five basic assumptions about how the equals method is implemented for <em>any</em> class, including user-defined classes, and these assumptions are recorded in the documentation for the <code>Object</code> class. These assumptions, as quoted from the aforementioned documentation, are as follows:</p> 
+<ol> 
+ <li>It is reflexive: for any non-null reference value <code>x</code>, <code>x.equals(x)</code> should return <code>true</code>.</li> 
+ <li>It is symmetric: for any non-null reference values <code>x</code> and <code>y</code>, <code>x.equals(y)</code> should return <code>true</code> if and only if <code>y.equals(x)</code> returns <code>true</code>.</li> 
+ <li>It is transitive: for any non-null reference values <code>x</code>, <code>y</code>, and <code>z</code>, if <code>x.equals(y)</code> returns <code>true</code> and <code>y.equals(z)</code> returns <code>true</code>, then <code>x.equals(z)</code> should return <code>true</code>.</li> 
+ <li>It is consistent: for any non-null reference values <code>x</code> and <code>y</code>, multiple invocations of <code>x.equals(y)</code> consistently return <code>true</code> or consistently return <code>false</code>, provided no information used in equals comparisons on the objects is modified.</li> 
+ <li>For any non-null reference value <code>x</code>, <code>x.equals(null)</code> should return <code>false</code>.</li> 
+</ol> 
+<p pid="68">It should be noted that these restrictions are compounded with the purpose of equals: Return <code>true</code> if two objects are considered equal or <code>false</code> otherwise. In most cases, the default equals implementation will suffice, but there may be cases in which a more fine-tuned implementation is needed. For example, if we create an immutable class, two objects of this class should be equal if all of their fields are equal. In practice, overriding the equals method results in the following implementation structure:</p> 
+<ul> 
+ <li>Check if the supplied object is this object</li> 
+ <li>Check if the supplied object has the same type as this object</li> 
+ <li>Check if the fields of the supplied object are the same as the fields of this object   </li> 
+</ul> 
+<p pid="70">For example, if we wanted to create an immutable <code>Exam</code> class that records the grade received by a student on a specific exam, we can define the class, along with its <code>equals</code> method, as follows:</p> 
+<pre>
+public class Exam {
+
+    private final int id;
+    private final int score;
+
+    public Exam(int id, int score) {
+        this.id = id;
+        this.score = score;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if (o == this) {
+            return true;
+        }
+        else if (!(o instanceof Exam)) {
+          return false;
+        }
+        else {
+            Exam other = (Exam) o;
+            return other.id == id &amp;&amp; other.score == score;
+        }
+    }
+}</pre>
+<p pid="72"><br></p> 
+<p pid="73">This implementation ensures that the following results are obtained:</p> 
+<pre>
+Exam x = new Exam(1, 97);
+Exam y = new Exam(1, 97);
+Exam z = new Exam(1, 97);
+Exam different = new Exam(5, 89);
+
+// Difference comparison
+System.out.println(x.equals(different)); // False
+
+// Reflexive
+System.out.println(x.equals(x));         // True
+
+// Symmetric
+System.out.println(x.equals(y));         // True
+System.out.println(y.equals(x));         // True
+
+// Transitive
+System.out.println(x.equals(y));         // True
+System.out.println(y.equals(z));         // True
+System.out.println(x.equals(z));         // True
+
+// Consistent
+System.out.println(x.equals(y));         // True
+System.out.println(x.equals(y));         // True
+
+// Null
+System.out.println(x.equals(null));      // False</pre>
+<p pid="75"><br></p> 
+<p pid="76">There is more to the <code>equals</code> method than first meets the eye and intermediate and advanced Java developers should become familiar with this important method by reading its official documentation. An in-depth look at the <code>equals</code> method, including many of the idiosyncrasies associated with custom implementations, can be found in Item 10 (pp. 37-49) of <a href="https://www.amazon.com/Effective-Java-3rd-Joshua-Bloch/dp/0134685997" target="_blank" rel="nofollow">Effective Java, 3rd Edition</a> by Joshua Bloch.</p> 
+<h3 pid="77">hashCode</h3> 
+<p pid="77">The second pair in the <code>Object</code> tandem is the <code>hashCode</code> method, which generates an integer hash code that corresponds to an object. This hash code is used as the hash digest when making insertions in hash-based data structures, such as <code><a href="https://docs.oracle.com/javase/9/docs/api/java/util/HashMap.html" target="_blank" rel="nofollow">HashMap</a></code>. Just like the <code>equals</code> method, the entirety of the Java environment makes assumptions about the behavior of the <code>hashCode</code> method that are not reflected programmatically:</p> 
+<ol> 
+ <li>Hash codes for an object must be constant while the data that is factored into the hash code remains unchanged; generally, this means that the hash code for an object remains constant if the state of the object is unchanged</li> 
+ <li>Hash codes must be equal for objects that are equal according to the <code>equals</code> method</li> 
+ <li>Hash codes for two objects <em>are not required</em> to be unequal if the two objects are unequal according to their <code>equals</code> methods, although algorithms and data structures that rely on hash codes usually perform better when unequal objects result in unequal hash codes</li> 
+</ol> 
+<p pid="79">Hash codes are usually some ordered summation of the values of each field in an object. This ordering is usually achieved through multiplication of each component in the summation. As explained in <a href="https://www.amazon.com/Effective-Java-3rd-Joshua-Bloch/dp/0134685997" target="_blank" rel="nofollow">Effective Java, 3rd Edition</a> (pp. 52), the multiplicative factor 31 is selected:</p> 
+<blockquote pid="80">
+  The number 31 was chosen because it is an odd prime. If it were even and the multiplication overflowed, information would be lost, because multiplication by 2 is equivalent to shifting. The advantage of using a prime is less clear, but it is traditional. A nice property of 31 is that the multiplication can be replaced by a shift and a subtraction for better performance on some architectures:  
+ <code>31 * i = (i &lt;&lt; 5) - i</code>. 
+</blockquote> 
+<p pid="81">For example, the hash code for some arbitrary set of fields is usually computed in practice using the following series of calculations:</p> 
+<pre>
+int result = field1.hash();
+result = (31 * result) + field2.hash();
+result = (31 * result) + field3.hash();
+// ...
+return result;</pre>
+<p pid="3"><br></p> 
+<p pid="81">In code, this results <code>hashCode</code> definitions that resemble the following:</p> 
+<pre>
+public class Exam {
+
+    private final int id;
+    private final int score;
+
+    // ...existing class definition...
+
+    @Override
+    public int hashCode() {
+        return (31 * id) + score;
+    }
+}</pre>
+<p pid="83"><br></p> 
+<p pid="86">In order to reduce the tediousness of implementing the <code>hashCode</code> method for a class with numerous fields, the <code>Objects</code> class includes a static method <code>hash</code> that allows for an arbitrary number of values to be hashed together:</p> 
+<pre>
+public class Exam {
+
+    private final int id;
+    private final int score;
+
+    // ...existing class definition...
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, score);
+    }
+}</pre>
+<p pid="87"><br></p> 
+<p pid="88">While the <code>Objects#hash</code> method reduces the clutter of the <code>hashCode</code> method and improves its readability, it does not come with a price: Since the <code>hash</code> method uses variable arguments, the Java Virtual Machine (JVM) creates an array to hold its arguments and requires boxing of arguments that are of a primitive type. All things considered, the hash method is a good default when overriding the the <code>hashCode</code> method, but if better performance is required, the manual multiply-and-sum operation should be implemented or the hash code should be cached. Lastly, due to the conjoined constraints of the <code>equals</code> and <code>hashCode</code> methods (i.e. hash codes much be equal if the <code>equals</code> method returns <code>true</code>), whenever one of the methods is overridden, the other should be overridden as well.</p> 
+<p pid="89">While this section covers many of the major aspects of the <code>Object</code> class, it only scratches the surface on the nuance of this important class. For more information, consult the <a href="https://docs.oracle.com/javase/9/docs/api/java/lang/Object.html" target="_blank" rel="nofollow">official Object class documentation</a>. In summary, the following rule should be adhered to:</p> 
+<blockquote pid="90">
+  Get to know the  
+ <code>Object</code> 
+  class: Every class inherits from it and the Java environment makes serious expectations for its methods. Be sure to follow these rules when overridding either  
+ <code>equals</code> 
+  or  
+ <code>hashCode</code> 
+  and be sure never to override one without overriding the other. 
+</blockquote> 
+<h2 pid="2">3. Experiment With jshell</h2> 
+<p pid="24">There are countless times when a developer gets curious about how a statement or class will work at runtime in his or her application and does not want to try it in the real application. For example, if we loop with <em>these</em> indices, how many times will <em>this</em> loop get executed? Or, if we use <em>this</em> conditional, will <em>this</em> logic ever be executed? Sometimes, the curiosity may be more general, such as wondering what the return value of a single statement will be or questioning how a language feature looks in practice (i.e. what happens if I supply a null value to <code>Objects#requireNonNull</code>?).</p> 
+<p pid="25">Accompanying many of the other important features in JDK 9, a Read-Evaluate-Print Loop (REPL) tool called jshell was introduced. jshell is a command-line tool that allows for Java statements to be executed and evaluated, displaying the result of the statement. To start jshell (assuming that the <code>bin/</code> directory for a JDK 9 installation is on the operating system path), simply execute the <code>jshell</code> command as follows (the version number will depend on the version of the JDK installed on the machine):</p> 
+<pre>
+$ jshell
+|  Welcome to JShell -- Version 9.0.4
+|  For an introduction type: /help intro
+
+jshell&gt;</pre>
+<p pid="27"><br></p> 
+<p pid="28">Once the <code>jshell&gt;</code> prompt is displayed, we can type in any executable Java statement and see its evaluation. Note that single statements do not require trailing semicolons, although they can be included if desired. For example, we can see how Java would sum 4 and 5 with the following command in jshell:</p> 
+<pre>
+jshell&gt; 4 + 5
+$4 ==&gt; 9</pre>
+<p pid="31"><br></p> 
+<p pid="32">While this may be simple, it is important to grasp that we are able to execute Java code without creating an entirely new project and writing a boilerplate <code>public static void main</code> method. Whatsmore, we can also execute relatively complex logic with jshell, as seen below.</p> 
+<pre>
+jshell&gt; public class Car {
+   ...&gt;     private final String name;
+   ...&gt;     public Car(String name) {
+   ...&gt;         this.name = name;
+   ...&gt;     }
+   ...&gt;     public String getName() {
+   ...&gt;         return name;
+   ...&gt;     }
+   ...&gt; }
+|  created class Car
+
+jshell&gt; Car myCar = new Car("Ferrari 488 Spider");
+myCar ==&gt; Car@5e5792a0
+
+jshell&gt; myCar.getName()
+$3 ==&gt; "Ferrari 488 Spider"</pre>
+<p pid="34"><br></p> 
+<p pid="40">Being that jshell a swift alternative to creating an entire project, it no longer becomes cumbersome to evaluate small pieces of code (ones that would take seconds to write and minutes to create an runnable project for). For example, if we were curious to see how the <code>Objects#requireNonNull</code> methods would respond to various arguments (technique 1), we could try them out and see the actual results using jshell, as depicted below.</p> 
+<pre>
+jshell&gt; Objects.requireNonNull(null, "This argument cannot be null")
+|  java.lang.NullPointerException thrown: This argument cannot be null
+|        at Objects.requireNonNull (Objects.java:246)
+|        at (#5:1)
+
+jshell&gt; Objects.requireNonNull(new Object(), "This argument cannot be null")
+$6 ==&gt; java.lang.Object@210366b4</pre>
+<p pid="43"><br></p> 
+<p pid="35">It is important to note that although we can execute single statements without trailing semicolons, statements with a scope (i.e. those surrounded by curly braces, single-line conditional bodies, etc.) must include trailing semicolons. For example, leaving off a trailing semicolon in the middle of a class definition causes a syntax error in jshell:</p> 
+<pre>
+jshell&gt; public class Foo {
+   ...&gt;     private final String bar
+   ...&gt; }
+|  Error:
+|  ';' expected
+|      private final String bar
+|</pre>
+<p pid="37"><br></p> 
+<p pid="38">Although jshell is much more capable than the examples in this section give it credit for, a full exposé of its features is beyond the scope of this article. The curious reader can find a wealth of information in the <a href="https://docs.oracle.com/javase/9/jshell/introduction-jshell.htm#JSHEL-GUID-630F27C8-1195-4989-9F6B-2C51D46F52C8" target="_blank" rel="nofollow">Java Shell User's Guide</a>. Notwithstanding the simplicity of the examples in this section, the ease of use and power of jshell provide us with a handy technique for improving how we develop applications in Java:</p> 
+<blockquote pid="39">
+  Use jshell to evaulate the runtime behavior of a Java statement or groups of statements. Don't be shy: Taking a few seconds to see how a statement is 
+ <em>actually</em> evaluated can save value minutes or hours. 
+</blockquote> 
+<h2 pid="5">4. Read Well-Written Code</h2> 
+<p pid="44">One of the best ways to become a skilled craftsman is to watch a more experienced craftsman at work. For example, in order to be a better painter, an aspiring artist can watch a professional painter in a video (i.e. <a href="https://en.wikipedia.org/wiki/The_Joy_of_Painting" target="_blank" rel="nofollow">The Joy of Painting</a> by <a href="https://en.wikipedia.org/wiki/Bob_Ross" target="_blank" rel="nofollow">Bob Ross</a>) or even study existing paintings by masters such as Rembrandt or Monet. Likewise, a hockey player can study video on how the best National Hockey League (NHL) players skate or still handle during a game or hire an experienced player as a coach.</p> 
+<p pid="45">Programming is no different. It can be easy to forget that programming is a skill that must be honed and one of the best ways to improve this skill is to look towards the historically best programmers. In the realm of Java, this means looking into how the original designers of the language use the language. For example, if we wish to know how to write clean, simple code, we can look at the JDK source code and find out how the inventors of Java write Java code. (Note that the JDK source code can be found <code>lib/src.zip</code> under a standard JDK installation in Windows or downloaded from <a href="http://openjdk.java.net/install/" target="_blank" rel="nofollow">OpenJDK</a> on any operating system.)</p> 
+<p pid="46">We can also garner a great deal of information about how a particular class works by looking at its implementation. For example, suppose we are concerned about how a <code><a href="https://docs.oracle.com/javase/9/docs/api/java/util/Collection.html" target="_blank" rel="nofollow">Collection</a></code> removes an element using the <code>AbstractCollection#remove(Object)</code> method. Instead of guessing about the implementation, we can go straight to the source and see the implementation (as depicted below).</p> 
+<pre>
+public boolean remove(Object o) {
+    Iterator&lt;E&gt; it = iterator();
+    if (o==null) {
+        while (it.hasNext()) {
+            if (it.next()==null) {
+                it.remove();
+                return true;
+            }
+        }
+    } else {
+        while (it.hasNext()) {
+            if (o.equals(it.next())) {
+                it.remove();
+                return true;
+            }
+        }
+    }
+    return false;
+}</pre>
+<p pid="48"><br></p> 
+<p pid="49">By simply looking at the source code for this method, we can see that if a null <code>Object</code> is passed to this method, the first null found in the <code>Collection</code> (using the <code>Iterator</code> for the <code>Collection</code>) is removed. Otherwise, the <code>equals</code> method is used to find a matching element and if present, it is removed from the <code>Collection</code>. If any alterations are made to the <code>Collection</code>, <code>true</code> is returned; otherwise, <code>false</code> is returned. While we can understand <em>what</em> the method is doing from its associated JavaDocs, we can see <em>how</em> it is accomplished by looking directly at the source for the method.</p> 
+<p pid="50">Apart from seeing how specific methods work, we can also see how some of the most experienced Java developers write their code. For example, we can see how to effectively concatenate strings by looking at the <code>AbstractCollection#toString</code> method:</p> 
+<pre>
+public String toString() {
+    Iterator&lt;E&gt; it = iterator();
+    if (! it.hasNext())
+        return "[]";
+
+    StringBuilder sb = new StringBuilder();
+    sb.append('[');
+    for (;;) {
+        E e = it.next();
+        sb.append(e == this ? "(this Collection)" : e);
+        if (! it.hasNext())
+            return sb.append(']').toString();
+        sb.append(',').append(' ');
+    }
+}</pre>
+<p pid="52"><br></p> 
+<p pid="53">Many new Java developers may have used simple string concatenation, but the developer of the <code>AbstractCollection#toString</code> (who happens to be one of the original Java forerunners) decided to use a <code>StringBuilder</code>. This should at least beg the question: Why? Is there something that this developer knows that we do not? (It is likely since it's not too common to find a bug or typo in the JDK source code.)</p> 
+<p pid="54">It should be noted, however, that just because code is written a certain way in the JDK does not necessarily mean that it is written that way in most Java applications. Many times, idioms are used by a wide array of Java developers but are not present in the JDK (some JDK code has been written long ago). Likewise, the developers of the JDK may not have made the correct decision (even some of the original Java developers admit that some original implementations were a mistake, but these implementations are used in too many different applications to go back and alter them) and it would be wise not to repeat these mistakes, but rather, learn from them.</p> 
+<p pid="55">As a supplement to the JDK source code, an experienced Java developer should read as much code written by famous Java developers as possible. For example, reading the code written by Martin Fowler in <a href="https://www.amazon.com/Refactoring-Improving-Design-Existing-Code/dp/0201485672" target="_blank" rel="nofollow">Refactoring</a> can be quite eye-opening. There may be ways of writing code that we had never thought of but are common to the most well-seasoned practitioners. Although it is nearly impossible to devise a comprehensive list of the books that contain the most-written code (being that <em>well-written</em> is very subjective), a few of the most well-known books are as follows:</p> 
+<ul> 
+ <li><a href="https://www.amazon.com/Effective-Java-3rd-Joshua-Bloch/dp/0134685997" target="_blank" rel="nofollow">Effective Java</a></li> 
+ <li><a href="https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1519171272&amp;sr=1-1&amp;keywords=clean+code" target="_blank" rel="nofollow">Clean Code</a></li> 
+ <li><a href="https://www.amazon.com/Pragmatic-Programmer-Journeyman-Master/dp/020161622X/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1519171292&amp;sr=1-1&amp;keywords=the+pragmatic+programmer" target="_blank" rel="nofollow">The Pragmatic Programmer</a></li> 
+ <li><a href="https://www.amazon.com/Release-Design-Deploy-Production-Ready-Software/dp/1680502395/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1519171305&amp;sr=1-1&amp;keywords=release+it" target="_blank" rel="nofollow">Release It!</a></li> 
+ <li><a href="https://www.amazon.com/Java-Concurrency-Practice-Brian-Goetz/dp/0321349601/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1519171335&amp;sr=1-1&amp;keywords=java+concurrency+in+practice+3rd+edition" target="_blank" rel="nofollow">Java Concurrency in Practice</a></li> 
+</ul> 
+<p pid="58">Although there are countless others, these books provide a good foundation, encompassing some of the most prolific Java developers in history. Just as with the JDK source code, the code written in each of the above books is written in the particular style of its author. Each developer is an individual and each will have his or her own style (i.e. some swear by opening braces at the end of a line while others demand that they are placed on a new line all by themselves), but the point is not to get bogged down in minutia. Instead, we should learn how some of the best Java developers write their code and should aspire to write code that is just as simple and just as clean to read.</p> 
+<p pid="59">In summary, this technique can be distilled down into the following:</p> 
+<blockquote pid="60">
+  Read as much code written by experienced Java developers as possible. Each developer has his or her own style, and each are human and can make poor choices, but on the whole, developers should emulate the code written by many of the original authors of Java and many of its most prolific practitioners. 
+</blockquote> 
+<h2 pid="91">Conclusion</h2> 
+<p pid="92">There are countless techniques for improving both the skill level of a developer, as well as the code he or she developers. In this third installation of the <a href="https://dzone.com/articles/4-techniques-for-writing-better-java" target="_blank" rel="nofollow">4 More Techniques for Writing Better Java</a> series, we covered validating method arguments using the standard methods provided by the <code>Objects</code> class, understanding the <code>Object</code> class, experimenting with jshell, and maintaining an insatiable appetite for resources with the best-written code. Using these techniques, paired with a healthy dosage of good judgment, can lead to better Java for developers at any level, from novice to expert.</p>
+                </div>
+</body>
+</html>
