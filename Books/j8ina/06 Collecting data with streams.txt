@@ -159,14 +159,15 @@ This method takes two arguments:
 
 ------------------------------------------------
 6.4. Partitioning
-Partitioning is a special case of grouping: having a predicate (a function returning a boolean), called a partitioning function, as a classification function. The fact that the partitioning function returns a boolean means the resulting grouping Map will have a Boolean as a key type and therefore there can be at most two different groups—one for true and one for false.
+Partitioning is a special case of grouping: having a predicate (a function returning a boolean), called a PARTITIONING FUNCTION, as a CLASSIFICATION FUNCTION. 
+The fact that the partitioning function returns a boolean means the resulting grouping Map will have a Boolean as a key type and therefore there can be at most two different groups—one for true and one for false.
 
 Note that you could achieve the same result by just filtering the stream created from the menu List with the same predicate used for partitioning and then collecting the result in an additional List:
 
 menu.stream().filter(Dish::isVegetarian).collect(toList());
 
 6.4.1. Advantages of partitioning
-Partitioning has the advantage of keeping both lists of the stream elements, for which the application of the partitioning function returns true or false
+Partitioning has the advantage of keeping both lists of the stream elements, for which the application of the PARTITIONING FUNCTION returns true or false
 
 Also, as you already saw for grouping, the partitioningBy factory method has an overloaded version to which you can pass a second collector
 
@@ -183,7 +184,7 @@ As you’ve seen, like the groupingBy collector, the partitioningBy collector ca
 To partition the first n numbers into prime and nonprime, it’s enough to create a stream containing those n numbers and reduce it with a partitioningBy collector using as predicate the isPrime method 
 
 6.5. The Collector interface
-The Collector interface consists of a set of methods that provide a blueprint for how to implement specific reduction operations (that is, collectors). You’ve seen many collectors that implement the Collector interface, such as toList or groupingBy. This also implies that you’re free to create customized reduction operations by providing your own implementation of the Collector interface. 
+The Collector interface consists of a set of methods that provide a blueprint for how to implement specific reduction operations (that is, collectors). You’ve seen many collectors that implement the Collector interface, such as toList() or groupingBy(). This also implies that you’re free to create customized reduction operations by providing your own implementation of the Collector interface. 
 
 public interface Collector<T, A, R> {
     Supplier<A> supplier();
@@ -200,13 +201,13 @@ In this listing, the following definitions apply:
 
 6.5.1. Making sense of the methods declared by Collector interface
 
-The SUPPLIER() method has to return a Supplier of an empty result—a parameterless function that when invoked creates an instance of an empty accumulator used during the collection process. Clearly, for a collector returning the accumulator itself as result, like our ToListCollector, this empty accumulator will also represent the result of the collection process when performed on an empty stream. 
+The SUPPLIER() method has to return a Supplier of an empty result—a parameterless function that when invoked creates an INSTANCE OF AN EMPTY ACCUMULATOR used during the collection process. Clearly, for a collector returning the accumulator itself as result, like our ToListCollector, this empty accumulator will also represent the result of the collection process when performed on an empty stream. 
 
-The ACCUMULATOR() method returns the function that performs the reduction operation. When traversing the nth element in the stream, this function is applied with two arguments, the accumulator being the result of the reduction (after having collected the first n–1 items of the stream) and the nth element itself. The function returns void because the accumulator is modified in place, meaning that its internal state is changed by the function application to reflect the effect of the traversed element.
+The ACCUMULATOR() method returns the function that performs the REDUCTION OPERATION. When traversing the n-th element in the stream, this function is applied with two arguments, the accumulator being the result of the reduction (after having collected the first n–1 items of the stream) and the n-th element itself. The function returns void because the accumulator is modified in place, meaning that its internal state is changed by the function application to reflect the effect of the traversed element.
 
-The FINISHER() method has to return a function that’s invoked at the end of the accumulation process, after having completely traversed the stream, in order to transform the accumulator object into the final result of the whole collection operation. Often, as in the case of the ToListCollector, the accumulator object already coincides with the final expected result. As a consequence, there’s no need to perform a transformation, so the finisher method just has to return the identity function.
+The FINISHER() method has to return a function that’s INVOKED AT THE END OF THE ACCUMULATION PROCESS, after having completely traversed the stream, in order to TRANSFORM THE ACCUMULATOR OBJECT INTO THE FINAL RESULT of the whole collection operation. Often, as in the case of the ToListCollector, the accumulator object already coincides with the final expected result. As a consequence, there’s no need to perform a transformation, so the finisher method just has to return the IDENTITY FUNCTION.
 
-The COMBINER() method, the last of the four methods that return a function used by the reduction operation, defines how the accumulators resulting from the reduction of different subparts of the stream are combined when the subparts are processed in parallel. In the toList case, the implementation of this method is simple; just add the list containing the items gathered from the second subpart of the stream to the end of the list obtained when traversing the first subpart
+The COMBINER() method, the last of the four methods that RETURN A FUNCTION USED BY THE REDUCTION OPERATION, defines how the accumulators resulting from the reduction of different subparts of the stream are combined when the subparts are processed in parallel. In the toList case, the implementation of this method is simple; just add the list containing the items gathered from the second subpart of the stream to the end of the list obtained when traversing the first subpart
   
 -- The addition of this fourth method allows a parallel reduction of the stream. This uses the fork/join framework introduced in Java 7 and the Spliterator abstraction that you’ll learn about in the next chapter. 
 Как это работает:
@@ -214,7 +215,7 @@ The COMBINER() method, the last of the four methods that return a function used 
 (2) At this point all substreams can be processed in parallel, each of them using the sequential reduction algorithm shown in figure 6.7.
 (3) Finally, all the partial results are combined pairwise using the function returned by the combiner method of the collector. This is done by combining results corresponding to substreams associated with each split of the original stream.
 
-The last method, CHARACTERISTICS(), returns an immutable set of Characteristics, defining the behavior of the collector—in particular providing hints about whether the stream can be reduced in parallel and which optimizations are valid when doing so. Characteristics is an enumeration containing three items:
+The last method, CHARACTERISTICS(), returns an immutable set of Characteristics, defining the behavior of the collector — in particular providing hints about whether the stream can be reduced in parallel and which optimizations are valid when doing so. Characteristics is an enumeration containing three items:
 (1) UNORDERED—The result of the reduction isn’t affected by the order in which the items in the stream are traversed and accumulated.
 (2) CONCURRENT—The accumulator function can be called concurrently from multiple threads, and then this collector can perform a parallel reduction of the stream. If the collector isn’t also flagged as UNORDERED, it can perform a parallel reduction only when it’s applied to an unordered data source.
 (3) IDENTITY_FINISH—This indicates the function returned by the finisher method is the identity one, and its application can be omitted. In this case, the accumulator object is directly used as the final result of the reduction process. This also implies that it’s safe to do an unchecked cast from the accumulator A to the result R.
@@ -245,10 +246,8 @@ Note that in reality this collector can’t be used in parallel, because the alg
 
 6.7. Summary
 Following are the key concepts you should take away from this chapter:
-(1) collect is a terminal operation that takes as argument various recipes (called collectors) for accumulating the elements of a stream into a summary result.
-(2) Predefined collectors include reducing and summarizing stream elements into a single value, such as calculating the minimum, maximum, or average. Those collectors are summarized in table 6.1.
-(3) Predefined collectors let you group elements of a stream with groupingBy and partition elements of a stream with partitioningBy.
+(1) collect() is a terminal operation that takes as argument various recipes (called collectors) for accumulating the elements of a stream into a summary result.
+(2) Predefined collectors include reducing() and summarizing() stream elements into a single value, such as calculating the minimum, maximum, or average. Those collectors are summarized in table 6.1.
+(3) Predefined collectors let you group elements of a stream with groupingBy() and partition elements of a stream with partitioningBy().
 (4) Collectors compose effectively to create multilevel groupings, partitions, and reductions.
 (5) You can develop your own collectors by implementing the methods defined in the Collector interface.
-
-

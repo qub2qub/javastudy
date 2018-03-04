@@ -1,0 +1,194 @@
+07 Parallel data processing and performance (158-183=25)
+
+In the last three chapters, you’ve seen how the new Stream interface lets you manipulate collections of data in a declarative way. We also explained that the shift from external to internal iteration enables the native Java library to gain control over processing the elements of a stream. This approach relieves Java developers from explicitly implementing optimizations necessary to speed up the processing of collections of data. By far the most important benefit is the possibility of executing a pipeline of operations on these collections that automatically makes use of the multiple cores on your computer.
+
+it’s important to know how parallel streams work internally, because if you ignore this aspect, you could obtain unexpected (and very likely wrong) results by misusing them.
+
+ the way a parallel stream gets divided into chunks, before processing the different chunks in parallel, can in some cases be the origin of these incorrect and apparently unexplainable results. For this reason, you’ll learn how to take control of this splitting process by implementing and using your own Spliterator.
+
+7.1. Parallel streams
+
+it’s possible to turn a collection into a parallel stream by invoking the method parallelStream() on the collection source. 
+A PARALLEL STREAM is a stream that splits its elements into multiple chunks, processing each chunk with a different thread.
+
+Note that, in reality, calling the method parallel() on a sequential stream doesn’t imply any concrete transformation on the stream itself. 
+Internally, a boolean flag is set to signal that you want to run in parallel all the operations that follow the invocation to parallel. 
+Similarly, you can turn a parallel stream into a sequential() one by just invoking the method sequential on it.
+
+Если скомбинировать несколько parallel() or sequential() то на весь стрим повлияет только последний:
+But the last call to parallel() or sequential() wins and affects the pipeline globally.
+
+------
+Configuring the thread pool used by parallel streams
+Looking at the stream’s parallel() method, you may wonder where the threads used by the parallel stream come from, how many there are, and how you can customize the process.
+
+Parallel streams internally use the default ForkJoinPool (you’ll learn more about the fork/join framework in section 7.2), which by default has as many threads as you have processors, as returned by Runtime.getRuntime().availableProcessors().
+
+But you can change the size of this pool using the system property java.util.concurrent.ForkJoinPool.common.parallelism, as in the following example:
+
+System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "12");
+
+This is a global setting, so it will affect all the parallel streams in your code. Conversely, it currently isn’t possible to specify this value for a single parallel stream. In general, having the size of the ForkJoinPool equal to the number of processors on your machine is a meaningful default, and we strongly suggest that you not modify it unless you have a very good reason for doing so.
+--------------
+
+You should expect that the iterative version using a traditional for loop runs much faster because it works at a much lower level and, more important, doesn’t need to perform any boxing or unboxing of the primitive values
+
+the parallel version of the summing method is much slower than the sequential one. How can you explain this unexpected result? There are actually two issues mixed together:
+1) iterate() generates boxed objects, which have to be unboxed to numbers before they can be added.
+2) iterate() is difficult to divide into independent chunks to execute in parallel.
+
+This demonstrates how parallel programming can be tricky and sometimes counterintuitive. When misused (for example, using an operation that’s not parallel-friendly, like iterate) it can actually worsen the overall performance of your programs, so it’s mandatory to understand what happens behind the scenes when you invoke that apparently magic parallel method.
+
+LongStream.rangeClosed() method has two benefits compared to iterate:
+1) LongStream.rangeClosed works on primitive long numbers directly so there’s no boxing and unboxing overhead.
+2) LongStream.rangeClosed produces ranges of numbers, which can be easily split into independent chunks. For example, the range 1–20 can be split into 1–5, 6–10, 11–15, and 16–20.
+
+!!! using the right data structure and then making it work in parallel guarantees the best performance.
+
+Nevertheless, keep in mind that parallelization doesn’t come for free. 
+The parallelization process itself requires you to 
+1) recursively partition the stream, 
+2) assign the reduction operation of each substream to a different thread, 
+3) and then combine the results of these operations in a single value. 
+
+But moving data between multiple cores is also more expensive than you might expect, so it’s important that work to be done in parallel on another core takes longer than the time required to transfer the data from one core to another. 
+In general, there are many cases where it isn’t possible or convenient to use parallelization. But before you use a parallel Stream to make your code faster, you have to be sure that you’re using it correctly; it’s not helpful to produce a result in less time if the result will be wrong. Let’s look at a common pitfall.
+
+7.1.3. Using parallel streams correctly
+The main cause of errors generated by misuse of parallel streams is the use of algorithms that mutate some shared state.
+
+7.1.4. Using parallel streams effectively
+In general it’s impossible (and pointless) to try to give any quantitative hint on when to use a parallel stream because any suggestion like “use a parallel stream only if you have at least one thousand (or one million or whatever number you want) elements” could be correct for a specific operation running on a specific machine, but it could be completely wrong in an even marginally different context. Nonetheless, it’s at least possible to provide some qualitative advice that could be useful when deciding whether it makes sense to use a parallel stream in a certain situation:
+
+1) If in doubt, measure. Turning a sequential stream into a parallel one is trivial but not always the right thing to do. As we already demonstrated in this section, a parallel stream isn’t always faster than the corresponding sequential version. Moreover, parallel streams can sometimes work in a counterintuitive way, so the first and most important suggestion when choosing between sequential and parallel streams is to always check their performance with an appropriate benchmark.
+
+2) Watch out for boxing. Automatic boxing and unboxing operations can dramatically hurt performance. Java 8 includes primitive streams (IntStream, LongStream, and DoubleStream) to avoid such operations, so use them when possible.
+
+3) Some operations naturally perform worse on a parallel stream than on a sequential stream. In particular, operations such as limit() and findFirst() that rely on the order of the elements are expensive in a parallel stream. 
+For example, findAny() will perform better than findFirst because it isn’t constrained to operate in the encounter order. 
+You can always turn an ordered stream into an unordered stream by invoking the method unordered on it. So, for instance, if you need N elements of your stream and you’re not necessarily interested in the first N ones, calling limit on an unordered parallel stream may execute more efficiently than on a stream with an encounter order (for example, when the source is a List).
+
+4) Consider the total computational cost of the pipeline of operations performed by the stream. With N being the number of elements to be processed and Q the approximate cost of processing one of these elements through the stream pipeline, the product of N*Q gives a rough qualitative estimation of this cost. A higher value for Q implies a better chance of good performance when using a parallel stream.
+
+5) For a small amount of data, choosing a parallel stream is almost never a winning decision. The advantages of processing in parallel only a few elements aren’t enough to compensate for the additional cost introduced by the parallelization process.
+
+6) Take into account how well the data structure underlying the stream decomposes. 
+For instance, an ArrayList can be split much more efficiently than a LinkedList, because the first can be evenly divided without traversing it, as it’s necessary to do with the second. 
+Also, the primitive streams created with the range() factory method can be decomposed quickly. Finally, as you’ll learn in section 7.3, you can get full control of this decomposition process by implementing your own Spliterator.
+
+7) The characteristics of a stream, and how the intermediate operations through the pipeline modify them, can change the performance of the decomposition process. 
+For example, a SIZED stream can be divided into two equal parts, and then each part can be processed in parallel more effectively, but a filter() operation can throw away an unpredictable number of elements, making the size of the stream itself unknown.
+
+8) Consider whether a terminal operation has a cheap or expensive merge step (for example, the combiner() method in a Collector). 
+If this is expensive, then the cost caused by the combination of the partial results generated by each substream can outweigh the performance benefits of a parallel stream.
+
+Source 		   | Decomposability
+---------------|----------------
+ArrayList		Excellent
+LinkedList		Poor
+IntStream.range	Excellent
+Stream.iterate	Poor
+HashSet			Good
+TreeSet			Good
+
+the infrastructure used behind the scenes by parallel streams to execute operations in parallel is the fork/join framework introduced in Java 7. The parallel summing example proved that it’s vital to have a good understanding of the parallel stream internals in order to use them correctly.
+
+7.2. The fork/join framework
+The fork/join framework was designed to recursively split a parallelizable task into smaller tasks and then combine the results of each subtask to produce the overall result. It’s an implementation of the ExecutorService interface, which distributes those subtasks to worker threads in a thread pool, called ForkJoinPool.
+
+7.2.1. Working with RecursiveTask
+To submit tasks to this pool, you have to create a subclass of RecursiveTask<R>, where R is the type of the result produced by the parallelized task (and each of its subtasks) or of RecursiveAction if the task returns no result (it could be updating other nonlocal structures, though). To define RecursiveTasks you need only implement its single abstract method, compute():
+
+protected abstract R compute();
+
+This method defines both the logic of splitting the task at hand into subtasks and the algorithm to produce the result of a single subtask when it’s no longer possible or convenient to further divide it. For this reason an implementation of this method often resembles the following pseudocode:
+
+if (task is small enough or no longer divisible) {
+    compute task sequentially
+} else {
+    split task in two subtasks
+    call method compute() recursively possibly further splitting each subtask
+    wait for the completion of all subtasks
+    combine the results of each subtask
+}
+
+In general there are no precise criteria for deciding whether a given task should be further divided or not, but there are various heuristics that you can follow to help you with this decision. 
+---
+Note that in a real-world application, it doesn’t make sense to use more than one ForkJoinPool. For this reason, what you typically should do is instantiate it only once and keep this instance in a static field, making it a singleton, so it could be conveniently reused by any part of your software. Here, to create it you’re using its default no-argument constructor, meaning that you want to allow the pool to use all the processors available to the JVM. More precisely, this constructor will use the value returned by Runtime.availableProcessors() to determine the number of threads used by the pool. Note that the availableProcessors() method, despite its name, in reality returns the number of available cores, including any virtual ones due to hyperthreading.
+
+7.2.2. Best practices for using the fork/join framework
+
+1) Invoking the join() method on a task blocks the caller until the result produced by that task is ready. 
+For this reason, it’s necessary to call it after the computation of both subtasks has been started. 
+Otherwise, you’ll end up with a slower and more complex version of your original sequential algorithm because every subtask will have to wait for the other one to complete before starting.
+
+2) The invoke() method of a ForkJoinPool shouldn’t be used from within a RecursiveTask. 
+Instead, you should always call the methods compute() or fork() directly; 
+!!! only sequential code should use invoke() to begin parallel computation.
+
+3) Calling the fork() method on a subtask is the way to schedule it on the ForkJoinPool. 
+It might seem natural to invoke it on both the left and right subtasks, but this is less efficient than just directly calling compute on one of them. Doing this allows you to reuse the same thread for one of the two subtasks and avoid the overhead caused by the unnecessary allocation of a further task on the pool.
+
+4) Debugging a parallel computation using the fork/join framework can be tricky. 
+In particular, it’s ordinarily quite common to browse a stack trace in your favorite IDE to discover the cause of a problem, but this can’t work with a fork-join computation because the call to compute occurs in a different thread than the conceptual caller, which is the code that called fork.
+
+5) As you’ve discovered with parallel streams, you should never take for granted that a computation using the fork/join framework on a multicore processor is faster than the sequential counterpart. We already said that a task should be decomposable into several independent subtasks in order to be parallelizable with a relevant performance gain. 
+ALL OF THESE SUBTASKS SHOULD TAKE LONGER TO EXECUTE THAN FORKING A NEW TASK; 
+---one idiom is to put I/O into one subtask and computation into another, thereby overlapping computation with I/O.--->> т.е. разделить работу по типу - один вычисляет - другой ждёт ввода-вывода, и из-за разнообразия что-то всё-таки выполнится.
+     Moreover, you should consider other things when comparing the performance of the sequential and parallel versions of the same algorithm. Like any other Java code, the fork/join framework needs to be “warmed up,” or executed, a few times before being optimized by the JIT compiler. 
+This is why it’s always important to run the program multiple times before to measure its performance, as we did in our harness. 
+  Also be aware that optimizations built into the compiler could unfairly give an advantage to the sequential version (for example, by performing dead code analysis—removing a computation that’s never used).
+
+The fork/join splitting strategy deserves one last note: you must choose the criteria used to decide if a given subtask should be further split or is small enough to be evaluated sequentially. We give some hints about this in the next section.
+
+7.2.3. Work stealing
+in most cases it’s difficult to find a good heuristic, other than trying to optimize it by making several attempts with different inputs.
+
+But forking a quite large number of fine-grained tasks is in general a winning choice. This is because ideally you want to partition the workload of a parallelized task in SUCH A WAY THAT EACH SUBTASK TAKES EXACTLY THE SAME AMOUNT OF TIME, KEEPING ALL THE CORES OF YOUR CPU EQUALLY BUSY. 
+Unfortunately, especially in cases closer to real-world scenarios than the straightforward example we presented here, the time taken by each subtask can dramatically vary either due to the use of an inefficient partition strategy or because of unpredictable causes like slow access to the disk or the need to coordinate the execution with external services.
+
+The fork/join framework works around this problem with a technique called WORK STEALING. 
+In practice, this means that the tasks are more or less evenly divided on all the threads in the ForkJoinPool. Each of these THREADS holds a DOUBLY LINKED QUEUE of the tasks assigned to it, and as soon as it completes a task it pulls another one from the HEAD of the queue and starts executing it. 
+For the reasons we listed previously, one thread might complete all the tasks assigned to it much faster than the others, which means its queue will become empty while the other threads are still pretty busy. In this case, instead of becoming idle, the THREAD RANDOMLY CHOOSES A QUEUE OF A DIFFERENT THREAD AND “STEALS” A TASK, taking it from the TAIL of the queue. 
+This process continues until all the tasks are executed, and then all the queues become empty. That’s why having many smaller tasks, instead of only a few bigger ones, can help in better balancing the workload among the worker threads.
+
+More generally, this work-stealing algorithm is used to redistribute and balance the tasks among the worker threads in the pool. 
+Для балансировки распределения задач по потокам в пуле.
+
+When a task in the queue of a worker is divided into two subtasks, one of the two subtasks is stolen by another idle worker. As described previously, this process can continue recursively until the condition used to define that a given subtask should be executed sequentially becomes true.
+
+7.3. Spliterator
+The Spliterator is another new interface added to Java 8; its name stands for “SPLITABLE ITERATOR.”  разделяемый итератор
+
+Like Iterators, Spliterators are used to traverse the elements of a source, but they’re also designed to do this in parallel. Although you may not have to develop your own Spliterator in practice, understanding how to do so will give you a wider understanding about how parallel streams work. Java 8 already provides a default Spliterator implementation for all the data structures included in its Collections Framework. Collections now implements the interface Spliterator, which provides a method spliterator.
+
+public interface Spliterator<T> {
+    boolean tryAdvance(Consumer<? super T> action);
+    Spliterator<T> trySplit();
+    long estimateSize();
+    int characteristics();
+}
+As usual, T is the type of the elements traversed by the Spliterator. The tryAdvance method behaves in a way similar to a normal Iterator in the sense that it’s used to sequentially consume the elements of the Spliterator one by one, returning true if there are still other elements to be traversed. But the trySplit method is more specific to the Spliterator interface because it’s used to partition off some of its elements to a second Spliterator (the one returned by the method), allowing the two to be processed in parallel. A Spliterator may also provide an estimation of the number of the elements remaining to be traversed via its estimateSize method, because even an inaccurate but quick-to-compute value can be useful to split the structure more or less evenly.
+
+7.3.1. The splitting process
+The algorithm that splits a Stream into multiple parts is a recursive process. 
+In the first step trySplit() is invoked on the first Spliterator and generates a second one. Then in step 2 it’s called again on these two Spliterators, which results in a total of four. The framework keeps invoking the method trySplit on a Spliterator until it returns null to signal that the data structure that it’s processing is no longer divisible, as shown in step 3. Finally, this recursive splitting process terminates in step 4 when all Spliterators have returned null to a trySplit invocation.
+
+This splitting process can also be influenced by the characteristics of the Spliterator itself, which are declared via the characteristics method.
+
+----------- The Spliterator characteristics ------------
+The last abstract method declared by the Spliterator interface is characteristics, which returns an int encoding the set of characteristics of the Spliterator itself. The Spliterator clients can use these characteristics to better control and optimize its usage.
+
+Characteristic 	| Meaning
+----------------|-------------------------
+ORDERED			Elements have a defined order (for example, a List), so the Spliterator enforces this order when traversing and partitioning them.
+DISTINCT		For each pair of traversed elements x and y, x.equals(y) returns false.
+SORTED			The traversed elements follow a predefined sort order.
+SIZED			This Spliterator has been created from a source with a known size (for example, a Set), so the value returned by estimatedSize() is precise.
+NONNULL			It’s guaranteed that the traversed elements won’t be null.
+IMMUTABLE		The source of this Spliterator can’t be modified. This implies that no elements can be added, removed, or modified during their traversal.
+CONCURRENT		The source of this Spliterator may be safely concurrently modified by other threads without any synchronization.
+SUBSIZED		Both this Spliterator and all further Spliterators resulting from its split are SIZED.
+
+7.3.2. Implementing your own Spliterator
+
