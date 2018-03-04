@@ -192,3 +192,42 @@ SUBSIZED		Both this Spliterator and all further Spliterators resulting from its 
 
 7.3.2. Implementing your own Spliterator
 
+Let’s look at a practical example of where you might need to implement your own Spliterator. We’ll develop a simple method that counts the number of words in a String. 
+
+You can calculate the number of words by performing a reduction on this stream. While reducing the stream, you’ll have to carry a state consisting of two variables: an int counting the number of words found so far and a boolean to remember if the last-encountered Character was a space or not. Because Java doesn’t have tuples (a construct to represent an ordered list of heterogeneous elements without the need of a wrapper object), you’ll have to create a new class, WordCounter, which will encapsulate this state.
+
+ you’ll have to implement a Spliterator of Character that splits a String only between two words
+
+ This Spliterator is created from the String to be parsed and iterates over its Characters by holding the index of the one currently being traversed. Let’s quickly revisit the methods of the WordCounterSpliterator implementing the Spliterator interface:
+
+(1) The tryAdvance() method feeds the Consumer with the Character in the String at the current index position and increments this position. The Consumer passed as argument is an internal Java class forwarding the consumed Character to the set of functions that have to be applied to it while traversing the stream, which in this case is only a reducing function, namely, the accumulate method of the WordCounter class. The tryAdvance() method returns true if the new cursor position is less than the total String length and there are further Characters to be iterated.
+
+(2) The trySplit() method is the most important one in a Spliterator because it’s the one DEFINING THE LOGIC USED TO SPLIT THE DATA STRUCTURE TO BE ITERATED. 
+As you did in the compute method of the RecursiveTask implemented in listing 7.1 (on how to use the fork/join framework), the first thing you have to do here is 
+-- set a limit under which you don’t want to perform further splits. 
+Here, you use a very low limit of 10 Characters only to make sure that your program will perform some splits with the relatively short String you’re parsing, but in real-world applications you’ll have to use a higher limit, as you did in the fork/join example, to avoid creating too many tasks. 
+If the number of remaining Characters to be traversed is under this limit, you return null to signal that no further split is necessary. Conversely, if you need to perform a split, you set the candidate split position to the half of the String chunk remaining to be parsed. But you don’t use this split position directly because you want to avoid splitting in the middle of a word, so you move forward until you find a blank Character. 
+-- Once you find an opportune split position, you create a new Spliterator that will traverse the substring chunk going from the current position to the split one; you set the current position of this to the split one, because the part before it will be managed by the new Spliterator, and then you return it.
+
+(3) The estimatedSize() of elements still to be traversed is the difference between the total length of the String parsed by this Spliterator and the position currently iterated.
+
+(4) Finally, the characteristic() method signals to the framework that this Spliterator is 
+(-)-> ORDERED (the order is just the sequence of Characters in the String), 
+(-)-> SIZED (the value returned by the estimatedSize method is exact), 
+(-)-> SUBSIZED (the other Spliterators created by the trySplit method also have an exact size), 
+(-)-> NONNULL (there can be no null Characters in the String), and 
+(-)-> IMMUTABLE (no further Characters can be added while parsing the String because the String itself is an immutable class).
+
+Putting the WordCounterSpliterator to work
+
+One last notable feature of Spliterators is the possibility of binding the source of the elements to be traversed at the point of first traversal, first split, or first query for estimated size, rather than at the time of its creation. When this happens, it’s called a late-binding Spliterator.
+
+7.4. Summary
+In this chapter, you’ve learned the following:
+
+(1) Internal iteration allows you to process a stream in parallel without the need to explicitly use and coordinate different threads in your code.
+(2) Even if processing a stream in parallel is so easy, there’s no guarantee that doing so will make your programs run faster under all circumstances. Behavior and performance of parallel software can sometimes be counterintuitive, and for this reason it’s always necessary to measure them and be sure that you’re not actually slowing your programs down.
+(3) Parallel execution of an operation on a set of data, as done by a parallel stream, can provide a performance boost, especially when the number of elements to be processed is huge or the processing of each single element is particularly time consuming.
+(4) From a performance point of view, using the right data structure, for instance, employing primitive streams instead of nonspecialized ones whenever possible, is almost always more important than trying to parallelize some operations.
+(5) The fork/join framework lets you recursively split a parallelizable task into smaller tasks, execute them on different threads, and then combine the results of each subtask in order to produce the overall result.
+(6) Spliterators define how a parallel stream can split the data it traverses.
