@@ -200,7 +200,10 @@ You can calculate the number of words by performing a reduction on this stream. 
 
  This Spliterator is created from the String to be parsed and iterates over its Characters by holding the index of the one currently being traversed. Let’s quickly revisit the methods of the WordCounterSpliterator implementing the Spliterator interface:
 
-(1) The tryAdvance() method feeds the Consumer with the Character in the String at the current index position and increments this position. The Consumer passed as argument is an internal Java class forwarding the consumed Character to the set of functions that have to be applied to it while traversing the stream, which in this case is only a reducing function, namely, the accumulate method of the WordCounter class. The tryAdvance() method returns true if the new cursor position is less than the total String length and there are further Characters to be iterated.
+(1) The tryAdvance() method feeds the Consumer with the Character in the String at the current index position and increments this position. 
+The Consumer passed as argument IS AN INTERNAL JAVA CLASS FORWARDING THE CONSUMED CHARACTER TO THE SET OF FUNCTIONS THAT HAVE TO BE APPLIED TO IT WHILE TRAVERSING THE STREAM, 
+which in this case is only a reducing function, namely, the accumulate() method of the WordCounter class. 
+The tryAdvance() method returns true if the new cursor position is less than the total String length and there are further Characters to be iterated.
 
 (2) The trySplit() method is the most important one in a Spliterator because it’s the one DEFINING THE LOGIC USED TO SPLIT THE DATA STRUCTURE TO BE ITERATED. 
 As you did in the compute method of the RecursiveTask implemented in listing 7.1 (on how to use the fork/join framework), the first thing you have to do here is 
