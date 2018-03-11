@@ -1,0 +1,156 @@
+10. Using Optional (244-225=19)
+
+A British computer scientist named Tony Hoare introduced null references back in 1965 while designing ALGOL W, he thought this was the most convenient way to model the absence of a value. 
+
+What can you do to avoid running into an unexpected NullPointerException? Typically, you can add null checks where necessary (and sometimes, in an excess of defensive programming, even where not necessary) and often with different styles.
+
+Note that you can avoid this last null check only because of your knowledge of the business domain, but that isn’t reflected in the Java classes modeling your data.
+
+“DEEP DOUBTS” shows a recurring pattern: every time you have a doubt that a variable could be null, you’re obliged to add a further nested if block, increasing the indentation level of the code. This clearly scales poorly and compromises the readability.
+
+In this second attempt, you try to avoid the deeply nested if blocks, adopting a different strategy: every time you meet a null variable, you return the string “Unknown.” 
+Nevertheless, this solution is also far from ideal; now the method has four distinct exit points, making it hardly maintainable. Even worse, the default value to be returned in case of a null, the string “Unknown,” is repeated in three places—and hopefully not misspelled! Of course, you may wish to extract it into a constant to avoid this problem.
+
+PROBLEMS WITH NULL:
+(1) It’s a source of error. NullPointerException is by far the most common exception in Java.
+(2) It bloats your code. It worsens readability by making it necessary to fill your code with often deeply nested null checks.
+(3) It’s meaningless. It doesn’t have any semantic meaning, and in particular it represents the wrong way to model the absence of a value in a statically typed language.
+(4) It breaks Java philosophy. Java always hides pointers from developers except in one case: the null pointer.
+(5) It creates a hole in the type system. null carries no type or other information, meaning it can be assigned to any reference type. This is a problem because, when it’s propagated to another part of the system, you have no idea what that null was initially supposed to be.
+
+A BETTER WAY TO MODEL THE ABSENCE AND PRESENCE OF A VALUE.
+Groovy worked around this problem by introducing a safe navigation operator, represented by "?.", to safely navigate through potentially null values. 
+		person?.car?.insurance?.name
+The Groovy safe navigation operator allows you to safely navigate through these potentially null references without throwing a NullPointerException, by just propagating the null reference through the invocations chain, returning a null in the event that any value in the chain is a null.
+ If you solve this problem in this way, without wondering if it’s correct that your algorithm or your data model could present a null value in that specific situation, you’re not fixing a bug but hiding it, making its discovery and fix far more difficult for whoever will be called to work on it next time; it very likely will be you in the next week or month. You’re just sweeping the dirt under the carpet. Groovy’s null-safe dereferencing operator is only a bigger and more powerful broom for making this mistake, without worrying too much about its consequences.
+
+ Other functional languages, such as Haskell and Scala, take a different view. Haskell includes a Maybe type, which essentially encapsulates an optional value. A value of type Maybe can contain either a value of a given type or nothing. There’s no concept of a null reference. Scala has a similar construct called Option[T] to encapsulate the presence or absence of a value of type T.
+ You then have to explicitly check whether a value is present or not using operations available on the Option type, which enforces the idea of “null checking.” You can no longer forget to do it because it’s enforced by the type system.
+--------------------------------------------------------
+
+ 10.2. Introducing the Optional class
+
+java.util.Optional<T> - It’s a class that encapsulates an optional value.
+
+When a value is present, the Optional class just wraps it. Conversely, the absence of a value is modeled with an “empty” optional returned by the method Optional.empty. It’s a static factory method that returns a special singleton instance of the Optional class. You might wonder what the difference is between a null reference and Optional .empty(). Semantically, they could be seen as the same thing, but in practice the difference is huge: trying to dereference a null will invariably cause a NullPointer-Exception, whereas Optional.empty() is a valid, workable object of type Optional that can be invoked in useful ways.
+
+An important, practical semantic difference in using optionals instead of nulls is that in the first case, declaring a variable of type Optional<Car> instead of Car clearly signals that a missing value is permitted there. Conversely, always using the type Car and possibly assigning a null reference to a variable of that type implies you don’t have any help, other than your knowledge of the business model, to understand whether the null belongs to the valid domain of that given variable or not.
+
+Note how the use of the Optional class enriches the semantics of your model. The fact that a person references an Optional<Car>, and a car an Optional<Insurance>, makes it explicit in the domain that a person might or might not own a car, and that car might or might not be insured.
+
+At the same time, the fact that the name of the insurance company is declared of type String instead of Optional<String> makes it evident that it’s mandatory for an insurance company to have a name. This way you know for certain whether you’ll get a NullPointerException when dereferencing the name of an insurance company; you don’t have to add a null check because doing so will just hide the problem instead of fixing it. An insurance company must have a name, so if you find one without, you’ll have to work out what’s wrong in your data instead of adding a piece of code covering up this circumstance. 
+
+Using optionals consistently disambiguates beyond any doubt the case of a value that can be structurally missing from the case of a value that’s absent only because of a bug in your algorithm or a problem in your data. It’s important to note that the intention of the Optional class is not to replace every single null reference. Instead, its purpose is to help you design more-comprehensible APIs so that by just reading the signature of a method, you can tell whether to expect an optional value. This forces you to actively unwrap an optional to deal with the absence of a value.
+
+10.3. Patterns for adopting Optional
+
+1) As mentioned earlier, you can get hold of an empty optional object using the static factory method Optional.empty(): Optional<Car> optCar = Optional.empty();
+2) You can also create an optional from a non-null value with the static factory method Optional.of(XYZ): Optional<Car> optCar = Optional.of(car);
+If car were null, a NullPointerException would be immediately thrown (rather than getting a latent error once you try to access properties of the car).
+3) Finally, by using the static factory method Optional.ofNullable, you can create an Optional object that may hold a null value:
+Optional<Car> optCar = Optional.ofNullable(car);
+If car were null, the resulting Optional object would be empty.
+
+Optional supports a map() method:
+You could also think of an Optional object as a particular collection of data, containing at most a single element. If the Optional contains a value, then the function passed as argument to map() transforms that value. If the Optional is empty, then nothing happens. 
+
+Optional<Insurance> optInsurance = Optional.ofNullable(insurance);
+Optional<String> name = optInsurance.map(Insurance::getName);
+-----------------------------
+FLATMAP()
+With streams, the flatMap method takes a function as an argument, which returns another stream. This function is applied to each element of a stream, which would result in a stream of streams. But flatMap has the effect of replacing each generated stream by the contents of that stream. In other words, all the separate streams that are generated by the function get amalgamated or flattened into a single stream.
+-----------------------------
+
+Here the function passed to the stream’s flatMap method transforms each square into another stream containing two triangles. The result of a simple map would then be a stream containing three other streams, each of them having two triangles, but the flatMap method flattens this two-level stream into a single stream containing six triangles in total. In the same way, the function passed to the optional’s flatMap method transforms the square contained in the original optional into an optional containing a triangle. If this function was passed to the map method, the result would be an optional containing another optional that, in turn, contains a triangle, but the flatMap method flattens this two-level optional into a single optional containing a triangle.
+
+..instead of increasing the code complexity with conditional branches.
+
+Once again this approach allows you to make explicit through the type system something that otherwise would remain implicit in your knowledge of the domain model, namely, you should never forget that the first purpose of a language, even a programming language, is communication. Declaring a method to take an optional as an argument or to return an optional as a result documents to your colleagues—and all future users of your method—that it can take an empty value or that it might give an empty value as result.
+
+много букв, и хер поймёшь их объяснение:
+Here you begin with the optional wrapping the Person and invoking flatMap(Person::getCar)on it. As we said, you can logically think of this invocation as something that happens in two steps. In step 1, a Function is applied to the Person inside the optional to transform it. In this case, the Function is expressed with a method reference invoking the method getCar on that Person. Because that method returns an Optional<Car>, the Person inside the optional is transformed into an instance of that type, resulting in a two-level optional that’s flattened as part of the flatMap operation. From a theoretical point of view, you can think of this flattening operation as the operation that combines two optionals, resulting in an empty optional, if at least one of them is empty. What happens in reality is that if you invoke flatMap on an empty optional, nothing is changed, and it’s returned as is. Conversely, if the optional wraps a Person, the Function passed to the flatMap method is applied to that Person. Because the value produced by that Function application is already an optional, the flatMap method can return it as is.
+
+At this point the resulting optional will be empty if any of the methods in this invocation chain returns an empty optional or will contain the desired insurance company name otherwise. So how do you read that value? After all, you’ll end up getting an Optional<String> that may or may not contain the name of the insurance company.
+
+----------------
+!!!  Brian Goetz clearly stated the purpose of Optional is to support the optional-return idiom only.
+
+Because the Optional class wasn’t intended for use as a field type, it also doesn’t implement the Serializable interface. For this reason, using Optionals in your domain model could break applications using tools or frameworks that require a serializable model to work. 
+
+public class Person {
+    private Car car;
+    public Optional<Car> getCarAsOptional() {
+        return Optional.ofNullable(car);
+    }
+}
+
+10.3.4. Default actions and unwrapping an optional:
+
+(1) get() is the simplest but also the least safe of these methods. It returns the wrapped value if present but throws a NoSuchElementException otherwise. For this reason, using this method is almost always a bad idea unless you’re really sure the optional contains a value. In addition, it’s not much of an improvement over nested null checks.
+(2) orElse(T other) is the method used in listing 10.5, and as we noted there, it allows you to provide a default value for when the optional doesn’t contain a value.
+(3) orElseGet(Supplier<? extends T> other) is the lazy counterpart of the orElse method, because the supplier is invoked only if the optional contains no value. You should use this method either when the default value is time-consuming to create (to gain a little efficiency) or you want to be sure this is done only if the optional is empty (in which case it’s strictly necessary).
+(4) orElseThrow(Supplier<? extends X> exceptionSupplier) is similar to the get method in that it throws an exception when the optional is empty, but in this case it allows you to choose the type of exception that you want to throw.
+(5) ifPresent(Consumer<? super T> consumer) lets you execute the action given as argument if a value is present; otherwise no action is taken.
+
+10.3.5. Combining two optionals
+
+public Optional<Insurance> nullSafeFindCheapestInsurance2(Optional<Person> person, Optional<Car> car) {
+        return person.flatMap(p -> car.map(c -> findCheapestInsurance(p, c)));
+    }
+Here you invoke a flatMap on the first optional, so if this is empty, the lambda expression passed to it won’t be executed at all and this invocation will just return an empty optional. Conversely, if the person is present, it uses it as the input of a Function returning an Optional<Insurance> as required by the flatMap method. The body of this function invokes a map on the second optional, so if it doesn’t contain any car, the Function will return an empty optional and so will the whole nullSafeFindCheapestInsurance method. Finally, if both the person and the car are present, the lambda expression passed as argument to the map method can safely invoke the original findCheapestInsurance method with them.
+
+10.3.6. Rejecting certain values with filter
+Optional<Insurance> optInsurance = ...;
+optInsurance.filter(insurance -> "CambridgeInsurance".equals(insurance.getName()))
+            .ifPresent(x -> System.out.println("ok"));
+The filter method takes a predicate as an argument. If a value is present in the Optional object and it matches the predicate, the filter method returns that value; otherwise, it returns an empty Optional object. If you remember that you can think of an optional as a stream containing at most a single element, the behavior of this method should be pretty clear. If the optional is already empty, it doesn’t have any effect; otherwise, it applies the predicate to the value contained in the optional. If this application returns true, the optional returns unchanged; otherwise, the value is filtered away, leaving the optional empty.
+
+Table 10.1. The methods of the Optional class
+Method
+
+Description
+
+[.empty()]	--->	Returns an empty Optional instance
+[.filter()]	--->	If the value is present and matches the given predicate, returns this Optional; otherwise returns the empty one
+[.flatMap()]	--->	If a value is present, returns the Optional resulting from the application of the provided mapping function to it; otherwise returns the empty Optional
+[.get()]	--->	Returns the value wrapped by this Optional if present; otherwise throws a NoSuchElementException
+[.ifPresent()]	--->	If a value is present, invokes the specified consumer with the value; otherwise does nothing
+[.isPresent()]	--->	Returns true if there is a value present; otherwise false
+[.map()]	--->	If a value is present, applies the provided mapping function to it
+[.of()]	--->	Returns an Optional wrapping the given value or throws a NullPointerException if this value is null
+[.ofNullable()]	--->	Returns an Optional wrapping the given value or the empty Optional if this value is null
+[.orElse()]	--->	Returns the value if present or the given default value otherwise
+[.orElseGet()]	--->	Returns the value if present or the one provided by the given Supplier otherwise
+[.orElseThrow()]	--->	Returns the value if present or throws the exception created by the given Supplier otherwise
+
+10.4. Practical examples of using Optional
+10.4.1. Wrapping a potentially null value in an optional
+An existing Java API almost always returns a null to signal the absence of the required value or that the computation to obtain it failed for some reason.
+
+improve this by wrapping in an optional the value returned by the map. 
+--- Optional<Object> value = Optional.ofNullable(map.get("key"));
+You can use this method every time you want to safely transform a value that could be potentially null into an optional.
+
+10.4.2. Exceptions vs. Optional
+Throwing an exception is another common alternative in the Java API to returning a null when, for any reason, a value can’t be provided. A typical example of this is the conversion of String into an int, provided by the Integer.parseInt(String) static method. 
+ the only difference being that this time you have to check it with a try/catch block instead of using an if condition controlling whether a value is not null.
+You can’t change the original Java method, but nothing prevents you from implementing a tiny utility method, wrapping it, and returning an optional as desired, as shown in this next listing.
+public static Optional<Integer> stringToInt(String s) {
+try {
+return Optional.of(Integer.parseInt(s)); 
+} catch (NumberFormatException e) {
+return Optional.empty(); 
+}
+}
+
+PRIMITIVE OPTIONALS AND WHY YOU SHOULDN’T USE THEM
+Note that, like streams, optionals also have primitive counterparts—OptionalInt, OptionalLong, and OptionalDouble
+We discourage using primitive optionals because they lack the map, flatMap, and filter methods, which are the most useful methods of the Optional class. Moreover, as happens for streams, an optional can’t be composed with its primitive counterpart, so, for example, if the method of listing 10.6 returned OptionalInt, you couldn’t pass it as a method reference to the flatMap method of another optional.
+
+10.5. Summary
+(1) null references have been historically introduced in programming languages to generally signal the absence of a value.
+(2) Java 8 introduces the class java.util.Optional<T> to model the presence or absence of a value.
+(3) You can create Optional objects with the static factory methods Optional.empty, Optional.of, and Optional.ofNullable.
+(4) The Optional class supports many methods such as map, flatMap, and filter, which are conceptually similar to the methods of a stream.
+(5) Using Optional forces you to actively unwrap an optional to deal with the absence of a value; as a result, you protect your code against unintended null pointer exceptions.
+(6) Using Optional can help you design better APIs in which, just by reading the signature of a method, users can tell whether to expect an optional value.
