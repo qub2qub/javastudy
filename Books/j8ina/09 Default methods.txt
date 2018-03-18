@@ -1,6 +1,8 @@
 09 Default methods 224-207=17
 
-Traditionally, a Java interface groups related methods together into a contract. Any class that implements an interface must provide an implementation for each method defined by the interface or inherit the implementation from a superclass. But this causes a problem when library designers need to update an interface to add a new method. 
+Traditionally, a Java interface groups related methods together into a contract. 
+
+Any class that implements an interface must provide an implementation for each method defined by the interface or inherit the implementation from a superclass. But this causes a problem when library designers need to update an interface to add a new method. 
 Indeed, existing concrete classes (which may not be under their control) need to be modified to reflect the new interface contract. This is particularly problematic because the Java 8 API introduces many new methods on existing interfaces, such as the sort method on the List interface that you used in previous chapters. 
 Imagine all the angry maintainers of alternative collection frameworks such as Guava and Apache Commons who now need to modify all the classes implementing the List interface to provide an implementation for the sort method too!
 
@@ -27,7 +29,8 @@ So if you’re a library designer, this chapter is important because default met
 
 **********************************
 STATIC METHODS AND INTERFACES
-A common pattern in Java is to define both an interface and a utility companion class defining many static methods for working with instances of the interface. For example, Collections is a companion class to deal with Collection objects. Now that static methods can exist inside interfaces, such utility classes in your code can go away and their static methods can be moved inside an interface. These companion classes will remain in the Java API in order to preserve backward compatibility.
+A common pattern in Java is to define both an interface and a utility companion class defining many static methods for working with instances of the interface. 
+For example, Collections is a companion class to deal with Collection objects. Now that static methods can exist inside interfaces, such utility classes in your code can go away and their static methods can be moved inside an interface. These companion classes will remain in the Java API in order to preserve backward compatibility.
 **********************************
 
 9.1. Evolving APIs
@@ -43,23 +46,28 @@ There are three main kinds of compatibility when introducing a change to a Java 
 
 You saw that adding a method to an interface is binary compatible but results in a compiler error if the class implementing the interface is recompiled. It’s good to know the different kinds of compatibilities, so let’s examine them in more detail.
 
-BINARY COMPATIBILITY means existing binaries running without errors continue to link (which involves verification, preparation, and resolution) without error after introducing a change. For example, just adding a method to an interface is binary compatible because if it’s not called, existing methods of the interface can still run without problems.
+BINARY COMPATIBILITY means existing binaries running without errors continue to link (which involves verification, preparation, and resolution) without error after introducing a change. 
+For example, just adding a method to an interface is binary compatible because if it’s not called, existing methods of the interface can still run without problems.
 
-In its simplest form, SOURCE COMPATIBILITY means an existing program will still compile after introducing a change. For example, adding a method to an interface isn’t source compatible; existing implementations won’t recompile because they need to implement the new method.
+In its simplest form, SOURCE COMPATIBILITY means an existing program will still compile after introducing a change. 
+For example, adding a method to an interface isn’t source compatible; existing implementations won’t recompile because they need to implement the new method.
 
-Finally, BEHAVIORAL COMPATIBILITY means running a program after a change with the same inputs results in the same behavior. For example, adding a method to an interface is behavioral compatible because the method is never called in the program (or it gets overridden by an implementation).
+Finally, BEHAVIORAL COMPATIBILITY means running a program after a change with the same inputs results in the same behavior. 
+For example, adding a method to an interface is behavioral compatible because the method is never called in the program (or it gets overridden by an implementation).
 ********************************************
 
 9.2. Default methods in a nutshell
-Default methods are a new feature added in Java 8 to help evolve APIs in a compatible way. An interface can now contain method signatures for which an implementing class doesn’t provide an implementation. So who implements them? The missing method bodies are given as part of the interface (hence default implementations) rather than in the implementing class.
+Default methods are a new feature added in Java 8 to help evolve APIs in a compatible way. 
+An interface can now contain method signatures for which an implementing class doesn’t provide an implementation. So who implements them? The missing method bodies are given as part of the interface (hence default implementations) rather than in the implementing class.
 
 It starts with a "default" modifier and contains a body just like a method declared in a class. 
 
-adding a method to an interface with a default implementation isn’t a source incompatibility. = т.е. явл-ся SOURCE COMPATIBILITY
+adding a default method to an interface with a default implementation isn’t a source incompatibility. = т.е. явл-ся SOURCE COMPATIBILITY
 --------------
 What happens if an implementing class also defines the same method signature or if default methods can be overridden? 
 
-(remember, a functional interface contains only one abstract method; default methods are non-abstract methods).
+(remember, a functional interface contains only one abstract method; 
+default methods are non-abstract methods).
 
 ***********************
 Abstract classes vs. interfaces in Java 8
@@ -71,7 +79,7 @@ Abstract classes vs. interfaces in Java 8
 --  OPTIONAL METHODS
 With default methods, you can provide a default implementation for such methods, so concrete classes don’t need to explicitly provide an empty implementation.
 
--- MULTIPLE INHERITANCE OF BEHAVIOR == This is the ability of a class to reuse code from multiple places
+-- MULTIPLE INHERITANCE OF BEHAVIOR == This is the ability of a class to reuse code from multiple places.
 Classes in Java can inherit from only one other class, but classes have always been allowed to implement multiple interfaces.
 ArrayList is extending one class and implementing six interfaces. As a result, an ArrayList is a direct subtype of seven types: AbstractList, List, RandomAccess, Cloneable, Serializable, Iterable, and Collection.
 Because interface methods can have implementations in Java 8, classes can inherit behavior (implementation code) from multiple interfaces.
@@ -83,13 +91,15 @@ public interface Rotatable {
         setRotationAngle((getRotationAngle() + angleInDegrees) % 360);
     }
 }
-This technique is somewhat related to the template design pattern where a skeleton algorithm is defined in terms of other methods that need to be implemented.
+This technique is somewhat related to the TEMPLATE DESIGN PATTERN where a skeleton algorithm is defined in terms of other methods that need to be implemented.
 
-Here’s another advantage of defining simple interfaces with default implementations like the ones for your game. Let’s say you need to modify the implementation of moveVertically to make it more efficient. You can now change its implementation directly in the Moveable interface, and all classes implementing it will automatically inherit the code (provided they didn’t implement the method themselves)!
+Here’s another advantage of defining simple interfaces with default implementations like the ones for your game. Let’s say you need to modify the implementation of moveVertically() to make it more efficient. You can now change its implementation directly in the Moveable interface, and all classes implementing it will automatically inherit the code (provided they didn’t implement the method themselves)!
 
 ******************
 Inheritance considered harmful
-Inheritance shouldn’t be your answer to everything when it comes down to reusing code. For example, inheriting from a class that has 100 methods and fields just to reuse one method is a bad idea, because it adds unnecessary complexity. You’d be better off using delegation: create a method that calls directly the method of the class you need via a member variable. This is why you’ll sometime find classes that are declared “final” intentionally: they can’t be inherited from to prevent this kind of antipattern or have their core behavior messed with. Note that sometimes final classes have a place; for example, String is final because we don’t want anybody to be able to interfere with such core functionality.
+Inheritance shouldn’t be your answer to everything when it comes down to reusing code. For example, inheriting from a class that has 100 methods and fields just to reuse one method is a bad idea, because it adds unnecessary complexity. 
+You’d be better off using DELEGATION: create a method that calls directly the method of the class you need via a member variable. 
+This is why you’ll sometime find classes that are declared “final” intentionally: they can’t be inherited from to prevent this kind of antipattern or have their core behavior messed with. Note that sometimes final classes have a place; for example, String is final because we don’t want anybody to be able to interfere with such core functionality.
 
 The same idea is applicable to interfaces with default methods. By keeping your interface minimal, you can achieve greater composition because you can select only the implementations you need.
 ******************
@@ -135,11 +145,11 @@ The new abstract hello method in C takes priority over the default hello method 
 
 9.5. Summary
 
-(1) Interfaces in Java 8 can have implementation code through default methods and static methods.
-(2) Default methods start with a default keyword and contain a body like class methods do.
-(3) Adding an abstract method to a published interface is a source incompatibility.
+(1) Interfaces in Java 8 can have implementation code through DEFAULT methods and STATIC methods.
+(2) Default methods start with a "default" keyword and contain a body like class methods do.
+(3) Adding an ABSTRACT METHOD to a published interface is a SOURCE INCOMPATIBILITY.
 (4) Default methods help library designers evolve APIs in a backward-compatible way.
-(5) Default methods can be used for creating optional methods and MULTIPLE INHERITANCE OF BEHAVIOR.
+(5) Default methods can be used for creating OPTIONAL METHODS and MULTIPLE INHERITANCE OF BEHAVIOR.
 (6) There are resolution rules to resolve conflicts when a class inherits from several default methods with the same signature.
 (7) A method declaration in the class or a superclass takes priority over any default method declaration. Otherwise, the method with the same signature in the most specific default-providing interface is selected.
 (8) When two methods are equally specific, a class can explicitly override a method and select which one to call.

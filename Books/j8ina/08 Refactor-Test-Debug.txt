@@ -231,13 +231,13 @@ This works nicely because the method moveRightBy is public. Therefore, it can be
 
 Sometime you may have access to a lambda via a field so you can reuse it, and you’d really like to test the logic encapsulated in that lambda. What can you do? You could test the lambda just like when calling methods. For example, let’s say you add a static field compareByXAndThenY in the Point class that gives you access to a Comparator object
 
-Remember that lambda expressions generate an instance of a functional interface. As a result, you can test the behavior of that instance. Here, you can now call the method compare on the Comparator object compareByXAndThenY with different arguments to test that its behavior.
+Remember that lambda expressions generate an instance of a functional interface. As a result, you can test the behavior of that instance. Here, you can now call the method compare() on the Comparator object compareByXAndThenY with different arguments to test that its behavior.
 
 8.3.2. Focusing on the behavior of the method using a lambda
 But the purpose of lambdas is to encapsulate a one-off piece of behavior to be used by another method. In that case you shouldn’t make lambda expressions available publicly; they’re only an implementation detail. 
 Instead, we argue that YOU SHOULD TEST THE BEHAVIOR OF THE METHOD THAT USES A LAMBDA EXPRESSION.
 
-Note that in the unit test just shown, it’s important that the Point class implement the equals method appropriately; otherwise it will rely on the default implementation from Object!
+Note that in the unit test just shown, it’s important that the Point class implement the equals() method appropriately; otherwise it will rely on the default implementation from Object!
 
 8.3.3. Pulling complex lambdas into separate methods
 Perhaps you come across a really complicated lambda expression that contains a lot of logic (for example, a technical pricing algorithm with corner cases). 
@@ -262,7 +262,7 @@ lambda$main$0
 Note that if a method reference refers to a method declared in the same class as where it’s used, then it will appear in the stack trace. For instance, in the following example
 
 -------------------
-stream operation PEEK can help. Its purpose is to execute an action on each element of a stream as it’s consumed. But it doesn’t consume the whole stream like forEach does; it forwards the element it performed an action on to the next operation in the pipeline.
+stream operation .peek() can help. Its purpose is to execute an action on each element of a stream as it’s consumed. But it doesn’t consume the whole stream like forEach does; it forwards the element it performed an action on to the next operation in the pipeline.
 you use peek to print the intermediate value before and after each operation in the stream pipeline
 
 8.5. Summary
@@ -276,4 +276,4 @@ Following are the key concepts you should take away from this chapter:
 (6) Lambda expressions can be unit tested, but in general you should focus on testing the behavior of the methods where the lambda expressions appear.
 (7) Consider extracting complex lambda expressions into regular methods.
 (8) Lambda expressions can make stack traces less readable.
-(9) The peek method of a stream is useful to log intermediate values as they flow past at certain points in a stream pipeline.
+(9) The peek() method of a stream is useful to log intermediate values as they flow past at certain points in a stream pipeline.
