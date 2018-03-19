@@ -1,0 +1,21 @@
+12 New Date and Time API (288-273=15)
+
+The DateFormat also comes with its own set of problems. For example, it isn’t thread-safe. This means that if two threads try to parse a date using the same formatter at the same time, you may receive unpredictable results.
+
+Finally, both Date and Calendar are mutable classes. What does it mean to mutate the 18th of March 2014 to the 18th of April? This design choice can lead you into a maintenance nightmare
+
+12.1. LocalDate, LocalTime, Instant, Duration, Period
+
+LocalDate --- An instance of this class is an immutable object representing just a plain date without the time of day. In particular, it doesn’t carry any information about the time zone. 	
+
+LocalDate date = LocalDate.of(2014, 3, 18); 
+int year = date.getYear(); 
+Month month = date.getMonth(); 
+int day = date.getDayOfMonth(); 
+DayOfWeek dow = date.getDayOfWeek(); 
+int len = date.lengthOfMonth(); 
+boolean leap = date.isLeapYear();
+
+It’s also possible to obtains the current date from the system clock using the now factory method:
+LocalDate today = LocalDate.now();
+

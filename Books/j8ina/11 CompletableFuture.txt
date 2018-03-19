@@ -1,16 +1,45 @@
 11 CompletableFuture (272-245=27)
+*********************************************
+см про параллельные и concurrent
+http://tutorials.jenkov.com/java-concurrency/concurrency-vs-parallelism.html
+Parallelism
+Parallelism means that an application splits its tasks up into smaller subtasks which can be processed in parallel, for instance on multiple CPUs at the exact same time.
+Concurrency
+Concurrency means that an application is making progress on more than one task at the same time (concurrently).
+Concurrency vs. Parallelism In Detail
+As you can see, concurrency is related to how an application handles multiple tasks it works on. An application may process one task at at time (sequentially) or work on multiple tasks at the same time (concurrently).
 
-This situation represents the other side of the multitask-programming coin. The fork/join framework and parallel streams are valuable tools for parallelism; they split an operation into multiple suboperations and perform those suboperations in parallel on different cores, CPUs, or even machines.
+Parallelism on the other hand, is related to how an application handles each individual task. An application may process the task serially from start to end, or split the task up into subtasks which can be completed in parallel.
 
-Conversely, when dealing with concurrency instead of parallelism, or when your main goal is to perform several loosely related tasks on the same CPUs, keeping their cores as busy as possible to maximize the throughput of your application, what you really want to achieve is to avoid blocking a thread and wasting its computational resources while waiting, potentially for quite a while, for a result from a remote service or from interrogating a database. As you’ll see in this chapter, the Future interface and particularly its new CompletableFuture implementation are your best tools in such circumstances.
+As you can see, an application can be concurrent, but not parallel. This means that it processes more than one task at the same time, but the tasks are not broken down into subtasks.
+
+An application can also be parallel but not concurrent. This means that the application only works on one task at a time, and this task is broken down into subtasks which can be processed in parallel.
+
+Additionally, an application can be neither concurrent nor parallel. This means that it works on only one task at a time, and the task is never broken down into subtasks for parallel execution.
+
+Finally, an application can also be both concurrent and parallel, in that it both works on multiple tasks at the same time, and also breaks each task down into subtasks for parallel execution. However, some of the benefits of concurrency and parallelism may be lost in this scenario, as the CPUs in the computer are already kept reasonably busy with either concurrency or parallelism alone. Combining it may lead to only a small performance gain or even performance loss. Make sure you analyze and measure before you adopt a concurrent parallel model blindly.
+*********************************************
+
+This situation represents the other side of the multitask-programming coin. The fork/join framework and parallel streams are valuable tools for PARALLELISM: they split an operation into multiple suboperations and perform those suboperations in parallel on different cores, CPUs, or even machines.
+
+Conversely, when dealing with CONCURRENCY instead of PARALLELISM, or when your main goal is to perform several loosely related tasks on the same CPUs, keeping their cores as busy as possible to maximize the throughput of your application, 
+
+what you really want to achieve is to avoid blocking a thread and wasting its computational resources while waiting, potentially for quite a while, for a result from a remote service or from interrogating a database. 
+
+As you’ll see in this chapter, the Future interface and particularly its new CompletableFuture implementation are your best tools in such circumstances.
 
 11.1. Futures
-The Future interface was introduced in Java 5 to model a result made available at some point in the future. It models an asynchronous computation and provides a reference to its result that will be available when the computation itself is completed. Triggering a potentially time-consuming action inside a Future allows the caller Thread to continue doing useful work instead of just waiting for the operation’s result. You can think of it as taking a bag of clothes to your favorite dry cleaner. They will give you a receipt to tell you when your clothes are cleaned (a Future). In the meantime, you can do some other activities. Another advantage of Future is that it’s friendlier to work with than lower-level Threads. To work with a Future, you typically have to wrap the time-consuming operation inside a Callable object and submit it to an Executor-Service.
+The Future interface was introduced in Java 5 to model a result made available at some point in the future. It models an asynchronous computation and provides a reference to its result that will be available when the computation itself is completed. 
 
-this style of programming allows your thread to perform some other tasks while the long-lasting operation is executed concurrently in a separate thread provided by the ExecutorService. Then, when you can’t do any other meaningful work without having the result of that asynchronous operation, you can retrieve it from the Future by invoking its get method. This method immediately returns the result of the operation if it’s already completed or blocks your thread, waiting for its result to be available.
+Triggering a potentially time-consuming action inside a Future allows the caller Thread to continue doing useful work instead of just waiting for the operation’s result. You can think of it as taking a bag of clothes to your favorite dry cleaner. They will give you a receipt to tell you when your clothes are cleaned (a Future). In the meantime, you can do some other activities. 
+
+Another advantage of Future is that it’s friendlier to work with than lower-level Threads. To work with a Future, you typically have to wrap the time-consuming operation inside a Callable object and submit it to an ExecutorService.
+
+this style of programming allows your thread to perform some other tasks while the long-lasting operation is executed concurrently in a separate thread provided by the ExecutorService. Then, when you can’t do any other meaningful work without having the result of that asynchronous operation, you can retrieve it from the Future by invoking its get() method. This method immediately returns the result of the operation if it’s already completed or blocks your thread, waiting for its result to be available.
 
 11.1.1. FUTURES LIMITATIONS
-This first small example shows that the Future interface provides methods to check if the asynchronous computation is complete (using the isDone method), to wait for its completion, and to retrieve its result. But these features aren’t enough to let you write concise concurrent code. For example, it’s difficult to express dependencies between results of a Future; declaratively it’s easy to say, “When the result of the long computation is available, please send its result to another long computation, and when that’s done, combine its result with the result from another query.” But implementing this with the operations available in a Future is a different story. 
+This first small example shows that the Future interface provides methods to check if the asynchronous computation is complete (using the isDone method), to wait for its completion, and to retrieve its result. But these features aren’t enough to let you write concise concurrent code. 
+For example, it’s difficult to express dependencies between results of a Future; declaratively it’s easy to say, “When the result of the long computation is available, please send its result to another long computation, and when that’s done, combine its result with the result from another query.” But implementing this with the operations available in a Future is a different story. 
 
 This is why more declarative features would be useful, such as these:
 (1) Combining two asynchronous computations in one—both when they’re independent and when the second depends on the result of the first
@@ -26,31 +55,39 @@ The designs of Stream and CompletableFuture follow similar patterns: both use la
 11.1.2. Using CompletableFutures to build an asynchronous application
 ********************************************************
 Synchronous vs. asynchronous API
-The phrase synchronous API is just another way of talking about a traditional call to a method: you call it, the caller then waits while the method computes, the method then returns, and the caller continues with the returned value. Even if the caller and callee were executed on different threads, the caller would still wait for the callee to complete; this gives rise to the phrase blocking call.
+The phrase synchronous API is just another way of talking about a traditional call to a method: you call it, the caller then waits while the method computes, the method then returns, and the caller continues with the returned value.
+Even if the caller and callee were executed on different threads, the caller would still wait for the callee to complete; this gives rise to the phrase blocking call.
 
-In contrast, in an asynchronous API the method returns immediately, or at least before its computation is complete, delegating its remaining computation to a thread, which runs asynchronously to the caller—hence the phrase non-blocking call. The remaining computation gives its value to the caller, either by calling a callback method or by the caller invoking a further “wait until the computation is complete” method. This style of computation is common for I/O systems programming: you initiate a disc access, which happens asynchronously while you do more computation, and when you have nothing more useful to do, you simply wait until the disc blocks are loaded into memory.
+In contrast, in an asynchronous API the method returns immediately, or at least before its computation is complete, delegating its remaining computation to a thread, which runs asynchronously to the caller—hence the phrase non-blocking call. The remaining computation gives its value to the caller, either by calling a callback method or by the caller invoking a further “wait until the computation is complete” method. 
+
+This style of computation is common for I/O systems programming: you initiate a disc access, which happens asynchronously while you do more computation, and when you have nothing more useful to do, you simply wait until the disc blocks are loaded into memory.
 ********************************************************
 
 11.2. Implementing an asynchronous API
 The internal implementation of getPrice() method would query the shop’s database but probably also perform other time-consuming tasks, such as contacting various other external services (for example, the shop’s suppliers or manufacturer-related promotional discounts).
 
-java.util.concurrent .Future interface was introduced in Java 5 to represent the result of an asynchronous computation (that is, the caller thread is allowed to proceed without blocking). This means a Future is just a handle for a value that isn’t yet available but can be retrieved by invoking its get method after its computation has finally terminated. As a result, the getPriceAsync method can return immediately, giving the caller thread a chance to perform other useful computations in the meantime. The new CompletableFuture class gives you various possibilities to implement this method in an easy way
+"java.util.concurrent.Future" interface was introduced in Java 5 to represent the result of an asynchronous computation (that is, the caller thread is allowed to proceed without blocking). 
+This means a Future is just a handle for a value that isn’t yet available but can be retrieved by invoking its get() method after its computation has finally terminated. As a result, the getPriceAsync() method can return immediately, giving the caller thread a chance to perform other useful computations in the meantime. The new CompletableFuture class gives you various possibilities to implement this method in an easy way.
 
 As you can see, the client asks the shop to get the price of a certain product. Because the shop provides an asynchronous API, this invocation almost immediately returns the Future, through which the client can retrieve the product’s price at a later time.
 This allows the client to do other tasks, like querying other shops, instead of remaining blocked waiting for the first shop to produce the requested result. Later, when there are no other meaningful jobs that the client could do without having the product price, it can invoke get on the Future. By doing so the client either unwraps the value contained in the Future (if the asynchronous task is already finished) or remains blocked until that value is available.
-
+--------------
 it’s also possible for the client to avoid any risk of being blocked. Instead it can just be notified when the Future is completed, and execute a callback code, defined through a lambda expression or a method reference, only when the result of the computation is available. For now we’ll address another problem: how to correctly manage the possibility of an error occurring during the execution of the asynchronous task.
 
 11.2.2. Dealing with errors
 the exception raised to signal the error will remain confined in the thread, which is trying to calculate the product price, and will ultimately kill it. As a consequence, the client will remain blocked forever, waiting for the result of the get method to arrive.
 
-The client can prevent this problem by using an overloaded version of the get method that also accepts a timeout. It’s a good practice to always use a timeout to avoid similar situations elsewhere in your code. This way the client will at least avoid waiting indefinitely, but when the timeout expires, it will just be notified with a TimeoutException. As a consequence, it won’t have a chance to discover what really caused that failure inside the thread that was trying to calculate the product price. To make the client aware of the reason the shop wasn’t able to provide the price of the requested product, you have to propagate the Exception that caused the problem inside the CompletableFuture through its completeExceptionally() method. 
+The client can prevent this problem by using an overloaded version of the get method that also accepts a timeout. It’s a good practice to always use a timeout to avoid similar situations elsewhere in your code. This way the client will at least avoid waiting indefinitely, but when the timeout expires, it will just be notified with a TimeoutException. 
+As a consequence, it won’t have a chance to discover what really caused that failure inside the thread that was trying to calculate the product price. 
+To make the client aware of the reason the shop wasn’t able to provide the price of the requested product, you have to PROPAGATE the Exception that caused the problem inside the CompletableFuture through its completeExceptionally() method. 
 
 So, for example, if that method throws a RuntimeException saying “product not available,” the client will get an ExecutionException with that cause.
 
-Until now you’ve created CompletableFutures and completed them programmatically, when it seemed convenient to do so, but the CompletableFuture class itself comes with lots of handy factory methods that can make this process far easier and less verbose. For example, the supplyAsync method can let you rewrite the getPriceAsync() method in with a single statement.
+Until now you’ve created CompletableFutures and completed them programmatically, when it seemed convenient to do so, but the CompletableFuture class itself comes with lots of handy factory methods that can make this process far easier and less verbose. For example, the supplyAsync() method can let you rewrite the getPriceAsync() method in with a single statement.
 
-The supplyAsync method accepts a Supplier as argument and returns a Completable-Future that will be asynchronously completed with the value obtained by invoking that Supplier. This Supplier will be run by one of the Executors in the ForkJoinPool, but you can specify a different Executor by passing it as a second argument to the overloaded version of this method. More generally, it’s possible to optionally pass an Executor to all other CompletableFuture factory methods, and you’ll use this capability in section 11.3.4, where we demonstrate that using an Executor that fits the characteristics of your application can have a positive effect on its performance.
+The supplyAsync() method accepts a Supplier as argument and returns a CompletableFuture that will be asynchronously completed with the value obtained by invoking that Supplier. 
+This Supplier will be run by one of the Executors in the ForkJoinPool, but you can specify a different Executor by passing it as a second argument to the overloaded version of this method. 
+More generally, it’s possible to optionally pass an Executor to all other CompletableFuture factory methods, and you’ll use this capability in section 11.3.4, where we demonstrate that using an Executor that fits the characteristics of your application can have a positive effect on its performance.
 
 11.3. Make your code non-blocking
 ....
@@ -121,16 +158,18 @@ To achieve this, as you did with the first invocation of supplyAsync with getPri
 Retrieve the price from a shop and then transform it into a Quote
 Take this Quote and pass it to the Discount service to obtain the final discounted price
 
-The Java 8 CompletableFutures API provides the thenCompose method specifically for this purpose, allowing you to pipeline two asynchronous operations, passing the result of the first operation to the second operation when it becomes available. In other words, you can compose two CompletableFutures by invoking the thenCompose method on the first CompletableFuture and passing to it a Function. This Function has as argument the value returned by that first CompletableFuture when it completes, and it returns a second CompletableFuture that uses the result of the first as input for its computation. Note that with this approach, while the Futures are retrieving the quotes from the different shops, the main thread can perform other useful operations such as responding to UI events.
+The Java 8 CompletableFutures API provides the thenCompose() method specifically for this purpose, allowing you to pipeline two asynchronous operations, passing the result of the first operation to the second operation when it becomes available. 
+In other words, you can compose two CompletableFutures by invoking the thenCompose method on the first CompletableFuture and passing to it a Function. This Function has as argument the value returned by that first CompletableFuture when it completes, and it returns a second CompletableFuture that uses the result of the first as input for its computation. Note that with this approach, while the Futures are retrieving the quotes from the different shops, the main thread can perform other useful operations such as responding to UI events.
 
-Collecting the elements of the Stream resulting from these three map operations into a List, you obtain a List<CompletableFuture<String>>, and finally you can wait for the completion of those CompletableFutures and extract their values using join, 
+Collecting the elements of the Stream resulting from these three map operations into a List, you obtain a List<CompletableFuture<String>>, and finally you can wait for the completion of those CompletableFutures and extract their values using join(), 
 
-The thenCompose method you used in listing 11.16, like other methods of the Completable-Future class, also has a variant with an Async suffix, thenComposeAsync. In general, a method without the Async suffix in its name executes its task in the same thread as the previous task, whereas a method terminating with Async always submits the succeeding task to the thread pool, so each of the tasks can be handled by a different thread. In this case, the result of the second CompletableFuture depends on the first, so it makes no difference to the final result or to its broad-brush timing whether you compose the two CompletableFutures with one or the other variant of this method. We chose to use the one with thenCompose only because it’s slightly more efficient due to less thread-switching overhead.
+The thenCompose method you used in listing 11.16, like other methods of the Completable-Future class, also has a variant with an Async suffix, thenComposeAsync(). In general, a method without the Async suffix in its name executes its task in the same thread as the previous task, whereas a method terminating with Async always submits the succeeding task to the thread pool, so each of the tasks can be handled by a different thread. 
+In this case, the result of the second CompletableFuture depends on the first, so it makes no difference to the final result or to its broad-brush timing whether you compose the two CompletableFutures with one or the other variant of this method. We chose to use the one with thenCompose only because it’s slightly more efficient due to less thread-switching overhead.
 
 11.4.4. Combining two CompletableFutures—dependent and independent
 In listing 11.16, you invoked the thenCompose method on one CompletableFuture and passed to it a second CompletableFuture, which needed as input the value resulting from the execution of the first. But another frequently occurring case is where you need to combine the results of the operations performed by two completely independent CompletableFutures, and you don’t want to wait for the first to complete before starting on the second.
 
-In situations like this, use the thenCombine method; this takes as second argument a BiFunction, which defines how the results of the two CompletableFutures are to be combined when they both become available. Just like thenCompose, the thenCombine method also comes with an Async variant. In this case, using the thenCombineAsync method will cause the combination operation defined by the BiFunction to be submitted to the thread pool and then executed asynchronously in a separate task.
+In situations like this, use the thenCombine() method; this takes as second argument a BiFunction, which defines how the results of the two CompletableFutures are to be combined when they both become available. Just like thenCompose, the thenCombine method also comes with an Async variant. In this case, using the thenCombineAsync method will cause the combination operation defined by the BiFunction to be submitted to the thread pool and then executed asynchronously in a separate task.
 ...
 Here, because the combination operation is a simple multiplication, performing it in a separate task would have been a waste of resources, so you need to use the then-Combine method instead of its asynchronous thenCombineAsync counterpart.
 
