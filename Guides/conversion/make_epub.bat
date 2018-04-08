@@ -1,0 +1,1 @@
+for %%f in (*.txt) do pandoc "%%~nf.txt" -o "%%~nf.epub"
