@@ -1,0 +1,143 @@
+Thinking functionally
+13.1. Implementing and maintaining systems
+A seasoned Java contractor’s only slightly tongue-in-cheek maxim for deciding is “Start by searching for the keyword synchronized; if you find it, then just say no (reflecting the difficulty of fixing concurrency bugs); otherwise consider the structure of the system in more detail.”
+
+functions in your stream-processing pipeline don’t interact by one reading from or writing to a variable that’s written by another
+
+software engineering metrics of 
+COUPLING (how interdependent parts of the system are) and 
+COHESION (how related the various parts of the system are).
+
+ideas of no side effects and immutability, which functional programming promotes, can help.
+
+13.1.1. Shared mutable data
+Ultimately, the reason for the unexpected variable value problems just discussed is that shared mutable data structures are read and updated by more than one of the methods your maintenance centers on.
+
+Suppose several classes keep a reference to a list. Who owns this list? What if one class modifies it? Do other classes expect this change? How do other classes learn of this change? Do they need to be notified of this change to satisfy all assumptions on this list, or should they make a defensive copy for themselves? In other words, SHARED MUTABLE DATA STRUCTURES make it harder to track changes in different parts of your program.
+
+A method, which modifies neither the state of its enclosing class nor the state of any other objects and returns its entire results using return, is called pure or side-effect free.
+---Метод, который не изменяет ни состояние его окружающего класса, ни состояние каких-либо других объектов и возвращает только свои внутренние результаты, называется чистым или без-побочных-эффектов.
+
+Modifying a data structure in place, including assigning to any field, apart from initialization inside a constructor (for example, setter methods)
+
+THROWING AN EXCEPTION
+Doing I/O operations such as writing to a file
+Another way to look at this idea of no side effects is to consider immutable objects. --- An IMMUTABLE OBJECT is an object that can’t change its state after it’s instantiated so it can’t be affected by the actions of a function. 
+This means that once immutable objects are instantiated, they can never go into an unexpected state. You can share them without having to copy them, and they’re thread-safe because they can’t be modified.
+
+...the methods can no longer interfere with each other.
+
+13.1.2. Declarative programming
+There are two ways of thinking about implementing a system by writing a program. 
+1) ONE WAY CENTERS ON "HOW" THINGS ARE DONE: “first do this, then update that, then ....” For example, if you want to calculate the most expensive transaction in a list, you’ll typically execute a sequence of commands: take a transaction from the list and compare it with the provisional most expensive transaction; if it’s more expensive, then it becomes the provisional most expensive; repeat with the next transaction in the list and so on.
+
+This “how” style of programming is an excellent match for classic object-oriented programming, sometimes called IMPERATIVE PROGRAMMING, because it has instructions that mimic the low-level vocabulary of a computer (for example, assignment, conditional branching, and loops), 
+
+(1) как сделать, 2) что сделать)
+2) The other way centers instead on WHAT’S TO BE DONE. ...using streams for example...
+The fine detail of how this query is implemented is left to the library. We refer to this idea as internal iteration. The great advantage is that your query reads like the problem statement, and because of that it’s clear to understand immediately in comparison to trying to understand what a sequence of commands does.
+
+This “what” style is often called DECLARATIVE PROGRAMMING. You give rules saying what you want, and you expect the system to decide how to achieve it. It’s great because it reads closer to the problem statement.
+
+13.1.3. Why functional programming?
+FUNCTIONAL PROGRAMMING exemplifies this idea of DECLARATIVE PROGRAMMING AND SIDE-EFFECT-FREE COMPUTATION (“just say what you want, using expressions that don’t interact, and for which the system can choose the implementation”) 
+
+Note that certain language features such as composing operations and passing behaviors, which we presented in chapter 3 using lambda expressions, are required to help read and write code in a natural way using a declarative style. Using streams, you were able to chain several operations together to express a complicated query. 
+
+13.2. What’s functional programming?
+The oversimplistic answer to “What is functional programming?” is “programming using functions.” So what’s a function?
+
+It’s easy to imagine a method taking an int and a double as arguments and producing a double—and also having the side effect of counting the number of times it has been called by updating a mutable variable...
+But in the context of functional programming a function corresponds to a mathematical function: it takes zero or more arguments, gives one or more results, and has no side effects. You can see it as a black box, which takes some inputs and produces some outputs...
+
+The distinction between this sort of function and the methods you see in programming languages like Java is central. (The idea of the mathematical functions like log or sin having such side effects in unthinkable.) In particular, mathematical functions when repeatedly called with the same arguments always return the same results.
+
+When we say functional we mean “like mathematics—no side effects.” 
+Or might we allow a function to do nonfunctional things internally, as long as it doesn’t expose any of these side effects to the rest of the system? (a side effect that can’t be observed by callers -- it's OK because it can’t affect them.)
+
+13.2.1. Functional-style Java
+First, there’s a further subtlety about no one seeing your side effects and hence the meaning of functional.
+Suppose a function or method has no side effects, except for it incrementing a field just after entry and decrementing it just before exit. From the point of view of a program consisting of a single thread, this method has no visible side effects and can be regarded as functional style. On the other hand, if another thread could inspect the field—or worse could call the method concurrently—it wouldn’t be functional.
+You could hide this issue by wrapping the body of this method with a lock, and this would again enable you to argue that the method is functional. But in doing so you would have lost the ability to execute two calls to the method in parallel using two cores on your multicore processor. Your side effect may not be visible to a program, but it’s visible to the programmer in terms of slower execution!
+
+1) Our guideline is that to be regarded as functional style, a function or method can mutate only local variables. In addition, objects it references should be immutable. By this we mean all fields are final, and all fields of reference type refer transitively to other immutable objects. Later you may also permit updates to fields of objects that are freshly created in the method, and so aren’t visible from elsewhere, and that aren’t saved to affect the result of a subsequent call.
+
+2) Our previous guideline is incomplete, and there’s an additional requirement on being functional, which feels less important at first. To be regarded as functional style, a function or method shouldn’t throw any exceptions. There’s a simple overlegalistic explanation: you can’t throw an exception because this means a result is being signaled other than being passed as a proper result via return as in the black-box model discussed previously. 
+But then this seems countered by practical mathematical use: although legally a mathematical function gives exactly one result for each possible argument value, many common mathematical operations are what we should properly call partial functions. That is, for some or most input values they give exactly one result, but for other input values they’re undefined and don’t give a result at all. 
+An example is division when the second operand is zero or sqrt when its argument is negative. It might seem natural to model these situations by throwing an exception as Java does. There’s some scope for debate here, with some authors arguing that uncaught exceptions representing fatal errors are okay, but it’s the act of catching an exception that represents nonfunctional control flow, in that it breaks the simple “pass arguments, return result” metaphor pictured in the black-box model, leading to a third arrow representing an exception.
+
+So how might you express functions like division without using exceptions? The answer is to use types like Optional<T>
+...you may choose to use exceptions locally but not expose them via large-scale interfaces, thereby gaining the advantages of functional style without the risk of code bloat.
+
+3) Finally, to be regarded as functional, your function or method should call only those side-effecting library functions for which you can hide their nonfunctional behavior (that is, ensuring that any mutation they make on data structures is hidden from your caller, perhaps by copying first and by catching any exceptions they might raise). 
+
+4) Finally, for pragmatic reasons, you may find it convenient for functional-style code still to be able to output debugging information to some form of log file. Yes, this means the code can’t be strictly described as functional, but in practice you retain most of the benefits of functional-style programming.
+
+13.2.2. Referential transparency -- Ссылочная прозрачность
+The restrictions on “no visible side-effects” (no mutating structure visible to callers, no I/O, no exceptions) encode the concept of referential transparency. 
+---- A function is REFERENTIALLY TRANSPARENT if it always returns the same result value when called with the same argument value.
+The method String.replace() is referentially transparent because "raoul".replace('r', 'R') will always produce the same result (the method replace returns a new String with all lowercase 'r' replaced with uppercase 'R') rather than updating its this object so it can be considered a function.
+
+Put another way, a function consistently produces the same result given the same input, no matter where and when it’s invoked. 
+
+Referential transparency is a great property for program understanding. It also encompasses a save-instead-of-recompute(сохранить вместо пересчета) optimization for expensive or long-lived operations, which goes under the name MEMOIZATION or CACHING. 
+
+In Java there’s one slight complication about referential transparency. 
+Suppose you make two calls to a method that returns a List. Then the two calls may return references to distinct lists in memory but containing the same elements. If these lists were to be seen as mutable object-oriented values (and hence non-identical) then the method wouldn’t be referentially transparent. If you plan to use these lists as pure (immutable) values, then it makes sense to see the values as equal and hence the function as referentially transparent. 
+In general, IN FUNCTIONAL-STYLE CODE YOU CHOOSE TO REGARD SUCH FUNCTIONS AS REFERENTIALLY TRANSPARENT. 
+
+13.2.3. Object-oriented vs. functional-style programming
+At one end of the spectrum is the extreme object-oriented view: everything is an object and programs operate by updating fields and calling methods that update their associated object. At the other end of the spectrum lies the referentially transparent functional-programming style of no (visible) mutation. In practice, Java programmers have always mixed these styles.
+
+13.2.4. Functional style in practice
+Let’s review what you’ve just done. You’ve assumed that the missing methods insertAll() and concat() are themselves functional and deduced that your function subsets is also, because no operation in it mutates any existing structure. (If you’re familiar with mathematics, then you’ll recognize this argument as being BY INDUCTION.)
+
+The focus caused by thinking of methods like insertAll as functional gives you a natural place to put all this careful copying code—inside insertAll rather in its callers.
+
+ The second version of concat is a pure function. It may be using mutation (adding elements to the list r) internally, but it returns a result based on its arguments and modifies neither of them.
+
+Takeaway point: thinking of programming problems in terms of function-style methods that are characterized only by their input arguments, and their output result (that is, what to do) is often more productive than thinking how to do it and what to mutate too early in the design cycle. We now turn to recursion in more detail, a technique promoted in functional programming to let you think more in terms of this what to do style.
+
+13.3. Recursion vs. iteration
+Pure functional programming languages typically don’t include iterative constructs like while and for loops. Why? Because such constructs are often a hidden invitation to use mutation. For example, the condition in a while loop needs to be updated; otherwise the loop would execute zero or an infinite number of times. 
+But for a lot of use cases loops are perfectly fine. We’ve argued that to be functional style you’re allowed mutation if no one can see you doing it, meaning it’s acceptable to mutate local variables. Using the for-each loop in Java, for(Apple a : apples { } decodes into the Iterator: 
+		Iterator<Apple> it = apples.iterator();
+		while (it.hasNext()) {
+		   Apple apple = it.next();
+		   // ...
+		}
+This isn’t a problem because the mutations (both changing the state of the Iterator with the method next and assigning to the variable apple inside the while body) aren’t visible to the caller of the method where the mutations happen. But using a for-each loop, such as a search algorithm, as follows is problematic because the loop body is updating a data structure that’s shared with the caller:
+		public void searchForGold(List<String> list, Stats stats){
+		    for(String s: list){
+		        if("gold".equals(s)){
+		            stats.incrementFor("gold");
+		        }
+		    }
+		}
+Indeed, the body of the loop has a side effect that can’t be dismissed as functional style: it mutates the state of the stats object, which is shared with other parts of the program.
+
+!!! The theoretical answer is that every program can be rewritten to avoid iteration by using recursion instead, which doesn’t require mutability. 
+
+static long factorialRecursive(long n) {
+    return n == 1 ? 1 : n * factorialRecursive(n-1);
+}
+
+!! In Java, recursive forms are typically less efficient, and we discuss this shortly.
+In general, making a recursive function call is much more expensive than the single machine-level branch instruction needed to iterate. Why? Every time the factorialRecursive function is called, a new STACK FRAME is created on the call stack to hold the state of each function call (the multiplication it needs to do) until the recursion is done. This means your recursive definition of factorial will take memory proportional to its input. 
+
+Functional languages provide an answer to this problem: TAIL-CALL OPTIMIZATION. The basic idea is that you can write a recursive definition of factorial where the RECURSIVE CALL IS THE LAST THING THAT HAPPENS IN THE FUNCTION (we say the call is in a tail position). This different form of recursion style can be optimized to run fast. 
+
+The function factorialHelper is tail recursive because the recursive call is the last thing that happens in the function. By contrast in our previous definition of factorial-Recursive, the last thing was a multiplication of n and the result of a recursive call.
+
+This form of recursion is useful because instead of storing each intermediate result of the recursion onto different stack frames, the compiler can decide to reuse a single stack frame. Indeed, in the definition of factorialHelper, the intermediate results (the partial results of the factorial) are passed directly as arguments to the function. There’s no need to keep track of the intermediate result of each recursive call on a separate stack frame—it’s accessible directly through the argument of the function.
+
+The bad news is that Java doesn’t support this kind of optimization. But adopting tail recursion may be a better practice than classic recursion because it opens the way to eventual compiler optimization.
+
+The guidance when writing Java 8 is that you can often replace iteration with streams to avoid mutation. In addition, iteration can be replaced with recursion when it lets you write an algorithm in a more concise and side-effect-free way. Indeed, recursion can make examples easier to read, write, and understand (for example, in the subsets example shown previously), and programmer efficiency is often more important than small differences in execution time.
+
+13.4. Summary
+(1) Reducing shared mutable data structures can help you maintain and debug your programs in the long term.
+(2) Functional-style programming promotes side-effect-free methods and declarative programming.
+(3) Function-style methods are characterized only by their input arguments and their output result.
+(4) A function is referentially transparent if it always returns the same result value when called with the same argument value. Iterative constructs such as while loops can be replaced by recursion.
+(5) Tail recursion may be a better practice than classic recursion in Java because it opens the way to eventual compiler optimization.

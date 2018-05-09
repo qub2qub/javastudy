@@ -1,0 +1,129 @@
+14 Func-Prog techniques
+14.1. Functions everywhere
+phrase "functional-style programming" to mean that the behavior of functions and methods should be like that of mathematical-style functions—no side effects.
+
+Functional-language programmers often use the phrase with more generality to mean that functions may be used like other values: passed as arguments, returned as results, and stored in data structures. Such functions that may be used like other values are referred to as FIRST-CLASS FUNCTIONS. 
+
+Functions (like Comparator.comparing) that can do at least one of the following are called higher-order functions within the functional programming community:
+	1) Take one or more functions as parameter
+	2) Return a function as result
+
+This directly relates to Java 8 functions because they can not only be passed as arguments but also returned as results, assigned to local variables, or even inserted into structures. 
+
+Side effects and higher-order functions
+We noted in chapter 7 that functions passed to stream operations should generally be side-effect free, and we noted the problems that arise otherwise (such as incorrect results, perhaps even unpredictable results due to race conditions we hadn’t thought of). This principle also applies in general when you use higher-order functions. When writing a higher-order function or method, you don’t know in advance what arguments it will be passed—and if the arguments have side effects, then what these might do! It becomes far too complicated to reason about what your code does if it uses functions passed as arguments that make unpredictable changes to the state of your program; they might even interfere with your code in some hard-to-debug way. So it’s a good design principle to document what side effects you’re willing to accept from functions passed as parameters, and “none” is the best of all!
+
+14.1.2. Currying
+The basic pattern of all unit conversion is as follows:
+1.  Multiply by the conversion factor.
+2.  Adjust the baseline if relevant.
+
+You can express this pattern with the following general method:
+	static double converter(double x, double f, double b) {
+    	return x * f + b;
+	}
+
+But this method is a bit too general. You’ll typically find you require a lot of conversions between the same pair of units, kilometers to miles, for example. You could obviously call the converter method with three arguments on each occasion, but supplying the factor and baseline each time would be tedious and you might accidentally mistype them.
+
+======= Theoretical definition of currying =========
+Currying is a technique where a function f of two arguments (x and y, say) is seen instead as a function g of one argument that returns a function also of one argument. The value returned by the latter function is the same as the value of the original function, that is, f(x,y) = (g(x))(y).
+Of course, this generalizes: you can curry a six-argument function to first take arguments numbered 2, 4, and 6 returning a function taking argument 5, which returns a function taking the remaining arguments, 1 and 3.
+When some but fewer than the full complement of arguments have been passed, we often say the function is PARTIALLY APPLIED.
+
+14.2. Persistent data structures
+In this section, we explore the use of data structures used in functional-style programs. These come under various names, such as functional data structures and immutable data structures, but perhaps most common is persistent data structures (unfortunately this terminology clashes with the notion of persistent in databases, meaning “outliving one run of the program”).
+
+The first thing to note is that a functional-style method isn’t allowed to update any global data structure or any structure passed as a parameter. Why? Because calling it twice is likely to produce different answers—violating referential transparency and the ability to understand the method as a simple mapping from arguments to results.
+
+14.2.1. Destructive updates vs. functional
+If you need a data structure to represent the result of a computation, you should make a new one and not mutate an existing data structure as done previously. This is often best practice in standard object-oriented programming too. A common objection to the functional approach is that it causes excess copying and that the programmer says, “I’ll just remember” or “I’ll just document” that it has side effects. But this leaves traps for maintenance programmers who later will have to deal with your code. 
+
+BINARY SEARCH TREE
+So what’s the difference between update and fupdate? We noted previously that the method update assumes every user wants to share the identical data structure and see updates caused by any part of the program. Hence it’s vital (but often overlooked) in nonfunctional code that whenever you add some form of structured value to a tree, you copy it, because, who knows, someone may later assume they can update it. By contrast, fupdate is purely functional. It creates a new Tree as a result but sharing as much as it can with its argument. 
+
+Such functional data structures are often called persistent—their values persist and are isolated from changes happening elsewhere—so as a programmer you’re sure fupdate won’t mutate the data structures passed as its arguments. There’s just one proviso: the other side of the treaty is you require all users of persistent data structures to follow the do-not-mutate requirement. If not, a programmer who disregards this might mutate the result of fupdate (for example, changing Emily’s 20). This would then be visible as an (almost certainly unwanted) unexpected and delayed change to the data structure passed as argument to fupdate!
+
+Seen in these terms, fupdate can often be more efficient: the “no mutation of existing structure” rule allows structures that differ only slightly from each other (for example, the Tree seen by user A and the modified version seen by user B) to share storage for common parts of their structure. You can get the compiler to help enforce this “no mutation of existing structure” rule by declaring fields key, val, left, and right of class Tree to be final; but remember that final protects only a field and not the object pointed to, which may need its own fields to be final to protect it, and so on.
+
+Ah, but you might say, “I want updates to the tree to be seen by some users (but admittedly not by some others).” Well, there are two choices: one is the classical Java solution (be very careful when updating something to check whether you need to copy it first). The other is the functional-style solution: you logically make a new data structure whenever you do an update (so nothing is ever mutated) and just arrange to pass the correct version of the data structure to users as appropriate. This idea could be enforced through an API. If certain clients of the data structure need to have updates visible, they should go through an API that returns the latest version. Clients who don’t want updates visible (such as for long-running statistical analysis) simply use whatever copy they retrieved, knowing that it can’t be mutated from under them.
+
+14.3. Lazy evaluation with streams
+14.3.1. Self-defining stream
+
+Lazy evaluation
+There’s an additional, more important problem: the static method IntStream.concat expects two instances of a stream. But its second argument is a direct recursive call to primes, resulting in an infinite recursion! For many Java purposes, restrictions on Java 8 streams such as “no recursive definitions” are unproblematic and give your database-like queries expressivity and the ability to parallelize. Thus, the Java 8 designers chose a sweet spot. Nonetheless, the more-general features and models of streams from functional languages such as Scala and Haskell can be a useful addition to your programming tool box. What you need is a way to lazily evaluate the call to the method primes in the second argument of concat. (In a more technical programming language vocabulary we refer to this as lazy evaluation, nonstrict evaluation, or even call by name.) Only when you need to process the prime numbers (for example, with the method limit) should the stream be evaluated. Scala (which we explore in the next chapter) provides support for this idea. In Scala you can write the previous algorithm as follows, where the operator #:: does lazy concatenation (the arguments are evaluated only when you need to actually consume the stream):******
+
+14.3.2. Your own lazy list
+Java 8 streams are often described as lazy. They’re lazy in one particular aspect: a stream behaves like a black box that can generate values on request. When you apply a sequence of operations to a stream, these are merely saved up. Only when you apply a terminal operation to a stream is anything actually computed. This has the great advantage when you apply several operations (perhaps a filter and a map followed by a terminal operation reduce) to a stream; then the stream has to be traversed only once instead of for each operation.
+
+In this section we consider the notion of lazy lists, which are a form of a more general stream (lazy lists form a similar concept to stream). Lazy lists also provide an excellent way of thinking about higher-order functions; you place a function value into a data structure so most of the time it can sit there unused, but when it’s called (that is, on demand) it can create more of the data structure.
+
+14.4. Pattern matching
+There’s one other important aspect to what’s generally regarded as functional programming, and that’s (structural) pattern matching (not to be confused with pattern matching and regex). Recall that chapter 1 ended by observing that mathematics can write definitions such as
+		f(0) = 1
+		f(n) = n*f(n-1) otherwise
+whereas in Java, you have to write an if-then-else or a switch statement. As data types become more complex, the amount of code (and clutter) needed to process them increases. Using pattern matching can reduce this clutter.
+
+14.4.1. Visitor design pattern
+Another way to unwrap the data type in Java is to make use of the visitor design pattern. In essence, you can create a separate class that encapsulates an algorithm to “visit” a specific data type.
+How does it work? The visitor class needs to take as input a specific instance of the data type. It can then access all its members. Here’s an example of how this works. First, you add the method accept to BinOp, which takes SimplifyExprVisitor as argument and passes itself to it (you also add a similar method for Number):
+
+class BinOp extends Expr{
+    ...
+    public Expr accept(SimplifyExprVisitor v){
+        return v.visit(this);
+    }
+}
+The SimplifyExprVisitor can now access a BinOp object and unwrap it:
+
+public class SimplifyExprVisitor {
+    ...
+    public Expr visit(BinOp e){
+        if("+".equals(e.opname) && e.right instanceof Number && ...){
+            return e.left;
+        }
+        return e;
+    }
+}
+
+14.4.2. Pattern matching to the rescue
+There’s a simpler solution using a feature called pattern matching. It’s not available in Java, so we’re going to use small examples from the Scala programming language to exemplify pattern matching. It will give you an idea of what could be possible in Java if pattern matching were supported.
+
+14.5. Miscellany
+In this section we explore two subtleties of being functional and of having referential transparency; one concerns efficiency and the other concerns returning the same result. These are interesting issues, but we place them here because they’re subtleties concerning side effects rather than conceptually central. We also explore the idea of combinators—methods or functions that take two or more functions and return another function; this idea has inspired many of the additions to the Java 8 API.
+
+14.5.1. Caching or memoization
+Suppose you have a side-effect-free method computeNumberOfNodes(Range) that calculates the number of nodes inside a given range in a network with a tree-like topology. Let’s assume the network never changes (that is, the structure is immutable), but calling the method computeNumberOfNodes is expensive to calculate because the structure needs to be traversed recursively. You may want to calculate the results over and over again. If you have referential transparency, there’s a clever way of avoiding this additional overhead. 
+One standard solution to this issue is MEMOIZATION — adding a cache (for example, a HashMap) to the method as a wrapper—when the wrapper is called. It first consults the cache to see if the (argument, result) pair is already in the cache; if so, it can return the stored result immediately; otherwise, you call computeNumberOfNodes(), but before returning from the wrapper you store the new (argument, result) pair in the cache. 
+Strictly speaking, this is a nonpurely functional solution because it mutates a data structure shared by multiple callers, but the wrapped version of the code is referentially transparent.
+....
+It’s clear that the method computeNumberOfNodesUsingCache is referentially transparent (assuming the method computeNumberOfNodes is also referentially transparent). But the fact that numberOfNodes is mutable shared state, and that HashMap isn’t synchronized,[2] means that this code isn’t thread-safe.
+...
+Perhaps the best thing to take away from this struggle is that mixing mutable state with concurrency is trickier than you’d imagine, and functional-style programming avoids it entirely, except for low-level performance hacks such as caching. A second thing is that apart from implementing tricks like caching, if you code in functional style, then you never need to care whether or not another functional-style method you call is synchronized, because you know it has no shared mutable state.
+
+14.5.2. What does “return the same object” mean?
+Let’s consider again the binary tree example
+
+REFERENTIALLY TRANSPARENT means “equal arguments (the case here) imply equal results.”
+
+The problem is that t2 and t3 are different references and therefore (t2 == t3) is false, so it looks as if you’ll have to conclude that fupdate isn’t referentially transparent. But when using persistent data structures that aren’t to be modified, there’s logically no difference between t2 and t3.
+We can debate this point at length, but the simplest adage is that functional-style programming generally uses equals to compare structured values rather than == (reference equality) because data isn’t modified, and under this model fupdate is referentially transparent.
+
+14.5.3. Combinators
+In functional programming it’s common and natural to write a higher-order function (perhaps written as a method) that accepts, say, two functions and produces another function somehow combining these functions. The term combinator is generally used for this idea. Much of the new Java 8 API is inspired by this idea; for example, thenCombine in the CompletableFuture class. This method takes two CompletableFutures and a BiFunction to produce another CompletableFuture.
+
+static <A,B,C> Function<A,C> compose(Function<B,C> g, Function<A,B> f) {
+    return x -> g.apply(f.apply(x));
+}
+It takes functions f and g as arguments and returns a function whose effect is to do f first and then g. 
+
+14.6. Summary
+1) First-class functions are functions that can be passed as arguments, returned as results, and stored in data structures.
+2) A higher-order function is a function that takes at least one or more functions as input or returns another function. Typical higher-order functions in Java include comparing, andThen, and compose.
+3) Currying is a technique that lets you modularize functions and reuse code.
+4) A persistent data structure preserves the previous version of itself when it’s modified. As a result, it can prevent unnecessary defensive copying.
+5) Streams in Java can’t be self-defined.
+6) A lazy list is a more expressive version of a Java stream. A lazy list lets you produce elements of the list on demand by using a supplier that can create more of the data structure.
+7) Pattern matching is a functional feature that lets you unwrap data types. It can be seen as generalizing Java’s switch statement.
+8) Referential transparency allows computations to be cached.
+9) Combinators are a functional idea that combines two or more functions or other data structures.

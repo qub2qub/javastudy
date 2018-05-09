@@ -4,9 +4,9 @@ The DateFormat also comes with its own set of problems. For example, it isn’t 
 
 Finally, both Date and Calendar are mutable classes. What does it mean to mutate the 18th of March 2014 to the 18th of April? This design choice can lead you into a maintenance nightmare
 
-12.1. LocalDate, LocalTime, Instant, Duration, Period
+12.1. LocalDate, LocalTime, LocalDateTime, Instant, Duration, Period
 
-LocalDate --- An instance of this class is an immutable object representing just a plain date without the time of day. In particular, it doesn’t carry any information about the time zone. 	
+LocalDate --- An instance of this class is an immutable object representing just a plain date without the time of day. In particular, it doesn’t carry any information about the time zone.
 
 LocalDate date = LocalDate.of(2014, 3, 18); 
 int year = date.getYear(); 
@@ -19,3 +19,235 @@ boolean leap = date.isLeapYear();
 It’s also possible to obtains the current date from the system clock using the now factory method:
 LocalDate today = LocalDate.now();
 
+All the other date-time classes we’ll investigate in the remaining part of this chapter provide a similar factory method. You can also access the same information by passing a TemporalField to the get method. The TemporalField is an interface defining how to access the value of a specific field of a temporal object. The ChronoField enumeration implements this interface, so you can conveniently use an element of that enumeration with the get method, as shown in the next listing.
+
+Listing 12.2. Reading LocalDate values using a TemporalField
+int year = date.get(ChronoField.YEAR);
+int month = date.get(ChronoField.MONTH_OF_YEAR);
+int day = date.get(ChronoField.DAY_OF_MONTH);
+Similarly, the time of day, such as 13:45:20, is represented by the LocalTime class. You can create instances of LocalTime using two overloaded static factory methods named of. The first one accepts an hour and a minute and the second one also accepts a second. Just like the LocalDate class, the LocalTime class provides some getter methods to access its values, as shown in the following listing.
+
+LocalTime time = LocalTime.of(13, 45, 20); 
+int hour = time.getHour(); 
+int minute = time.getMinute(); 
+int second = time.getSecond();
+
+Both LocalDate and LocalTime can be created by parsing a String representing them. You can achieve this using their parse static methods:
+
+It’s possible to pass a DateTimeFormatter to the parse method. An instance of this class specifies how to format a date and/or a time object. It’s intended as a replacement for the old java.util.DateFormat that we mentioned earlier. 
+
+Also note that these parse methods both throw a DateTimeParseException, which extends RuntimeException in case the String argument can’t be parsed as a valid LocalDate or LocalTime.
+
+12.1.2. Combining a date and a time
+The composite class called LocalDateTime pairs a LocalDate and a LocalTime. It represents both a date and a time, without a time zone, and can be created either directly or by combining a date and time, as shown in the next listing.
+
+Listing 12.4. Creating a LocalDateTime directly or by combining a date and a time
+// 2014-03-18T13:45:20
+LocalDate date = LocalDate.parse("2014-03-18");
+LocalTime time = LocalTime.parse("13:45:20");
+
+LocalDateTime dt1 = LocalDateTime.of(2014, Month.MARCH, 18, 13, 45, 20);
+LocalDateTime dt2 = LocalDateTime.of(date, time);
+LocalDateTime dt3 = date.atTime(13, 45, 20);
+LocalDateTime dt4 = date.atTime(time);
+LocalDateTime dt5 = time.atDate(date);
+
+Note that it’s possible to create a LocalDateTime by passing a time to a LocalDate, or conversely a date to a LocalTime, using respectively their atTime or atDate methods. You can also extract the LocalDate or LocalTime component from a LocalDateTime using the toLocalDate and toLocalTime methods:
+LocalDate date1 = dt1.toLocalDate(); 
+LocalTime time1 = dt1.toLocalTime();
+
+12.1.3. Instant: a date and time for machines
+java.time.Instant -- a single large number representing a point on a continuous timeline. (непрерывный график времени)
+, which basically represents the number of seconds passed since the Unix epoch time, set by convention to midnight of January 1, 1970 UTC.
+
+You can create an instance of this class by passing the number of seconds to its ofEpochSecond static factory method. In addition, the Instant class supports nanosecond precision. 
+Instant.ofEpochSecond(111416468698743);
+Instant.ofEpochSecond(3, 0);
+Instant.ofEpochSecond(2, 1_000_000_000); //One billion nanoseconds (1second) after 2 seconds
+Instant.ofEpochSecond(4, -1_000_000_000); // One billion nanoseconds (1second) before 4 seconds
+
+As you’ve already seen for the LocalDate and the other human-readable date-time classes, the Instant class also supports another static factory method named now, which allows you to capture a timestamp of the current moment. It’s important to reinforce that an Instant is intended for use only by a machine. It consists of a number of seconds and nanoseconds. As a consequence, it doesn’t provide any ability to handle units of time that are meaningful to humans; you can work with Instants by using the Duration and Period classes;
+
+12.1.4. Defining a Duration or a Period
+All the classes you’ve seen so far implement the Temporal interface, which defines how to read and manipulate the values of an object modeling a generic point in time. We’ve shown you a few ways to create different Temporal instances. The next natural step is to create a duration between two temporal objects. The between static factory method of the Duration class serves exactly this purpose. You can create a duration between two LocalTimes, two LocalDateTimes, or two Instants ( YOU’RE NOT ALLOWED TO MIX THEM или будет DateTimeException):
+Duration d1 = Duration.between(time1, time2);
+Duration d1 = Duration.between(dateTime1, dateTime2);
+Duration d2 = Duration.between(instant1, instant2);
+
+because the Duration class is used to represent an amount of time measured in seconds and eventually nanoseconds, you can’t pass a LocalDate to the between method.
+
+When you need to model an amount of time in terms of years, months, and days, you can use the Period class. You can find out the difference between two LocalDates with the between factory method of that class:
+
+Period tenDays = Period.between(LocalDate.of(2014, 3, 8),
+                                LocalDate.of(2014, 3, 18));
+
+CONVENIENT FACTORY METHODS: 
+Duration threeMinutes = Duration.ofMinutes(3);
+Duration threeMinutes = Duration.of(3, ChronoUnit.MINUTES);
+
+Period tenDays = Period.ofDays(10);
+Period threeWeeks = Period.ofWeeks(3);
+Period twoYearsSixMonthsOneDay = Period.of(2, 6, 1);
+
+Both the Duration and Period classes share many similar methods
+Method / Static / Description
+between		Yes	Creates an interval between two points in time
+from		Yes	Creates an interval from a temporal unit
+of			Yes	Creates an instance of this interval from its constituent parts
+parse		Yes	Creates an instance of this interval from a String
+addTo		No	Creates a copy of this interval adding to it the specified temporal object
+get			No	Reads part of the state of this interval
+isNegative	No	Checks if this interval is negative, excluding zero
+isZero		No	Checks if this interval is zero length
+minus		No	Creates a copy of this interval with an amount of time subtracted
+multipliedBy	No	Creates a copy of this interval multiplied by the given scalar
+negated		No	Creates a copy of this interval with the length negated
+plus		No	Creates a copy of this interval with an amount of time added
+subtractFrom	No	Subtracts this interval from the specified temporal object
+
+All the classes we’ve investigated so far are immutable, and this is a great design choice to allow a more functional programming style, ensure thread-safety, and preserve the consistency of the domain model. Nevertheless, the new Date and Time API offers some handy methods to create a modified version of those objects. For example, you may wish to add three days to an existing LocalDate instance.
+
+
+12.2. Manipulating, parsing, and formatting dates
+The most immediate and easiest way to create a modified version of an existing LocalDate is changing one of its attributes, using one of its withAttribute methods. Note that all the methods return a new object with the modified attribute, as shown in the following listing. They don’t mutate the existing object!
+
+LocalDate date1 = LocalDate.of(2014, 3, 18); 
+LocalDate date2 = date1.withYear(2011); 
+LocalDate date3 = date2.withDayOfMonth(25);
+LocalDate date4 = date3.with(ChronoField.MONTH_OF_YEAR, 9);
+
+Temporal interface implemented by all the classes of the Date and Time API, which define a single point in time such as LocalDate, LocalTime, LocalDateTime, and Instant. More precisely, the get() and with() methods let you respectively read and modify the value of a field of a Temporal object. They throw an UnsupportedTemporalTypeException if the requested field isn’t supported by the specific Temporal, for example, a ChronoField.MONTH_OF_YEAR on an Instant or a ChronoField.NANO_OF_SECOND on a LocalDate.
+
+It’s even possible to manipulate a LocalDate in a declarative manner. For example, you can add or subtract a given amount of time, as shown in the next listing.
+LocalDate date1 = LocalDate.of(2014, 3, 18); 
+LocalDate date2 = date1.plusWeeks(1); 
+LocalDate date3 = date2.minusYears(3); 
+LocalDate date4 = date3.plus(6, ChronoUnit.MONTHS);
+
+Similarly to what we’ve explained about the with and get methods, the generic plus method used in the last statement of listing 12.7, together with the analogous minus method, is declared in the Temporal interface. These methods allow you to move a Temporal back or forward a given amount of time, defined by a number plus a Temporal-Unit, where the ChronoUnit enumeration offers a convenient implementation of the TemporalUnit interface.
+
+As you may have anticipated, all the date-time classes representing a point in time like LocalDate, LocalTime, LocalDateTime, and Instant have many methods in common;
+Method / Static / Description
+from		Yes	Creates an instance of this class from the passed temporal object
+now			Yes	Creates a temporal object from the system clock
+of			Yes	Creates an instance of this temporal object from its constituent parts
+parse		Yes	Creates an instance of this temporal object from a String
+atOffset	No	Combines this temporal object with a zone offset
+atZone		No	Combines this temporal object with a time zone
+format		No	Converts this temporal object into a String using the specified formatter (not available for Instant)
+get			No	Reads part of the state of this temporal object
+minus		No	Creates a copy of this temporal object with an amount of time subtracted
+plus		No	Creates a copy of this temporal object with an amount of time added
+with		No	Creates a copy of this temporal object with part of the state changed
+-----------------------------------
+every change will create a new LocalDate object, and the subsequent invocation will manipulate the object created by the former one.
+
+12.2.1. Working with TemporalAdjusters
+All the date manipulations you’ve seen so far are relatively straightforward. Sometimes, you may need to perform more advanced operations, such as adjusting a date to the next Sunday, the next working day, or the last day of the month. In such cases you can pass to an overloaded version of the with method a TemporalAdjuster that provides a more customizable way to define the manipulation needed to operate on a specific date. The Date and Time API already provides many predefined TemporalAdjusters for the most common use cases. You can access them using the static factory methods contained in the TemporalAdjusters class, as shown next.
+
+import static java.time.temporal.TemporalAdjusters.*;
+LocalDate date1 = LocalDate.of(2014, 3, 18); 
+LocalDate date2 = date1.with(nextOrSame(DayOfWeek.SUNDAY)); 
+LocalDate date3 = date2.with(lastDayOfMonth());
+
+Method / Description
+dayOfWeekInMonth	Creates a new date in the same month with the ordinal day of week
+firstDayOfMonth		Creates a new date set to the first day of the current month
+firstDayOfNextMonth	Creates a new date set to the first day of the next month
+firstDayOfNextYear	Creates a new date set to the first day of the next year
+firstDayOfYear		Creates a new date set to the first day of the current year
+firstInMonth		Creates a new date in the same month with the first matching day of week
+lastDayOfMonth		Creates a new date set to the last day of the current month
+lastDayOfNextMonth	Creates a new date set to the last day of the next month
+lastDayOfNextYear	Creates a new date set to the last day of the next year
+lastDayOfYear		Creates a new date set to the last day of the current year
+lastInMonth			Creates a new date in the same month with the last matching day of week
+next/previous		Creates a new date set to the first occurrence of the specified day of week after/before the date being adjusted
+nextrSame/previousOrSame	Creates a new date set to the first occurrence of the specified day of week after/before the date being adjusted unless it’s already on that day, in which case the same object is returned
+
+It’s likely that you may want to apply this manipulation to a date in several points of your code, and for this reason we suggest encapsulating its logic in a proper class as we did here. Do the same for all the manipulations you use frequently. You’ll end up with a small library of adjusters you and your team could easily reuse in your codebase.
+
+If you want to define the TemporalAdjuster with a lambda expression, it’s preferable to do it using the ofDateAdjuster static factory of the TemporalAdjusters class that accepts a UnaryOperator<LocalDate>
+
+12.2.2. Printing and parsing date-time objects
+Formatting and parsing is another relevant feature when working with dates and times. The new java.time.format package is entirely devoted to this purpose. The most important class of this package is DateTimeFormatter. The easiest way to create a formatter is through its static factory methods and constants. The constants such as BASIC_ISO_DATE and ISO_LOCAL_DATE are just predefined instances of the DateTimeFormatter class. All DateTimeFormatters can be used to create a String representing a given date or time in a specific format. 
+
+LocalDate date = LocalDate.of(2014, 3, 18);
+String s1 = date.format(DateTimeFormatter.BASIC_ISO_DATE); 
+String s2 = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+You can also parse a String representing a date or a time in that format to re-create the date object itself. You can achieve this by using the parse factory method provided by all the classes of the Date and Time API representing a point in time or an interval:
+LocalDate date1 = LocalDate.parse("20140318", DateTimeFormatter.BASIC_ISO_DATE);
+LocalDate date2 = LocalDate.parse("2014-03-18", DateTimeFormatter.ISO_LOCAL_DATE);
+
+ The DateTimeFormatter class also supports a static factory method that lets you create a formatter from a specific pattern,
+ DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+LocalDate date1 = LocalDate.of(2014, 3, 18);
+String formattedDate = date1.format(formatter);
+LocalDate date2 = LocalDate.parse(formattedDate, formatter);
+
+The ofPattern() method also has an overloaded version allowing you to create a formatter for a given Locale,
+DateTimeFormatter italianFormatter = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.ITALIAN);
+LocalDate date1 = LocalDate.of(2014, 3, 18);
+String formattedDate = date.format(italianFormatter); // 18. marzo 2014
+LocalDate date2 = LocalDate.parse(formattedDate, italianFormatter);
+
+Finally, in case you need even more control, the DateTimeFormatterBuilder class lets you define complex formatters step by step using meaningful methods. In addition, it provides you with the ability to have case-insensitive parsing, lenient parsing (allowing the parser to use heuristics to interpret inputs that don’t precisely match the specified format), padding, and optional sections of the formatter:
+DateTimeFormatter italianFormatter = new DateTimeFormatterBuilder()
+        .appendText(ChronoField.DAY_OF_MONTH)
+        .appendLiteral(". ")
+        .appendText(ChronoField.MONTH_OF_YEAR)
+        .appendLiteral(" ")
+        .appendText(ChronoField.YEAR)
+        .parseCaseInsensitive()
+        .toFormatter(Locale.ITALIAN);
+
+--- Зачем в DateTimeFormatter инициализация в static блоках??? ---
+
+12.3. Working with different time zones and calendars
+The new java.time.ZoneId class is the replacement for the old java.util.TimeZone class. It aims to better shield you from the complexities related to time zones, such as dealing with Daylight Saving Time (DST). Like the other classes of the Date and Time API, it’s immutable.
+
+A time zone is a set of rules corresponding to a region in which the standard time is the same. There are about 40 of them held in instances of the ZoneRules class. You can simply call getRules() on a ZoneId to obtain the rules for that given time zone. A specific ZoneId is identified by a region ID, for example:
+
+ZoneId romeZone = ZoneId.of("Europe/Rome");
+
+The region IDs are all in the format “{area}/{city}” and the set of available locations is the one supplied by the IANA Time Zone Database. You can also convert an old TimeZone object to a ZoneId by using the new method toZoneId:
+
+ZoneId zoneId = TimeZone.getDefault().toZoneId();
+Once you have a ZoneId object, you can combine it with a LocalDate, a LocalDateTime, or an Instant, to transform it into ZonedDateTime instances, which represent points in time relative to the specified time zone
+
+Figure 12.1 illustrates the components of a ZonedDateTime to help you understand the differences between LocaleDate, LocalTime, LocalDateTime, and ZoneId.
+
+12.3.1. Fixed offset from UTC/Greenwich
+Another common way to express a time zone is with a fixed offset from UTC/Greenwich. For instance, you can use this notation to say that “New York is five hours behind London.” In cases like this you can use the ZoneOffset class, a subclass of ZoneId that represents the difference between a time and the zero meridian of Greenwich, London:
+
+ZoneOffset newYorkOffset = ZoneOffset.of("-05:00");
+
+Be aware that a ZoneOffset defined in this way doesn’t have any Daylight Saving Time management, and for this reason it isn’t suggested in the majority of cases. Because a ZoneOffset is also a ZoneId,
+You can also create an OffsetDateTime, which represents a date-time with an offset from UTC/Greenwich in the ISO-8601 calendar system.
+
+12.3.2. Using alternative calendar systems
+12.3.2. Using alternative calendar systems
+The ISO-8601 calendar system is the de facto world civil calendar system. But four additional calendar systems are provided in Java 8. Each of these calendar systems has a dedicated date class: ThaiBuddhistDate, MinguoDate, JapaneseDate, and HijrahDate. All these classes together with LocalDate implement the ChronoLocalDate interface intended to model a date in an arbitrary chronology. You can create an instance of one of these classes out of a LocalDate. More generally, you can create any other Temporal instance using their from static factory methods as follows:
+
+LocalDate date = LocalDate.of(2014, Month.MARCH, 18);
+JapaneseDate japaneseDate = JapaneseDate.from(date);
+
+Alternatively, you can explicitly create a calendar system for a specific Locale and create an instance of a date for that Locale. In the new Date and Time API, the Chronology interface models a calendar system, and you can obtain an instance of it using its ofLocale static factory method:
+
+Chronology japaneseChronology = Chronology.ofLocale(Locale.JAPAN);
+ChronoLocalDate now = japaneseChronology.dateNow();
+
+The designers of the Date and Time API advise using LocalDate instead of Chrono-LocalDate for most cases; this is because a developer could make assumptions in their code that unfortunately aren’t true in a multicalendar system. Such assumptions might include that the value of a day or month will never be higher than 31, that a year contains 12 months, or even that a year has a fixed number of months. For these reasons, it’s recommended to use LocalDate throughout your application, including all storage, manipulation, and interpretation of business rules, whereas you should employ Chrono-LocalDate only when you need to localize the input or output of your program.
+
+Islamic calendar
+Out of the new calendars added to Java 8, the HijrahDate (Islamic calendar) seems to be the most complex because it can have variants. The Hijrah calendar system is based on lunar months. There are a variety of methods to determine a new month, such as a new moon that could be visible anywhere in the world or that must be visible first in Saudi Arabia. The withVariant method is used to choose the desired variant. Java 8 has included the Umm Al-Qura variant for HijrahDate as standard.
+
+12.4. Summary
+(1) The old java.util.Date class and all other classes used to model date and time in Java before Java 8 have many inconsistencies and design flaws, including their mutability and some poorly chosen offsets, defaults, and naming.
+(2) The date-time objects of the new Date and Time API are all immutable.
+(3) This new API provides two different time representations to manage the different needs of humans and machines when operating on it.
+(4) You can manipulate date and time objects in both an absolute and relative manner, and the result of these manipulations is always a new instance, leaving the original one unchanged.
+(5) TemporalAdjusters allow you to manipulate a date in a more complex way than just changing one of its values, and you can define and use your own custom date transformations.
+(6) You can define a formatter to both print and parse date-time objects in a specific format. These formatters can be created from a pattern or programmatically and they’re all thread-safe.
+(7) You can represent a time zone, both relative to a specific region/location and as a fixed offset from UTC/Greenwich, and apply it to a date-time object in order to localize it.
+(8) You can use calendar systems different from the ISO-8601 standard system.
