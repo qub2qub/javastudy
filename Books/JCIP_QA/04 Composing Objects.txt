@@ -1,10 +1,10 @@
 ﻿Компоновка объектов
 
-Как понять, что класс будет thread-safe или не будет?
+Как можно понять по простому признаку, что класс будет thread-safe или не будет?
 While it is possible to write a thread-safe program that stores all its state in public static fields, it is a lot harder to verify its thread safety or to modify it so that it remains thread-safe than one that uses encapsulation appropriately.
 Encapsulation makes it possible to determine that a class is thread-safe without having to examine the entire program.
 
-Чтобы класс был thread-safe, надо:
+Чтобы задизайнить thread-safe класс, надо:
 The design process for a thread-safe class should include these three basic elements:
 •1• Identify the variables that form the object’s state;
 •2• Identify the invariants that constrain the state variables;
@@ -15,9 +15,10 @@ The design process for a thread-safe class should include these three basic elem
 А если же поля являются ссылками на другие объекты -- то состояние объекта будет включать в себя также и поля из этих связанных объектов.
 For example, the state of a LinkedList includes the state of all the link node objects belonging to the list.
 
-The synchronization policy defines how an object coordinates access to its state without violating its invariants or postconditions. It specifies what combination of immutability, thread confinement, and locking is used to maintain thread safety, and which variables are guarded by which locks. To ensure that the class can be analyzed and maintained, document the synchronization policy.
+The SYNCHRONIZATION POLICY defines how an object coordinates access to its state without violating its invariants or postconditions. 
+It specifies what combination of immutability, thread confinement, and locking is used to maintain thread safety, and which variables are guarded by which locks. To ensure that the class can be analyzed and maintained, document the synchronization policy.
 
-related variables must be fetched or updated in a single atomic operation. You cannot update one, release and reacquire the lock, and then update the others, since this could involve leaving the object in an invalid state when the lock was released. 
+Related variables must be fetched or updated in a single atomic operation. You cannot update one, release and reacquire the lock, and then update the others, since this could involve leaving the object in an invalid state when the lock was released. 
 
 Что значит сделать класс thread-safe ?
 Making a class thread-safe means ensuring that its invariants hold under concurrent access; this requires reasoning about its state.
@@ -29,26 +30,36 @@ Many classes have invariants that identify certain states as valid or invalid.
 The value field in Counter is a long. The state space of a long ranges from Long.MIN_VALUE to Long.MAX_VALUE, but Counter places constraints on value; negative values are not allowed.
 Similarly, operations may have postconditions that identify certain state transitions as invalid. If the current state of a Counter is 17, the only valid next state is 18.
 
-When the next state is derived(производное) from the current state, the operation is necessarily a compound action. Not all operations impose state transition constraints не все операции налагают ограничения на переход из одного состояния в другое; when updating a variable that holds the current temperature, its previous state does not affect the computation.
+Ещё одно определение compound action?
+When the next state is derived(производное) from the current state, the operation is necessarily a compound action.
+
+   Not all operations impose state transition constraints (не все операции налагают ограничения на переход из одного состояния в другое); when updating a variable that holds the current temperature, its previous state does not affect the computation.
+
+   Если объект можно перевести в какое-то невалидное состояние -- это очень плохо! -- т.к. клиент его таки сделает невалидным, поэтому надо сделать такой переход невозможным:
+   ==> инкапсулировать переменные и все эти изменения поместить в атомарную операцию.
 Constraints placed on states or state transitions by invariants and postconditions create additional synchronization or encapsulation requirements. If certain states are invalid, then the underlying state variables must be encapsulated, otherwise client code could put the object into an invalid state. If an operation has invalid state transitions, it must be made atomic(related variables must be fetched or updated in a single atomic operation). On the other hand, if the class does not impose any such constraints, we may be able to relax encapsulation or serialization requirements to obtain greater flexibility or better performance.
 
 !! You cannot ensure thread safety without understanding an object’s invariants and postconditions. Constraints on the valid values or state transitions for state variables can create atomicity and encapsulation requirements.
 
 Что такое State-dependent operations ?
 Operations with state-based preconditions (предусловия на основе состояния) are called STATE-DEPENDENT.
+т.е. операции которые зависят он предусловий наложенных на состояние объекта.
+в многопоточном приложении предусловия меняются динамически другими потоками, когда те меняют состояние объекта.
+
 In a single-threaded program, if a precondition does not hold, the operation has no choice but to fail. But in a concurrent program, the precondition may become true later due to the action of another thread. Concurrent programs add the possibility of waiting until the precondition becomes true, and then proceeding with the operation.
 
 Что такое State ownership и в чём выражается в классе?
 не все поля в классе определяют его состояние.
 State ownership -- это элемент дизайна класса (an element of class design)
 When defining which variables form an object's state, we want to consider only the data that object owns. Ownership is not embodied explicitly in the language, but is instead an element of class design.
-Состояние объекта -- это такие переменные, которые содержат те данные, которыми класс обладает\владеет (own).
+Состояние объекта -- это такие переменные, которые содержат те данные, которыми класс обладает\владеет (own), т.е. только те переменные, которые определяют/влияют состояние объекта.
 
-In many cases, OWNERSHIP AND ENCAPSULATION go together—the object encapsulates the state it owns and owns the state it encapsulates. It is the owner of a given state variable that gets to decide on the locking protocol used to maintain the integrity (целостность, нетронутость, чистота) of that variable's state. 
-Ownership implies control, but once you publish a reference to a mutable object, you no longer have exclusive control; at best, you might have "shared ownership". 
+In many cases, OWNERSHIP AND ENCAPSULATION go together — the object encapsulates the state it owns and owns the state it encapsulates. It is the owner of a given state variable that gets to decide on the locking protocol used to maintain the integrity (целостность, нетронутость, чистота) of that variable's state. 
+Ownership implies control, but once you publish a reference to a mutable object, you no longer have exclusive control; at best, you might have "SHARED OWNERSHIP".
+
 A class usually DOES NOT OWN the OBJECTS PASSED TO ITS METHODS or CONSTRUCTORS, unless the method is designed to explicitly transfer ownership of objects passed in (such as the synchronized collection wrapper factory methods).
 
-Пример для "split ownership" ?
+Пример для "split ownership" ? разделённого владения.
 the collection owns the state of the collection infrastructure (структура, связи внутри коллекции), but client code owns the objects stored in the collection. 
 An example is ServletContext.
 
@@ -58,37 +69,39 @@ An example is ServletContext.
 
 Что такое instance confinement?
 Encapsulation simplifies making classes thread-safe by promoting instance confinement, often just called confinement.
-When an object is encapsulated within another object, all code paths that have access to the encapsulated object are known and can be therefore be analyzed more easily than if that object were accessible to the entire program.
+When an object is encapsulated within another object, all code paths that have access to the encapsulated object are known and can therefore be analyzed more easily than if that object were accessible to the entire program.
 !! Encapsulating data within an object confines access to the data to the object’s methods, making it easier to ensure that the data is always accessed with the appropriate lock held.
-любой доступ к данным просиходит с применением соответствующей блокировки.
+Т.е. любой доступ к instance confinement переменной происходит только из одного объекта и с применением соответствующей блокировки.
 
 Чем можно ограничить использование объекта?
-(Заточённые\ограниченные объекты) Confined objects must NOT escape their intended scope (предназначеную область).
+(Заточённые\ограниченные объекты) Confined objects must NOT escape their intended scope (предназначенную область / из своей камеры).
 An object may be confined to:
 1) a class instance (such as a private class member), 
 2) a lexical scope (such as a local variable), or 
 3) a thread (such as an object that is passed from method to method within a thread, but not supposed to be shared across threads).
 
-** Пример thread confinement?
+** Пример thread confinement? - локальные переменные, или когда только 1 поток может писать в переменную.
 
-Ошибки, когда объект сбежит из заключения:
+Если объект сбежит из заключения (или неявно станет доступен через итератор или внутренний класс) -- это БАГ, Ошибка программы.
 if an object is intended to be confined to a specific scope, then letting it escape from that scope is a bug. 
 Confined objects can also escape by publishing other objects such as iterators or inner class instances that may indirectly publish the confined objects.
 
-Можно ли понять только по виду класса, что он будет thread-safe ?
+Можно ли понять только по самому класса, что он будет thread-safe, без анализа всего кода ?
 Confinement makes it easier to build thread-safe classes because a class that confines its state can be analyzed for thread safety without having to examine the whole program.
 
 Что такое Java monitor pattern ?
-An object following the Java monitor pattern encapsulates all its mutable state and guards it with the object's own intrinsic lock.
+Это шаблон для дизайна всего класса, когда он инкапсулирует всё своё изменяемое состояние у себя внутри и сам является объектом, по которому идёт синхронизация(охраняет его своим внутренним intrinsic Локом).
+An object, following the Java monitor pattern, encapsulates all its mutable state and guards it with the object's own intrinsic lock.
 Пример: Counter -- It encapsulates one state variable, value, and all access to that state variable is through the methods of Counter, which are all synchronized.
 
-Какие приемущества в использовании private lock object instead of an object's intrinsic lock(or any other publicly accessible lock) ?
+Какие преимущества в использовании private lock object instead of an object's intrinsic lock(or any other publicly accessible lock) ?
 Making the lock object private encapsulates the lock so that client code cannot acquire it, whereas a publicly accessible lock allows client code to participate in its synchronization policy — correctly or incorrectly.
 
 ** Описать все примеры и почему они так были расшарены !!
+
 All but the most trivial objects are composite objects. The Java monitor pattern is useful when building classes from scratch or composing classes out of objects that are not thread-safe. 
 Большинство объектов -- всё-таки это составные\сложные объекты.
-Java monitor pattern полезен, когда надо создавать объект с самого начала или составлять классы из не потокобезопасных объектов.
+Java monitor pattern полезен, когда надо создавать объект с самого начала или составлять классы из потоко-НЕ-безопасных объектов.
 Нужно ли добавлять дополнительную синхронизацию, если наш класс состоит из потокобезопасных объектов? ОТВЕТ: это зависит..
 In some cases a composite made of thread-safe components is thread-safe (Listings 4.7 and 4.9), and in others it is merely a good start (Listing 4.10).
 
@@ -97,13 +110,13 @@ In some cases a composite made of thread-safe components is thread-safe (Listing
 --- MonitorVehicleTracker ---
 - Since the view thread and the updater threads will access the data model concurrently, it must be thread-safe. Listing 4.4 shows an implementation of the vehicle tracker using the Java monitor pattern that uses MutablePoint in Listing 4.5 for representing the vehicle locations.
 - Even though MutablePoint is not thread-safe, the tracker class is. Neither the map nor any of the mutable points it contains is ever published. When we need to return vehicle locations to callers, the appropriate values are copied using either the MutablePoint copy constructor or deepCopy, which creates a new Map whose values are copies of the keys and values from the old Map.
-- This implementation maintains thread safety in part by copying mutable data before returning it to the client. This is usually not a performance issue, but could become one if the set of vehicles is very large. Another consequence of copying the data on each call to getLocation is that the contents of the returned collection do not change even if the underlying locations change. Whether this is good or bad depends on your requirements. It could be a benefit if there are internal consistency requirements on the location set, in which case returning a consistent snapshot is critical, or a drawback if callers require up-to-date information for each vehicle and therefore need to refresh their snapshot more often.
+- This implementation maintains thread safety in part by copying mutable data before returning it to the client. This is usually not a performance issue, but could become one if the set of vehicles is very large. Another consequence of copying the data on each call to getLocation() is that the contents of the returned collection do not change even if the underlying locations change. Whether this is good or bad depends on your requirements. It could be a benefit if there are internal consistency requirements on the location set, in which case returning a consistent snapshot is critical, or a drawback if callers require up-to-date information for each vehicle and therefore need to refresh their snapshot more often.
 
 **********************************************************************************************
 ***************** NOTES *************
-1) Note that deepCopy can't just wrap the Map with an unmodifiableMap, because that protects only the collection from modification; it does not prevent callers from modifying the mutable objects stored in it. For the same reason, populating the HashMap in deepCopy via a copy constructor wouldn't work either, because only the references to the points would be copied, not the point objects themselves.
+1) Note that deepCopy() can't just wrap the Map with an unmodifiableMap, because that protects only the collection from modification; it does not prevent callers from modifying the mutable objects stored in it. For the same reason, populating the HashMap in deepCopy via a copy constructor wouldn't work either, because only the references to the points would be copied, not the point objects themselves.
 2) Because deepCopy is called from a synchronized method, the tracker's intrinsic lock is held for the duration of what might be a long-running copy operation, and this could degrade the responsiveness of the user interface when many vehicles are being tracked.
-3) в CountingFactorizer также важно, чтобы переменная AtomicLong была также и final, т.к. это гарантирует что ссылка на AtomicLong всегда будет одна и та же. Если бы она была не final, значит, что какой-то поток мог изменить эту ссылку, и она бы стала указывать на другой AtomicLong объект. В этому случае надо было также дополнительно удостовериться\гарантировать, что при изменении ссылки, она была видима всем другим потокам, которые работают с этим же counter, и убедиться, что не будет race condition при получении доступа к этой новой ссылке.
+3) в CountingFactorizer также важно, чтобы переменная AtomicLong была также и final, т.к. это гарантирует что ссылка на AtomicLong всегда будет одна и та же. Если бы она была не final, значит, что какой-то поток мог изменить эту ссылку, и она бы стала указывать на другой AtomicLong объект. В этом случае надо было также дополнительно удостовериться\гарантировать, что при изменении ссылки, она была видима всем другим потокам, которые работают с этим же counter, и убедиться, что не будет race condition при получении доступа к этой новой ссылке.
 
 **********************************************************************************************
 ****** 2 способ VehicleTracker -- delegates to a thread-safe class **************
@@ -112,14 +125,14 @@ We store the locations in a thread-safe Map implementation, ConcurrentHashMap.
 We also store the location using an immutable Point class instead of MutablePoint.
 ImmutablePoint is thread-safe because it is immutable. Immutable values can be freely shared and published, so we no longer need to copy the locations when returning them. (т.е. убираем перформанс ишьюс при получении локейшнс)
 DelegatingVehicleTracker in Listing 4.7 does not use any explicit synchronization; all access to state is managed by ConcurrentHashMap, and all the keys and values of the Map are immutable.
-Т.е. не надо никакой доплнительной синхронизации при доступе к мап или точке.
+Т.е. не надо никакой дополнительной синхронизации при доступе к мап или точке.
 Важно отметить, что поля мэп обозначены как public final, т.к. эти ссылки публикуются (возвращаются из класса вовне в другие классы), т.е. нельзя заменить ссылку у этих мэп на другие мэп с другим контентом.
 
-If we had used the original MutablePoint class instead of ImmutablePoint, we would be breaking encapsulation by letting getLocations publish a reference to mutable state that is not thread-safe. Notice that we've changed the behavior of the vehicle tracker class slightly; while the monitor version returned a snapshot of the locations, the delegating version returns an unmodifiable but "live" view of the vehicle locations. This means that if thread A calls getLocations and thread B later modifies the location of some of the points, those changes are reflected in the Map returned to thread A. As we remarked earlier, this can be a benefit (more up-to-date data) or a liability (potentially inconsistent view of the fleet), depending on your requirements.
+If we had used the original MutablePoint class instead of ImmutablePoint, we would be breaking encapsulation by letting getLocations() publish a reference to mutable state that is not thread-safe. Notice that we've changed the behavior of the vehicle tracker class slightly; while the monitor version returned a snapshot of the locations, the delegating version returns an unmodifiable but "live" view of the vehicle locations. This means that if thread A calls getLocations() and thread B later modifies the location of some of the points, those changes are reflected in the Map returned to thread A. As we remarked earlier, this can be a benefit (more up-to-date data) or a liability (potentially inconsistent view of the fleet), depending on your requirements.
 
 Listing 4.8. Returning a static copy of the location set instead of a "live" one.
 ** Почитать про 2ю версию Listing 4.8:
-If an unchanging view of the fleet is required, getLocations could instead return a shallow copy of the locations map. Since the contents of the Map are immutable, only the structure of the Map, not the contents, must be copied, as shown in Listing 4.8 (which returns a plain HashMap, since getLocations did not promise to return a thread-safe Map).
+If an unchanging view of the fleet is required, getLocations could instead return a shallow copy of the locations map. Since the contents of the Map are immutable, only the structure of the Map, not the contents, must be copied, as shown in Listing 4.8 (which returns a plain HashMap, since getLocations() did not promise to return a thread-safe Map).
 **********************************************************************************************
 
 Independent state variables
@@ -129,9 +142,14 @@ The delegation examples so far delegate to a single, thread-safe state variable.
 одна для хранения key listeners и вторая -- для mouses listeners.
 
 Небезопасно, когда AtomicIntegers зависят друг от друга:
-When delegation fails
-So while the underlying AtomicIntegers are thread-safe, the composite class is not. Because the underlying state variables lower and upper are not independent, NumberRange cannot simply delegate thread safety to its thread-safe state variables.
-NumberRange could be made thread-safe by using LOCKING to maintain its invariants, such as guarding lower and upper with a common lock. It must also AVOID PUBLISHING lower and upper to prevent clients FROM SUBVERTING ITS INVARIANTS.
+When delegation fails (см класс NumberRange)
+    // INVARIANT: lower <= upper
+    private final AtomicInteger lower = new AtomicInteger(0);
+    private final AtomicInteger upper = new AtomicInteger(0);
+
+So while the underlying AtomicIntegers are thread-safe, the composite class is not. 
+Because the underlying state variables "lower" and "upper" are not independent, NumberRange cannot simply delegate thread safety to its thread-safe state variables.
+NumberRange could be made thread-safe by using LOCKING to maintain its invariants, such as GUARDING LOWER AND UPPER WITH A COMMON LOCK. It must also AVOID PUBLISHING lower and upper to prevent clients FROM SUBVERTING ITS INVARIANTS.
 ...сlass must provide its own locking to ensure that compound actions are atomic, unless the entire compound action can also be delegated to the underlying state variables.
 
 Если у переменных нет пересекающихся\зависимых операций которые могу привести к ошибочному состоянию:
@@ -141,13 +159,13 @@ If a class is composed of multiple independent thread-safe state variables and h
 потому что The problem that prevented NumberRange from being thread-safe even though its state components were thread-safe is very SIMILAR to one of the rules about VOLATILE VARIABLES:
 a VARIABLE is SUITABLE for being DECLARED VOLATILE only if it does NOT PARTICIPATE IN INVARIANTS involving other STATE VARIABLES.
 
-Когда забота о thread safety передаются к внутренним переменным (к-е хранят состояние), то как можно расшарить доступ к этим переменым, чтобы другие классы также могли изменять их?
+Когда забота о thread safety передаются к внутренним переменным (к-е хранят состояние), то как можно расшарить доступ к этим переменным, чтобы другие классы также могли изменять их?
 ОТВЕТ ЗАВИСИТ ОТ ТОГО, КАКИЕ ИНВАРИАНТЫ КЛАСС НАКЛАДЫВАЕТ НА ЭТИ ПЕРЕМЕННЫЕ.
 
 Например, для счетчика на переменную накладываются доп. ограничения:
 1) значение должно быть только положительным
 2) новое значение должно базироваться на текущем
-То в  этом случае клиенты могут испортить состояние, и расшаривать доступ не следует.
+То в  этом случае клиенты могут испортить состояние -- и расшаривать доступ не следует.
 Если же подобных ограничений нет, то в принципе тогда можно дать доступ из других классов, но есть нюансы при дальнейшем кодировании\изменении этого класса.
 
 Идеально простая ситуация, когда можно расшарить thread-safe переменную:
@@ -158,13 +176,15 @@ If a state variable is thread-safe, does not participate in any invariants that 
 SafePoint in Listing 4.11 provides a getter that retrieves both the x and y values at once by returning a two-element array. If we provided separate getters for x and y, then the values could change between the time one coordinate is retrieved and the other, resulting in a caller seeing an inconsistent value: an (x,y) location where the vehicle never was.
 
 Пример private constructor capture idiom ?
-The private constructor exists to avoid the race condition that would occur if the copy constructor were implemented as this(p.x, p.y);
+The private constructor exists to avoid the race condition that would occur if the copy constructor were implemented as "this(p.x, p.y)";
 ** НАЧАЛО -->
 см. почему сделали private конструктор:
 [THE AIM IS TO CAPTURE A TEMPORARY VALUE DURING CONSTRUCTION.
 we want to capture and store the parameter that we wish to pass to the superclass constructor. In order to do so, we create a private helper constructor, which our public constructor then calls.
 http://stackoverflow.com/questions/11360619/what-is-a-java-example-of-the-private-constructor-capture-idiom]
+
 http://stackoverflow.com/questions/12028925/private-constructor-to-avoid-race-condition
+
 ** Constructors in Java can not be synchronized. Почему?
 We can not implement public SafePoint(SafePoint p) as { this (p.x, p.y); } because
 As we are not synchronized(and can't as we are in the constructor), during the execution of the constructor, someone may be calling SafePoint.set() from the different thread
@@ -182,11 +202,11 @@ so, if the constructor which takes int array as an argument will be public or pr
 ****** 3 способ VehicleTracker -- that publishes its underlying mutable state **************
 --- PublishingVehicleTracker --- Listing 4.12
 
-PublishingVehicleTracker derives its thread safety from delegation to an underlying ConcurrentHashMap, but this time the contents of the Map are thread-safe mutable points rather than immutable ones. The getLocation method returns an unmodifiable copy of the underlying Map. Callers cannot add or remove vehicles, but could change the location of one of the vehicles by mutating the SafePoint values in the returned Map. 
+PublishingVehicleTracker derives its thread safety from delegation to an underlying ConcurrentHashMap, but this time the contents of the Map are thread-safe mutable points rather than immutable ones. The getLocation() method returns an unmodifiable copy of the underlying Map. Callers cannot add or remove vehicles, but could change the location of one of the vehicles by mutating the SafePoint values in the returned Map. 
 
 PublishingVehicleTracker is thread-safe, but would not be so if it imposed any additional constraints on the valid values for vehicle locations. If it needed to be able to "VETO" changes to vehicle locations or to take action when a location changes, the approach taken by PublishingVehicleTracker would not be appropriate.
 
-The requirement that the class be thread-safe implicitly adds another requirement—that operations like put-if-absent be atomic. Any reasonable interpretation suggests that, if you take a List that does not contain object X, and add X twice with put-if-absent, the resulting collection contains only one copy of X. But, if put-if-absent were not atomic, with some unlucky timing two threads could both see that X was not present and both add X, resulting in two copies of X.
+The requirement that the class be thread-safe implicitly adds another requirement — that operations like PUT-IF-ABSENT be atomic. Any reasonable interpretation suggests that, if you take a List that does not contain object X, and add X twice with put-if-absent, the resulting collection contains only one copy of X. But, if put-if-absent were not atomic, with some unlucky timing two threads could both see that X was not present and both add X, resulting in two copies of X.
 *********************************************************************************************
 
 4.4 Adding functionality to existing thread-safe classes
@@ -220,7 +240,13 @@ ImprovedList adds an additional level of locking using its own intrinsic lock. I
 Document a "class’s thread safety guarantees" for its clients; document its "synchronization policy" for its maintainers.
 
 Надо принять много решений, чтобы создать политику по синхронизации:
-Crafting a synchronization policy requires a number of decisions: which variables to make volatile, which variables to guard with locks, which lock(s) guard which variables, which variables to make immutable or confine to a thread, which operations must be atomic, etc
+Crafting a synchronization policy requires a number of decisions: 
+1) which variables to make volatile, 
+2) which variables to guard with locks, 
+3) which lock(s) guard which variables, 
+4) which variables to make immutable or confine to a thread, 
+5) which operations must be atomic, 
+6) etc
 
 Как догадаться о неуказанной потокобезопасности: есть ли она в реализации?
 One way to improve the quality of your guess is to interpret the specification from the perspective of someone who will implement it (such as a container or database vendor), as opposed to someone who will merely use it.
