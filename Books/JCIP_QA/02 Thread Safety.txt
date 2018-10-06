@@ -7,7 +7,7 @@ thread-safe code is about managing access to state, and in particular to shared,
 т.е. это управления доступом к состоянию объекта, а в частности к общему, изменяемому состоянию.
 
 A class is thread-safe if it behaves correctly when accessed from multiple threads, regardless of the scheduling or interleaving of the execution of those threads by the runtime environment, and with no additional synchronization or other coordination on the part of the calling code.
-Класс является потокобезопастным -- если он продолжает правильно работать когда к нему обращаются много потоков. (при этом он может быть изменяемым или быть например final)
+Класс является потоко-безопасным -- если он продолжает правильно работать когда к нему обращаются много потоков. (при этом он может быть изменяемым или быть например final)
 
 Since any single-threaded program is also a valid multithreaded program, it cannot be thread-safe if it is not even correct in a single-threaded environment. 
 
@@ -16,7 +16,7 @@ Since any single-threaded program is also a valid multithreaded program, it cann
 Thread-safe classes encapsulate any needed synchronization so that clients need not provide their own.
 
 Writing thread-safe code is, at its core, about managing access to state, and in particular to shared, mutable state.
-***
+*************************************************
 
 Что такое состояние объекта?
 Это данные, которые хранятся в полях объекта, а также в других зависимым объектах.
@@ -24,20 +24,20 @@ Writing thread-safe code is, at its core, about managing access to state, and in
 Informally, an object's state is its data, stored in state variables such as instance or static fields. An object's state may include fields from other, dependent objects; 
 a HashMap's state is partially stored in the HashMap object itself, but also in many Map.Entry objects. An object's state encompasses any data that can affect its externally visible behavior.
 
-Что такое ОБЩАЯ переменная? (shared = расшаренная)
+Что такое ОБЩЕДОСТУПНАЯ переменная? (shared = расшаренная)
 By shared, we mean that a variable could be accessed by multiple threads; 
 
 Что такое ИЗМЕНЯЕМАЯ переменная?
 by mutable, we mean that its value could change during its lifetime. 
 
 От чего зависит, должен ли быть объект thread-safe?
-[Неважно что объект делает, главное - как он используется. В частности, если объект будет ис-ся разными потоками (несколькими, > 1) то он должен быть thread-safe ]
-(когда как минимум два потока одновременно выполняются и используют общие ресурсы - надо думать про thread-safe.)
+[Неважно что объект делает, главное - как он используется. В частности, если объект будет использоваться разными потоками (несколькими, > 1) то он должен быть thread-safe]
+(когда как минимум два потока одновременно выполняются или используют общие ресурсы - надо думать про thread-safe.)
 Whether an object needs to be thread-safe depends on whether it will be accessed from multiple threads. This is a property of how the object is used in a program, not what it does.
 
 Is a thread-safe program one that is constructed entirely of thread-safe classes? 
 Not necessarily — a program that consists entirely of thread-safe classes may not be thread-safe, and a thread-safe program may contain classes that are not thread-safe.
-Почему: потому что взаимодействие может быть небезопасным:
+Почему: потому что взаимодействие может быть небезопасным (или какой-то общий инвариант может быть нарушен):
 есть 2 интежера, они все thread-safe, надо сделать атомарную операцию, и если это не в синхронизированном блоке? 
 
 
@@ -58,6 +58,7 @@ Whenever more than one thread accesses a given state variable, and one of them m
 Это когда правильность вычислений зависит от относительного тайминга или наложения нескольких потоков при их выполнении, т.е. когда получение правильного ответа зависит от удачного выбора момента вычислений (распределения порядка вычислений по времени относительно друг друга).
 A race condition occurs when the correctness of a computation depends on the relative timing or interleaving of multiple threads by the runtime;
 in other words, when getting the right answer relies on lucky timing. 
+
 The most common type of race condition is CHECK-THEN-ACT, where a potentially STALE OBSERVATION is used to make a decision on WHAT TO DO NEXT.
 --This type of race condition is called check-then-act: you observe something to be true (file X doesn't exist) and then take action based on that observation (create X); but in fact the observation could have become invalid between the time you observed it and the time you acted on it (someone else created X in the meantime), causing a problem (unexpected exception, overwritten data, file corruption).
 
@@ -116,7 +117,7 @@ A SYNCHRONIZED METHOD is a shorthand for a SYNCHRONIZED BLOCK that spans an ENTI
 
 Какие объекты могут выступать в качестве lock ?
 Every Java object can implicitly act as a lock for purposes of synchronization; 
-these built-in locks are called INTRINSIC LOCKS or MONITOR LOCKS. 
+these built-in locks are called INTRINSIC LOCKS or MONITOR LOCKS.
 
 Как можно получить "acquire" lock?
 The lock is automatically acquired by the executing thread before entering a synchronized block and automatically released when control exits the synchronized block, whether by the normal control path or by throwing an exception out of the block. 
@@ -124,7 +125,7 @@ The ONLY WAY to acquire an intrinsic lock is to enter a synchronized block or me
 
 Что такое "обоюдная взаимоисключающая блокировка" = MUTEXES = mutual exclusion locks ?
 Intrinsic locks in Java act as mutexes (or mutual exclusion locks), which means that at most one thread may own the lock. When thread A attempts to acquire a lock held by thread B, A must wait, or block, until B releases it. If B never releases the lock, A waits forever.
-обоюдная взаимоисключающая блокировка = когда максимум только 1 поток может владеть Lock. Другое поток/потоки не могут получить этот же Lock до тех пор пока 1й поток не отпустить этот Lock.
+обоюдная взаимоисключающая блокировка = когда максимум только 1 поток может владеть Lock. Другой поток/потоки не могут получить этот же Lock до тех пор пока 1й поток не отпустить этот Lock.
 
 Что значит атомарность? ATOMICITY
 In the context of concurrency, atomicity means the same thing as it does in transactional applications — that a group of statements appear to execute as a single, indivisible unit.
@@ -135,7 +136,7 @@ Reentrancy means that locks are acquired on a per-thread rather than per-invocat
 Lock захватывается на уровне потока - а не на уровне вызовов.
 
 Как реализованы re-entrant locks? (acquisition count)
-Reentrancy is implemented by associating with each lock an ACQUISITION COUNT and an owning thread. 
+Reentrancy is implemented by associating with each lock an ACQUISITION COUNT and an owning thread.
 When the count is zero, the lock is considered unheld. 
 When the count reaches zero, the lock is released.
 
@@ -155,11 +156,12 @@ serialization (turning an object into a byte stream);
 Какие данные надо защищать?
 Not all data needs to be guarded by locks — only mutable data that will be accessed from multiple threads.
 
-When a variable is guarded by a lock — meaning that every access to that variable is performed with that lock held — you've ensured that only one thread at a time can access that variable. 
+When a variable is guarded by a lock — meaning that every access to that variable is performed with that lock held — you've ensured that ONLY ONE THREAD AT A TIME CAN ACCESS THAT VARIABLE.
 
-When a class has invariants that involve more than one state variable, there is an additional requirement: each variable participating in the invariant must be guarded by the same lock.
+When a class has invariants that involve more than one state variable, there is an additional requirement: EACH VARIABLE PARTICIPATING IN THE INVARIANT MUST BE GUARDED BY THE SAME LOCK.
 For every invariant that involves more than one variable, all the variables involved in that invariant must be guarded by the same lock.
-Если в инварианте участвуют несколько переменных/состояний - то каждая переменная должна охраняться одним и тем же Lock. Т.е. все переменные входящие в инвариант должны использовать один и тот же Lock при выполнении/изменении этого инварианта. (т.е. кроме того что их все надо добавлять в один synchronized блок по одному и тому же Lock, также каждое индивидуальное изменение только 1 из этих переменных тоже должно быть синхронизировано по этому же Lock)
+Если в инварианте участвуют несколько переменных/состояний - то каждая переменная должна охраняться одним и тем же Lock. Т.е. все переменные входящие в инвариант должны использовать один и тот же Lock при выполнении/изменении этого инварианта.
+(т.е. кроме того что их все надо добавлять в один synchronized блок по одному и тому же Lock, также каждое индивидуальное обращение к любой только 1 из этих переменных тоже должно быть синхронизировано по этому же Lock)
 
 Avoid holding locks during lengthy computations or operations at risk of not completing quickly such as network or console I/O.
 
