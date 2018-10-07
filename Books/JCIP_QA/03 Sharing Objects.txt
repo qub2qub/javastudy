@@ -13,7 +13,7 @@ An effectively final variable -- is a variable that is never assigned a new valu
 
 Что такое stale data?
 Если несколько потоков несинхронизированно обращаются к одной переменной, то они могут видеть её несвежее/неактуальное/устаревшее состояние, т.к. они могут кэшировать её значение в регистрах.
-одни переменных могут быть актуальные а другие stale, возможно из-за оптимизации JVM.
+одни переменных могут быть актуальные, а другие stale, возможно из-за оптимизации JVM.
 Потому что если нет синхронизации -- то runtime может делать откровенно странные вещи с порядком выполнения операторов.
 
 In the absence of synchronization, the compiler, processor, and runtime can do some downright weird things to the order in which operations appear to execute. Attempts to reason about the order in which memory actions “must” happen in insufficiently synchronized multithreaded programs will almost certainly be incorrect.
@@ -21,20 +21,21 @@ In the absence of synchronization, the compiler, processor, and runtime can do s
 
 Reading data without synchronization is analogous to using the READ_UNCOMMITTED isolation level in a database, where you are willing to trade accuracy for performance.
 
-Не делает ли компилятор reordering когда указан synchronized блок?
+** Не делает ли компилятор reordering когда указан synchronized блок?
+Гарантирует на входе и на выходе, а внутри может наверное переставлять.
 
 нужно синхронизировать и геттеры и сеттеры, чтобы например гет не кэшировал значение.
 
-можно сделать чтобы 1 поток писал а все остальные читали, тогда можно не делать синхронизацию, какие ещё особенности? 
+можно сделать чтобы 1 поток писал, а все остальные читали, тогда можно не делать синхронизацию, какие ещё особенности? 
 
 3.1.2    Nonatomic 64-bit operations
 When a thread reads a variable without synchronization, it may see a stale value, but at least it sees a value that was actually placed there by some thread rather than some random value. 
 This safety guarantee is called OUT-OF-THIN-AIR safety.
-Out-of-thin-air safety applies to all variables, with one exception: 64-bit numeric variables (double and long) that are not declared volatile.
+Out-of-thin-air safety applies to all variables, with one exception: 64-bit numeric variables (double and long) that are not declared volatile (on 32-bit OS).
 
 для дебита и кредита валотайл не подойдёт, т.к. нужен синхр. блок как для атомарной операции.
 
-Intrinsic locking can be used to guarantee that one thread sees the effects of another in a predictable manner. Without synchronization, there is no such guarantee.
+Intrinsic locking can be used to guarantee that one thread sees the effects of another in a predictable manner. Without synchronization, there is no such guarantee (и при этом на однои и том же локе).
 
 Зачем использовать 1 и тот же объект для lock ?
 Locking is not just about mutual exclusion; it is also about memory visibility. To ensure that all threads see the most up-to-date values of shared mutable variables, the reading and writing threads must synchronize on a common lock.
@@ -53,18 +54,19 @@ When thread A writes to a volatile variable and subsequently thread B reads that
 Т.Е... So from a memory visibility perspective, writing a volatile variable is like exiting a synchronized block and reading a volatile variable is like entering a synchronized block. 
 НО.. However, we do not recommend relying too heavily on volatile variables for visibility; code that relies on volatile variables for visibility of arbitrary state is more fragile and harder to understand than code that uses locking.
 
- Use volatile variables only when they simplify implementing and verifying your synchronization policy; avoid using volatile variables when veryfing correctness would require subtle reasoning about visibility. Good uses of VOLATILE VARIABLES include ENSURING THE VISIBILITY OF THEIR OWN STATE, that of the object they refer to, or indicating that an important lifecycle event (such as initialization or shutdown) has occurred.
+ Use volatile variables only when they simplify implementing and verifying your synchronization policy; avoid using volatile variables when veryfying correctness would require subtle reasoning about visibility. Good uses of VOLATILE VARIABLES include ENSURING THE VISIBILITY OF THEIR OWN STATE, that of the object they refer to, or indicating that an important lifecycle event (such as initialization or shutdown) has occurred.
 
 Когда чаще всего применяются volatile variables?
 как флаг!
 The most common use for volatile variables is as a completion, interruption, or status flag.
 
 Ограничения volatile variable?
-Locking can guarantee both visibility and atomicity; volatile variables can only guarantee visibility.
+Locking can guarantee both visibility and atomicity; 
+volatile variables can only guarantee visibility.
 Volatile переменные гарантируют только видимость своего значения, но не атомарность. Т.е. в общую видимость запишется какой-то результат, но какой набор операций к этому приведёт -- точно сказать нельзя, был ли он атомарным и законченным или нет. Чтобы это гарантировать - надо дополнительно синхронизировать.
 
 Когда можно использовать volatile variables?
-You can use volatile variables only when all the following criteria are met:
+You can use volatile variables only when ALL the following criteria are met:
 • Writes to the variable do not depend on its current value, or you can ensure that only a single thread ever updates the value; (иначе race condition и нет гарантии атомарности, т.к. надо сначала считать значение)
 • The variable does not participate in invariants with other state variables; (нет гарантии атомарности и соблюдения инвариантов, т.к. нет синхронизации для этих других зависимых переменных состояния)
 • Locking is not required for any other reason while the variable is being accessed.
