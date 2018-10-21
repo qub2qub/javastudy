@@ -143,7 +143,8 @@ Thread confinement is an element of your program's design that must be enforced 
 3.3.1 Ad-hoc thread confinement -- решение использовать "заключение в 1 поток" является следствием решения реализовать какую-то специальную подсистему, например GUI. Single-threaded subsystems can sometimes offer a simplicity benefit that outweighs the fragility of ad-hoc thread confinement.
 
 Когда запись в volatile переменную безопасно может делать только 1 поток?
-A special case of thread confinement applies to volatile variables. It is safe to perform read-modify-write operations on shared volatile variables as long as you ensure that the volatile variable is only written from a single thread. In this case, you are confining the modification to a single thread to prevent race conditions, and the visibility guarantees for volatile variables ensure that other threads see the most up-to-date value. (Гонок не будет - т.к. пишет только 1 поток, а при считывании любыми другими потоками они всегда увидят результат этой записи)
+A special case of thread confinement applies to volatile variables. It is safe to perform read-modify-write operations on shared volatile variables as long as you ensure that the volatile variable is ONLY WRITTEN FROM A SINGLE THREAD. 
+In this case, you are confining the modification to a single thread to prevent race conditions, and the visibility guarantees for volatile variables ensure that other threads see the most up-to-date value. (Гонок не будет - т.к. пишет только 1 поток, а при считывании любыми другими потоками они всегда увидят результат этой записи)
 
 Что такое 3.3.2 Stack confinement ?
 Это когда объект может быть доступен только через локальную переменную. Это подвид thread confinement, т.к. только 1 поток сможет изменять эту локальную переменную, т.к. она хранится только в стэке этого потока.
@@ -153,12 +154,13 @@ they exist on the executing thread's stack, which is not accessible to other thr
 Stack confinement (also called WITHIN-THREAD or THREAD-LOCAL usage, but not to be confused with the ThreadLocal library class) is simpler to maintain and less fragile than ad-hoc thread confinement.
 
 Что такое 3.3.3 ThreadLocal ? = value-holding object
-A more formal means of maintaining thread confinement is ThreadLocal, which allows you to associate a per-thread value with a VALUE-HOLDING OBJECT. ThreadLocal provides get() and set() accessors methods that maintain a separate copy of the value for each thread that uses it, so a get() returns the most recent value passed to set() from the currently executing thread.
- - If you are porting a single-threaded application to a multithreaded environment, you can preserve thread safety by converting shared global variables into ThreadLocals, if the semantics of the shared globals permits this; an applicationwide cache would not be as useful if it were turned into a number of thread-local caches.
- - It is easy to abuse ThreadLocal by treating its thread confinement property as a license to use global variables or as a means of creating "hidden" method arguments. Like global variables, thread-local variables can detract from reusability and introduce hidden couplings among classes, and should therefore be used with care.
+A more formal means of maintaining thread confinement is ThreadLocal, which allows you to associate a per-thread value with a VALUE-HOLDING OBJECT. ThreadLocal provides get() and set() accessors methods that maintain a separate copy of the value for each thread that uses it, so a get() returns the most recent value passed to set() FROM THE CURRENTLY EXECUTING THREAD.
+ - If you are porting a single-threaded application to a multithreaded environment, you can preserve thread safety by converting shared global variables into ThreadLocals, if the semantics of the shared globals permits this; an application-wide cache would not be as useful if it were turned into a number of thread-local caches.
+ - It is easy to abuse ThreadLocal by treating its thread confinement property as a license to use global variables or as a means of creating "hidden" method arguments. Like global variables, thread-local variables can detract/отвлекать/ from reusability and introduce hidden couplings among classes, and should therefore be used with care.
 
 Что такое immutable objects [Immutability] ?
-An immutable object is one whose state cannot be changed after construction. 
+AN IMMUTABLE OBJECT IS ONE WHOSE STATE CANNOT BE CHANGED AFTER CONSTRUCTION. 
+
 Immutable objects are inherently thread-safe; THEIR INVARIANTS ARE ESTABLISHED BY THE CONSTRUCTOR, and if their state cannot be changed, these invariants always hold.
 
 IMMUTABLE OBJECTS ARE ALWAYS THREAD-SAFE.
@@ -178,16 +180,17 @@ An object is immutable if:
 •2• All its fields are final;
 •3• It is properly constructed (the "this" reference does not escape during construction).
 
-There is a difference between an OBJECT being immutable and the REFERENCE to it being immutable. Program state stored in immutable objects can still be updated by "replacing" immutable objects with a new instance holding new state;
+There is a difference between an OBJECT being immutable and the REFERENCE to it being immutable. PROGRAM STATE STORED IN IMMUTABLE OBJECTS CAN STILL BE UPDATED by "replacing" immutable objects with a new instance holding new state;
 
 Что такое Final fields?
-Final fields can't be modified (хотя the objects they refer to can be modified if they are mutable), but they also have special semantics under the Java Memory Model. 
+Final fields can't be modified (хотя the objects they refer to can be modified if they are mutable), but they also have SPECIAL SEMANTICS under the Java Memory Model. 
 It is the use of final fields that makes possible the GUARANTEE OF INITIALIZATION SAFETY (see Section 3.5.2) that lets immutable objects be freely accessed and shared without synchronization.
 
 Just as it is a GOOD PRACTICE to make ALL FIELDS PRIVATE unless they need greater visibility, it is a good practice to make ALL FIELDS FINAL unless they need to be mutable.
 
-Опасно ис-ть volatile для >2 несинхронизированных операций:
-для двух переменных которые ис-ся в 1 инварианте.
+Опасно использовать volatile для >2 несинхронизированных операций:
+для двух переменных которые используются в 1 инварианте. (если инварианты разные - то можно ис-ть безопасно.)
+
 In UnsafeCachingFactorizer on page 24, we tried to use two AtomicReferences to store the last number and last factors but this was not thread-safe because we could not fetch or update the two related values atomically. Using volatile variables for these values would not be thread-safe for the same reason.
 
 Race conditions in accessing or updating multiple related variables can be eliminated by using an immutable object to hold all the variables. With a mutable ©Immutable "holder object", you would have to use locking to ensure atomicity; with an immutable one, once a thread acquires a reference to it, it need never worry about another thread modifying its state. If the variables are to be updated, a new holder object is created, but any threads working with the previous holder still see it in a consistent state.
@@ -209,9 +212,10 @@ While it may seem that field values set in a constructor are the first values wr
 * * * * *
 3.5 Safe publication
 Что такое Safe publication?
-sometimes we do want to share objects across threads, and in this case we must do so safely. Unfortunately, simply storing a reference to an object into a public field, as in Listing 3.14, is not enough to publish that object safely. Потому что improper publication could allow another thread to observe a partially constructed object.
+sometimes we do want to SHARE OBJECTS ACROSS THREADS, and in this case we must do so safely. Unfortunately, simply storing a reference to an object into a public field, as in Listing 3.14, is not enough to publish that object safely. 
+Потому что improper publication could allow another thread to observe a PARTIALLY CONSTRUCTED OBJECT.
  
-You cannot rely on the integrity of partially constructed objects.
+You cannot rely on the integrity/целостность/ of partially constructed objects.
 
 Какие 2 проблемы могут быть при неправильно расшаренных переменных?
 public class StuffIntoPublic {
@@ -221,20 +225,23 @@ public class StuffIntoPublic {
     }
 }
 //The problem here is not the Holder class itself, but that the Holder is not properly published.
-Because synchronization was not used to make the Holder visible to other threads, we say the Holder was not properly published. Two things can go wrong with improperly published objects.
+Because synchronization was not used to make the Holder visible to other threads, we say the Holder was not properly published. 
+
+Two things can go wrong with improperly published objects:
 1) Other threads could see a stale value for the holder field, and thus see a null reference or other older value even though a value has been placed in holder. (ссылка самого холдера плохая)
 2) other threads could see an up-to-date value for the holder reference, but stale values for the state of the Holder. (т.е. будут ошибочные значения у переменных внутри холдера)
 
-an object reference becomes visible to another thread does not necessarily mean that the state of that object is visible to the consuming thread. In order to guarantee a consistent view of the object's state, synchronization is needed.
+an object reference becomes visible to another thread does not necessarily mean that the state of that object is visible to the consuming thread. 
+In order to guarantee a consistent view of the object's state, synchronization is needed.
 Immutable objects, on the other hand, can be safely accessed even when synchronization is not used to publish the object reference. 
 
-Что за a special guarantee of initialization safety for sharing immutable objects от JMM ?
+Что за a SPECIAL GUARANTEE OF INITIALIZATION SAFETY for sharing immutable objects от JMM ?
 Если выполнены все условия по неизменяемости:
 [1]unmodifiable state, [2]all fields are final, [3]and proper construction,
 то Immutable objects can be safely accessed even when synchronization is not used to publish the object reference.
 !! IMMUTABLE OBJECTS CAN BE USED SAFELY BY ANY THREAD WITHOUT ADDITIONAL SYNCHRONIZATION, EVEN WHEN SYNCHRONIZATION IS NOT USED TO PUBLISH THEM.
 
--This guarantee extends to the values of all final fields of properly constructed objects; final fields can be safely accessed without additional synchronization. However, if final fields refer to mutable objects, synchronization is still required to access the state of the objects they refer to.
+-This guarantee extends to the values of all final fields of properly constructed objects; final fields can be safely accessed without additional synchronization. However, if __FINAL FIELDS__ REFER TO __MUTABLE__ OBJECTS, _SYNCHRONIZATION_ is still _REQUIRED_ to access the state of the objects they refer to.
 
 3.5.3 Safe publication idioms
 Objects that are not immutable must be safely published, which usually entails synchronization by both the publishing and the consuming thread.
