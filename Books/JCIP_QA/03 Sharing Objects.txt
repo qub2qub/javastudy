@@ -258,7 +258,7 @@ A properly constructed object can be safely published by:
 •3• Storing a reference to it into a final field of a properly constructed object; or
 •4• Storing a reference to it into a field that is properly guarded by a lock.
 
-** Порядок загрузки\инициализации полей в классе?
+** Порядок загрузки\инициализации полей в классе? **
 
 -The internal synchronization in thread-safe collections means that placing an object in a thread-safe collection, such as a Vector or synchronizedList, fulfills the last of these requirements.
 The thread-safe library collections offer the following safe publication guarantees, even if the Javadoc is less than clear on the subject:
@@ -266,7 +266,7 @@ The thread-safe library collections offer the following safe publication guarant
   --- Placing an element in a Vector, CopyOnWriteArrayList, CopyOnWriteArraySet, synchronizedList, or synchronizedSet safely publishes it to any thread that retrieves it from the collection;
   --- Placing an element on a BlockingQueue or a ConcurrentLinkedQueue safely publishes it to any thread that retrieves it from the queue.
 
-Other handoff mechanisms in the class library (such as Future and Exchanger) also constitute safe publication;
+Other handoff mechanisms in the class library (such as Future and Exchanger) also constitute/формируют safe publication;
 
 Какой самый простой и лёгкий способ создать и опубликовать (статический)объект?
 
@@ -275,7 +275,8 @@ Using a static initializer is often the easiest and safest way to publish object
 STATIC INITIALIZERS are executed by the JVM at class initialization time; because of internal synchronization in the JVM, this mechanism is guaranteed to safely publish any objects initialized in this way.
 
 Что гарантирует Safe publication? в случае неизменения состояния такого объекта.
-Safe publication is sufficient for other threads to safely access objects that are not going to be modified after publication without additional synchronization. 
+
+Safe publication is sufficient for other threads to safely access objects that are not going to be modified after publication without additional synchronization.
 The safe publication mechanisms all guarantee that the as-published state of an object is visible to all accessing threads as soon as the reference to it is visible, and if that state is not going to be changed again, this is sufficient to ensure that any access is safe.
 Т.Е. РАЗНЫЕ ПОТОКИ МОГУТ ЧИТАТЬ СОСТОЯНИЕ ТАКОГО ОБЪЕКТА БЕЗ ДОПОЛНИТЕЛЬНОЙ СИНХРОНИЗАЦИИ.
 
@@ -291,10 +292,10 @@ For example, Date is mutable, but if you use it as if it were immutable, you may
 [Collections.synchronizedMap(new HashMap<String, Date>());
 If the Date values are not modified after they are placed in the Map, then the synchronization in the synchronizedMap implementation is sufficient to publish the Date values safely, and no additional synchronization is needed when accessing them.]
 
-**Можно ли наследоваться от анонимного класса?
 
 3.5.5 Mutable objects
-If an object may be modified after construction, safe publication ensures only the VISIBILITY of the AS-PUBLISHED STATE. Synchronization must be used not only to publish a mutable object, but also every time the object is accessed to ensure visibility of subsequent modifications. To share mutable objects safely, they must be safely published and be either thread-safe or guarded by a lock.
+If an object may be modified after construction, safe publication ensures only the VISIBILITY of the AS-PUBLISHED STATE. Synchronization must be used not only to publish a mutable object, but also every time the object is accessed to ensure visibility of subsequent modifications. 
+To share mutable objects safely, they must be safely published and be either thread-safe or guarded by a lock.
 
 The publication requirements for an object depend on its mutability:
 • Immutable objects can be published through any mechanism;
@@ -304,11 +305,30 @@ The publication requirements for an object depend on its mutability:
 Как правильно и безопасно шарить объекты в многопоточном приложении?
 
 3.5.6 Sharing objects safely.
+Перво наперво надо детально описать эту политику в javadoc-e.
 The most useful policies for using and sharing objects in a concurrent program are:
-1) THREAD-CONFINED. A thread-confined object is owned exclusively by and confined to one thread, and can be modified by its owning thread.
-2) SHARED READ-ONLY. A shared read-only object can be accessed concurrently by multiple threads without additional synchronization, but cannot be modified by any thread. Shared read-only objects include immutable and effectively immutable objects.
-3) SHARED THREAD-SAFE. A thread-safe object performs synchronization internally, so multiple threads can freely access it through its public interface without further synchronization.
-4) GUARDED. A guarded object can be accessed only with a specific lock held. 
+1) THREAD-CONFINED. 
+A thread-confined object is owned exclusively by and confined to one thread, and can be modified by its owning thread.
+
+2) SHARED READ-ONLY. 
+A shared read-only object can be accessed concurrently by multiple threads without additional synchronization, but cannot be modified by any thread. Shared read-only objects include immutable and effectively immutable objects.
+
+3) SHARED THREAD-SAFE. 
+A thread-safe object performs synchronization internally, so multiple threads can freely access it through its public interface without further synchronization.
+
+4) GUARDED. (разные объекты попадают под это правило)
+A guarded object can be accessed only with a specific lock held. 
 Guarded objects include those:
   4a) that are encapsulated within other thread-safe objects and 
   4b) published objects that are known to be guarded by a specific lock.
+
+*********************************************************
+** Можно ли наследоваться от анонимного класса?
+> From JLS: An anonymous class is always implicitly final (§8.1.1.2).
+
+How to pass parameters to anonymous class?
+> An anonymous class use use the constructors of its parent:
+      >> new ArrayList(10) { }
+
+Anonymous classes can have Instance Initializers, which can function as parameter-less constructors in anonymous classes. These are executed in the same order as field assignments, i.e. after super() and before the rest of the actual constructor. new someclass(){ fields; {initializer} fields; methods(){} }. It's sort of like a static initializer but without the static keyword. http://docs.oracle.com/javase/specs/jls/se7/html/jls-8.html#jls-8.6
+

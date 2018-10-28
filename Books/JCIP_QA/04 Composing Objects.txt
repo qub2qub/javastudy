@@ -15,8 +15,10 @@ The design process for a thread-safe class should include these three basic elem
 А если же поля являются ссылками на другие объекты -- то состояние объекта будет включать в себя также и поля из этих связанных объектов.
 For example, the state of a LinkedList includes the state of all the link node objects belonging to the list.
 
-The SYNCHRONIZATION POLICY defines how an object coordinates access to its state without violating its invariants or postconditions. 
-It specifies what combination of immutability, thread confinement, and locking is used to maintain thread safety, and which variables are guarded by which locks. To ensure that the class can be analyzed and maintained, document the synchronization policy.
+!! The SYNCHRONIZATION POLICY defines how an object coordinates access to its state without violating its invariants or postconditions.
+
+It specifies what combination of immutability, thread confinement, and locking is used to maintain thread safety, and which variables are guarded by which locks. 
+To ensure that the class can be analyzed and maintained, document the synchronization policy.
 
 Related variables must be fetched or updated in a single atomic operation. You cannot update one, release and reacquire the lock, and then update the others, since this could involve leaving the object in an invalid state when the lock was released. 
 
@@ -24,11 +26,12 @@ Related variables must be fetched or updated in a single atomic operation. You c
 Making a class thread-safe means ensuring that its invariants hold under concurrent access; this requires reasoning about its state.
 
 Что такое пространство состояния [state space]?
-Objects and variables have a STATE SPACE: the range(область значений, диапазон) of possible states they can take on. The smaller this state space, the easier it is to reason about.
+Objects and variables have a (1) STATE SPACE: the range(область значений, диапазон) of possible states they can take on. The smaller this state space, the easier it is to reason about.
 Many classes have invariants that identify certain states as valid or invalid. 
 Например,
 The value field in Counter is a long. The state space of a long ranges from Long.MIN_VALUE to Long.MAX_VALUE, but Counter places constraints on value; negative values are not allowed.
-Similarly, operations may have postconditions that identify certain state transitions as invalid. If the current state of a Counter is 17, the only valid next state is 18.
+
+Similarly, operations may have (2) POSTCONDITIONS that identify certain state transitions as invalid. If the current state of a Counter is 17, the only valid next state is 18.
 
 Ещё одно определение compound action?
 When the next state is derived(производное) from the current state, the operation is necessarily a compound action.
@@ -37,7 +40,11 @@ When the next state is derived(производное) from the current state, t
 
    Если объект можно перевести в какое-то невалидное состояние -- это очень плохо! -- т.к. клиент его таки сделает невалидным, поэтому надо сделать такой переход невозможным:
    ==> инкапсулировать переменные и все эти изменения поместить в атомарную операцию.
-Constraints placed on states or state transitions by invariants and postconditions create additional synchronization or encapsulation requirements. If certain states are invalid, then the underlying state variables must be encapsulated, otherwise client code could put the object into an invalid state. If an operation has invalid state transitions, it must be made atomic(related variables must be fetched or updated in a single atomic operation). On the other hand, if the class does not impose any such constraints, we may be able to relax encapsulation or serialization requirements to obtain greater flexibility or better performance.
+
+Constraints placed on states or state transitions by INVARIANTS and POSTCONDITIONS create "ADDITIONAL SYNCHRONIZATION OR ENCAPSULATION REQUIREMENTS". 
+If certain states are invalid, then the underlying state variables must be encapsulated, otherwise client code could put the object into an invalid state. 
+If an operation has invalid state transitions, it must be made atomic(related variables must be fetched or updated in a single atomic operation). 
+On the other hand, if the class does not impose any such constraints, we may be able to relax encapsulation or serialization requirements to obtain greater flexibility or better performance.
 
 !! You cannot ensure thread safety without understanding an object’s invariants and postconditions. Constraints on the valid values or state transitions for state variables can create atomicity and encapsulation requirements.
 
@@ -54,7 +61,9 @@ State ownership -- это элемент дизайна класса (an element
 When defining which variables form an object's state, we want to consider only the data that object owns. Ownership is not embodied explicitly in the language, but is instead an element of class design.
 Состояние объекта -- это такие переменные, которые содержат те данные, которыми класс обладает\владеет (own), т.е. только те переменные, которые определяют/влияют состояние объекта.
 
-In many cases, OWNERSHIP AND ENCAPSULATION go together — the object encapsulates the state it owns and owns the state it encapsulates. It is the owner of a given state variable that gets to decide on the locking protocol used to maintain the integrity (целостность, нетронутость, чистота) of that variable's state. 
+In many cases, OWNERSHIP AND ENCAPSULATION go together — the object encapsulates the state it owns and owns the state it encapsulates. 
+
+It is the owner of a given state variable that gets to decide on the locking protocol used to maintain the integrity (целостность, нетронутость, чистота) of that variable's state. 
 Ownership implies control, but once you publish a reference to a mutable object, you no longer have exclusive control; at best, you might have "SHARED OWNERSHIP".
 
 A class usually DOES NOT OWN the OBJECTS PASSED TO ITS METHODS or CONSTRUCTORS, unless the method is designed to explicitly transfer ownership of objects passed in (such as the synchronized collection wrapper factory methods).
@@ -68,9 +77,10 @@ An example is ServletContext.
 2) that all access to it is properly guarded by a lock.
 
 Что такое instance confinement?
-Encapsulation simplifies making classes thread-safe by promoting instance confinement, often just called confinement.
+Encapsulation simplifies making classes thread-safe by promoting instance confinement, often just called CONFINEMENT.
 When an object is encapsulated within another object, all code paths that have access to the encapsulated object are known and can therefore be analyzed more easily than if that object were accessible to the entire program.
-!! Encapsulating data within an object confines access to the data to the object’s methods, making it easier to ensure that the data is always accessed with the appropriate lock held.
+
+!! Encapsulating data within an object confines access to the data to the object's methods, making it easier to ensure that the data is always accessed with the appropriate lock held.
 Т.е. любой доступ к instance confinement переменной происходит только из одного объекта и с применением соответствующей блокировки.
 
 Чем можно ограничить использование объекта?
@@ -96,6 +106,8 @@ An object, following the Java monitor pattern, encapsulates all its mutable stat
 
 Какие преимущества в использовании private lock object instead of an object's intrinsic lock(or any other publicly accessible lock) ?
 Making the lock object private encapsulates the lock so that client code cannot acquire it, whereas a publicly accessible lock allows client code to participate in its synchronization policy — correctly or incorrectly.
+--private lock object также упрощает сложность и verifying.
+Clients that improperly acquire another object's lock could cause liveness problems, and verifying that a publicly accessible lock is properly used requires examining the entire program rather than a single class.
 
 ** Описать все примеры и почему они так были расшарены !!
 
@@ -122,7 +134,7 @@ In some cases a composite made of thread-safe components is thread-safe (Listing
 ****** 2 способ VehicleTracker -- delegates to a thread-safe class **************
 --- DelegatingVehicleTracker ---
 We store the locations in a thread-safe Map implementation, ConcurrentHashMap. 
-We also store the location using an immutable Point class instead of MutablePoint.
+We also store the location using an ImmutablePoint class instead of MutablePoint.
 ImmutablePoint is thread-safe because it is immutable. Immutable values can be freely shared and published, so we no longer need to copy the locations when returning them. (т.е. убираем перформанс ишьюс при получении локейшнс)
 DelegatingVehicleTracker in Listing 4.7 does not use any explicit synchronization; all access to state is managed by ConcurrentHashMap, and all the keys and values of the Map are immutable.
 Т.е. не надо никакой дополнительной синхронизации при доступе к мап или точке.
@@ -206,14 +218,22 @@ PublishingVehicleTracker derives its thread safety from delegation to an underly
 
 PublishingVehicleTracker is thread-safe, but would not be so if it imposed any additional constraints on the valid values for vehicle locations. If it needed to be able to "VETO" changes to vehicle locations or to take action when a location changes, the approach taken by PublishingVehicleTracker would not be appropriate.
 
-The requirement that the class be thread-safe implicitly adds another requirement — that operations like PUT-IF-ABSENT be atomic. Any reasonable interpretation suggests that, if you take a List that does not contain object X, and add X twice with put-if-absent, the resulting collection contains only one copy of X. But, if put-if-absent were not atomic, with some unlucky timing two threads could both see that X was not present and both add X, resulting in two copies of X.
 *********************************************************************************************
 
 4.4 Adding functionality to existing thread-safe classes
-1) The safest way to add a new atomic operation is to modify the original class to support the desired operation, but this is not always possible because you may not have access to the source code or may not be free to modify it. If you can modify the original class, you need to understand the implementation's synchronization policy so that you can enhance it in a manner consistent with its original design. Adding the new method directly to the class means that all the code that implements the synchronization policy for that class is still contained in one source file, facilitating easier comprehension and maintenance.
+
+Sometimes a thread-safe class that supports all of the operations we want already exists, but often the best we can find is a class that supports almost all the operations we want, and then we need to add a new operation to it without undermining its thread safety.
+
+As an example, let's say we need a thread-safe List with an atomic put-if-absent operation. The synchronized List implementations nearly do the job, since they provide the contains and add methods from which we can construct a put-if-absent operation.
+
+The requirement that the class be thread-safe implicitly adds another requirement — that operations like PUT-IF-ABSENT be atomic. Any reasonable interpretation suggests that, if you take a List that does not contain object X, and add X twice with put-if-absent, the resulting collection contains only one copy of X. But, if put-if-absent were not atomic, with some unlucky timing two threads could both see that X was not present and both add X, resulting in two copies of X.
+
+1) The safest way to add a new atomic operation is to modify the original class to support the desired operation, but this is not always possible because you may not have access to the source code or may not be free to modify it. 
+If you can modify the original class, you need to understand the implementation's synchronization policy so that you can enhance it in a manner consistent with its original design. Adding the new method directly to the class means that all the code that implements the synchronization policy for that class is still contained in one source file, facilitating easier comprehension and maintenance.
 
 2) Another approach is to extend the class, assuming it was designed for extension. 
-Extension is more fragile than adding code directly to a class, because the implementation of the synchronization policy is now distributed over multiple, separately maintained source files. If the underlying class were to change its synchronization policy by choosing a different lock to guard its state variables, the subclass would subtly and silently break, because it no longer used the right lock to control concurrent access to the base class's state.
+Extension is more fragile than adding code directly to a class, because the implementation of the synchronization policy is now distributed over multiple, separately maintained source files. 
+If the underlying class were to change its synchronization policy by choosing a different lock to guard its state variables, the subclass would subtly and silently break, because it no longer used the right lock to control concurrent access to the base class's state.
 
 3) Client-side locking
 A third strategy is to extend the functionality of the class without extending the class itself by placing extension code in a "helper" class.
@@ -227,15 +247,17 @@ If extending a class to add another atomic operation is fragile because it distr
 Client-side locking has a lot in common with class extension — they both couple the behavior of the derived(производного) class to the implementation of the base class. 
 Just as extension violates encapsulation of implementation, client-side locking violates encapsulation of synchronization policy.
 
-4) Есть более надёжный способ добавить атомик операцию к уже существующему классу, это композиция (composition) 
-т.е. создание типа прокси.
-но им надо поддерживать исходный интерфейс.
+4) Есть более надёжный способ добавить атомик операцию к уже существующему классу, это КОМПОЗИЦИЯ (composition) 
+т.е. создание типа ПРОКСИ.
+но им надо поддерживать исходный интерфейс того класса, который заюзали в композиции(надо добавить прокси вывозовы ко всем его исходным методам).
 но теоретически, можно и не implement-ить интерфейс, но это будет геморройнее 
-ImprovedList in Listing 4.16 implements the List operations by delegating them to an underlying List instance, and adds an atomic putIfAbsent method.
+
+ImprovedList in Listing 4.16 implements the List operations by delegating them to an underlying List instance, and adds an atomic putIfAbsent() method.
 (Like Collections.synchronizedList and other collections wrappers, ImprovedList assumes that once a list is passed to its constructor, the client will not use the underlying list directly again, accessing it only through the wrapper\ImprovedList.)
 ImprovedList adds an additional level of locking using its own intrinsic lock. It does not care whether the underlying List is thread-safe, because it provides its own consistent locking that provides thread safety even if the List is not thread-safe or changes its locking implementation.
 --------------------
 
+4.5 Documenting synchronization policies
 Один из Самых важных инструментов thread-safety -- Это Documenting synchronization policies.
 Document a "class’s thread safety guarantees" for its clients; document its "synchronization policy" for its maintainers.
 

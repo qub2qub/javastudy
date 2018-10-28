@@ -3,69 +3,118 @@
 ** Чем отличаются Runnable от Callable?
 
 Most concurrent applications are organized around the execution of tasks.
-TASKS --> abstract, discrete(отдельные единицы работы) units of work. 
+TASKS --> abstract, discrete units of work. (отдельные/абстрактные/разделённые единицы работы)
 
 Dividing the work of an application into tasks имеет ряд преимуществ:
 1) simplifies program organization, (упрощает организацию программы)
-2) facilitates(облегчать, помогать, способствовать) error recovery(восстановление после ошибок) by providing natural transaction boundaries, 
+2) facilitates(облегчать, помогать, способствовать) error recovery(восстановлению после ошибок) by providing natural transaction boundaries, 
 3) promotes concurrency by providing a natural structure(естественной структуры) for parallelizing work.
 
 *** 6.1 Executing tasks in threads ***
-The first step in organizing a program around task execution is identifying ( разумный, благоразумный, здравомыслящий)SENSIBLE TASK BOUNDARIES. 
+The first step in organizing a program around task execution is identifying SENSIBLE TASK BOUNDARIES (разумных границ задачи). 
 
 Ideally, TASKS ARE INDEPENDENT ACTIVITIES: 
-work that doesn't depend on the state, result, or side effects of other tasks. 
+work that DOESN'T depend on the state, result, or side effects OF OTHER TASKS. 
 
-Independence facilitates(облегчает) concurrency, as independent tasks can be executed in parallel if there are adequate processing resources. 
-For greater flexibility in scheduling and load balancing tasks, each task should also represent a small fraction of your application's processing capacity.
+Independence facilitates(облегчает, помогает произойти) concurrency, as independent tasks can be executed in parallel if there are adequate processing resources. 
+For greater flexibility in scheduling and load balancing tasks, each task should also represent a SMALL FRACTION of your application's processing capacity.
 
 Server applications should exhibit (показывать, обнаруживать, проявлять) both GOOD THROUGHPUT and GOOD RESPONSIVENESS under normal load. 
+(Хорошую пропускную способность/производительность и отзывчивость)
+
 Также applications should exhibit (приятный, элегантный)GRACEFUL DEGRADATION as they become overloaded, rather than simply falling over under heavy load. 
 Choosing good task boundaries, coupled with a sensible task execution policy (see Section 6.2.2), can help achieve these goals.
 
-*** 6.1.1 Executing tasks sequentially *** добавть из этой части:
-какие + и - у последовательной обработки.
+Most server applications offer a natural choice of task boundary: 
+INDIVIDUAL CLIENT REQUESTS.
+
+There are a number of possible policies for scheduling tasks within an application, some of which exploit the potential for concurrency better than others. 
+
+*** 6.1.1 Executing tasks sequentially *** (+ и - у последовательной обработки.)
+The simplest is to execute tasks sequentially in a single thread.
+In server applications, sequential processing rarely provides either good throughput or good responsiveness. There are exceptions — such as when tasks are few and long-lived, or when the server serves a single client that makes only a single request at a time — but most server applications do not work this way.
+In some situations, sequential processing may offer a SIMPLICITY OR SAFETY ADVANTAGE; most GUI frameworks process tasks sequentially using a single thread.
+
+Processing a web request involves a MIX of computation and I/O. The server must perform socket I/O to read the request and write the response, which can block due to network congestion or connectivity problems. It may also perform file I/O or make database requests, which can also block. In a single-threaded server, blocking not only delays completing the current request, but prevents pending requests from being processed at all. If one request blocks for an unusually long time, users might think the server is unavailable because it appears unresponsive. At the same time, resource utilization is poor, since the CPU sits idle while the single thread waits for its I/O to complete.
+   
+Какие операции могут заблочиться:
+1) socket I/O to read the request (network congestion or connectivity problems)
+2) socket I/O to write the response (network congestion or connectivity problems)
+3) file I/O (disc read/write)
+4) user input I/O (waiting for keyress)
+5) database requests (blocked by transactions)
+
+Обработка web request выключает вычисления и io операции. Сервер может читать файл или обращаться к БД, и это может быть долго. Или могут быть проблемы с сетью или трафик сильно большой.
+В таких случаях отзывчивость будет страдать, ЦПУ простаивать, некоторые ожидающие запросы так могут никогда и не выполниться, а юзер будет думать, что сайт не работает.
+
 *** 6.1.2 Explicitly creating threads for tasks ***
-также добавить + и -
+A more responsive approach is to create a new thread for servicing each request.
 
-
-
-Most server applications offer a natural choice of task boundary: INDIVIDUAL CLIENT REQUESTS.
-
-Обработка web request выключает вычисления и io операции. Сервер может читать файл или обращаться к БД, и это может быть долго. Или могут быть проблему с сетью или трафик сильно большой.
-В таких случаях отзывчивость будет страдать, ЦПУ простаивать, некоторые ожидающие запросы так могут никогда и не выполниться, а юзер думать что сайт не работает.
-
-Распараллеливание обработки запросов даёт следующие приемущества:
+Распараллеливание обработки запросов даёт следующие преимущества:
 1) главный поток освобождается от нагрузки и может спокойно принимать след.запросы.
-2) запросы обрабатываются параллельно и одновременно.
+2) запросы обрабатываются параллельно, много запросов обр-ся одновременно.
 3) код для обработки запросов\задач должен быть thread-safe.
-При это желательно чтобы частота поступления новых запросов была меньше чем способность сервера их обрабатывать.
+При этом желательно чтобы частота поступления новых запросов была меньше чем способность сервера их обрабатывать -- только тогда производительность будет лучше.
+>>>
+1) Task processing is offloaded from the main thread, enabling the main loop to resume waiting for the next incoming connection more quickly. This enables new connections to be accepted before previous requests complete, improving responsiveness.
+2) Tasks can be processed in parallel, enabling multiple requests to be serviced simultaneously. This may improve throughput if there are multiple processors, or if tasks need to block for any reason such as I/O completion, lock acquisition, or resource availability.
+3) Task-handling code must be thread-safe, because it may be invoked concurrently for multiple tasks.
+Under light to moderate load, the thread-per-task approach is an improvement over sequential execution. As long as the request arrival rate does not exceed the server's capacity to handle requests, this approach offers better responsiveness and throughput.
 
 *** 6.1.3 Disadvantages of unbounded thread creation
+For production use, however, the thread-per-task approach has some practical drawbacks, especially when a large number of threads may be created.
+
 Недостатки такого распараллеливания:
-1) Thread lifecycle overhead (накладные расходы, издержки). Создание и удаление нового потока занимает время и ресурсы.
-2) Resource consumption (расход, потребление). Потоки потребляют системные ресурсы, в частности - память. А также если потоков больше чем процессоров -- то некоторые из них простаивают. много проставивающих потоков могут съесть всю память, усложнить работу garbage collector, и негативно сказаться на других сторонах производительности.
-3) Stability (устойчивость, стабильность). Есть ограничение на макс кол-во потоков.
-макс кол-во зависит от параметров запуска JVM, размера стека при создании потока, ограничения от ОС. В итоге скорее всего будет OutOfMemoryError.
+1) THREAD LIFECYCLE OVERHEAD (накладные расходы, издержки). 
+Создание и удаление нового потока занимает время и ресурсы. (If requests are frequent and lightweight, as in most server applications, creating a new thread for each request can consume significant computing resources.)
 
---- Each thread maintains two execution stacks, one for Java code and one for native code. Typical JVM defaults yield a combined stack size of around half a megabyte. (You can change this with the -Xss JVM flag or through the Thread constructor.) If you divide the per-thread stack size into 2 в 32й (32битные системы), you get a limit of a few thousands or tens of thousands of threads (8 192 потоков = 2в32й байт разделить на 512Кб-на1поток).
+2) RESOURCE CONSUMPTION (расход, потребление). 
+Потоки потребляют системные ресурсы, особенно -- память. А также если потоков больше чем процессоров -- то некоторые из потоков простаивают. Много простаивающих потоков могут съесть всю память, усложнить работу garbage collector, и негативно сказаться на других сторонах производительности. (Having many idle threads can tie up a lot of memory...)  If you have enough threads to keep all the CPUs busy, creating more threads won't help and may even hurt.
 
-Like other concurrency hazards, unbounded thread creation may appear to work just fine during prototyping and development, with problems surfacing only when the application is deployed and under heavy load.
+3) STABILITY (устойчивость, стабильность). 
+Есть ограничение на максимальное кол-во потоков, которые могу быть созданы.
+макс кол-во зависит от параметров запуска JVM, размера стека при создании потока, ограничения от самой ОС. When you hit this limit, то скорее всего будет OutOfMemoryError. Trying to recover from such an error is very risky; it is far easier to structure your program to avoid hitting this limit.
 
- *** 6.2 The Ex'ecutor framework ***
-TASKS   are logical units of work.
-THREADS are a mechanism by which tasks can run as'ynchronously. 
-the SEQUENTIAL APPROACH suffers from poor responsiveness and throughput, and 
-the THREAD-PER-TASK APPROACH suffers from poor resource management.
+!!! Like other concurrency hazards, UNBOUNDED THREAD CREATION may appear to work just fine during prototyping and development, with problems surfacing only when the application is deployed and under heavy load.
 
-The primary abstraction for task execution in the Java class libraries is not Thread, but EXECUTOR.
+--- EACH THREAD maintains two EXECUTION STACKS:
+1) one for Java code 
+2) one for native code. 
+Typical JVM defaults yield a combined stack size (т.е. для обоих этих стэков) of around half a megabyte (512Kb). 
+You can change this with the -Xss JVM flag or through the Thread constructor.
+If you divide the per-thread stack size into 2в32й степени (32bitOS=4096Мб=макс ОЗУ), you get a limit of a few thousands or tens of thousands of threads (8 192 потоков = 2в32й байт разделить на 512Кб-на1поток).  4194304 Кб / 512 Кб = 8192
+Other factors, such as OS limitations, may impose stricter limits.
 
-Executor may be a simple interface, but it forms the basis for a flexible and powerful framework for asynchronous task execution that supports a wide variety of task execution policies. 
+@see https://docs.gigaspaces.com/xap/12.2/production/production-jvm-tuning.html
+
+ *** 6.2 The Executor framework ***
+
+TASKS   >>  are logical units of work.
+THREADS >>  are a mechanism by which tasks can run asynchronously. 
+SEQUENTIAL APPROACH >>  suffers from poor responsiveness and throughput. 
+THREAD-PER-TASK APPROACH >>  suffers from poor resource management.
+
+The PRIMARY ABSTRACTION for task execution in the Java class libraries is NOT Thread, but EXECUTOR.
+
+Executor MAY BE A SIMPLE INTERFACE, but it forms the basis for a flexible and powerful framework for asynchronous task execution that supports a wide variety of task execution policies. 
 It provides a standard means of (расцепление, разъединение)DECOUPLING TASK SUBMISSION(передача на рассмотрение) from TASK EXECUTION, describing tasks with Runnable. 
 The Executor implementations also provide LIFECYCLE SUPPORT and HOOKS FOR ADDING STATISTICS GATHERING, APPLICATION MANAGEMENT, AND MONITORING.
 
+Что по сути предлагает Executor:
+1) Разделяет регистрацию/создание задачи от её непосредственного выполнения. 
+[Разделяет передачу от выполнения (submission from execution)]
+2) Поддержку жизненного цикла
+3) Возможность собирать статистику
+4) Управление приложение
+5) Мониторинг/наблюдение
+
 EXECUTOR IS BASED ON THE PRODUCER-CONSUMER PATTERN, where activities that submit tasks are the producers (producing units of work to be done) and the threads that execute tasks are the consumers (consuming those units of work). 
 Using an Executor is usually the easiest path to implementing a producer-consumer design in your application.
+
+public interface Executor {
+	void execute(Runnable command);
+}
+// An object that executes submitted Runnable tasks. This interface provides a way of decoupling task submission from the mechanics of how each task will be run, including details of thread use, scheduling, etc. An Executor is normally used instead of explicitly creating threads.
 
 Поэтому в примере переделали на ис-ие Executor, 
 тут главное в коде это сделать, т.к. в коде вряд ли потом легко поменяется логика запуска обработки запросов.
@@ -82,28 +131,32 @@ An execution policy specifies the "what, where, when, and how" of task execution
 6) какие действия выполнять до и после выполнения задачи.
 
 Separating the specification of execution policy from task submission makes it practical to select an execution policy at deployment time that is matched to the available hardware.
+EXECUTION POLICIES ARE A RESOURCE MANAGEMENT TOOL, and the optimal policy depends on the available computing resources and your quality-of-service requirements. 
 
-*** 6.2.3 Thread pools *** пул потоков.
+
+*** 6.2.3 Thread pools *** пул потоков. 
 -- В чём разница между процессом и потоком?
-Процессы управляются на уровне ОС, а процесс управляет своими потоками.
+Процессы управляются на уровне ОС, и процесс управляет своими потоками.
 Потоками можно управлять внутри кода процесса. 
 
-A THREAD POOL manages a homogeneous pool of worker threads. 
-A thread pool is tightly bound to a WORK QUEUE holding tasks waiting to be executed. 
+A THREAD POOL manages a homogeneous(однородный) pool of worker threads. 
+A thread pool is TIGHTLY BOUND to a WORK QUEUE HOLDING TASKS waiting to be executed. 
 Worker threads have a simple life: request the next task from the work queue, execute it, and go back to waiting for another task.
 
-Плюсы:
+Плюсы thread pool: (a number of advantages over the thread-per-task approach)
 1) не тратится время и ресурсы на создание и подчистку потоков.
 2) лучшая отзывчивость (responsiveness): т.к. поток уже создан, когда пришла задача.
-3) оптимально кол-во потоков эффективно ис-ет ЦПУ и память.
+3) оптимальное кол-во потоков эффективно ис-ет ЦПУ и память и не крэшится.
+(By properly tuning the size of the thread pool, you can have enough threads to keep the processors busy while not having so many that your application runs out of memory or thrashes due to competition among threads for resources.)
 
 ** какое оптимальное кол-во потоком в зависимости от кол-во ядер в процессоре??
+(N-1) И почему? Потому что всё равно нужен какое-то свободное ядро на выполнение остальных задач (ОС, других программ, и т.п.)
 
 Пулы можно получить из static factory methods in Executors:
 -------------- 1) newFixedThreadPool. -------------- 
 A fixed-size thread pool creates threads as tasks are submitted, up to the maximum pool size, and then attempts to keep the pool size constant (adding new threads if a thread dies due to an unexpected Exception).
 -------------- 2) newCachedThreadPool. -------------- 
-A cached thread pool has more flexibility to reap(пожинать, собирать урожай) idle threads when the current size of the pool exceeds the demand for processing, and to add new threads when demand increases, but places no bounds on the size of the pool.
+A cached thread pool has more flexibility to reap(пожинать, собирать урожай) idle threads when the current size of the pool exceeds the demand for processing, and to add new threads when demand increases, but places NO BOUNDS ON THE SIZE OF THE POOL.
 -------------- 3) newSingleThreadExecutor. -------------- 
 A single-threaded executor creates a single worker thread to process tasks, replacing it if it dies unexpectedly. Tasks are guaranteed to be processed sequentially according to the order imposed by the task queue (FIFO, LIFO, priority order).
 [Single-threaded executors also provide sufficient internal synchronization to guarantee that any memory writes made by tasks are visible to subsequent tasks; this means that objects can be safely confined to the "task thread" even though that thread may be replaced with another from time to time.]
@@ -115,36 +168,99 @@ A fixed-size thread pool that supports delayed and periodic task execution, simi
 Использование TASK EXECUTION FRAMEWORK даёт ряд новых возможностей:
 tuning, management, monitoring, logging, error reporting, and other possibilities..
 
+!! While the server may not fail due to the creation of too many threads, if the TASK ARRIVAL RATE exceeds the TASK SERVICE RATE for long enough it is still possible (just harder) to run out of memory because of the GROWING QUEUE OF RUNNABLES awaiting execution. This can be addressed within the Executor framework by using a BOUNDED WORK QUEUE.
+
 *** 6.2.4 Executor lifecycle ***
+1) Всегда ли надо останавливать Executor?
+!!! JVM can't exit until all the (nondaemon) threads have terminated, so failing to shut down an Executor could prevent the JVM from exiting.
+2) По умолчанию Executor поддерживает управление своим жизненным циклом?
+Нет, это добавлено в ExecutorService. И Executors возвращает именно ExecutorService.
+3) какие ещё методы добавлены в ExecutorService?
+4) В чём отличие graceful shutdown от abrupt shutdown? (для выполняемых задач)
+ * * * *
 Since Executors provide a service to applications, they should be able to be shut down as well, both gracefully(вежливо, прилично) and abruptly(внезапно, резко), and feed back information to the application about the status of tasks that were affected by the shutdown(выключение).
 
 To address the issue of execution service lifecycle, the ExecutorService interface extends Executor, adding a number of methods for lifecycle management (as well as some convenience methods for task submission(передача на рассмотрение)).
 
 The lifecycle implied by ExecutorService has three states — RUNNING, SHUTTING DOWN, AND TERMINATED. 
 1) ExecutorServices are initially created in the RUNNING state. 
-2) The SHUTDOWN method initiates a GRACEFUL shutdown: no new tasks are accepted but previously submitted tasks are allowed to complete — including those that have not yet begun execution. 
-3) The SHUTDOWNNOW method initiates an ABRUPT SHUTDOWN: it attempts to cancel outstanding(нереализованный) tasks and does not start any tasks that are queued but not begun.
+
+2) void shutdown();  >> 
+method initiates a GRACEFUL shutdown: NO NEW TASKS ARE ACCEPTED but previously SUBMITTED TASKS are ALLOWED TO COMPLETE — including those that have not yet begun execution. 
+
+@DOC: Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted. Invocation has no additional effect if already shut down.
+This method does not wait for previously submitted tasks to complete execution. Use awaitTermination to do that.
+
+3) List<Runnable> shutdownNow();  >> 
+method initiates an ABRUPT SHUTDOWN: it attempts to cancel outstanding(нереализованный) tasks and does not start any tasks that are queued but not begun.
+
+@DOC: Attempts to stop all actively executing tasks, halts the processing of waiting tasks, and returns a list of the tasks that were awaiting execution.
+This method does not wait for actively executing tasks to terminate. Use awaitTermination to do that.
+There are no guarantees beyond best-effort attempts to stop processing actively executing tasks. For example, typical implementations will cancel via Thread.interrupt, so any task that fails to respond to interrupts may never terminate.
+
 4) Tasks submitted to an ExecutorService AFTER IT HAS BEEN SHUT DOWN are handled by the REJECTED EXECUTION HANDLER (see Section 8.3.3), which might silently discard the task or might cause execute to throw the unchecked RejectedExecutionException. 
-5) Once all tasks have completed, the ExecutorService transitions to the TERMINATED state. 
+
+5) Once all tasks have completed, the ExecutorService transitions to the TERMINATED state.
+
+!!!! MEMORY CONSISTENCY EFFECTS: !!!!
+Actions in a thread prior to the submission of a Runnable or Callable task to an ExecutorService happen-before any actions taken by that task, which in turn happen-before the result is retrieved via Future.get().
+
+@see https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html
+
+>> boolean isTerminated(); >>
+@DOC: Returns true if all tasks have completed following shut down. Note that isTerminated is never true unless either shutdown or shutdownNow was called first.
+
+>> boolean awaitTermination(long timeout, TimeUnit unit) >>
+@DOC: Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or the current thread is interrupted, whichever happens first.
 
 You can wait for an ExecutorService to reach the terminated state with .awaitTermination(), or poll(опросить) for whether it has yet terminated with .isTerminated(). 
-It is common to follow .shutdown() immediately by .awaitTermination(), creating the effect of synchronously shutting down the ExecutorService. (Executor shutdown and task cancellation are covered in more detail in Chapter 7)
+It is common to follow .shutdown() immediately by .awaitTermination(), creating the effect of synchronously shutting down the ExecutorService. (Executor shutdown and task cancellation are covered in more detail in Chapter 7) 
+
+The following method shuts down an ExecutorService in two phases, first by calling shutdown to reject incoming tasks, and then calling shutdownNow, if necessary, to cancel any lingering tasks:
+ 
+ void shutdownAndAwaitTermination(ExecutorService pool) {
+   pool.shutdown(); // Disable new tasks from being submitted
+   try {
+     // Wait a while for existing tasks to terminate
+     if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+       pool.shutdownNow(); // Cancel currently executing tasks
+       // Wait a while for tasks to respond to being cancelled
+       if (!pool.awaitTermination(60, TimeUnit.SECONDS))
+           System.err.println("Pool did not terminate");
+     }
+   } catch (InterruptedException ie) {
+     // (Re-)Cancel if current thread also interrupted
+     pool.shutdownNow();
+     // Preserve interrupt status
+     Thread.currentThread().interrupt();
+   }
+ }
 
 *** 6.2.5 Delayed and periodic tasks ***
 The Timer facility manages the execution of DEFERRED[отсроченный, отложенный] ("run this task in 100 ms") and PERIODIC[периодический, повторяющийся] ("run this task every 10 ms") tasks. 
 However, Timer has some drawbacks, and ScheduledThreadPoolExecutor should be thought of as its replacement.
 
 ** Перечислить drawbacks у таймера ??
-** и как это решено в ScheduledThreadPoolExecutor ??
-** Пример плохого таймера ??
+1) A Timer creates only a single thread for executing timer tasks. (Поэтому когда 1 Long-running, то выполнение других сдвигается, и может быть вызвано 4 раза подряд когда 1й наконец закончится)
+2) Timer behaves poorly if a TimerTask throws an unchecked exception. The Timer thread doesn't catch the exception, поэтому оно terminates the timer thread. Timer also doesn't resurrect the thread in this situation; instead, it erroneously assumes the entire Timer was cancelled. TimerTasks that are already scheduled but not yet executed are never run, and new tasks cannot be scheduled. (This problem, called "thread leakage" is described in Section 7.3, along with techniques for avoiding it.)
+3) Timer can become confused in this manner and, as confusion loves company, how the Timer shares its confusion with the next hapless caller that tries to submit a TimerTask.
+4) Timer does have support for scheduling based on absolute, not relative time, so that tasks can be sensitive to changes in the system clock; 
 
-Timer does have support for scheduling based on absolute, not relative time, so that tasks can be sensitive to changes in the system clock; ScheduledThreadPoolExecutor supports only relative time.
+** и как это решено в ScheduledThreadPoolExecutor ??
+1) Scheduled thread pools address this limitation by letting you provide multiple threads for executing deferred and periodic tasks.
+2) Видимо unchecked exception не ломает ScheduledThreadPoolExecutor.
+3) Такого видимо нет.
+4) ScheduledThreadPoolExecutor supports only relative time.
+
+** Пример плохого таймера ?? == OutOfTime.java in Listing 6.9
 
 If you need to build your own scheduling service, you may still be able to take advantage of the library by using a DelayQueue.
-DelayQueue -- это a BlockingQueue implementation that provides the scheduling functionality of ScheduledThreadPoolExecutor. 
+DelayQueue -- это BlockingQueue implementation that provides the scheduling functionality of ScheduledThreadPoolExecutor. 
 A DelayQueue manages a collection of Delayed objects. A Delayed has a delay time associated with it: DelayQueue lets you take an element only if its delay has expired. Objects are returned from a DelayQueue ordered by the time associated with their delay.
 
 *** 6.3 Finding exploitable parallelism *** Поиск пригодного к эксплуатации параллелизма **
+The Executor framework makes it easy to specify an execution policy, but in order to use an Executor, you have to be able to describe your task as a Runnable. In most server applications, there is an obvious task boundary: a single client request. But sometimes good task boundaries are not quite so obvious, as in many desktop applications. There may also be exploitable parallelism within a single client request in server applications, as is sometimes the case in database servers.
+
 Our sample component is the page-rendering portion of a browser application, which takes a page of HTML and renders it into an image buffer.
 sequential page renderer -- неэффективно.
 -- RUNNABLE --
