@@ -14,12 +14,14 @@ Where practical, delegation is one of the most effective strategies for creating
 just let existing thread-safe classes manage all the state.
 
 ****5.1    Synchronized collections****
-The synchronized collection classes include 
+The synchronized collection classes include: 
 1) Vector and Hashtable,
-2) the synchronized wrapper classes created by the Collections.synchronizedXxx factory methods.
+2) the synchronized wrapper classes created by the Collections.synchronizedXxx() factory methods.
 
 Problems with synchronized collections
-The synchronized collections are thread-safe, but you may sometimes need to use additional client-side locking to guard compound actions: iteration, navigation, and conditional operations such as put-if-absent.
+The synchronized collections are thread-safe, but you may sometimes need to use additional client-side locking to guard COMPOUND ACTIONS: 
+iteration, navigation, and conditional operations such as "put-if-absent".
+
 With a synchronized collection, these compound actions are still technically thread-safe even without client-side locking, but they may not behave as you might expect when other threads can concurrently modify the collection.
 public class UnsafeVectorHelpers {
     public static Object getLast(Vector list) {
@@ -33,68 +35,87 @@ public class UnsafeVectorHelpers {
     }
 }
 Например, list.size() и list.remove() --- это 2 разных действия.
-И если getLast и deleteLast наложатся друг на друга - может быть exception if asked for a nonexistent element.
+И если getLast() и deleteLast() наложатся друг на друга - может быть exception if asked for a nonexistent element.
 Поэтому надо дополнительно делать client-side синхронизацию, где локом будет сам list\vector, но тогда любые операцию с этим листом может делать только 1 поток, что немного ухудшает эффективность многопоточности.
 
-Because the synchronized collections commit to a synchronization policy that supports client-side locking, it is possible to create new operations that are atomic with respect to other collection operations as long as we know which lock to use. The synchronized collection classes guard each method with the lock on the synchronized collection object itself. By acquiring the collection lock we can make getLast and deleteLast atomic, ensuring that the size of the Vector does not change between calling size and get, as shown in Listing 5.2.
+Because the synchronized collections commit to a synchronization policy that supports client-side locking, it is possible to create new operations that are atomic with respect to other collection operations as long as we know which lock to use. 
+
+The synchronized collection classes guard each method with the lock on the synchronized collection object itself. By acquiring the collection lock we can make getLast() and deleteLast atomic, ensuring that the size of the Vector does not change between calling size and get, as shown in Listing 5.2.
 synchronized (list) { ... }
 
 The problem of unreliable iteration can again be addressed by client-side locking, at some additional cost to scalability. By holding the Vector lock for the duration of iteration, as shown in Listing 5.4, we prevent other threads from modifying the Vector while we are iterating it. Unfortunately, we also prevent other threads from accessing it at all during this time, impairing concurrency.
 
-можно передать объект для синхронизации в Collections.synchronizedXXXX(YYYY);
+можно передать объект для синхронизации в Collections.synchronizedXxx(YYYY);
 
 *** 5.1.2 Iterators and ConcurrentModificationException ***
 FOR-EACH LOOP использует итератор в итоге: Internally, javac generates code that uses an Iterator, repeatedly calling hasNext() and next() to iterate the List.
 
-!!! using iterators DOES NOT OBVIATE ( НЕ устраняет необходимость) the need to lock the collection during iteration if other threads can concurrently modify it
+!!! using iterators DOES NOT OBVIATE ( НЕ устраняет необходимость) the need to lock the collection during iteration if other threads can concurrently modify it.
 
-The iterators returned by the synchronized collections are not designed to deal with concurrent modification, and they are fail-fast—meaning that if they detect that the collection has changed since iteration began, they throw the unchecked ConcurrentModificationException.
--Iterators are implemented by associating a modification count with the collection: if the modification count changes during iteration, hasNext or next throws ConcurrentModificationException.
--However, this check is done without synchronization, so there is a risk of seeing a stale value of the modification count and therefore that the iterator does not realize a modification has been made. This was a deliberate(преднамеренный, обдуманный компромисс дизайна) design tradeoff to reduce the performance impact of the concurrent modification detection code.
+The iterators returned by the synchronized collections are not designed to deal with concurrent modification, and they are FAIL-FAST—meaning that if they detect that the collection has changed since iteration began, they throw the unchecked ConcurrentModificationException.
+
+--- Iterators are implemented by associating a modification count with the collection: if the modification count changes during iteration, hasNext or next throws ConcurrentModificationException.
+--- However, this check is done without synchronization, so there is a risk of seeing a stale value of the modification count and therefore that the iterator does not realize a modification has been made. This was a deliberate(преднамеренный, обдуманный компромисс дизайна) design trade-off to reduce the performance impact of the concurrent modification detection code.
 
 Блокировать коллекцию на время итерации не всегда желательно, т.к. если она большая или операция над каждым элементом довольно долгая, то другим потокам придётся ждать довольно долго.
 также есть риск возникновения starvation or deadlock. 
-и также locking collections for significant periods of time hurts application scalability(масштабируемость, расширяемость). т.е. если много потоков будут ждать освобождения лока и бороться за него, то будут простаивать\неэффективно ис-ся ресурсы процессора и пропускная способность\производительность будет страдать.
+и также locking collections for significant periods of time hurts application scalability(масштабируемость, расширяемость). 
+т.е. если много потоков будут ждать освобождения лока и бороться за него, то будут простаивать\неэффективно ис-ся ресурсы процессора и пропускная способность\производительность будет страдать.
 
 Альтернативой для блокировки коллекции при итерации может быть клонирование коллекции и итерация по клону, но насколько это выгодный компромисс (клонирование имеет obvious performance cost) -- зависит от многих факторов: 
 1) размер коллекции
 2) сколько работы будет сделано над каждым элементом
 3) относительная частота итерации по коллекции, в сравнении с другими операциями с коллекцией
-4) требования отзывчивости
+4) требования отзывчивости (responsiveness)
 5) требования пропускной способности.
 
 *** 5.1.3 Hidden iterators СКРЫТЫЕ ИТЕРАТОРЫ ***
-You have to remember to use locking everywhere a shared collection might be iterated.
+!!! You have to remember to use locking everywhere a shared collection might be iterated.
 
-Скрытая итерации будет например при выводе коллекции в дебаг сообщение (HiddenIterator class), т.к. будет вызван StringBuilder.append(Object) и collection's toString method, а в коллекции для каждого её элемента будет вызван toString. И в итоге может быть ConcurrentModificationException. поэтому вывод в дебаг тоже должен происходить с получение лока для этой коллекции (в соответствии с логикой блокировки).
+Скрытая итерации будет например при выводе коллекции в дебаг сообщение (HiddenIterator class), т.к. будет вызван StringBuilder.append(Object) и collection's toString method, а в коллекции для каждого её элемента будет вызван toString. И в итоге может быть ConcurrentModificationException. 
+!!! поэтому вывод в дебаг тоже должен происходить с получение лока для этой коллекции (в соответствии с логикой блокировки).
+
+Just as encapsulating an object’s state makes it easier to preserve its invariants, encapsulating its synchronization makes it easier to enforce its synchronization policy.
+>>> encapsulating its synchronization: когда синхронизация уже сделана внутри класса/коллекции и автоматически применяется при операциях
 
 Проблема в том, что чем дальше расстояние между состоянием и блокировкой, которая охраняет это состояние, тем БОЛЬШЕ шанс что кто-то забудет сделать блокировку при работе с этим состоянием.
-Just as encapsulating an object’s state makes it easier to preserve its invariants, encapsulating its synchronization makes it easier to enforce its synchronization policy.
-
-The real lesson here is that the greater the distance between the state and the synchronization that guards it, the more likely that someone will forget to use proper synchronization when accessing that state. If HiddenIterator wrapped the HashSet with a synchronizedSet, encapsulating the synchronization, this sort of error would not occur.
+The real lesson here is that the greater the distance between the state and the synchronization that guards it, the more likely that someone will forget to use proper synchronization when accessing that state. 
+If HiddenIterator wrapped the HashSet with a synchronizedSet, encapsulating the synchronization, this sort of error would not occur.
 
 -Также итерация косвенно вызывается в:
 1) hashCode() и equals() методами коллекции. Так может быть если коллекция является ключом или значением в другой коллекции.
 2) containsAll, removeAll, and retainAll methods, 
 3) as well as the constructors that take collections as arguments, also iterate the collection. 
 Это всё может привести к ConcurrentModificationException.
+4) toString()
 
 *** 5.2 Concurrent collections ***
 Synchronized collections achieve their thread safety by serializing all access to the collection's state. The cost of this approach is poor concurrency; when multiple threads contend for the collection-wide lock, throughput suffers.
+
 The new concurrent collections, on the other hand, are designed for concurrent access from multiple threads.
 Replacing synchronized collections with concurrent collections can offer dramatic scalability improvements with little risk.
 
 1) CopyOnWriteArrayList for cases where traversal(проход по всем элементам) is the dominant operation.
+Пример: набор event listener-ов, событий больше и чаще, чем когда мы добавляем/удаляем listeners.
 2) The new ConcurrentMap interface adds support for common compound actions such as put-if-absent, replace, and conditional remove.
 ----------------
 Java 5.0 also adds two new collection types, Queue and BlockingQueue. 
+
 1) A Queue is intended to hold a set of elements temporarily while they await processing. 
 Several implementations are provided:
 [1.A] ConcurrentLinkedQueue, a traditional FIFO queue,
 [1.B] PriorityQueue, a (NON CONCURRENT) priority ordered queue. 
-QUEUE OPERATIONS DO NOT BLOCK; IF THE QUEUE IS EMPTY, THE RETRIEVAL OPERATION RETURNS NULL. While you can simulate the behavior of a Queue with a List — in fact, LinkedList also implements Queue — the Queue classes were added because eliminating the random-access requirements of List admits more efficient concurrent implementations.
+QUEUE OPERATIONS DO NOT BLOCK; IF THE QUEUE IS EMPTY, THE RETRIEVAL OPERATION RETURNS NULL. 
+While you can simulate the behavior of a Queue with a List — in fact, LinkedList also implements Queue — the Queue classes were added because eliminating the random-access requirements of List admits more efficient concurrent implementations.
+
+@Javadoc for PriorityQueue:
+/* Priority queue represented as a balanced binary heap: 
+the two children of queue[n] are queue[2*n+1] and queue[2*n+2] (in a zero-based array).  
+The priority queue is ordered by comparator, or by the elements' natural ordering (if comparator is null).
+For each node n in the heap and each descendant d of n, n <= d.  The element with the lowest value is in queue[0], assuming the queue is nonempty. */
 
 ** Что за RANDOM ACCESS requirements для List?
+когда по индексу можно взять ЛЮБОЙ элемент из листа за ПОСТОЯННОЕ время.
 
 2) BlockingQueue extends Queue to add BLOCKING INSERTION AND RETRIEVAL OPERATIONS. 
 If the queue is empty, a retrieval blocks until an element is available, and if the queue is full (for bounded queues) an insertion blocks until there is space available. Blocking queues are extremely useful in producer-consumer designs, and are covered in greater detail in Section 5.3.
@@ -108,11 +129,13 @@ Java 6 adds ConcurrentSkipListMap and ConcurrentSkipListSet, which are concurren
 
 THE SYNCHRONIZED COLLECTIONS CLASSES HOLD A LOCK FOR THE DURATION OF EACH OPERATION. 
 Some operations, such as HashMap.get() or List.contains(), may involve more work than is initially obvious: 
-ЧТОБЫ пройти по всем hash bucket or list и найти нужный объект надо вызывать equals для всех проверяемых кандидатов (equals сам по себе может повлечь большое кол-во вычислений).
+ЧТОБЫ пройти по всем hash bucket or list и найти нужный объект надо вызывать .equals() для всех проверяемых кандидатов (equals сам по себе может повлечь большое кол-во вычислений).
 Или в hash-based collection при плохом методе hashCode() элементы неравномерно распределятся по бакетам (в самом плохом случае это станет LinkedList).
 
 Поэтому ConcurrentHashMap ис-ет другой механизм блокировки:
-it uses an entirely different locking strategy that offers better concurrency and scalability. Instead of synchronizing every method on a common lock, restricting access to a single thread at a time, it uses a FINER-GRAINED LOCKING MECHANISM called LOCK STRIPING (череда локов, т.е. коллекция как бы делится на отдельные блоки и для каждого будет свой лок) to allow a greater degree of shared access.
+it uses an entirely different locking strategy that offers better concurrency and scalability. 
+Instead of synchronizing every method on a common lock, restricting access to a single thread at a time, it uses a FINER-GRAINED LOCKING MECHANISM called LOCK STRIPING (череда локов, т.е. коллекция как бы делится на отдельные блоки и для каждого будет свой лок) to allow a greater degree of shared access.
+Элементы делятся на группы и на каждую такую группу будет отдельный лок.
 
 Arbitrarily many READING THREADS can access the map concurrently, READERS can access the map concurrently with WRITERS, and a limited NUMBER OF WRITERS can modify the map concurrently. The result is far higher throughput under concurrent access, with little performance penalty for single-threaded access.
 --------
@@ -126,14 +149,16 @@ The iterators returned by ConcurrentHashMap are WEAKLY CONSISTENT instead of FAI
 Но в новых коллекциях пошли также на ряд компромиссов:
 1) size() and isEmpty(), have been slightly weakened to reflect the concurrent nature of the collection (потому что эти 2 метода far less useful in concurrent environments, потому что значения этих методов -- это постоянно движущиеся мишени, т.е. они и так постоянно меняются и нет смысла на них полагаться). Поэтому их ослабили, чтобы улучшить производительность других более важных методов, например, get, put, containsKey, and remove.
 [1.A] size() is allowed to return an approximation instead of an exact count.
+>>> т.е. показывает приблизительное кол-во элементов.
 
-Единственной полезной фичей у старого способа (synchronized Map) осталась возможность залочить мэп для иксклюзивного(единственного) доступа. Это может пригодиться когда:
+Единственной полезной фичей у старого способа (synchronized Map) осталась возможность залочить мэп для эксклюзивного(единственного) доступа. Это может пригодиться когда:
 This might be necessary in unusual cases such as adding several mappings atomically, 
 or iterating the Map several times and needing to see the same elements in the same order.
 
-Since a ConcurrentHashMap cannot be locked for exclusive access, we cannot use client-side locking to create new atomic operations such as put-if-absent. Instead, a number of common compound operations such as put-if-absent, remove-if-equal, and replace-if-equal are implemented as atomic operations and specified by the ConcurrentMap interface.
+Since a ConcurrentHashMap cannot be locked for exclusive access, we cannot use client-side locking to create new atomic operations such as put-if-absent. 
+Instead, a number of common compound operations such as put-if-absent, remove-if-equal, and replace-if-equal are implemented as atomic operations and specified by the ConcurrentMap interface.
 
-*** 5.2.3    CopyOnWriteArrayList ***
+*** 5.2.3    CopyOnWriteArrayList *** CopyOnWriteArraySet
 CopyOnWriteArrayList is a concurrent replacement for a synchronized List that offers better concurrency in some common situations and eliminates the need to lock or copy the collection during iteration. (Similarly, CopyOnWriteArraySet is a concurrent replacement for a synchronized Set.)
 Similarly, CopyOnWriteArraySet is a concurrent replacement for a synchronized Set.)
 
@@ -141,20 +166,23 @@ Similarly, CopyOnWriteArraySet is a concurrent replacement for a synchronized Se
 as long as an effectively immutable object is properly published, no further synchronization is required when accessing it. 
 
 На этом факте и основывается CopyOnWriteArrayList:
-The copy-on-write collections derive their thread safety from the fact that as long as an effectively immutable object is properly published, no further synchronization is required when accessing it. They implement mutability by creating and republishing a new copy of the collection every time it is modified. Iterators for the copy-on-write collections retain a reference to the backing array that was current at the start of iteration, and since this will never change, they need to synchronize only briefly to ensure visibility of the array contents.
+The copy-on-write collections derive their thread safety from the fact that as long as an EFFECTIVELY IMMUTABLE OBJECT IS PROPERLY PUBLISHED, NO FURTHER SYNCHRONIZATION IS REQUIRED WHEN ACCESSING IT. 
+They implement mutability by creating and republishing a new copy of the collection every time it is modified. Iterators for the copy-on-write collections retain a reference to the backing array that was current at the start of iteration, and since this will never change, they need to synchronize only briefly to ensure visibility of the array contents.
 
 ITERATORS for the copy-on-write collections retain a reference to the backing array that was current at the start of iteration, and since this will never change, they need to synchronize only briefly to ensure visibility of the array contents. (т.е. убедиться только что ссылка на новую коллекцию было safely published ?)
 
-As a result, multiple threads can iterate the collection without interference from one another or from threads wanting to modify the collection. The iterators returned by the copy-on-write collections do not throw ConcurrentModificationException and return the elements exactly as they were at the time the iterator was created, regardless of subsequent modifications.
-** The returned iterator provides a snapshot of the state of the list when the iterator was constructed. No synchronization is needed while traversing the iterator. The iterator does NOT support the remove method.
+As a result, multiple threads can iterate the collection without interference from one another or from threads wanting to modify the collection. 
+The iterators returned by the copy-on-write collections do not throw ConcurrentModificationException and return the elements exactly as they were at the time the iterator was created, regardless of subsequent modifications.
+** The returned iterator provides a snapshot of the state of the list when the iterator was constructed. No synchronization is needed while traversing the iterator. The iterator does NOT support the .remove() method.
 
 -- Тут возникают проблемы с производительностью, т.к. при записи в лист надо делать его копию ( особенно если размер листа достаточно большой). 
-Поэтому COPY-ON-WRITE COLLECTIONS выгодно использовать только когда чаще всего происходит итерация по коллекции, чем изменение коллекции.
+Поэтому COPY-ON-WRITE COLLECTIONS выгодно использовать только когда чаще всего происходит итерация/чтение по коллекции, чем изменение коллекции.
 !! the copy-on-write collections are reasonable to use only when iteration is far more common than modification. 
 
 Поэтому COPY-ON-WRITE коллекции подходят для EVENT-NOTIFICATION SYSTEMS: 
-когда приходят много событий и надо пробегать по списку листенеров чтобы найти обработчик. И при этом чаще надо обрабатывать ивенты, чем удалять и добавлять обработчиков.
-This criterion exactly describes many event-notification systems: delivering a notification requires iterating the list of registered listeners and calling each one of them, and in most cases registering or unregistering an event listener is far less common than receiving an event notification.
+когда приходят много событий и надо пробегать по списку листенеров чтобы найти обработчик. И при этом чаще надо обрабатывать события, чем удалять и добавлять обработчиков.
+This criterion exactly describes many event-notification systems: 
+delivering a notification requires iterating the list of registered listeners and calling each one of them, and in most cases registering or unregistering an event listener is far less common than receiving an event notification.
 
 *** 5.3 Blocking queues and the producer-consumer pattern ***
 Blocking queues provide blocking PUT and TAKE methods as well as the timed equivalents OFFER and POLL. 
@@ -170,6 +198,12 @@ One of the most common producer-consumer designs is a THREAD POOL COUPLED WITH A
 
 Blocking queues also provide an "offer()" method, which returns a failure status if the item cannot be enqueued. This enables you to create more flexible policies for dealing with overload, such as shedding load, serializing excess work items and writing them to disk, reducing the number of producer threads, or throttling producers in some other manner.
 
+>> add() - бросает exception, 
+offer() - возвращает true/false, 
+put() - wait + exception
+>> take() - wait, 
+poll() - waitTime/null
+
 Bounded queues are a powerful resource management tool for building RELIABLE APPLICATIONS: they make your program more robust to overload by throttling activities that threaten to produce more work than can be handled.
 
 While the producer-consumer pattern enables producer and consumer code to be decoupled from each other, their BEHAVIOR is still COUPLED indirectly through the SHARED WORK QUEUE.
@@ -182,18 +216,19 @@ The class library contains several implementations of BlockingQueue:
 4) SynchronousQueue, is not really a queue at all, in that it maintains no storage space for queued elements. Instead, it maintains a list of queued threads waiting to enqueue or dequeue an element. In the dish-washing analogy, this would be like having no dish rack, but instead handing the washed dishes directly to the next available dryer.
 
 -В SynchronousQueue работа по завершению сразу передаётся к потребителю, что гораздо надёжнее, чем сначала положить её в очередь, т.к. неизвестно когда её потом обработают(а тут производитель сразу знает что его результат пошёл обрабатываться дальше). Заодно, не тратятся ресурсы, чтобы положить её в очередь и забрать оттуда. Но при SynchronousQueue всегда должен быть хотя бы 1 свободный потребитель, чтобы ему передать результаты работы.
--Since a SynchronousQueue has no storage capacity, put and take will block unless another thread is already waiting to participate in the handoff. Synchronous queues are generally suitable only when there are enough consumers that there nearly always will be one ready to take the handoff.
+-Since a SynchronousQueue has no storage capacity, put() and take() will block unless another thread is already waiting to participate in the handoff. Synchronous queues are generally suitable only when there are enough consumers that there nearly always will be one ready to take the HANDOFF.
 
 --Priority queue represented as a balanced binary heap.
 ** почитать более подробно про эту структуру
 *******************************************************************
 A heap is not a sorted structure and can be regarded as partially ordered.
 можно сделать heap как tree или как array.
-A common implementation of a heap is the binary heap, in which the tree is a complete binary tree
+A common implementation of a heap is the binary heap, in which the tree is a COMPLETE BINARY TREE.
 binary tree -- значит, что у каждого нода есть 2 ребёнка.
-A binary heap is a heap data structure that takes the form of a binary tree. Binary heaps are a common way of implementing priority queues.
+A binary heap is a heap data structure that takes the form of a binary tree. 
+Binary heaps are a common way of implementing priority queues.
 
-и заполнять хип надо сверху вниз и справа налево. Это необходимое условие, иначе заполнять нельзя.
+и заполнять хип надо СВЕРХУ ВНИЗ и СПРАВА НАЛЕВО. Это необходимое условие, иначе заполнять нельзя.
 и потом когда удалять элемент -- то на его место берётся самый правый нижний, и потом опускается на нужное место.
 there is no particular relationship among nodes on any given level, even among the siblings. When a heap is a complete binary tree, it has a smallest possible height — a heap with N nodes always has (log N) height. A heap is a useful data structure when you need to remove the object with the highest (or lowest) priority.
 
@@ -223,7 +258,7 @@ Note that, as shown in the graphic, there is no implied ordering between sibling
 **********************************************************************************
 
 5.3.1 Example: desktop search
-DiskCrawler class.
+FileCrawler class. (Producer and consumer tasks in a desktop search application.)
 Producers and consumers can execute concurrently; if one is I/O-bound and the other is CPU-bound, executing them concurrently yields better overall throughput than executing them sequentially.
 While this example uses explicitly managed threads, many producer-consumer designs can be expressed using the Executor task execution framework, which itself uses the producer-consumer pattern.
 
@@ -241,19 +276,24 @@ As long as the pool contains sufficient internal synchronization to publish the 
 
 *** 5.3.3 Deques and work stealing ***
 Java 6 also adds another two collection types, Deque (pronounced "deck") and BlockingDeque, that extend Queue and BlockingQueue. 
-A DEQUE is a DOUBLE-ENDED QUEUE that allows efficient INSERTION AND REMOVAL FROM BOTH THE HEAD AND THE TAIL. Implementations include ArrayDeque and LinkedBlockingDeque.
--Just as blocking queues lend themselves(быть пригодным/подходящим для) to the producer-consumer pattern, deques lend themselves to a related pattern called WORK STEALING. 
-A producer-consumer design has one shared work queue for all consumers; IN A WORK STEALING DESIGN, EVERY CONSUMER HAS ITS OWN DEQUE. If a consumer exhausts the work in its own deque, it can steal work from the TAIL of someone else's deque. 
+A DEQUE is a DOUBLE-ENDED QUEUE that allows efficient INSERTION AND REMOVAL FROM BOTH THE HEAD AND THE TAIL. Implementations include ArrayDeque and LinkedBlockingDeque. (bounded & unbounded)
+
+- Just as blocking queues lend themselves(быть пригодным/подходящим для) to the producer-consumer pattern, 
+- deques lend themselves to a related pattern called WORK STEALING. 
+
+A producer-consumer design has one shared work queue for all consumers; 
+IN A WORK STEALING DESIGN, EVERY CONSUMER HAS ITS OWN DEQUE. 
+If a consumer exhausts the work in its own deque, it can steal work from the TAIL of someone else's deque. 
 Work stealing can be more scalable than a traditional producer-consumer design because workers don't contend for a shared work queue; most of the time they access only their own deque, reducing contention. When a worker has to access another's queue, it does so from the tail rather than the head, further reducing contention(соревнование, состязание).
 
 *** 5.4 Blocking and interruptible methods ***
 Threads may block, or pause, for several reasons: 
 1) waiting for I/O completion, 
 2) waiting to acquire a lock, 
-3) waiting to wake up from Thread.sleep, 
+3) waiting to wake up from Thread.sleep(), 
 4) or waiting for the result of a computation in another thread. 
 
-When a thread blocks, it is usually suspended and placed in one of the blocked thread states (BLOCKED, WAITING, or TIMED_WAITING). 
+When a thread blocks, it is usually suspended and placed in one of the blocked thread states (BLOCKED(ждём монитора), WAITING(ждём вычисления), or TIMED_WAITING(вычисления или sleep)). 
 The distinction between a blocking operation and an ordinary operation that (только, просто; единственно)merely takes a long time to finish is that a blocked thread must wait for an event that is beyond its control before it can proceed — the I/O completes, the lock becomes available, or the external computation finishes. When that external event occurs, the thread is placed back in the RUNNABLE state and becomes eligible again for scheduling.
 
 The put() and take() methods of BlockingQueue throw the checked InterruptedException, as do a number of other library methods such as Thread.sleep(). 
@@ -271,7 +311,7 @@ For library code, there are basically two choices:
 1) PROPAGATE THE INTERRUPTED EXCEPTION. 
 This is often the most sensible policy if you can get away with it — just propagate the InterruptedException to your caller. This could involve not catching InterruptedException, or catching it and throwing it again after performing some brief activity-specific cleanup.
 2) RESTORE THE INTERRUPT. 
-Sometimes you cannot throw InterruptedException, for instance when your code is part of a Runnable. In these situations, you must catch InterruptedException and restore the interrupted status by calling interrupt on the current thread, so that code higher up the call stack can see that an interrupt was issued, as demonstrated in Listing 5.10. [Thread.currentThread().interrupt();]
+Sometimes you cannot throw InterruptedException, for instance when your code is part of a Runnable. In these situations, you must catch InterruptedException and restore the interrupted status by calling .interrupt() on the current thread, so that code higher up the call stack can see that an interrupt was issued, as demonstrated in Listing 5.10. [Thread.currentThread().interrupt();]
 public class TaskRunnable implements Runnable {
     BlockingQueue<Task> blockingQueue;
     public void run() {
@@ -282,7 +322,7 @@ public class TaskRunnable implements Runnable {
             Thread.currentThread().interrupt();
         }
     }
-..}
+}
 
 You can get much more sophisticated with interruption, but these two approaches should work in the vast majority of situations. But there is one thing you should NOT do with InterruptedException — [!! DO NOT] CATCH IT AND DO NOTHING IN RESPONSE. 
 This deprives(лишать; отбирать, отнимать, не допускать) code higher up on the call stack of the opportunity to act on the interruption, because the evidence that the thread was interrupted is lost. 
@@ -290,7 +330,7 @@ The only situation in which it is acceptable to swallow an interrupt is when you
 
 --------------------------------------------------------------------------------
 
-*** 5.5 Synchronizers *** 07.01.2016
+*** 5.5 Synchronizers *** 07.01.2016 - 11.11.2018
 A SYNCHRONIZER is any object that coordinates the control flow of threads based on its state. 
 SYNCHRONIZER -- любой объект, который координирует ход выполнения потоков, в зависимости от своего состояния.
 
@@ -305,7 +345,7 @@ SYNCHRONIZER -- любой объект, который координирует
 All synchronizers share certain STRUCTURAL PROPERTIES: they encapsulate STATE that:
 1) determines whether threads arriving at the synchronizer should be ALLOWED TO PASS or FORCED TO WAIT, 
 2) provide methods to MANIPULATE that STATE, 
-3) provide methods to WAIT EFFICIENTLY for the synchronizer TO ENTER the desired state. (Эффективно ждать момента, пока синхронизатор придёт в нужное состояние.)
+3) provide methods to WAIT EFFICIENTLY for the synchronizer TO ENTER the desired state. (Эффективно ждать момента, пока синхронизатор придёт в нужное состояние.)=поток ждёт, не расходуя ресурсы впустую.
 
 *** 5.5.1 Latches (триггер, защёлка, клапан -- а ля шпингалет) 
 *** CountDownLatch *** ОДНОРАЗОВЫЕ ЗАЩЁЛКИ
@@ -400,10 +440,13 @@ A Semaphore manages a set of VIRTUAL PERMITS; the initial number of permits is p
 Activities can acquire permits (as long as some remain) and release permits when they are done with them. If no permit is available, .acquire() blocks until one is (пока хотя бы 1 разрешение не станет доступным) (or until interrupted or the operation times out).
 The .release() method returns a permit to the semaphore.
 
----The implementation has no actual permit objects, and Semaphore does not associate dispensed permits with threads, so a permit acquired in one thread can be released from another thread. You can think of "acquire()" as consuming a permit and "release()" as creating one; a Semaphore is not limited to the number of permits it was created with.---
+ЛОГИЧЕСКИЕ ПЕРМИТЫ
+---The implementation has no actual permit objects, and Semaphore does not associate dispensed permits with threads, so a permit acquired in one thread can be released from another thread. You can think of "acquire()" as consuming a permit and "release()" as creating one; a Semaphore is not limited to the number of permits it was created with. ---
 A degenerate case of a counting semaphore is a binary semaphore, a Semaphore with an initial count of one. A binary semaphore can be used as a MUTEX(взаимное исключение) with nonreentrant locking semantics; whoever holds the sole permit holds the mutex.
 
-Semaphores are useful for implementing resource pools such as database connection pools. While it is easy to construct a fixed-sized pool that fails if you request a resource from an empty pool, what you really want is to block if the pool is empty and unblock when it becomes nonempty again.
+ГДЕ ИСПОЛЬЗОВАТЬ:
+Semaphores are useful for implementing RESOURCE POOLS such as database connection pools. 
+While it is easy to construct a fixed-sized pool that fails if you request a resource from an empty pool, what you really want is to block if the pool is empty and unblock when it becomes nonempty again.
 
 *** 5.5.4 Barriers *** ждёт всё кол-во участников и пропускает их через турникет. *** МНОГОРАЗОВЫЙ
 *** BARRIERS как турникеты на скачках -- все лошади подтянулись (и неважно, без подковы или без наездника) -- турникет автоматически срабатывает на присутствие лошади и открывается когда все они появились, и сразу после этого закрывается и ждёт новую группу лошадей ***
@@ -418,14 +461,17 @@ A barrier implements the protocol some families use to rendezvous during a day a
 
 - CyclicBarrier allows a fixed number of parties to rendezvous REPEATEDLY at a barrier point and is useful in PARALLEL ITERATIVE ALGORITHMS that break down a problem into a fixed number of independent subproblems.
 -- Threads call .await() when they reach the barrier point, and "await" blocks until all the threads have reached the barrier point. If all threads meet at the barrier point, the barrier has been successfully passed, in which case all threads are released and the barrier is reset so it can be used again. 
---- If a call to await() times out or a thread blocked in await() is interrupted, then the barrier is considered broken and all outstanding calls to .await() terminate with BrokenBarrierException. If the barrier is successfully passed, .await() returns a unique arrival index for each thread, which can be used to "ELECT" a leader that takes some special action in the next iteration. 
----- CyclicBarrier also lets you pass a barrier action to the constructor; this is a Runnable that is executed (in one of the subtask threads) when the barrier is successfully passed but before the blocked threads are released. 
+--- If a call to await() times out or a thread blocked in await() is interrupted, then the barrier is considered broken and all outstanding calls to .await() terminate with BrokenBarrierException. 
+--- If the barrier is successfully passed, .await() returns a unique arrival index for each thread, which can be used to "ELECT" a leader that takes some special action in the next iteration. 
+---- CyclicBarrier also lets you pass a barrier action to the constructor; this is a Runnable that is executed (in one of the subtask threads) when the barrier is successfully passed but before the blocked threads are released. Выполнится в последнем потоке, который вызвал Barrier.await().
 
 ********** When using a CyclicBarrier, the assumption is that you specify the number of waiting threads that trigger the barrier. If you specify 5, you must have at least 5 threads to call await().
 
-When using a CountDownLatch, you specify the number of calls to countDown() that will result in all waiting threads being released. This means that you can use a CountDownLatch with only a single thread.
+When using a CountDownLatch, you specify the number of calls to countDown() that will result in all waiting threads being released. 
+This means that you can use a CountDownLatch with only a single thread.
 
-!!! The CyclicBarrier uses an ALL-OR-NONE breakage model for failed synchronization attempts: If a thread leaves a barrier point prematurely(преждевременно) because of interruption, failure, or timeout, ALL OTHER THREADS waiting at that barrier point will also leave abnormally via BrokenBarrierException (or InterruptedException if they too were interrupted at about the same time). 
+!!! The CyclicBarrier uses an ALL-OR-NONE breakage model for failed synchronization attempts: 
+If a thread leaves a barrier point prematurely(преждевременно) because of interruption, failure, or timeout, ALL OTHER THREADS waiting at that barrier point will also leave abnormally via BrokenBarrierException (or InterruptedException if they too were interrupted at about the same time). 
 ************
 
 CellularAutomata.java

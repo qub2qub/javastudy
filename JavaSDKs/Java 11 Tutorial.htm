@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Java 11 Tutorial</title>
+    <link rel="stylesheet" href="../Guides/grey.css">
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+<a href="https://winterbe.com/posts/2018/09/24/java-11-tutorial/">src winterbe</a>
+<a href="https://github.com/winterbe/java8-tutorial/tree/master/src/com/winterbe/java11">published on GitHub</a>
+<p>
+    Use: <span>([^<]+)</span> $1 for fast replacement.
+    <pre>&lt;span&gt;([^<]+)&lt;/span&gt;</pre>
+</p>
+<h2>Java 11 Tutorial</h2>
+<div>
+<p data-page-url="https://winterbe.com/posts/2018/09/24/java-11-tutorial/">
+    September 24, 2018<br>
+    <span></span>
+</p>
+
+<div>
+    <p><a href="http://openjdk.java.net/projects/jdk/11/">Java 11</a> is around the corner and <a href="https://twitter.com/winterbe_/status/1035864662976413696">many people</a> still use Java 8 in production. This example-driven tutorial covers the most important language and API features from Java 9 to 11. No walls of text, so let's dive right into the code. Enjoy!</p>
+
+<h3 id="local-variable-type-inference">Local Variable Type Inference<a href="#local-variable-type-inference" title="Permalink to this section">#</a></h3>
+
+<p>Java 10 has introduced a new language keyword <code>var</code> which optionally replaces the type information when declaring local variables (<em>local</em> means variable declarations inside method bodies).</p>
+
+<p>Prior to Java 10 you would declare variables like this:</p>
+<figure><pre><code data-lang="java">String text = "Hello Java 9";
+</code></pre></figure>
+<p>Now you can replace <code>String</code> with <code>var</code>. The compiler infers the correct type from the assignment of the variable. In this case <code>text</code> is of type <code>String</code>:</p>
+<figure><pre><code data-lang="java">var text = "Hello Java 10";
+</code></pre></figure>
+<p>Variables declared with <code>var</code> are still statically typed. You cannot reassign incompatible types to such variables. This code snippet does not compile:</p>
+<figure><pre><code data-lang="java">var text = "Hello Java 11";
+text = 23;  // Incompatible types
+</code></pre></figure>
+<p>You can also use <code>final</code> in conjunction with <code>var</code> to forbid reassigning the variable with another value:</p>
+<figure><pre><code data-lang="java">final var text = "Banana";
+text = "Joe";   // Cannot assign a value to final variable 'text'
+</code></pre></figure>
+<p>Also <code>var</code> is not allowed when the compiler is incapable of infering the correct type of the variable. All of the following code samples result in compiler errors:</p>
+<figure><pre><code data-lang="java">// Cannot infer type:
+var a;
+var nothing = null;
+var lambda = () -&gt; System.out.println("Pity!");
+var method = this::someMethod;
+</code></pre></figure>
+<p>Local variable type inference really shines with generics involved. In the next example <code>current</code> has a rather verbose type of <code>Map&lt;String, List&lt;Integer&gt;&gt;</code> which can be reduced to a single <code>var</code> keyword, saving you from typing a lot of boilerplate:</p>
+<figure><pre><code data-lang="java">var myList = new ArrayList&lt;Map&lt;String, List&lt;Integer&gt;&gt;&gt;();
+
+for (var current : myList) {
+    // current is infered to type: Map&lt;String, List&lt;Integer&gt;&gt;
+    System.out.println(current);
+}
+</code></pre></figure>
+<p>As of Java 11 the <code>var</code> keyword is also allowed for lambda parameters which enables you to add annotations to those parameters:</p>
+<figure><pre><code data-lang="java">Predicate&lt;String&gt; predicate = (@Nullable var a) -&gt; true;
+</code></pre></figure>
+<blockquote>
+<p>Tip: In Intellij IDEA you can hover on a variable while holding <code>CMD/CTRL</code> to reveal the infered type of the variable (for keyboard junkies press <code>CTRL + J</code>).</p>
+</blockquote>
+
+<h3 id="http-client">HTTP Client<a href="#http-client" title="Permalink to this section">#</a></h3>
+
+<p>Java 9 introduced a new incubating <code>HttpClient</code> API for dealing with HTTP requests. As of Java 11 this API is now final and available in the standard libraries package <code>java.net</code>. Let's explore what we can do with this API.</p>
+
+<p>The new <code>HttpClient</code> can be used either synchronously or asynchronously. A synchronous request blocks the current thread until the reponse is available. <code>BodyHandlers</code> define the expected type of response body (e.g. as string, byte-array or file):</p>
+<figure><pre><code data-lang="java">var request = HttpRequest.newBuilder()
+    .uri(URI.create("https://winterbe.com"))
+    .GET()
+    .build();
+var client = HttpClient.newHttpClient();
+HttpResponse&lt;String&gt; response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.body());
+</code></pre></figure>
+<p>The same request can be performed asynchronously. Calling <code>sendAsync</code> does not block the current thread and instead returns a <code>CompletableFuture</code> to construct asynchronous operation pipelines.</p>
+<figure><pre><code data-lang="java">var request = HttpRequest.newBuilder()
+    .uri(URI.create("https://winterbe.com"))
+    .build();
+var client = HttpClient.newHttpClient();
+client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+    .thenApply(HttpResponse::body)
+    .thenAccept(System.out::println);
+</code></pre></figure>
+<blockquote>
+<p>We can omit the <code>.GET()</code> call as it's the default request method.</p>
+</blockquote>
+
+<p>The next example sends data to a given URL via <code>POST</code>. Similiar to <code>BodyHandlers</code> you use <code>BodyPublishers</code> to define the type of data you want to send as body of the request such as strings, byte-arrays, files or input-streams:</p>
+<figure><pre><code data-lang="java">var request = HttpRequest.newBuilder()
+    .uri(URI.create("https://postman-echo.com/post"))
+    .header("Content-Type", "text/plain")
+    .POST(HttpRequest.BodyPublishers.ofString("Hi there!"))
+    .build();
+var client = HttpClient.newHttpClient();
+var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.statusCode());      // 200
+</code></pre></figure>
+<p>The last sample demonstrates how to perform authorization via <code>BASIC-AUTH</code>:</p>
+<figure><pre><code data-lang="java">var request = HttpRequest.newBuilder()
+    .uri(URI.create("https://postman-echo.com/basic-auth"))
+    .build();
+var client = HttpClient.newBuilder()
+    .authenticator(new Authenticator() {
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication("postman", "password".toCharArray());
+        }
+    })
+    .build();
+var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.statusCode());      // 200
+</code></pre></figure>
+<h3 id="collections">Collections<a href="#collections" title="Permalink to this section">#</a></h3>
+
+<p>Collections such as <code>List</code>, <code>Set</code> and <code>Map</code> have been extended with new methods. <code>List.of</code> created a new immutable list from the given arguments. <code>List.copyOf</code> creates an immutable copy of the list.</p>
+<figure><pre><code data-lang="java">var list = List.of("A", "B", "C");
+var copy = List.copyOf(list);
+System.out.println(list == copy);   // true
+</code></pre></figure>
+<p>Because <code>list</code> is already immutable there's no practical need to actually create a copy of the list-instance, therefore <code>list</code> and <code>copy</code> are the same instance. However if you copy a mutable list, <code>copy</code> is indeed a new instance so it's garanteed there's no side-effects when mutating the original list:</p>
+<figure><pre><code data-lang="java">var list = new ArrayList&lt;String&gt;();
+var copy = List.copyOf(list);
+System.out.println(list == copy);   // false
+</code></pre></figure>
+<p>When creating immutable maps you don't have to create map entries yourself but instead pass keys and values as alternating arguments:</p>
+<figure><pre><code data-lang="java">var map = Map.of("A", 1, "B", 2);
+System.out.println(map);    // {B=2, A=1}
+</code></pre></figure>
+<blockquote>
+<p>Immutable collections in Java 11 still use the same interfaces from the old <a href="https://docs.oracle.com/javase/10/docs/api/java/util/Collection.html">Collection API</a>. However if you try to modify an immutable collection by adding or removing elements, a <code>java.lang.UnsupportedOperationException</code> is thrown. Luckily <a href="https://www.jetbrains.com/idea/">Intellij IDEA</a> warns via an inspection if you try to mutate immutable collections.</p>
+</blockquote>
+
+<h3 id="streams">Streams<a href="#streams" title="Permalink to this section">#</a></h3>
+
+<p>Streams were introduced in Java 8 and now receive three new methods. <code>Stream.ofNullable</code> constructs a stream from a single element:</p>
+<figure><pre><code data-lang="java">Stream.ofNullable(null)
+    .count()   // 0
+</code></pre></figure>
+<p>The methods <code>dropWhile</code> and <code>takeWhile</code> both accept a predicate to determine which elements to abandon from the stream:</p>
+<figure><pre><code data-lang="java">Stream.of(1, 2, 3, 2, 1)
+    .dropWhile(n -&gt; n &lt; 3)
+    .collect(Collectors.toList());  // [3, 2, 1]
+
+Stream.of(1, 2, 3, 2, 1)
+    .takeWhile(n -&gt; n &lt; 3)
+    .collect(Collectors.toList());  // [1, 2]
+</code></pre></figure>
+<blockquote>
+<p>If you're not yet familiar with Streams you should read my <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">Java 8 Streams Tutorial</a>.</p>
+</blockquote>
+
+<h3 id="optionals">Optionals<a href="#optionals" title="Permalink to this section">#</a></h3>
+
+<p>Optionals also receive a few quite handy new methods, e.g. you can now simply turn optionals into streams or provide another optional as fallback for an empty optional:</p>
+<figure><pre><code data-lang="java">Optional.of("foo").orElseThrow();     // foo
+Optional.of("foo").stream().count();  // 1
+Optional.ofNullable(null)
+    .or(() -&gt; Optional.of("fallback"))
+    .get();                           // fallback
+</code></pre></figure>
+<h3 id="strings">Strings<a href="#strings" title="Permalink to this section">#</a></h3>
+
+<p>One of the most basic classes <code>String</code> gets a few helper methods for trimming or checking whitespace and for streaming the lines of a string:</p>
+<figure><pre><code data-lang="java">" ".isBlank();                // true
+" Foo Bar ".strip();          // "Foo Bar"
+" Foo Bar ".stripTrailing();  // " Foo Bar"
+" Foo Bar ".stripLeading();   // "Foo Bar "
+"Java".repeat(3);             // "JavaJavaJava"
+"A\nB\nC".lines().count();    // 3
+</code></pre></figure>
+<h3 id="inputstreams">InputStreams<a href="#inputstreams" title="Permalink to this section">#</a></h3>
+
+<p>Last but not least <code>InputStream</code> finally gets a super useful method to transfer data to an <code>OutputStream</code>, a usecase that's very common when working with streams of raw data.</p>
+<figure><pre><code data-lang="java">var classLoader = ClassLoader.getSystemClassLoader();
+var inputStream = classLoader.getResourceAsStream("myFile.txt");
+var tempFile = File.createTempFile("myFileCopy", "txt");
+try (var outputStream = new FileOutputStream(tempFile)) {
+    inputStream.transferTo(outputStream);
+}
+</code></pre></figure>
+<h3 id="other-jvm-features">Other JVM features<a href="#other-jvm-features" title="Permalink to this section">#</a></h3>
+
+<p>These are the - in my opinion - most interesting language new API features when moving from Java 8 to 11. But the feature list doesn't end here. There's a lot more packed into the latest Java releases:</p>
+
+<ul>
+<li><a href="https://community.oracle.com/docs/DOC-1006738">Flow API for reactive programming</a></li>
+<li><a href="https://www.oracle.com/corporate/features/understanding-java-9-modules.html">Java Module System</a></li>
+<li><a href="https://blog.codefx.org/java/application-class-data-sharing/">Application Class Data Sharing</a></li>
+<li><a href="http://openjdk.java.net/jeps/309">Dynamic Class-File Constants</a></li>
+<li style="outline-offset: -4px;"><a href="https://docs.oracle.com/javase/10/jshell/introduction-jshell.htm#JSHEL-GUID-630F27C8-1195-4989-9F6B-2C51D46F52C8">Java REPL (JShell)</a></li>
+<li><a href="http://openjdk.java.net/jeps/328">Flight Recorder</a></li>
+<li><a href="http://openjdk.java.net/jeps/327">Unicode 10</a></li>
+<li><a href="https://blog.idrsolutions.com/2018/04/java-10-improvements-to-garbage-collection-explained-in-5-minutes/">G1: Full Parallel Garbage Collector</a></li>
+<li><a href="http://openjdk.java.net/jeps/333">ZGC: Scalable Low-Latency Garbage Collector</a></li>
+<li><a href="http://openjdk.java.net/jeps/318">Epsilon: No-Op Garbage Collector</a></li>
+<li><a href="http://openjdk.java.net/jeps/335">Deprecate the Nashorn JavaScript Engine</a></li>
+<li>...</li>
+</ul>
+
+<p>What's your favorite features? <a href="https://twitter.com/winterbe_">Let me know</a>!</p>
+
+<h3 id="where-to-go-from-here">Where to go from here?<a href="#where-to-go-from-here" title="Permalink to this section">#</a></h3>
+
+<p><a href="https://twitter.com/winterbe_/status/1035864662976413696">Many people</a> (including me) are still using Java 8 in production. However as of the beginning of 2019 <a href="https://blog.joda.org/2018/08/java-is-still-available-at-zero-cost.html">free support for JDK 8 ends</a>. So this is a good time to migrate to Java 11 now. I wrote a <a href="/posts/2018/08/29/migrate-maven-projects-to-java-11-jigsaw/">migration guide</a> how to move from Java 8 to 11 which hopefully helps you with your migration. You should also read my <a href="/posts/2014/03/16/java-8-tutorial/">Java 8</a> and <a href="/posts/2014/07/31/java8-stream-tutorial-examples/">Stream API</a> tutorials to learn more modern Java fundamentals. The source code of this tutorial is <a href="https://github.com/winterbe/java8-tutorial/tree/master/src/com/winterbe/java11">published on GitHub</a> so feel free to play around with it (and <a href="https://github.com/winterbe/java8-tutorial/stargazers">leave a star</a> if you like). You should also <a href="https://twitter.com/winterbe_">follow me on Twitter</a> for more Java- and development-related stuff. Cheers!</p>
+
+</div>
+
+    </div>
+<br><hr>
+</body>
+</html>
