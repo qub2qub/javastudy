@@ -494,12 +494,13 @@ The timing of the exchange depends on the responsiveness requirements of the app
 *** 5.6 Building an efficient, scalable result cache ***
 we'd like to create a Computable wrapper that remembers the results of previous computations and encapsulates the caching process. (This technique is known as MEMOIZATION.)
 ** КАКИЕ ПРОБЛЕМЫ С КЭШЕМ И КАК ИХ РЕШАТЬ ??
-*1* Memoizer1
+*1* Memoizer1 - он плохой, потому что:
+
 *2* Memoizer2 in Listing 5.17 improves on the awful concurrent behavior of Memoizer1 by replacing the HashMap with a ConcurrentHashMap. Since ConcurrentHashMap is thread-safe, there is no need to synchronize when accessing the backing Map, thus eliminating the serialization induced by synchronizing compute in Memoizer1.
 But it still has some defects as a cache — there is a window of vulnerability in which two threads calling compute at the same time could end up computing the same value.
 (The problem with Memoizer2 is that if one thread starts an expensive computation, other threads are NOT aware that the computation is in progress and so may start the same computation).
 
-*3* Для этого надо дать понять, что такая-то задача уже выполняется, и второму с такой же задачей надо лишь подождать результатов и получить их. Поэтому здесь надо ис-ть FutureTask.
+*3* Для этого надо дать понять, что такая-то задача уже выполняется, и второму потоку с такой же задачей надо лишь подождать результатов и получить их. Поэтому здесь надо ис-ть FutureTask.
 --FutureTask represents a computational process that may or may not already have completed. FutureTask.get() returns the result of the computation immediately if it is available; 
 otherwise it blocks until the result has been computed and then returns it.
 --Memoizer3 first checks to see if the appropriate calculation has been started (as opposed to finished, as in Memoizer2). If not, it creates a FutureTask, registers it in the Map, and starts the computation; otherwise it waits for the result of the existing computation. The result might be available immediately or might be in the process of being computed — but this is transparent to the caller of Future.get().
@@ -508,16 +509,23 @@ otherwise it blocks until the result has been computed and then returns it.
 
 Memoizer in Listing 5.19 takes advantage of the atomic putIfAbsent() method of ConcurrentMap, closing the window of vulnerability in Memoizer3.
 
--- Caching a Future instead of a value creates the POSSIBILITY of CACHE POLLUTION: 
+-- Caching a Future instead of a value creates the POSSIBILITY of [1] CACHE POLLUTION: (когда кэш в невалидном состоянии).
 if a computation is cancelled or fails, future attempts to compute the result will also indicate cancellation or failure. 
 To avoid this, Memoizer removes the Future from the cache if it detects that the computation was cancelled; 
 it might also be desirable to remove the Future upon detecting a RuntimeException if the computation might succeed on a future attempt.
--- Memoizer also does not address CACHE EXPIRATION, but this could be accomplished by using a subclass of FutureTask that associates an expiration time with each result and periodically scanning the cache for expired entries. 
-(Similarly, it does not address CACHE EVICTION, where old entries are removed to make room for new ones so that the cache does not consume too much memory.)
 
-что такое кэш - переиспользование результатов вычисления.
+-- Memoizer also does not address [2] CACHE EXPIRATION, but this could be accomplished by using a subclass of FutureTask that associates an expiration time with each result and periodically scanning the cache for expired entries. 
+(Similarly, it does not address [3] CACHE EVICTION, where old entries are removed to make room for new ones so that the cache does not consume too much memory.)
+
+Итого с кэшэм надо также продумать следующие моменты:
+[1] CACHE POLLUTION
+[2] CACHE EXPIRATION
+[3] CACHE EVICTION
+
+что такое кэш - переиспользование результатов вычисления/загруженных данных/результатов запросов (tcp / db).
 Что должно быть у идеального кэша:
 1) не считать одно и то же дважды (гарантировать что каждое зн-е будет вычислено только 1 раз)
 2) в многопоточном приложении -- распределять вычисления на много потоков, если в 1 уже вычисляется нужное зн-е то другие кому надо не запускают новое, а ждут результатов первого.
 3) CACHE EXPIRATION - Удалять истёкшие по валидности значения(либо обновлять эти значения). Например, курс валют каждый день.
 4) CACHE EVICTION - освобождать кэш от старых [может быть неиспользуемых значений]. чтобы кэш не разрастался бесконтрольно.
+5) CACHE POLLUTION - когда кэш в невалидном состоянии, надо не допускать такого.
