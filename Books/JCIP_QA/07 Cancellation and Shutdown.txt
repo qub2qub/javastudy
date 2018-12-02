@@ -22,12 +22,21 @@ The cooperative approach is required because we rarely want a task, thread, or s
 An activity is CANCELLABLE if external code can move it to completion before its normal completion.
 
 Причины, из-за которых может быть необходимо прервать активность:
-1) USER-REQUESTED CANCELLATION. The user clicked on the "cancel" button in a GUI application, or requested cancellation through a management interface such as JMX (Java Management Extensions).
-2) TIME-LIMITED ACTIVITIES. An application searches a problem space for a finite [`faınaıt] (ограниченный, имеющий предел) amount of time and chooses the best solution found within that time. When the timer expires, any tasks still searching are cancelled.
-3) APPLICATION EVENTS. An application searches a problem space by decomposing it so that different tasks search different regions of the problem space. 
+1) USER-REQUESTED CANCELLATION. 
+The user clicked on the "cancel" button in a GUI application, or requested cancellation through a management interface such as JMX (Java Management Extensions).
+
+2) TIME-LIMITED ACTIVITIES. 
+An application searches a problem space for a finite [`faınaıt] (ограниченный, имеющий предел) amount of time and chooses the best solution found within that time. When the timer expires, any tasks still searching are cancelled.
+
+3) APPLICATION EVENTS. 
+An application searches a problem space by decomposing it so that different tasks search different regions of the problem space. 
 WHEN ONE TASK FINDS A SOLUTION, ALL OTHER TASKS STILL SEARCHING ARE CANCELLED.
-4) ERRORS. A web crawler searches for relevant pages, storing pages or summary data to disk. When a crawler task encounters an error (FOR EXAMPLE, THE DISK IS FULL), other crawling tasks are cancelled, POSSIBLY RECORDING THEIR CURRENT STATE so that they can be RESTARTED LATER.
-5) SHUTDOWN. When an application or service is shut down, something must be done about work that is currently being processed or queued for processing. 
+
+4) ERRORS. 
+A web crawler searches for relevant pages, storing pages or summary data to disk. When a crawler task encounters an error (FOR EXAMPLE, THE DISK IS FULL), other crawling tasks are cancelled, POSSIBLY RECORDING THEIR CURRENT STATE so that they can be RESTARTED LATER.
+
+5) SHUTDOWN. 
+When an application or service is shut down, something must be done about work that is currently being processed or queued for processing. 
 In a graceful shutdown, tasks currently in progress might be allowed to complete; in a more immediate shutdown, currently executing tasks might be cancelled.
 
 В java нет приоритетного способа остановить поток/task. Есть только механизмы сотрудничества, т.е. определённый согласованный протокол (agreed-upon protocol) общения потока и другого кода, который запросил отмену этого потока.
@@ -35,6 +44,8 @@ In a graceful shutdown, tasks currently in progress might be allowed to complete
 Договорённости по протоколу:
 1) a "CANCELLATION REQUESTED" FLAG that the task checks periodically; if it finds the flag set, the task terminates early.
 					(см PrimeGenerator.java)
+PrimeGenerator uses a simple cancellation policy: client code requests cancellation by calling cancel, PrimeGenerator checks for cancellation once per prime found and exits when it detects cancellation has been requested.
+
 Но тут могут быть проблемы, т.к. если task [который чекает флаг] вызвал blocking method например BlockingQueue.put() -- то он может не проверять этот флаг и значит не закончится по требованию (или вообще никогда не закончится).
 2) ...
 
@@ -50,6 +61,8 @@ There is nothing in the API or language specification that ties interruption to 
 
 Each thread has a boolean interrupted status; interrupting a thread sets its interrupted status to true. Thread contains methods for interrupting a thread and querying the interrupted status of a thread.
 
+BrokenPrimeProducer.java
+
 Три метода для прерывания:
 1) public void .interrupt() method interrupts the target thread.
 2) public boolean .isInterrupted() returns the interrupted status of the target thread. 
@@ -57,25 +70,28 @@ Each thread has a boolean interrupted status; interrupting a thread sets its int
 
 Blocking library methods like Thread.sleep() and Object.wait() try to detect when a thread has been interrupted and return early. They respond to interruption by clearing the interrupted status and throwing InterruptedException, indicating that the blocking operation completed early due to interruption. The JVM makes no guarantees on how quickly a blocking method will detect interruption, but in practice this happens reasonably quickly.
 
-Calling interrupt does not necessarily stop the target thread from doing what it is doing; it merely delivers the message that interruption has been requested.
+Calling interrupt() does not necessarily stop the target thread from doing what it is doing; it merely delivers the message that interruption has been requested.
 
-Надо думать что interruption -- не прерывает запущенный потомк, а лишь просит этот поток, что он сам себя прервал при первой возможности.
-(REQUESTS that the thread interrupt itself at the next convenient opportunity. These opportunities are called CANCELLATION POINTS.)
+Надо думать что interruption -- не прерывает запущенный поток, а лишь просит этот поток, чтобы он сам себя прервал при первой возможности.
+(REQUESTS that the thread interrupt itself AT THE NEXT CONVENIENT OPPORTUNITY. These opportunities are called CANCELLATION POINTS.)
 
-wait, sleep, and join -- серьёзно воспринимают запрос на прерывание.
+wait(), sleep(), and join() -- серьёзно воспринимают запрос на прерывание.
 До тех пор пока код сохраняет(Транслирует дальше) этот interruption request in place -- он(код) может никак не реагировать на этот запрос, перекладывая эту ответственность на вызвавший код.
 
-The static .interrupted() method should be used with caution, because it CLEARS the current thread's interrupted status. If you call interrupted and it returns true, unless you are planning to swallow the interruption, you should do something with it — 1) either throw InterruptedException or 2) restore the interrupted status by calling .interrupt() again.
+The static .interrupted() method should be used with caution, because it CLEARS the current thread's interrupted status. If you call interrupted and it returns true, unless you are planning to swallow the interruption, you should do something with it — 
+1) either throw InterruptedException or 
+2) restore the interrupted status by calling .interrupt() again.
 
-Interruption is usually the most sensible way to implement cancellation.
+!!! Interruption is usually the most sensible way to implement cancellation.
 sensible - благоразумный, здравомыслящий; практичный; целесообразный.
 
-BrokenPrimeProducer can be easily fixed (and simplified) by using interruption instead of a boolean flag to request cancellation(флаг сделан volaotile, но поток ещё не прочтёт, т.к. будет заблокирован долгой операцией put() в BlockingQueue). Поэтому нужно заменить отмену на вызова метода .interrupt().
+BrokenPrimeProducer can be easily fixed (and simplified) by using interruption instead of a boolean flag to request cancellation(флаг сделан volatile, но поток ещё не прочтёт, т.к. будет заблокирован долгой операцией put() в BlockingQueue). Поэтому нужно заменить отмену на вызова метода .interrupt().
 
 There are two points in each loop iteration where interruption may be detected:
-1) in the blocking put call, 
+1) in the blocking put() call, 
 2) and by explicitly polling the interrupted status in the loop header. 
-The explicit test is not strictly necessary here because of the blocking put call, but it makes PrimeProducer more responsive to interruption because it checks for interruption before starting the lengthy task of searching for a prime, rather than after. 
+
+The explicit test is not strictly necessary here because of the blocking put() call, but it makes PrimeProducer more responsive to interruption because it checks for interruption before starting the lengthy task of searching for a prime, rather than after. 
 When calls to interruptible blocking methods are not frequent enough to deliver the desired responsiveness, explicitly testing the interrupted status can help.
 
 *** ВСЯ ГЛАВА НИЖЕ: 7.1.2 Interruption policies ***
@@ -100,7 +116,7 @@ Code that doesn't own the thread (for a thread pool, any code outside of the thr
 
 This is why MOST BLOCKING LIBRARY METHODS simply THROW InterruptedException in response to an interrupt. THEY WILL NEVER EXECUTE IN A THREAD THEY OWN, so they implement the most reasonable cancellation policy for task or library code: get out of the way as quickly as possible and communicate the interruption back to the caller so that code higher up on the call stack can take further action.
 
-A task needn't necessarily drop everything when it detects an interruption request—it can choose to postpone it until a more opport'une(подходящий, благоприятный) time by 1) remembering that it was interrupted, 
+A task needn't necessarily drop everything when it detects an interruption request—it can choose to postpone it until a more opportune(подходящий, благоприятный) time by 1) remembering that it was interrupted, 
 2) finishing the task it was performing, 
 3) and then throwing InterruptedException or otherwise indicating interruption. 
 This technique can protect data structures from corruption when an activity is interrupted in the middle of an update.
