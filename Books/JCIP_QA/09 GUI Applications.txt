@@ -1,7 +1,7 @@
 09 GUI Applications 189-202
 If you've tried to write even a simple GUI application using Swing, you know that GUI applications have their own peculiar(исключительно их) threading issues. 
 To maintain safety, certain tasks must run in the Swing event thread. 
-But you cannot execute long-running tasks in the event thread, lest(чтобы не) the UI become unresponsive. 
+But you cannot execute long-running tasks in the event thread, lest(из боязни; чтобы не) the UI become unresponsive. 
 And Swing data structures are not thread-safe, so you must be careful to confine them to the event thread.
 
 В общем есть 2 потока:
@@ -29,7 +29,7 @@ GUI приложения работают по принципу обработк
 Events are a kind of task; the event handling by AWT and Swing is structurally similar to an Executor.
 Because there is only a single thread for processing GUI tasks, they are processed sequentially.
 Минус в том, что если какая-то задача слишком долго выполняется -- то остальные задачи просто ждут её окончания.
-И если задача по взаимодействию с юзером тоже в ожидание -- то прилага зависла и ни на что не раегирует.
+И если задача по взаимодействию с юзером тоже в ожидании -- то прилага зависла и ни на что не раегирует.
 Therefore, tasks that execute in the event thread must return control to the event thread quickly. To initiate a long-running task such as spell-checking a large document, searching the file system, or fetching a resource over a network, you must run that task in another thread so control can return quickly to the event thread.
 
 *** 9.1.2    Thread confinement in Swing ***
@@ -41,13 +41,13 @@ The Swing event thread can be thought of as a single-threaded Executor that proc
 *** 9.2 Short-running GUI tasks ***
 In a GUI application, events originate in the event thread and bubble up to application-provided listeners, which will probably perform some computation that affects the presentation objects. For simple, short-running tasks, the entire action can stay in the event thread; for longer-running tasks, some of the processing should be offloaded to another thread.
 
-This trivial example characterizes the majority of interactions between GUI applications and GUI toolkits. So long as tasks are short-lived and access only GUI objects (or other thread-confined or thread-safe application objects), you can almost totally ignore threading concerns and do everything from the event thread, and the right thing happens.
+This trivial example characterizes the majority of interactions between GUI applications and GUI toolkits. So long as tasks are short-lived and access only GUI objects (or other thread-confined or thread-safe application objects), you can almost totally ignore threading concerns and do everything from the event thread, AND THE RIGHT THING HAPPENS.
 
 Swing splits most visual components into two objects, a MODEL and a VIEW. 
 Т.е. данные, которые надо отобразить, хранятся в модели.
-А правила, как отобразить данные, хранятся во вью.
+А правила, как отобразить данные, хранятся во view.
 Модель может посылать события, что данные в ней изменились.
-А вью подписан на эти события. И соотв-но запрашивает эти новые данные из модели и перерисовывает себя если надо.
+А view подписан на эти события. И соотв-но запрашивает эти новые данные из модели и перерисовывает себя если надо.
 
 Again, control never leaves the event thread. (The Swing data model fireXxx methods always call the model listeners directly rather than submitting a new event to the event queue, so the fireXxx methods must be called only from the event thread.)
 
@@ -55,10 +55,10 @@ Again, control never leaves the event thread. (The Swing data model fireXxx meth
 These tasks must run in another thread so that the GUI remains responsive while they run.
 
 ListenerExamples.java
-This example gets the long-running task out of the event thread in a "fire and forget" manner, which is probably not very useful.
-You cannot access presentation objects from the background thread, so on completion the task must submit another task to run in the event thread to update the user interface.
+This example gets the long-running task out of the event thread in a "FIRE AND FORGET" manner, which is probably not very useful.
+!!! You cannot access presentation objects from the background thread, so on completion the task must submit another task to run in the event thread to update the user interface.
 
-The task triggered when the button is pressed is composed of three sequential subtasks whose execution alternates between the event thread and the background thread. 
+The task [triggered when the button is pressed] is composed of three sequential subtasks whose execution alternates (выполнение чередуется между) between the event thread and the background thread. 
 The first subtask updates the user interface to show that a long-running operation has begun and starts the second subtask in a background thread. 
 Upon completion, the second subtask queues the third subtask..
 third subtask to run again in the event thread, which updates the user interface to reflect that the operation has completed. This sort of "thread hopping" is typical of handling long-running tasks in GUI applications.
@@ -66,7 +66,7 @@ third subtask to run again in the event thread, which updates the user interface
 *** 9.3.1 Cancellation ***
 You could implement cancellation directly using thread interruption, but it is much easier to use Future, which was designed to manage cancellable tasks.
 
-Because runningTask is confined to the event thread, no synchronization is required when setting or checking it, and the start button listener ensures that only one background task is running at a time. 
+Because runningTask is confined to the event thread, no synchronization is required when setting or checking it, and the start button listener ensures that only ONE background task is running at a time. 
 However, it would be better to be notified when the task completes so that, for example, the cancel button could be disabled.
 
 *** 9.3.2    Progress and completion indication *** 

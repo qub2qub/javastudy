@@ -1,4 +1,4 @@
-﻿07 Cancellation and Shutdown 135-166 (31 страница)
+07 Cancellation and Shutdown 135-166 (31 страница)
 
 >> http://docs.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html >>
 Почему плох Thread.stop() -- Because it is inherently unsafe. Stopping a thread causes it to unlock all the monitors that it has locked. (The monitors are unlocked as the ThreadDeath exception propagates up the stack.) If any of the objects previously protected by these monitors were in an inconsistent state, other threads may now view these objects in an inconsistent state. Such objects are said to be damaged. When threads operate on damaged objects, arbitrary behavior can result. This behavior may be subtle and difficult to detect, or it may be pronounced. Unlike other unchecked exceptions, ThreadDeath kills threads silently; thus, the user has no warning that his program may be corrupted. The corruption can manifest itself at any time after the actual damage occurs, even hours or days in the future.
@@ -401,6 +401,17 @@ Just about any code can throw a RuntimeException. Whenever you call another meth
 --There is some controversy over the safety of this technique; when a thread throws an unchecked exception, the entire application may possibly be compromised. But the alternative—shutting down the entire application—is usually not practical.
 
 Listing 7.23 illustrates a way to structure a worker thread within a thread pool. If a task throws an unchecked exception, it allows the thread to die, but not before notifying the framework that the thread has died.
+	// Typical thread-pool worker thread structure.
+    public void run() {
+        Throwable thrown = null;
+        try {
+            while (!isInterrupted()) runTask(getTaskFromWorkQueue());
+        } catch (Throwable e) {
+            thrown = e;
+        } finally {
+            threadExited(this, thrown);
+        }
+    }
 
 *** 7.3.1 Uncaught exception handlers ***
 The previous section offered a proactive(упреждающий, профилактический) approach to the problem of unchecked exceptions. 
@@ -409,37 +420,47 @@ The Thread API also provides the UncaughtExceptionHandler facility(удобст�
 The two approaches are complementary(дополнительный, добавочный): 
 taken together, they provide defense-indepth against thread leakage.
 
-What the handler should do with an uncaught exception depends on your quality-of-service requirements. The most common response is to write an error message and stack trace to the application log, as shown in Listing 7.25. 
-
 When a thread exits due to an uncaught exception, the JVM reports this event to an application-provided UncaughtExceptionHandler (see Listing 7.24); if no handler exists, the default behavior is to print the stack trace to System.err..
     public interface UncaughtExceptionHandler {
         void uncaughtException(Thread t, Throwable e);
     }
 
 --What the handler should do with an uncaught exception depends on your quality-of-service requirements. The most common response is to write an error message and stack trace to the application log, as shown in UEHLogger.java Listing 7.25. 
+    public void uncaughtException(Thread t, Throwable e) {
+        Logger logger = Logger.getAnonymousLogger();
+        logger.log(Level.SEVERE, "Thread terminated with exception: " + t.getName(), e);
+    }
+
 Handlers can also take more direct action, such as trying to restart the thread, shutting down the application, paging an operator, or other corrective or diagnostic action.
 
 !! In long-running applications, always use uncaught exception handlers for all threads that at least log the exception.
 
-To set an UncaughtExceptionHandler for pool threads, provide a ThreadFactory to the ThreadPoolExecutor constructor. (As with all thread manipulation, only the thread's owner should change its UncaughtExceptionHandler.)
+To set an UncaughtExceptionHandler for pool threads, provide a ThreadFactory to the ThreadPoolExecutor constructor. (As with all thread manipulation, only the thread's owner should change its UncaughtExceptionHandler.) Короче он сетается в классе Thread.setUncaughtExceptionHandler(..); 
 
 Without an uncaught exception handler or other failure notification mechanism, tasks can appear to fail silently, which can be very confusing.
 If you want to be notified when a task fails due to an exception so that you can take some task-specific recovery action, either
 1) wrap the task with a Runnable or Callable that catches the exception 
 2) or override the afterExecute hook in ThreadPoolExecutor.
 
-
 -- короче, исключение будет обработано в UncaughtExceptionHandler только для тех задач, которые были запущены через execute().
 -- для тасков запущенных через submit() - ВСЕ (любые виды) исключений будут обёрнуты в ExecutionException, которое придёт из Future.get().
 ========>
 Somewhat confusingly, 
--- exceptions thrown from tasks make it to the uncaught exception handler only for tasks submitted with execute(); 
--- for tasks submitted with submit(), any thrown exception, checked or not, is considered to be part of the task's return status. If a task submitted with submit() terminates with an exception, it is rethrown by Future.get(), wrapped in an ExecutionException. 
+-- exceptions thrown from tasks make it to the uncaught exception handler only for tasks submitted with .execute(..);
+-- for tasks submitted with .submit(..), any thrown exception, checked or not, is considered to be part of the task's return status. If a task submitted with .submit() terminates with an exception, it is rethrown by Future.get(), wrapped in an ExecutionException. 
 *************************************************************
 
 *** 7.4 JVM shutdown ***
 
-The JVM can shut down in either an orderly or abrupt manner. An orderly shutdown is initiated when the last "normal" (nondaemon) thread terminates, someone calls System.exit(), or by other platform-specific means (such as sending a SIGINT or hitting Ctrl-C). While this is the standard and preferred way for the JVM to shut down, it can also be shut down abruptly by calling Runtime.halt() or by killing the JVM process through the operating system (such as sending a SIGKILL).
+The JVM can shut down in either an orderly or abrupt manner. 
+An orderly shutdown is initiated when 
+1) the last "normal" (nondaemon) thread terminates, 
+2) someone calls System.exit(), 
+3) or by other platform-specific means (such as sending a SIGINT or hitting Ctrl-C). 
+
+While this is the standard and preferred way for the JVM to shut down, it can also be shut down ABRUPTLY
+1) by calling Runtime.halt() or 
+2) by killing the JVM process through the operating system (such as sending a SIGKILL).
 
 *** 7.4.1 Shutdown hooks ***
 
@@ -448,21 +469,24 @@ Shutdown hooks are UNSTARTED THREADS that are registered with Runtime.addShutdow
 
 The JVM makes NO GUARANTEES ON THE ORDER in which shutdown hooks are started. 
 If ANY APPLICATION THREADS (daemon or nondaemon) are still running at shutdown time, THEY CONTINUE TO RUN CONCURRENTLY WITH THE SHUTDOWN PROCESS. 
-When all shutdown hooks have completed, the JVM may choose to run finalizers if runFinalizersOnExit() is true, and then halts. 
+When all shutdown hooks have completed, the JVM MAY CHOOSE to run finalizers if runFinalizersOnExit() is true, and then halts. 
 
-The JVM makes no attempt to stop or interrupt any application threads that are still running at shutdown time; they are abruptly terminated when the JVM eventually halts. 
+The JVM makes no attempt to stop or interrupt any application threads that are still running at shutdown time; they are abruptly terminated when the JVM eventually halts (в конечном счете, в итоге, в конечном итоге). 
 If the shutdown hooks or finalizers don't complete, then the orderly shutdown process "hangs" and the JVM must be shut down abruptly.
 
-In an ABRUPT SHUTDOWN, the JVM is not required to do anything other than halt the JVM; shutdown hooks will not run.
+In an ABRUPT SHUTDOWN, the JVM is not required to do anything other than halt the JVM; 
+!!!! shutdown hooks WILL NOT RUN (on ABRUPT SHUTDOWN).
 
 Требования к Shutdown hooks:
 1) Shutdown hooks SHOULD BE THREAD-SAFE: they MUST USE SYNCHRONIZATION when accessing shared data and should be careful to avoid deadlock, just like any other concurrent code. 
 2) Further, they should not make assumptions about the state of the application or about why the JVM is shutting down, and must therefore be coded extremely defensively.
 3) Finally, they should exit as quickly as possible, since their existence delays JVM termination at a time when the user may be expecting the JVM to terminate quickly.
 
-Shutdown hooks can be used for service or application cleanup, such as deleting temporary files or cleaning up resources that are not automatically cleaned up by the OS.
+Shutdown hooks can be used for 
+1) service or application cleanup, such as deleting temporary files or
+2) cleaning up resources that are not automatically cleaned up by the OS.
 
-Because shutdown hooks all run concurrently, closing the log file could cause trouble for other shutdown hooks who want to use the logger. To avoid this problem, shutdown hooks should not rely on services that can be shut down by the application or other shutdown hooks. 
+Because shutdown hooks ALL RUN CONCURRENTLY, closing the log file could cause trouble for other shutdown hooks who want to use the logger. To avoid this problem, shutdown hooks should not rely on services that can be shut down by the application or other shutdown hooks. 
 One way to accomplish this is to use a SINGLE SHUTDOWN HOOK FOR ALL SERVICES, rather than one for each service, and have it call a series of shutdown actions. This ensures that SHUTDOWN ACTIONS EXECUTE SEQUENTIALLY IN A SINGLE THREAD, thus AVOIDING THE POSSIBILITY OF RACE CONDITIONS OR DEADLOCK BETWEEN SHUTDOWN ACTIONS. This technique can be used whether or not you use shutdown hooks; executing shutdown actions sequentially rather than concurrently eliminates many potential sources of failure.
 
 In applications that maintain explicit dependency information among services, this technique can also ensure that shutdown actions are performed in the right order.
@@ -477,7 +501,8 @@ When the JVM starts up, all the threads it creates (such as garbage collector an
 NORMAL THREADS AND DAEMON THREADS DIFFER ONLY IN WHAT HAPPENS WHEN THEY EXIT. 
 
 When a thread exits, the JVM performs an inventory of running threads, and if the only threads that are left are daemon threads, it initiates an orderly(планомерный, упорядоченный) shutdown. 
-When the JVM halts(останавливаться), any remaining daemon threads are abandoned(заброшенный, покинутый, оставленный) — finally blocks are not executed, stacks are NOT UNWOUND [ʌn`waʊnd] (НЕ разматываться, раскручиваться) — the JVM just exits.
+
+When the JVM HALTS(останавливаться), any remaining daemon threads are abandoned(заброшенный, покинутый, оставленный) — finally blocks are not executed, stacks are NOT UNWOUND [ʌn`waʊnd] (НЕ разматываться, раскручиваться) — the JVM just exits.
 
 Daemon threads should be used sparingly(очень умеренно) — few processing activities can be safely abandoned at any time with no cleanup. In particular, it is dangerous to use daemon threads for tasks that might perform any sort of I/O. Daemon threads are best saved for "housekeeping" tasks, such as a background thread that periodically removes expired entries from an in-memory cache.
 
@@ -489,7 +514,7 @@ The garbage collector does a good job of reclaiming memory resources when they a
 To assist in this, the garbage collector treats objects that have a [nontrivial finalize method] specially: after they are reclaimed(дезактивировать,  возвращать (в пользование)) by the collector, .finalize() is called so that persistent resources can be released.
 
 Since finalizers can run in a thread managed by the JVM, any state accessed by a finalizer will be accessed by more than one thread and therefore must be accessed with synchronization. 
-Finalizers offer no guarantees on when or even if they run, and they impose a significant performance cost on objects with nontrivial finalizers. 
+Finalizers offer no guarantees on WHEN or even IF they RUN, and they impose a significant performance cost on objects with nontrivial finalizers. 
 They are also extremely difficult to write correctly. 
 
 In most cases, the combination of finally blocks and explicit close methods does a better job of resource management than finalizers; the sole exception is when you need to manage objects that hold resources acquired by native methods. 
@@ -500,5 +525,5 @@ For these reasons and others, work hard to avoid writing or using classes with f
 
 Summary
 
-End-of-lifecycle issues for tasks, threads, services, and applications can add complexity to their design and implementation. Java does not provide a preemptive mechanism for cancelling activities or terminating threads. Instead, it provides a COOPERATIVE interruption mechanism that can be used to facilitate cancellation, but it is up to you to construct protocols for cancellation and use them consistently. Using FutureTask and the Executor framework simplifies building cancellable tasks and services.
-
+End-of-lifecycle issues for tasks, threads, services, and applications can add complexity to their design and implementation. Java does not provide a PREEMPTIVE MECHANISM for cancelling activities or terminating threads. Instead, it provides a COOPERATIVE INTERRUPTION MECHANISM that can be used to facilitate cancellation, but it is up to you to construct protocols for cancellation and use them consistently. 
+Using FutureTask and the Executor framework simplifies building cancellable tasks and services.

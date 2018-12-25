@@ -3,31 +3,41 @@ Chapter 8 -- Applying Thread Pools -- 167-188 (21стр)
 Executor framework decouples task submission from task execution.
 Не все задачи подходят\совместимы с execution policies.
 
-Специфическая политика выполнения нужна для:
+We claimed earlier that the Executor framework decouples task submission from task execution. Like many attempts at decoupling complex processes, this was a bit of an overstatement. While the Executor framework offers substantial flexibility in specifying and modifying execution policies, not all tasks are compatible with all execution policies. 
+Types of tasks that require specific execution policies include:
+
+Специфическая политика выполнения нужна для: (от типа задачи зависит то, где она может выполняться)
+0) Независимые задачи:
+   The most well behaved tasks are independent: those that do not depend on the timing, results, or side effects of other tasks. When executing independent tasks in a thread pool, you can freely vary the pool size and configuration without affecting anything but performance.
+
 1) DEPENDENT TASKS.
-  The most well behaved tasks are independent: those that do not depend on the timing, results, or side effects of other tasks. When executing independent tasks in a thread pool, you can freely vary the pool size and configuration without affecting anything but performance.
+  On the other hand, when you submit tasks that depend on other tasks to a thread pool, you implicitly create constraints on the execution policy that must be carefully managed to avoid liveness problems (see Section 8.1.1).
   При зависимых задачах появляются доп. ограничения (constraints on the execution policy), которыми надо аккуратно управлять, чтобы избежать liveness problems.
 
 2) Tasks that EXPLOIT(пользоваться, использовать) THREAD CONFINEMENT. 
   Single-threaded executors выполняют задачи последовательно.
   Objects can be confined to the task thread, thus enabling tasks designed to run in that thread to access those objects without synchronization, even if those resources are not thread-safe. 
-  Если потом сменить Single-threaded executor на другой то потоко-безопасность не гарантируется.
-  This forms an implicit coupling between the task and the execution policy—the tasks re quire their executor to be single-threaded. (The requirement is not quite this strong; it would be enough to ensure only that tasks not execute concurrently and provide enough synchronization so that the memory effects of one task are guaranteed to be visible to the next task — which is precisely the guarantee offered by newSingleThreadExecutor.)
+  Если потом сменить Single-threaded executor на другой, то потоко-безопасность не гарантируется.
+  This forms an implicit coupling between the task and the execution policy — the tasks require their executor to be single-threaded. (The requirement is not quite this strong; it would be enough to ensure only that tasks not execute concurrently and provide enough synchronization so that the memory effects of one task are guaranteed to be visible to the next task — which is precisely the guarantee offered by newSingleThreadExecutor.)
   In this case, if you changed the Executor from a single-threaded one to a thread pool, thread safety could be lost.
 
 3) Response-time-sensitive tasks.
-  Например, GUI applications. 
+  GUI applications are sensitive to response time: users are annoyed at long delays between a button click and the corresponding visual feedback.
   Поэтому долгие задачи лучше НЕ запускать в Single-threaded executor или в том, где мало потоков, т.к. это увеличить время ответа приложения. Пользователь может не дождаться и решить что прога повисла или сломалась.
 
 4) Tasks that use ThreadLocal.
-   ThreadLocal allows each thread to have its own private "version" of a variable. However, executors are free to reuse threads as they see fit. 
+   ThreadLocal allows each thread to have its own private "version" of a variable. 
+   However, executors are free to reuse threads as they see fit. 
    The standard Executor implementations may reap idle threads when demand is low and add new ones when demand is high, and also replace a worker thread with a fresh one if an unchecked exception is thrown from a task. 
-   ThreadLocal makes sense to use in pool threads only if the thread-local value has a lifetime that is bounded by that of a task; Thread-Local should not be used in pool threads to communicate values between tasks.
+   ThreadLocal makes sense to use in pool threads only if the thread-local value has a lifetime that is bounded by that of a task; 
+   !!! Thread-Local should NOT be used in pool threads to COMMUNICATE VALUES BETWEEN TASKS.
 
-Thread pools work best when tasks are HOMOGENEOUS and INDEPENDENT. 
-Mixing long-running and short-running tasks risks "clogging" the pool [закупорить/забить/засориться] unless it is very large; submitting tasks that depend on other tasks risks deadlock unless the pool is unbounded.
+Thread pools work best when tasks are HOMOGENEOUS and INDEPENDENT. (Однородные и независимые)
+И если у задач разные типы (read & write) -- то лучше делать 2 отдельных executor services на каждый тип задач.
+1) Mixing long-running and short-running tasks risks "clogging" the pool [закупорить/забить/засориться] unless it is very large; 
+2) submitting tasks that depend on other tasks risks deadlock unless the pool is unbounded.
 
-!! Tasks that depend on other tasks require that the thread pool be large enough that tasks are never queued or rejected; 
+!! Tasks that depend on other tasks require that the thread pool be large enough that tasks are NEVER queued or rejected; 
 
 !! tasks that exploit thread confinement require sequential execution.
 Поэтому в документации надо описать какую политику выполнения должны поддерживать задачи, чтобы программисты не попутали и не сломали работу программы неверной реализацией.
@@ -36,23 +46,29 @@ Mixing long-running and short-running tasks risks "clogging" the pool [заку�
 If tasks that depend on other tasks execute in a thread pool, they can deadlock.
 Если задача зависит от результатов выполнения другой задачи -- то потенциально может случиться дэдлок.
 Например, в single-threaded executor 2я задачи никогда не выполниться раньше 1й, которая запустила 2ю и ждёт результатов её выполнения.
-Но такое же может случиться и в других executor, даже когда много потоков, но если они ждут выполнения других потоков, который застряли в ожидании в очереди.
+Но такое же может случиться и в других executor, даже когда много потоков, но если они ждут выполнения других потоков, который застряли в ожидании в очереди. (и это когда есть ограничение на кол-во потов/очередь)
 
-If tasks that depend on other tasks execute in a thread pool, they can deadlock. In a single-threaded executor, a task that submits another task to the same executor and waits for its result will always deadlock. The second task sits on the work queue until the first task completes, but the first will not complete because it is waiting for the result of the second task. The same thing can happen in larger thread pools if all threads are executing tasks that are blocked waiting for other tasks still on the work queue.
-Это называется THREAD STARVATION DEADLOCK, and can occur whenever a pool task initiates an unbounded blocking wait for some resource or condition that can succeed only through the action of another pool task, such as waiting for the return value or side effect of another task, unless you can guarantee that the pool is large enough. 
+If tasks that depend on other tasks execute in a thread pool, they can deadlock. 
+In a single-threaded executor, a task that submits another task to the same executor and waits for its result will always deadlock. The second task sits on the work queue until the first task completes, but the first will not complete because it is waiting for the result of the second task. The same thing can happen in larger thread pools if all threads are executing tasks that are blocked waiting for other tasks still on the work queue.
+
+Это называется THREAD STARVATION DEADLOCK, and can occur whenever a pool task initiates an __unbounded blocking wait__ for some resource or condition that can succeed only through the action of another pool task, such as waiting for the return value or side effect of another task, unless you can guarantee that the pool is large enough. 
 
 ThreadDeadlock.java
 RenderPageTask{} submits two additional tasks to the Executor to fetch the page header and footer, renders the page body, waits for the results of the header and footer tasks, and then combines the header, body, and footer into the finished page. With a SINGLE-THREADED executor, ThreadDeadlock WILL ALWAYS DEADLOCK. 
 
-!!! А также tasks координирующие своё выполнение через BARRIER could also cause thread starvation deadlock if the pool is not big enough.
+!!! Также задачи, координирующие своё выполнение через BARRIER, could also cause thread starvation deadlock if the pool is not big enough.
 
 В общем, если запускать зависимые задачи, надо задокументировать какой размер пула для них необходим и достаточен, чтобы не возник Thread STARVATION deadlock.
-А кроме этого ещё могут быть дополнительные ограничения на другие ресурсы.[например, если есть только 10 подключений к БД, то сколько бы не было потоков, максимум сможет выполняться только 10 задач одновременно].
-[Или пул http connection для HttpClient - и если один клиент делает ещё 1 запрос в рамках своего запроса - то connection на всех может не хватить и клиенты зависнут в ожидании ответа от доп. запроса - ДЭДЛОК]
+
+In addition to any explicit bounds on the size of a thread pool, there may also be implicit limits because of constraints on other resources. If your application uses a JDBC connection pool with ten connections and each task needs a database connection, it is as if your thread pool only has ten threads because tasks in excess of ten will block waiting for a connection.
+===> А кроме этого ещё могут быть дополнительные ограничения на другие ресурсы.[например, если есть только 10 подключений к БД, то сколько бы не было потоков, максимум сможет выполняться только 10 задач одновременно].
+[Или пул http connection для HttpClient - и если один клиент делает ещё 1 запрос в рамках своего запроса - то connection на всех может не хватить и клиенты зависнут в ожидании ответа от доп. запроса - ДЭДЛОК] А может и норм будет, т.к. сначала первый запрос вернётся и отпустит коннект, если есть таймаут.
 
 *** 8.1.2    Long-running tasks ***
+Thread pools can have responsiveness problems if tasks can block for extended periods of time, even if deadlock is not a possibility. A thread pool can become clogged with long-running tasks, increasing the service time even for short tasks. If the pool size is too small relative to the expected steady-state number of long-running tasks, eventually all the pool threads will be running long-running tasks and responsiveness will suffer.
+
 Если есть много долгих задач, то в итоге и короткие задачи могут выполняться долго, т.к. пул будет забит выполняющимися долгими задачами. Все остальные будут ждать их окончания.
-Чтобы этого избежать, можно использовать ожидания с таймаутами (use timed resource waits instead of unbounded waits). 
+Чтобы этого избежать, можно использовать ожидания с таймаутами (use timed resource waits instead of unbounded waits). for tasks to use timed resource waits instead of unbounded waits. 
 (Thread.join, BlockingQueue.put, CountDownLatch.await, Selector.select.)
 Все блокирующие методы в библиотеке имеют параметр таймаут. И по истечению его можно либо остановить задачу, либо запустить ещё позже. Это освободит ресурсы, чтобы другие потоки\задачи могли попробовать сделать прогресс вперёд.
 
@@ -61,7 +77,8 @@ If the wait times out, you can mark the task as failed and abort it or requeue i
 If a thread pool is frequently full of blocked tasks, this may also be a sign that the pool is too small.
 
 *** 8.2    Sizing thread pools ***
-The ideal size for a thread pool depends on the types of tasks that will be submitted and the characteristics of the deployment system. Thread pool sizes should rarely be hard-coded; instead pool sizes should be provided by a configuration mechanism or computed dynamically by consulting Runtime.availableProcessors().
+The ideal size for a thread pool depends on the types of tasks that will be submitted and the characteristics of the deployment system. 
+Thread pool sizes should rarely be hard-coded; instead pool sizes should be provided by a configuration mechanism or computed dynamically by consulting Runtime.availableProcessors().
 
 Плохо:
 Слишком большой пул -- т.к. будет борьба за ресурсы(ЦПУ, память), ресурсов будет не хватать.
@@ -72,7 +89,8 @@ To size a thread pool properly, you need to understand
 1) your computing environment, 
 2) your resource budget, 
 3) and the nature of your tasks. 
-How many processors does the deployment system have? How much memory? Do tasks perform mostly computation, I/O, or some combination? Do they require a scarce resource (дефицитный), such as a JDBC connection? If you have different categories of tasks with very different behaviors, consider using multiple thread pools so each can be tuned according to its workload.
+How many processors does the deployment system have? How much memory? Do tasks perform mostly computation, I/O, or some combination? Do they require a scarce resource (дефицитный), such as a JDBC connection? 
+If you have different categories of tasks with very different behaviors, consider using multiple thread pools so each can be tuned according to its workload.
 
 Если есть N цпу, то оптимально сделать N+1 поток, т.к. (Even compute-intensive threads occasionally take a page fault or pause for some other reason, so an "extra" runnable thread prevents CPU cycles from going unused when this happens.) 
 For tasks that also include I/O or other blocking operations, you want a larger pool, since not all of the threads will be schedulable at all times. 
@@ -83,14 +101,17 @@ U_cpu = target CPU utilization, 0 < Ucpu < 1
 W/C = Wait/Compute = ratio of wait time to compute time
 The optimal pool size for keeping the processors at the desired utilization is:
 N_threads = N_cpu * U_cpu * ( 1 + W/C )
+т.е. чем больше потоки ждут - то можно делать больше потоков.
 
-Other resources that can contribute to sizing constraints are 
+Other resources that can contribute to __sizing constraints__ are 
 1) memory, 
 2) file handles, 
 3) socket handles, 
 4) database connections. 
 Calculating pool size constraints for these types of resources is easier: 
 just add up how much of that resource each task requires and divide that into the total quantity available. The result will be an upper bound on the pool size.
+10 connections, 1 task need 2 connection, -- т.е. тогда одновременно может быть 5 задач
+и например есть 2 CPU и W/C=1, то тогда цпу может потянуть 4 задачи.
 
 When tasks require a pooled resource such as database connections, thread pool size and resource pool size affect each other. If each task requires a connection, the effective size of the thread pool is limited by the connection pool size. 
 Similarly, when the only consumers of connections are pool tasks, the effective size of the connection pool is limited by the thread pool size.
@@ -149,25 +170,25 @@ The choice of queue interacts with other configuration parameters such as pool s
 
 newFixedThreadPool and newSingleThreadExecutor используют UNBOUNDED LinkedBlockingQueue. 
 
- -- A more stable resource management strategy is to use a bounded queue, such as an ArrayBlockingQueue or a bounded LinkedBlockingQueue or PriorityBlockingQueue. 
+-- A more stable resource management strategy is to use a bounded queue, such as an ArrayBlockingQueue or a bounded LinkedBlockingQueue or PriorityBlockingQueue. 
  Bounded queues help prevent resource exhaustion but introduce the question of what to do with new tasks when the queue is full. (There are a number of possible SATURATION [ˏsæʧə`reıʃ(ə)n] (насыщение, перегрузка\превышение имеющейся (доступной) пропускной способности) POLICIES for addressing this problem; see Section 8.3.3.)
    WITH A BOUNDED WORK QUEUE, THE QUEUE SIZE AND POOL SIZE MUST BE TUNED TOGETHER. 
    A large queue coupled with a small pool can help reduce memory usage, CPU usage, and context switching, at the cost of potentially constraining throughput.
 
- Для очень больших и безграничных пулов можно вообще пропустить "queueing" (т.е. сохранение в очередь), а можно сразу передавать задачи от производителя к рабочему потоку (который сразу же начнёт выполнять эту задачу) используя SynchronousQueue.
+Для очень больших и безграничных пулов можно вообще пропустить "queueing" (т.е. сохранение в очередь), а можно сразу передавать задачи от производителя к рабочему потоку (который сразу же начнёт выполнять эту задачу) используя SynchronousQueue.
  -- For very large or unbounded pools, you can also bypass queueing entirely and instead hand off tasks directly from producers to worker threads using a SynchronousQueue. 
 
-  A SynchronousQueue is NOT really A QUEUE at all, BUT a MECHANISM for managing handoffs between threads. 
-  In order to put an element on a SynchronousQueue, another thread must already be waiting to accept the handoff. If no thread is waiting but the CURRENT POOL SIZE IS LESS THAN THE MAXIMUM, ThreadPoolExecutor creates a new thread; otherwise the task is rejected according to the saturation policy. 
-  Using a direct handoff is more efficient because the task can be handed right to the thread that will execute it, rather than first placing it on a queue and then having the worker thread fetch it from the queue. 
-  SynchronousQueue is a practical choice ONLY IF the pool is unbounded or if rejecting excess(излишний, избыточный) tasks is acceptable. (т.е. когда приемлемо отклонять/ излишние задачи)
-  The newCachedThreadPool factory uses a SynchronousQueue.
+A SynchronousQueue is NOT really A QUEUE at all, BUT a MECHANISM for managing handoffs between threads. 
+In order to put an element on a SynchronousQueue, another thread must already be waiting to accept the handoff. If no thread is waiting but the CURRENT POOL SIZE IS LESS THAN THE MAXIMUM, ThreadPoolExecutor creates a new thread; otherwise the task is rejected according to the saturation policy. 
+Using a direct handoff is more efficient because the task can be handed right to the thread that will execute it, rather than first placing it on a queue and then having the worker thread fetch it from the queue. 
+SynchronousQueue is a practical choice ONLY IF the pool is unbounded or if rejecting excess(излишний, избыточный) tasks is acceptable. (т.е. когда приемлемо отклонять/ излишние задачи)
+The newCachedThreadPool factory uses a SynchronousQueue.
 
 Using a FIFO queue like LinkedBlockingQueue or ArrayBlockingQueue causes tasks to be started in the order in which they arrived. For more control over task execution order, you can use a PriorityBlockingQueue, which orders tasks according to priority. Priority can be defined by natural order (if tasks implement Comparable) or by a Comparator.
 
 The newCachedThreadPool factory is a good default choice for an Executor, providing better queuing performance than a fixed thread pool.
 *(This performance difference comes from the use of SynchronousQueue instead of LinkedBlockingQueue. 
-SynchronousQueue was replaced in Java 6 with a new nonblocking algorithm that improved throughput in Executor benchmarks by a factor of three over the Java 5.0 SynchronousQueue implementation)
+SynchronousQueue was replaced in Java 6 with a new nonblocking algorithm that improved throughput in Executor benchmarks by a factor of three over the Java 5.0 SynchronousQueue implementation).
 
 Но Для веб-приложений разумно использовать fixed size thread pool, т.к. это предотвратит прилагу от уязвимости при перегрузке (vulnerable -- [`vʌln(ə)rəb(ə)l] - (уязвимый; ранимый) - to overload).
 
@@ -178,8 +199,6 @@ With TASKS THAT DEPEND ON OTHER TASKS, bounded thread pools or queues can cause 
 instead, USE AN UNBOUNDED POOL configuration like newCachedThreadPool.
 *(ИЛИ же An alternative configuration for tasks that submit other tasks and wait for their results is to use a bounded thread pool, a SynchronousQueue as the work queue, and the caller-runs saturation policy.)
 
-
-
 *** 8.3.3 Saturation policies ***
 When a bounded work queue fills up, the saturation policy comes into play. 
 The saturation policy for a ThreadPoolExecutor can be modified by calling setRejectedExecutionHandler(). 
@@ -187,7 +206,7 @@ The saturation policy is also used when a task is submitted to an Executor that 
 Several implementations of RejectedExecutionHandler are provided, each implementing a different saturation policy: 
 
 1) AbortPolicy == по дефолту
-  The default policy, abort, causes execute to throw the unchecked RejectedExecutionException; the caller can catch this exception and implement its own overflow handling as it sees fit.
+  The default policy, ABORT, causes execute to throw the unchecked RejectedExecutionException; the caller can catch this exception and implement its own overflow handling as it sees fit.
 
 2) DiscardPolicy 
   The discard policy silently discards the newly submitted task if it cannot be queued for execution; 
@@ -202,26 +221,51 @@ Several implementations of RejectedExecutionHandler are provided, each implement
   В этом случае тот поток, который давал задания сам начнёт их выполнять, при этом он перестанет посылать новые задачи, за это время потоки может быть разгребутся.
   Но в этом случае есть проблема, что сам главный поток тоже не сможет обрабатывать запросы, которые к нему приходят. Если это веб-сервер -- то запросы будут складироваться(добавляться в очередь) на уровне TCP. И потом уже TCP начнёт отказывать в обработке запросам. Т.е. при сверх-нагрузке перегрузка постепенно будет просачиваться от потоков в приложение, от него в TCP, и от TCP к клиенту.
 
+И это на самом деле норм, т.к. сервак хотя бы не упадёт, а будет graceful degradation:
+As the server becomes overloaded, the overload is gradually pushed outward — from the pool threads to the work queue to the application to the TCP layer, and eventually to the client — enabling more graceful degradation under load.
+
+Choosing a saturation policy or making other changes to the execution policy can be done when the Executor is created. Listing 8.3 illustrates creating a fixed-size thread pool with the caller-runs saturation policy.
+      ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            1, 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10));
+      executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+
 По умолчанию нету такой политики, чтобы метод execute() блокировался, если очередь заполнилась. Можно сделать кастомный, с ис-ем семафора.
-!!!  semaphore is bounding the number of tasks both currently executing and
-awaiting execution.
-см BoundedExecutor.java
+!!!  semaphore is bounding the number of tasks both currently executing and awaiting execution.
+(см BoundedExecutor.java)
+In such an approach, use an unbounded queue (there's no reason to bound both the queue size and the injection rate) and set the bound on the semaphore to be equal to the pool size plus the number of queued tasks you want to allow, since the semaphore is bounding the number of tasks both currently executing and awaiting execution.
 
 *** 8.3.4 Thread factories ***
-Whenever a thread pool needs to create a thread, it does so through a thread factory (see Listing 8.5). The default thread factory creates a new, nondaemon thread with no special configuration. 
+Whenever a thread pool needs to create a thread, it does so through a thread factory (see Listing 8.5). 
+     public interface ThreadFactory {
+         Thread newThread(Runnable r);
+     }
+The default thread factory creates a new, nondaemon thread with no special configuration. 
 Specifying a thread factory allows you to customize the configuration of pool threads. 
 
 ThreadFactory has a single method, newThread() , that is called whenever a thread pool needs to create a new thread.
 
-Можно создать свою custom thread factory, и в ней задать UncaughtExceptionHandler, или создавать instance of a custom Thread class.
+Зачем вообще создавать свою кастомную ThreadFactory:
+  1) You might want to specify an UncaughtExceptionHandler for pool threads (задать свой UncaughtExceptionHandler для потоков из этой фабрики), 
+  2) or instantiate an instance of a custom Thread class, such as one that performs debug logging. 
+  3) You might want to modify the priority (generally not a very good idea; see Section 10.3.1) 
+  4) or set the daemon status (again, not all that good an idea; see Section 7.4.2) of pool threads. 
+  5) Or maybe you just want to give pool threads more meaningful names to simplify interpreting thread dumps and error logs.
 
-If your application takes advantage of SECURITY POLICIES to grant permissions to particular codebases, you may want to use the privilegedThreadFactory() factory method in Executors to construct your thread factory. It creates pool threads that have the same permissions, AccessControlContext , and contextClassLoader as the thread creating the privilegedThreadFactory.
+If your application takes advantage of SECURITY POLICIES to grant permissions to particular codebases, you may want to use the privilegedThreadFactory() factory method in Executors to construct your thread factory. 
+   // ThreadFactory privilegedThreadFactory = Executors.privilegedThreadFactory();
+It creates pool threads that have the same permissions, AccessControlContext, and contextClassLoader as the thread creating the .privilegedThreadFactory().
 Otherwise, THREADS created by the thread pool INHERIT PERMISSIONS FROM whatever CLIENT happens to be calling execute() or submit() at the time a new thread is needed, which could cause confusing security-related exceptions.
 
 *** 8.3.5 Customizing ThreadPoolExecutor after construction *** 
 Most of the options passed to the ThreadPoolExecutor constructors can also be modified after construction via setters (such as the core thread pool size, maximum thread pool size, keep-alive time, thread factory, and rejected execution handler). If the Executor is created through one of the factory methods in Executors (except newSingleThreadExecutor), you can cast the result to ThreadPoolExecutor to access the setters.
 А чтобы нельзя было изменять эти свойства после создания пула -- можно обернуть Executor в unconfigurableExecutorService() метод. Так мы гарантируем что лошара не сломает логику.
 Так сделано например для newSingleThreadExecutor().
+
+  public static ExecutorService newSingleThreadExecutor() {
+    return new FinalizableDelegatedExecutorService(
+      new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>())
+    );
+  }
 
 *** 8.4 Extending ThreadPoolExecutor ***
 1,2) The beforeExecute() and afterExecute() hooks are called in the thread that executes the task, and can be used for adding logging, timing, monitoring, or statistics gathering. 
@@ -238,9 +282,18 @@ Because execution hooks are called in the thread that executes the task, a value
 *** 8.5 Parallelizing recursive algorithms ***
 If we have a loop whose iterations are independent and we don't need to wait for all of them to complete before proceeding, we can use an Executor to transform a sequential loop into a parallel one.
 
-Sequential loop iterations are suitable for parallelization when EACH ITERATION IS INDEPENDENT of the others AND the WORK DONE IN EACH ITERATION of the loop body is significant enough to offset the cost of managing a new task. (и работа в каждой итерации покроет затраты на создание новой задачи).
+Sequential loop iterations are suitable for parallelization when EACH ITERATION IS INDEPENDENT of the others AND the WORK DONE IN EACH ITERATION of the loop body is SIGNIFICANT ENOUGH to offset the cost of managing a new task. (и работа в каждой итерации покроет затраты на создание новой задачи).
 
-см TransformingSequential.java
+Loop parallelization can also be applied to some recursive designs; there are often sequential loops within the recursive algorithm that can be parallelized in the same manner as Listing 8.10. The easier case is when each iteration does not require the results of the recursive iterations it invokes. 
+(см TransformingSequential.java)
+    void processSequentially(List<Element> elements) {
+        elements.forEach(this::process);
+    }
+    void processInParallel(Executor exec, List<Element> elements) {
+        elements.forEach(e -> exec.execute(() -> process(e)));
+    }
+см также методы sequentialRecursive() и parallelRecursive()
+
 A call to processInParallel() returns more quickly than a call to processSequentially() because it returns as soon as all the tasks are queued to the Executor, rather than waiting for them all to complete. 
 - If you want to submit a set of tasks and wait for them all to complete, you can use ExecutorService.invokeAll(); 
 - to retrieve the results as they become available, you can use a CompletionService, as in Renderer.java
@@ -249,15 +302,21 @@ When parallelRecursive() returns, each node in the tree has been visited (the tr
 Callers of parallelRecursive() can wait for all the results by creating an Executor specific to the traversal and using shutdown and awaitTermination().
 
 *** 8.5.1 Example: A puzzle framework ***
-The concurrent approach also trades one form of limitation for another that might be more suitable to the problem domain. The sequential version performs a depth-first search, so the search is bounded by the available stack size. The concurrent version performs a breadth-first search and is therefore free of the stack size restriction (but can still run out of memory if the set of positions to be searched or already searched exceeds the available memory).
+An appealing application of this technique is solving puzzles that involve finding a sequence of transformations from some initial state to reach a goal state, such as the familiar "sliding block puzzles", "Hi-Q", "Instant Insanity", and other solitaire puzzles.
+(см SequentialPuzzleSolver и ConcurrentPuzzleSolver)
+To avoid infinite loops, the sequential version maintained a Set of previously searched positions; ConcurrentPuzzleSolver uses a ConcurrentHashMap for this purpose. This provides thread safety and avoids the race condition inherent in conditionally updating a shared collection by using putIfAbsent() to atomically.
 
-In order to stop searching when we find a solution, we need a way to determine whether any thread has found a solution yet. If we want to accept the first solution found, we also need to update the solution only if no other task has already found one. These requirements describe a sort of latch (see Section 5.5.1) and in particular, a result-bearing latch. 
+The concurrent approach also trades one form of limitation for another that might be more suitable to the problem domain. 
+The SEQUENTIAL VERSION performs a DEPTH-FIRST SEARCH, so the search is bounded by the available stack size. 
+The CONCURRENT VERSION performs a BREADTH-FIRST SEARCH and is therefore free of the stack size restriction (but can still run out of memory if the set of positions to be searched or already searched exceeds the available memory).
+
+In order to stop searching when we find a solution, we need a way to determine whether any thread has found a solution yet. If we want to accept the first solution found, we also need to update the solution only if no other task has already found one. These requirements describe a sort of latch (see Section 5.5.1) and in particular, a RESULT-BEARING LATCH. 
 
 ValueLatch.java provides a way to hold a value such that only the first call actually sets the value, callers can test whether it has been set, and callers can block waiting for it to be set.
 
 Когда будет происходить RejectedExecutionHandler ?
 
-the rejected execution handler should be set to discard submitted tasks. Then, all unfinished tasks eventually run to completion and any subsequent attempts to execute new tasks fail silently, allowing the executor to terminate. (If the tasks took longer to run, we might want to interrupt them instead of letting them finish.)
+the rejected execution handler should be set to DISCARD submitted tasks. Then, all unfinished tasks eventually run to completion and any subsequent attempts to execute new tasks fail silently, allowing the executor to terminate. (If the tasks took longer to run, we might want to interrupt them instead of letting them finish.)
 
 The sequential version terminated when it had exhausted the search space, but getting concurrent programs to terminate can sometimes be more difficult. One possible solution is to keep a count of active solver tasks and set the solution to null when the count drops to zero
 
@@ -265,29 +324,39 @@ Finding the solution may also take longer than we are willing to wait; there are
 One is a time limit; this is easily done by implementing a timed getValue() in ValueLatch (which would use the timed version of await()), and shutting down the Executor and declaring failure if getValue() times out. 
 Another is some sort of puzzle-specific metric such as searching only up to a certain number of positions. Or we can provide a cancellation mechanism and let the client make its own decision about when to stop searching.
 
+Summary
+The Executor framework is a powerful and flexible framework for concurrently executing tasks. It offers a number of tuning options, such as policies for creating and tearing down threads, handling queued tasks, and what to do with excess tasks, and provides several hooks for extending its behavior. As in most powerful frameworks, however, there are combinations of settings that do not work well together; some types of tasks require specific execution policies, and some combinations of tuning parameters may produce strange results.
+
 **********************************************************
 java.util.concurrent public class ThreadPoolExecutor extends AbstractExecutorService
 
 An ExecutorService that executes each submitted task using one of possibly several pooled threads, normally configured using Executors factory methods.
 Thread pools address two different problems: they usually provide improved performance when executing large numbers of asynchronous tasks, due to reduced per-task invocation overhead, and they provide a means of bounding and managing the resources, including threads, consumed when executing a collection of tasks. Each ThreadPoolExecutor also maintains some basic statistics, such as the number of completed tasks.
 To be useful across a wide range of contexts, this class provides many adjustable parameters and extensibility hooks. However, programmers are urged to use the more convenient Executors factory methods Executors.newCachedThreadPool (unbounded thread pool, with automatic thread reclamation), Executors.newFixedThreadPool (fixed size thread pool) and Executors.newSingleThreadExecutor (single background thread), that preconfigure settings for the most common usage scenarios. Otherwise, use the following guide when manually configuring and tuning this class:
+
 Core and maximum pool sizes
 A ThreadPoolExecutor will automatically adjust the pool size (see getPoolSize) according to the bounds set by corePoolSize (see getCorePoolSize) and maximumPoolSize (see getMaximumPoolSize). When a new task is submitted in method execute(Runnable), and fewer than corePoolSize threads are running, a new thread is created to handle the request, even if other worker threads are idle. If there are more than corePoolSize but less than maximumPoolSize threads running, a new thread will be created only if the queue is full. By setting corePoolSize and maximumPoolSize the same, you create a fixed-size thread pool. By setting maximumPoolSize to an essentially unbounded value such as Integer.MAX_VALUE, you allow the pool to accommodate an arbitrary number of concurrent tasks. Most typically, core and maximum pool sizes are set only upon construction, but they may also be changed dynamically using setCorePoolSize and setMaximumPoolSize.
+
 On-demand construction
 By default, even core threads are initially created and started only when new tasks arrive, but this can be overridden dynamically using method prestartCoreThread or prestartAllCoreThreads. You probably want to prestart threads if you construct the pool with a non-empty queue.
+
 Creating new threads
 New threads are created using a ThreadFactory. If not otherwise specified, a Executors.defaultThreadFactory is used, that creates threads to all be in the same ThreadGroup and with the same NORM_PRIORITY priority and non-daemon status. By supplying a different ThreadFactory, you can alter the thread's name, thread group, priority, daemon status, etc. If a ThreadFactory fails to create a thread when asked by returning null from newThread, the executor will continue, but might not be able to execute any tasks. Threads should possess the "modifyThread" RuntimePermission. If worker threads or other threads using the pool do not possess this permission, service may be degraded: configuration changes may not take effect in a timely manner, and a shutdown pool may remain in a state in which termination is possible but not completed.
+
 Keep-alive times
 If the pool currently has more than corePoolSize threads, excess threads will be terminated if they have been idle for more than the keepAliveTime (see getKeepAliveTime(TimeUnit)). This provides a means of reducing resource consumption when the pool is not being actively used. If the pool becomes more active later, new threads will be constructed. This parameter can also be changed dynamically using method setKeepAliveTime(long, TimeUnit). Using a value of Long.MAX_VALUE TimeUnit.NANOSECONDS effectively disables idle threads from ever terminating prior to shut down. By default, the keep-alive policy applies only when there are more than corePoolSize threads. But method allowCoreThreadTimeOut(boolean) can be used to apply this time-out policy to core threads as well, so long as the keepAliveTime value is non-zero.
+
 Queuing
 Any BlockingQueue may be used to transfer and hold submitted tasks. The use of this queue interacts with pool sizing:
 If fewer than corePoolSize threads are running, the Executor always prefers adding a new thread rather than queuing.
 If corePoolSize or more threads are running, the Executor always prefers queuing a request rather than adding a new thread.
 If a request cannot be queued, a new thread is created unless this would exceed maximumPoolSize, in which case, the task will be rejected.
+
 There are three general strategies for queuing:
 Direct handoffs. A good default choice for a work queue is a SynchronousQueue that hands off tasks to threads without otherwise holding them. Here, an attempt to queue a task will fail if no threads are immediately available to run it, so a new thread will be constructed. This policy avoids lockups when handling sets of requests that might have internal dependencies. Direct handoffs generally require unbounded maximumPoolSizes to avoid rejection of new submitted tasks. This in turn admits the possibility of unbounded thread growth when commands continue to arrive on average faster than they can be processed.
 Unbounded queues. Using an unbounded queue (for example a LinkedBlockingQueue without a predefined capacity) will cause new tasks to wait in the queue when all corePoolSize threads are busy. Thus, no more than corePoolSize threads will ever be created. (And the value of the maximumPoolSize therefore doesn't have any effect.) This may be appropriate when each task is completely independent of others, so tasks cannot affect each others execution; for example, in a web page server. While this style of queuing can be useful in smoothing out transient bursts of requests, it admits the possibility of unbounded work queue growth when commands continue to arrive on average faster than they can be processed.
 Bounded queues. A bounded queue (for example, an ArrayBlockingQueue) helps prevent resource exhaustion when used with finite maximumPoolSizes, but can be more difficult to tune and control. Queue sizes and maximum pool sizes may be traded off for each other: Using large queues and small pools minimizes CPU usage, OS resources, and context-switching overhead, but can lead to artificially low throughput. If tasks frequently block (for example if they are I/O bound), a system may be able to schedule time for more threads than you otherwise allow. Use of small queues generally requires larger pool sizes, which keeps CPUs busier but may encounter unacceptable scheduling overhead, which also decreases throughput.
+
 Rejected tasks
 New tasks submitted in method execute(Runnable) will be rejected when the Executor has been shut down, and also when the Executor uses finite bounds for both maximum threads and work queue capacity, and is saturated. In either case, the execute method invokes the RejectedExecutionHandler.rejectedExecution(Runnable, ThreadPoolExecutor) method of its RejectedExecutionHandler. Four predefined handler policies are provided:
 In the default ThreadPoolExecutor.AbortPolicy, the handler throws a runtime RejectedExecutionException upon rejection.
@@ -295,11 +364,14 @@ In ThreadPoolExecutor.CallerRunsPolicy, the thread that invokes execute itself r
 In ThreadPoolExecutor.DiscardPolicy, a task that cannot be executed is simply dropped.
 In ThreadPoolExecutor.DiscardOldestPolicy, if the executor is not shut down, the task at the head of the work queue is dropped, and then execution is retried (which can fail again, causing this to be repeated.)
 It is possible to define and use other kinds of RejectedExecutionHandler classes. Doing so requires some care especially when policies are designed to work only under particular capacity or queuing policies.
+
 Hook methods
 This class provides protected overridable beforeExecute(Thread, Runnable) and afterExecute(Runnable, Throwable) methods that are called before and after execution of each task. These can be used to manipulate the execution environment; for example, reinitializing ThreadLocals, gathering statistics, or adding log entries. Additionally, method terminated can be overridden to perform any special processing that needs to be done once the Executor has fully terminated.
 If hook or callback methods throw exceptions, internal worker threads may in turn fail and abruptly terminate.
+
 Queue maintenance
 Method getQueue() allows access to the work queue for purposes of monitoring and debugging. Use of this method for any other purpose is strongly discouraged. Two supplied methods, remove(Runnable) and purge are available to assist in storage reclamation when large numbers of queued tasks become cancelled.
+
 Finalization
 A pool that is no longer referenced in a program AND has no remaining threads will be shutdown automatically. If you would like to ensure that unreferenced pools are reclaimed even if users forget to call shutdown, then you must arrange that unused threads eventually die, by setting appropriate keep-alive times, using a lower bound of zero core threads and/or setting allowCoreThreadTimeOut(boolean).
 Extension example. Most extensions of this class override one or more of the protected hook methods. For example, here is a subclass that adds a simple pause/resume feature:
