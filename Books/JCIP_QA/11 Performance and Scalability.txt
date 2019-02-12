@@ -1,75 +1,114 @@
 11 Performance and Scalability 221-245 (24стр)
 
 One of the primary reasons to use threads is to improve performance.
+Using threads can improve resource utilization by letting applications more easily exploit available processing capacity, and can improve responsiveness by letting applications begin processing new tasks immediately while existing tasks are still running.
+
 This chapter explores techniques for analyzing, monitoring, and improving the performance of concurrent programs.
-Unfortunately, many of the techniques for improving performance also increase complexity, thus increasing the likelihood of safety and liveness failures.
+Unfortunately, many of the techniques for IMPROVING PERFORMANCE ALSO INCREASE COMPLEXITY, thus increasing the likelihood of safety and liveness failures.
+Worse, some techniques intended to improve performance are actually counterproductive or trade one sort of performance problem for another.
 
 !! safety always comes first. 
-First make your program right, then make it fast
+FIRST MAKE YOUR PROGRAM RIGHT, THEN MAKE IT FAST — and then only if your performance requirements and measurements tell you it needs to be faster. In designing a concurrent application, squeezing out the last bit of performance is often THE LEAST OF YOUR CONCERNS.
 
 ** 11.1 Thinking about performance **
-Improving performance means doing more work with fewer resources
+IMPROVING PERFORMANCE MEANS DOING MORE WORK WITH FEWER RESOURCES
 
-While the goal may be to improve performance overall, using multiple threads always introduces some performance costs compared to the single-threaded approach. These include the overhead associated with coordinating between threads (locking, signaling, and memory synchronization), increased context switching, thread creation and teardown, and scheduling overhead. 
+While the goal may be to improve performance overall, using multiple threads always introduces some PERFORMANCE COSTS compared to the single-threaded approach. 
+These include 
+1) the overhead associated with COORDINATING BETWEEN THREADS 
+(locking, signaling, and memory synchronization), 
+2) increased context switching, 
+3) thread creation and teardown, 
+4) and scheduling overhead. 
+
+When threading is employed effectively, these costs are more than made up for by greater throughput, responsiveness, or capacity. (эти затраты с лихвой компенсируются большей пропускной способностью, оперативностью или емкостью)
+On the other hand, a poorly designed concurrent application can perform even worse than a comparable sequential one.
 
 In using concurrency to achieve better performance, we are trying to do two things: 
 1) utilize the processing resources we have more effectively, 
+1) более эффективно использовать имеющиеся ресурсы
 2) and enable our program to exploit additional processing resources if they become available.
+2) иметь возможность загрузить новые ресурсы когда они появятся
 
 ** 11.1.1 Performance versus scalability **
-Application performance can be measured in a number of ways, such as service time, latency, throughput, efficiency, scalability, or capacity.
+Application performance can be measured in a number of ways, such as 
+service time, latency, throughput, efficiency, scalability, or capacity.
+время обслуживания, задержка, пропускная способность, эффективность, масштабируемость или емкость.
 
-!! Scalability describes the ability to improve throughput or capacity when additional computing resources (such as additional CPUs, memory, storage, or I/O bandwidth) are added.
+!! SCALABILITY describes the ability to improve throughput or capacity when additional computing resources are added (such as additional CPUs, memory, storage, or I/O bandwidth).
 Designing and tuning concurrent applications for scalability can be very different from traditional performance optimization.
+When TUNING FOR PERFORMANCE, the goal is usually TO DO THE SAME WORK WITH LESS EFFORT, such as by reusing previously computed results through caching or replacing an O(n^2) algorithm with an O(n*log n) one. 
+When TUNING FOR SCALABILITY, you are instead trying to FIND WAYS TO PARALLELIZE THE PROBLEM so you can take advantage of additional processing resources to DO MORE WORK WITH MORE RESOURCES.
 
-These two aspects of performance—how fast and how much—are completely separate, and sometimes even at odds with each other.
+These two aspects of performance — how fast and how much — are completely separate, and sometimes even at odds with each other.
+Ironically, many of the tricks that improve performance in single-threaded programs are bad for scalability
 
- Ironically, many of the tricks that improve performance in single-threaded programs are bad for scalability
+The familiar three-tier application model — in which presentation, business logic, and persistence are separated and may be handled by different systems — illustrates how improvements in scalability often come at the expense of performance.
+...The monolithic application would not have the network latency inherent in handing off tasks between tiers, nor would it have to pay the costs inherent in separating a computational process into distinct abstracted layers (such as queuing overhead, coordination overhead, and data copying).
+>>>> Иногда без многопоточности что-то работает быстрее, но по достижении какого-то предела станет очень трудно увеличить её ёмкость.
+However, when the monolithic system reaches its processing capacity, we could have a serious problem: it may be prohibitively difficult to significantly increase capacity. So we often accept the performance costs of longer service time or greater computing resources used per unit of work so that our application can scale to handle greater load by adding more resources.
 
-The familiar three-tier application model—in which presentation, business logic, and persistence are separated and may be handled by different systems— illustrates how improvements in scalability often come at the expense of performance.
-
-Иногда без многопоточности что-то работает быстрее, но по достижении какого-то предела станет учень трудно увеличить её ёмкость.
-
-"how much" aspects (scalability, throughput, and capacity) are usually of greater concern for server applications than the "how fast" aspects.
-
+"HOW MUCH" aspects (scalability, throughput, and capacity) are usually of greater concern for server applications than the "HOW FAST" aspects.
+Т.е. для серверных приложений более важны аспекты масштабируемости, пропускной способности и ёмкости, чем аспекты скорости.
+(For interactive applications, latency tends to be more important, so that users need not wait for indications of progress and wonder what is going on.)
 This chapter focuses primarily on scalability rather than raw single-threaded performance.
 
 **11.1.2 Evaluating performance tradeoffs** баланс преимуществ и недостатков
+Nearly all engineering decisions involve some form of tradeoff.
+
 For example, the "quicksort" algorithm is highly efficient for large data sets, but the less sophisticated "bubble sort" is actually more efficient for small data sets.
+If you are asked to implement an efficient sort routine, you need to know something about the sizes of data sets it will have to process, along with metrics that tell you whether you are trying to optimize average-case time, worst-case time, or predictability. 
+Unfortunately, that information is often not part of the requirements given to the author of a library sort routine. This is one of the reasons why MOST OPTIMIZATIONS ARE PREMATURE: they are often undertaken before a clear set of requirements is available.
 
-!!! Avoid premature optimization. First make it right, then make it fast—if it is not already fast enough.
+!!! Avoid premature optimization. First make it right, then make it fast — if it is not already fast enough.
 
- Many performance optimizations come at the cost of readability or maintainability
+When making engineering decisions, sometimes you are trading one form of cost for another (service time versus memory consumption); sometimes you are trading cost for safety. 
+Many performance optimizations come at the cost of readability or maintainability
 
- Most performance decisions involve multiple variables and are highly situational. 
+Most performance decisions involve multiple variables and are highly situational. 
 поэтому надо ответить для себя на ряд вопросов...
+Before deciding that one approach is "faster" than another, ask yourself some questions:
+• What do you mean by "faster"?
+• Under what conditions will this approach actually be faster? Under light or heavy load? With large or small data sets? Can you support your answer with measurements?
+• How often are these conditions likely to arise in your situation? Can you support your answer with measurements?
+• Is this code likely to be used in other situations where the conditions may be different?
+• What hidden costs, such as increased development or maintenance risk, are you trading for this improved performance? Is this a good tradeoff?
 
-Worse, when you trade safety for performance, you may get neither. 
+WORSE, WHEN YOU TRADE SAFETY FOR PERFORMANCE, YOU MAY GET NEITHER. 
 
-Про многопоточность -- intuition of many developers about where a performance problem lies or which approach will be faster or more scalable is often incorrect.
+Especially when it comes to concurrency, the intuition of many developers about where a performance problem lies or which approach will be faster or more scalable is OFTEN INCORRECT. 
+It is therefore imperative that any performance tuning exercise be accompanied by concrete performance requirements (so you know both when to tune and when to stop tuning) and with a measurement program in place using a realistic configuration and load profile. Measure again after tuning to verify that you've achieved the desired improvements. 
 
 !!! Measure, don’t guess.
 
 **11.2 Amdahl's law**
+If one of our primary reasons for using threads is to harness the power[обуздать мощь] of multiple processors, we must also ensure that 
+1) the problem is amenable[поддаётся] to parallel decomposition and 
+2) that our program effectively exploits this potential for parallelization.
+
+Most concurrent programs have a lot in common with farming, consisting of a mix of parallelizable and serial portions. Amdahl's law describes how much a program can THEORETICALLY BE SPED UP by additional computing resources, based on the PROPORTION of parallelizable and serial components. 
+
 В случае, когда задача разделяется на несколько частей, суммарное время её выполнения на параллельной системе не может быть меньше времени выполнения самого длинного фрагмента, который выполняется последовательно.
 Согласно этому закону, ускорение выполнения программы за счёт распараллеливания её инструкций на множестве вычислителей ограничено временем, необходимым для выполнения её последовательных инструкций.
 
-If one of our primary reasons for using threads is to harness the power of multiple processors, we must also ensure that the problem is amenable to parallel decomposition and that our program effectively exploits this potential for parallelization.
-
-a program in which 50% of the processing must be executed serially can be sped up only by a factor of 2, regardless of how many processors are available, and a program in which 10% must be executed serially can be sped up by at most a factor of 10.
+a program in which 50% of the processing must be executed serially can be sped up only by a factor of 2, regardless of how many processors are available, and a program in which 10% must be executed serially can be sped up by at most a factor of 10. (если последовательный кусок занимает половину времени, то можно ускорить максимум вторую половину, т.е. в 2 р.)
 
    SERIALIZATION -- это кол-во последовательных вычислений (в данном контексте).
    (UTILIZATION is defined as the speedup divided by the number of processors.) 
 
+[Amdahl's law [ˈæmdɒlz lɔː] --  закон Амдаля]
 Amdahl's law also quantifies the efficiency cost of serialization. 
 With 10 processors, a program with 10% serialization can achieve at most a speedup of 5.3 (at 53% utilization), and with 100 processors it can achieve at most a speedup of 9.2 (at 9% utilization). It takes a lot of inefficiently utilized CPUs to never get to that factor of ten.
+Даже при 10% последовательных вычислений никогда не удастся ускорить все остальные 90% за это время, т.к. надо много 100 процессоров, и при этом они будут нагружены только на 9%.
 
 Например, последовательные ограничения будут для очереди в примере WorkerThread.java:
 (а ещё будут ограничения в result handling)
 The work queue is shared by all the worker threads, and it will require some amount of synchronization to maintain its integrity in the face of concurrent access. 
-If locking is used to guard the state of the queue, then while one thread is dequeing a task, other threads that need to dequeue their next task must wait—and this is where task processing is serialized.
+If locking is used to guard the state of the queue, then while one thread is dequeing a task, other threads that need to dequeue their next task must wait — and this is where TASK PROCESSING IS SERIALIZED.
 
-The processing time of a single task includes not only the time to execute the task Runnable, but also the time to dequeue the task from the shared work queue.
+The PROCESSING TIME of a single task includes
+1) the time to execute the task Runnable
+2) the time to dequeue the task from the shared work queue.
 !! accessing any shared data structure fundamentally introduces an element of serialization into a program.
 
 Надо что-то делать с результатами работы:
@@ -78,30 +117,45 @@ The processing time of a single task includes not only the time to execute the t
 !!! All concurrent applications have some sources of serialization; if you think yours does not, look again.
 
 **11.2.1 Example: serialization hidden in frameworks**
-У ConcurrentLinkedQueue бОльшая пропускная способность чем у synchronized LinkedList.
+To see how serialization can be hidden in the structure of an application, we can compare throughput as threads are added and infer differences in serialization based on observed differences in scalability. Figure 11.2 shows a simple application in which multiple threads repeatedly remove an element from a shared Queue and process it, similar to Listing 11.1. The processing step involves only thread-local computation. If a thread finds the queue is empty, it puts a batch of new elements on the queue so that other threads have something to process on their next iteration. Accessing the shared queue clearly entails some degree of serialization, but the processing step is entirely parallelizable since it involves no shared data.
 
-**11.2.2 Applying Amdahl's law qualitatively**
+While each run represents the same amount of "work", we can see that merely changing queue implementations can have a big impact on scalability.
+>>>>> У ConcurrentLinkedQueue бОльшая пропускная способность чем у synchronized LinkedList.
+The throughput of ConcurrentLinkedQueue continues to improve until it hits the number of processors and then remains mostly constant. On the other hand, the throughput of the synchronized LinkedList shows some improvement up to three threads, but then falls off as synchronization overhead increases. By the time it gets to four or five threads, contention is so heavy that every access to the queue lock is contended and throughput is dominated by context switching.
+
+**11.2.2 Applying Amdahl's law qualitatively/качественно** [Эмдол] закон Амдаля
 Amdahl's law quantifies the possible speedup when more computing resources are available, if we can accurately estimate the fraction of execution that is serialized. Although measuring serialization directly can be difficult, Amdahl's law can still be useful without such measurement.
 
 When evaluating an algorithm, thinking "in the limit" about what would happen with hundreds or thousands of processors can offer some insight into where scaling limits might appear.
 
+two techniques for reducing lock granularity: 
+1) lock splitting (splitting one lock into two) 1 на 2
+2) lock striping (splitting one lock into many). 1 на много
+
+Looking at them through the lens of Amdahl's law, we see that splitting a lock in two does not get us very far towards exploiting many processors, but lock striping seems much more promising because the size of the stripe set can be increased as processor count increases. (Of course, performance optimizations should always be considered in light of actual performance requirements; in some cases, splitting a lock in two may be enough to meet the requirements.)
+
 **11.3 Costs introduced by threads**
-Scheduling and interthread coordination have performance costs;
+Single-threaded programs incur neither scheduling nor synchronization overhead, and need not use locks to preserve the consistency of data structures. 
+Scheduling and inter-thread coordination have performance costs;
 И выигрыш в производительности должен превышать эти затраты на распараллеливание.
 
-**11.3.1 Context switching**
-=переключение между потоками.
-Оно требует saving the execution context of the currently running thread and restoring the execution context of the newly scheduled thread.
+**11.3.1 Context switching** =переключение между потоками.
+if there are more runnable threads than CPUs, eventually the OS will preempt(вытеснять) one thread so that another can use the CPU. This causes a context switch, which requires saving the execution context of the currently running thread and restoring the execution context of the newly scheduled thread.
 
-Context switches are not free; thread scheduling requires manipulating shared data structures in the OS and JVM. The OS and JVM use the same CPUs your program does;
+Context switches are not free; 
+thread scheduling requires manipulating shared data structures in the OS and JVM. 
 
-context switch causes a flurry of cache misses, and thus threads run a little more slowly when they are first scheduled....
-и в начале запуска потоков в кэшах пусто, и поэтому нужно некоторое время...
-на что?
+The OS and JVM use the same CPUs your program does; more CPU time spent in JVM and OS code means less is available for your program. But OS and jVM activity is not the only cost of context switches. 
 
-When a thread blocks because it is waiting for a contended lock, the JVM usually suspends the thread and allows it to be switched out. If threads block frequently, they will be unable to use their full scheduling quantum.
+When a new thread is switched in, the data it needs is unlikely to be in the local processor cache, so a context switch causes a flurry(суматоха, суета, переполох) of cache misses, and thus threads run a little more slowly when they are first scheduled. 
+This is one of the reasons that schedulers give each runnable thread a certain minimum time quantum even when many other threads are waiting: 
+(нужно время на подготовку к работе, и если это долго, и квант уже закончится - то нет смысла переключать потоки, пусть лучше 1 работает без переключение - и он больше успеет)
+it amortizes the cost of the context switch and its consequences over more uninterrupted execution time, improving overall throughput (at some cost to responsiveness).
+
+When a thread blocks because it is waiting for a contended lock, the JVM usually suspends/приостанавливает the thread and allows it to be switched out. If threads block frequently, they will be unable to use their full scheduling quantum.
 A program that does more blocking (blocking I/O, waiting for contended locks, or waiting on condition variables) incurs more context switches than one that is CPU-bound, increasing scheduling overhead and reducing throughput. 
 (Nonblocking algorithms can also help reduce context switches; see Chapter 15.)
+Чем больше потоки в проге блокируются - тем чаще происходят context switches, даже больше чем если бы потоки просто соперничали за процессор.
 
 The actual cost of context switching varies across platforms, but a good rule of thumb is that a context switch costs the equivalent of 5,000 to 10,000 clock cycles, or several microseconds on most current processors.
 
@@ -114,19 +168,24 @@ Memory barriers can
 Memory barriers may also have indirect performance consequences because they inhibit(запрещать, блокировать) other compiler optimizations; most operations cannot be reordered(переупорядочивать) with memory barriers.
 
 При оценке влияния синхронизации на производительность важно различать contended and uncontended synchronization. (соперничать, соревноваться, бороться).
-The synchronized mechanism is optimized for the UNCONTENDED case (volatile is always uncontended)[если будет uncontended случай - то для него будет применена оптимизация], and at this writing, the performance cost of a "fast-path" uncontended synchronization ranges from 20 to 250 clock cycles for most systems.
+The synchronized mechanism is optimized for the UNCONTENDED case (volatile is always uncontended)[если будет uncontended случай - и такой случай синхрониции оптимизирован в JVM, как бы], and at this writing, the performance cost of a "fast-path" uncontended synchronization ranges from 20 to 250 clock cycles for most systems.
 
 Modern JVMs can reduce the cost of incidental(случайный) synchronization by optimizing away locking that can be proven never to contend.
 More sophisticated JVMs can use escape analysis to identify when a local object reference is never published to the heap and is therefore thread-local.
-И того синхронизация может пропускаться/игнорироваться.
-ПРимер с вектором, но нет в нём смысла, т.к. он локально используется.
+И тогда синхронизация может пропускаться/игнорироваться.
+СМ Пример с вектором (ThreeStooges.java), но нет в нём смысла, т.к. он локально используется.
 --stack-confined variables are automatically thread-local
 
 Even without escape analysis, compilers can also perform lock coarsening(укрупнение, увеличение размеров, грубеть, делать грубым), the merging of adjacent[ə`ʤeıs(ə)nt]( соединяя смежные, соседние) synchronized blocks using the same lock.
+(а JVM that performs lock coarsening might combine the three calls to add and the call to toString into a single lock acquisition and release, using heuristics[эвристический анализ] on the relative cost of synchronization versus the instructions inside the synchronized block.)
+Not only does this reduce the synchronization overhead, but it also gives the optimizer a much larger block to work with, likely enabling other optimizations.
 
-!!!Don’t worry excessively about the cost of uncontended synchronization. The basic mechanism is already quite fast, and JVMs can perform additional optimizations that further reduce or eliminate the cost. Instead, focus optimization efforts on areas where lock contention actually occurs.
+!!!Don’t worry excessively about the cost of uncontended synchronization. The basic mechanism is already quite fast, and JVMs can perform additional optimizations that further reduce or eliminate the cost. Instead, focus optimization efforts on areas WHERE LOCK CONTENTION ACTUALLY OCCURS.
 
 lock contention -- борьба, состязание, конкуренция, конфликтная ситуация
+
+Synchronization by one thread can also affect the performance of other threads. Synchronization creates traffic on the SHARED MEMORY BUS; this bus has a limited bandwidth and is shared across all processors. If threads must compete for synchronization bandwidth, all threads using synchronization will suffer.
+(under heavy contention, nonblocking algorithms generate more synchronization traffic than lock-based ones.)
 
 **11.3.3 Blocking**
 UNCONTENDED synchronization can be handled entirely within the JVM.
@@ -145,7 +204,7 @@ Which is more efficient depends on
 
 Some JVMs choose between the two adaptively based on profiling data of past wait times, but most just suspend threads waiting for a lock.
 
-Suspending a thread because it could not get a lock entails two additional context switches and all the attendant OS and cache activity:
+Suspending a thread because it could not get a lock, or because it blocked on a condition wait or blocking I/O operation, entails two additional context switches and all the attendant OS and cache activity:
 1) the blocked thread is switched out before its quantum has expired, 
 2) and is then switched back in later after the lock or other resource becomes available. 
 (Blocking due to lock contention also has a cost for the thread holding the lock: when it releases the lock, it must then ask the OS to resume the blocked thread.)
@@ -161,13 +220,14 @@ Persistent contention for a lock limits scalability.
 Two factors influence the likelihood of contention for a lock: 
 1) how often that lock is requested and 
 2) how long it is held once acquired.
---"the average number of customers in a stable system is equal to their average arrival rate multiplied by their average time in the system"
-среднее кол-во юззеров в системе -- среднее время прибытия * на среднее время обработки
+
+This is a corollary( [kəˈrɔlərɪ] следствие) of Little's law, a result from queueing theory that says "the average number of customers in a stable system is equal to their average arrival rate multiplied by their average time in the system".
+среднее кол-во юзеров в системе == среднее время прибытия * на среднее время обработки
 
 There are three ways to reduce lock contention:
-1 Reduce the duration for which locks are held;
-2 Reduce the frequency with which locks are requested; or
-3 Replace exclusive locks with coordination mechanisms that permit greater concurrency.
+1) Reduce the duration for which locks are held;
+2) Reduce the frequency with which locks are requested; or
+3) Replace exclusive locks with coordination mechanisms that permit greater concurrency.
 
 **11.4.1 Narrowing lock scope ("Get in, get out")** стр 233 половина этой главы
 

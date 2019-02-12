@@ -1,60 +1,105 @@
 10 Liveness Hazards (205-220 = 15 pages)
-*** 10.1 Deadlock ***
-Обедающие философы, например 5, за круглым столом.
-Между тареками по 1 палочке, всего 5.
-Чтобы есть ему нужны 2 палки.
-
-When thread A holds lock L and tries to acquire lock M, but at the same time thread B holds M and tries to acquire L, both threads will wait forever. (multiple threads wait forever due to a cyclic locking dependency)
-
-Направленный Граф -- это точка со стрелочкой.
-Think of the threads as the nodes of a directed graph whose edges represent the relation "Thread A is waiting for a resource held by thread B". If this graph is cyclical, there is a deadlock.
 
 Database systems are designed to detect and recover from deadlock.
 а в джаве - дэдлок = конец, надо рестартовать прогу.
 
+************ Avoiding Liveness Hazards ******************* 
+There is often a tension between safety and liveness(Жизнеспособность, что есть какой-то прогресс). We use locking to ensure thread safety, but indiscriminate use of locking can cause lock-ordering deadlocks. Similarly, we use thread pools and semaphores to bound resource consumption, but failure to understand the activities being bounded can cause resource deadlocks. Java applications do not recover from deadlock, so it is worthwhile to ensure that your design precludes the conditions that could cause it.
+
+*** 10.1 Deadlock ***
+Deadlock is illustrated by the classic, if somewhat unsanitary, "dining philosophers" problem.
+Обедающие философы, например 5, за круглым столом.
+Между тарелками по 1 палочке, всего 5.
+Философ должен взять 2 палочки на длительное время чтобы поесть, but can then put the chopsticks back and return to thinking. 
+There are some chopstick-management algorithms that: 
+1) let everyone eat on a more or less timely basis 
+(a hungry philosopher tries to grab both adjacent chopsticks, but if one is not available, puts down the one that is available and waits a minute or so before trying again), 
+2) and some that can result in some or all of the philosophers dying of hunger (each philosopher immediately grabs the chopstick to his left and waits for the chopstick to his right to be available before putting down the left). 
+
+>>> The latter situation, where each has a resource needed by another and is waiting for a resource held by another, and will not release the one they hold until they acquire the one they don't, illustrates deadlock.
+
+When a thread holds a lock forever, other threads attempting to acquire that lock will block forever waiting.
+When thread A holds lock L and tries to acquire lock M, but at the same time thread B holds M and tries to acquire L, both threads will wait forever. (multiple threads wait forever due to a cyclic locking dependency)
+Направленный Граф -- это точка со стрелочкой.
+Think of the threads as the nodes of a directed graph whose edges represent the relation "Thread A is waiting for a resource held by thread B". If this graph is cyclical(круговой), there is a deadlock.
+
+Database systems are designed to detect and recover from deadlock. A transaction may acquire many locks, and locks are held until the transaction commits. So it is quite possible, and in fact not uncommon, for two transactions to deadlock. Without intervention, they would wait forever (holding locks that are probably required by other transactions as well). 
+But the database server is not going to let this happen. When it detects that a set of transactions is deadlocked (which it does by searching the IS-WAITING-FOR GRAPH for cycles), it picks a victim and aborts that transaction. This releases the locks held by the victim, allowing the other transactions to proceed. The application can then retry the aborted transaction, which may be able to complete now that any competing transactions have completed.
+
+The JVM is not nearly as helpful in resolving deadlocks as database servers are. When a set of Java threads deadlock, that's the end of the game — those threads are permanently out of commission. Depending on what those threads do, the application may stall completely, or a particular subsystem may stall, or performance may suffer. The only way to restore the application to health is to abort and restart it — and hope the same thing doesn't happen again.
+
+Like many other concurrency hazards, deadlocks rarely manifest themselves immediately. 
+The fact that a class has a potential deadlock doesn't mean that it ever will deadlock, just that it can. When deadlocks do manifest themselves, it is often at the worst possible time — under heavy production load.
+
 *** 10.1.1 Lock-ordering deadlocks ***
-The deadlock in LeftRightDeadlock came about because the two threads attempted to acquire the same locks in a different order. If they asked for the locks in the same order, there would be no cyclic locking dependency and therefore no deadlock. If you can guarantee that every thread that needs locks L and M at the same time always acquires L and M in the same order, there will be no deadlock.
+The deadlock in LeftRightDeadlock came about because the TWO THREADS ATTEMPTED TO ACQUIRE THE SAME LOCKS IN A DIFFERENT ORDER. 
+If they asked for the locks in the SAME ORDER, there WOULD BE NO CYCLIC LOCKING DEPENDENCY and therefore NO DEADLOCK. If you can guarantee that every thread that needs locks L and M at the same time always acquires L and M in the same order, there will be no deadlock.
 
 !!! A program will be free of lock-ordering deadlocks if all threads acquire the locks they need in a FIXED GLOBAL ORDER.
 
-Verifying consistent lock ordering requires a global analysis of your program's locking behavior. It is not sufficient to inspect code paths that acquire multiple locks individually; both leftRight and rightLeft are "reasonable" ways to acquire the two locks, they are just not compatible. When it comes to locking, the left hand needs to know what the right hand is doing.
+Verifying consistent lock ordering requires a global analysis of your program's locking behavior. 
+It is not sufficient to inspect code paths that acquire multiple locks individually; both leftRight and rightLeft are "reasonable" ways to acquire the two locks, they are just not compatible. 
+When it comes to locking, the left hand needs to know what the right hand is doing.
 
 *** 10.1.2 Dynamic lock order deadlocks ***
 Sometimes it is NOT OBVIOUS that you have sufficient control over lock ordering to prevent deadlocks. 
 
 Когда лок получается в одном и том же порядке, но всё равно может произойти дэдлок.
-ПО причине что в метод агрументы будут переданы в неудачном порядке:
+ПО причине что в метод аргументы будут переданы в неудачном порядке:
+the lock order depends on the order of arguments passed to transferMoney, and these in turn might depend on external inputs. Deadlock can occur if two threads call transferMoney at the same time, one transferring from X to Y, and the other doing the opposite:
 A: transferMoney(myAccount, yourAccount, 10);
 B: transferMoney(yourAccount, myAccount, 20);
 With unlucky timing, A will acquire the lock on myAccount and wait for the lock on yourAccount, while B is holding the lock on yourAccount and waiting for the lock on myAccount.
 
-Since the order of arguments is out of our control, to fix the problem we must induce (навести) an ordering on the locks and acquire them according to the induced ordering consistently throughout the application.
-InduceLockOrder.java
+Since the order of arguments is out of our control, to fix the problem we must induce (навести) an ordering on the locks and acquire them according to the induced ordering consistently throughout the application. One way to induce an ordering on objects is to use System.identityHashCode(), which returns the value that would be returned by Object.hashCode. System.identityHashCode()
+(см InduceLockOrder.java)
 
-..hash collisions with System.identityHashCode() are vanishingly infrequent, this technique provides that last bit of safety at little cost.
+In the rare case that two objects have the same hash code, we must use an arbitrary means of ordering the lock acquisitions, and this reintroduces the possibility of deadlock. To prevent inconsistent lock ordering in this case, a third "tie breaking" lock is used. 
+By acquiring the tie-breaking lock before acquiring either Account lock, we ensure that only one thread at a time performs the risky task of acquiring two locks in an arbitrary order, eliminating the possibility of deadlock (so long as this mechanism is used consistently). 
+If hash collisions were common, this technique might become a concurrency bottleneck (just as having a single, program-wide lock would), but because hash collisions with System.identityHashCode() are vanishingly infrequent, this technique provides that last bit of safety at little cost.
 
 If Account has a unique, immutable, comparable key such as an account number, inducing a lock ordering is even easier: order objects by their key, thus eliminating the need for the tie-breaking lock.
 
-*** 10.1.3 Deadlocks between cooperating objects ***
-... не понял я логики... в примере CooperatingDeadlock.java
-It was easy to spot the deadlock possibility in LeftRightDeadlock or transferMoney by looking for methods that acquire two locks. 
-Spotting the deadlock possibility in Taxi and Dispatcher is a little harder: the warning sign is that an alien method (defined on page 40) is being called while holding a lock.
+You may think we're overstating the risk of deadlock because locks are usually held only briefly, but deadlocks are a serious problem in real systems. A production application may perform billions of lock acquire-release cycles per day. Only one of those needs to be timed just wrong to bring the application to deadlock, and even a thorough load-testing regimen may not disclose all latent deadlocks.
+(Ironically, holding locks for short periods of time, as you are supposed to do to reduce lock contention, increases the likelihood that testing will not disclose latent deadlock risks.)
+(см DemonstrateDeadlock.java)
 
-!!! Invoking an alien method with a lock held is asking for liveness trouble. The alien method might acquire other locks (risking deadlock) or block for an unexpectedly long time, stalling other threads that need the lock you hold.
+*** 10.1.3 Deadlocks between cooperating objects *** сотрудничающий, взаимодействующий
+Multiple lock acquisition is not always as obvious as in LeftRightDeadlock or transferMoney; 
+the two locks need not be acquired by the same method. 
+Consider the cooperating classes in Listing 10.5, which might be used in a taxicab dispatching application. 
+Taxi represents an individual taxi with a location and a destination; 
+Dispatcher represents a fleet of taxis.
+
+While no method explicitly acquires two locks, callers of setLocation() and getImage() can acquire two locks just the same. 
+If a thread calls setLocation in response to an update from a GPS receiver, it first updates the taxi's location and then checks to see if it has reached its destination. If it has, it informs the dispatcher that it needs a new destination. Since both setLocation and notifyAvailable are synchronized, the thread calling setLocation acquires the Taxi lock and then the Dispatcher lock. Similarly, a thread calling getImage acquires the Dispatcher lock and then each Taxi lock (one at at time). Just as in LeftRightDeadlock, two locks are acquired by two threads in different orders, risking deadlock.
+
+CooperatingDeadlock.java
+
+It was easy to spot the deadlock possibility in LeftRightDeadlock or transferMoney by looking for methods that acquire two locks. 
+Spotting the deadlock possibility in Taxi and Dispatcher is a little harder: 
+the warning sign is that an ALIEN METHOD (defined on page 40) IS BEING CALLED WHILE HOLDING A LOCK.
+
+!!! Invoking an alien method with a lock held is asking for liveness trouble. 
+The alien method might acquire other locks (risking deadlock) or block for an unexpectedly long time, stalling other threads that need the lock you hold.
 
 *** 10.1.4 Open calls ***
 Of course, Taxi and Dispatcher didn't know that they were each half of a deadlock waiting to happen. And they shouldn't have to; a method call is an abstraction barrier intended to shield you from the details of what happens on the other side. But because you don't know what is happening on the other side of the call, calling an alien method with a lock held is difficult to analyze and therefore risky.
 
-!!! Calling a method with no locks held is called an open call, and classes that rely on open calls are more well-behaved and composable than classes that make calls with locks held.
+!!! Calling a method with no locks held is called an OPEN CALL, and classes that rely on open calls are more well-behaved and composable than classes that make calls with locks held.
 
-Using open calls to avoid deadlock is analogous to using encapsulation to provide thread safety..
+Using open calls to avoid deadlock is analogous to using encapsulation to provide thread safety: while one can certainly construct a thread-safe program without any encapsulation, the thread safety analysis of a program that makes effective use of encapsulation is far easier than that of one that does not. Similarly, the liveness analysis of a program that relies exclusively on open calls is far easier than that of one that does not.
 Restricting yourself to open calls makes it far easier to identify the code paths that acquire multiple locks and therefore to ensure that locks are acquired in a consistent order.
+(The need to rely on open calls and careful lock ordering reflects the fundamental messiness/беспорядок of composing synchronized objects rather than synchronizing composed objects.)
 
 CooperatingNoDeadlock.java -- This involves shrinking the synchronized blocks to guard only operations that involve shared state..
 
 Very often, the cause of таких problems is the use of synchronized methods instead of smaller synchronized blocks for reasons of compact syntax or simplicity rather than because the entire method must be guarded by a lock. (As a bonus, shrinking the synchronized block may also improve scalability as well)
 
-Restructuring a synchronized block to allow open calls can sometimes have undesirable consequences, since it takes an operation that was atomic and makes it not atomic. In many cases, the loss of atomicity is perfectly acceptable;
+Restructuring a synchronized block to allow open calls can sometimes have undesirable consequences, since it takes an operation that was atomic and makes it not atomic. 
+In many cases, the loss of atomicity is perfectly acceptable;
+In other cases, the loss of atomicity is noticeable but the semantic changes are still acceptable.
+In some cases, however, the loss of atomicity is a problem, and here you will have to use another technique to achieve atomicity. 
 
 И когда потеря атомарности явл-ся проблемой надо ис-ть технику:
 One such technique is to structure a concurrent object so that only one thread can execute the code path following(следующий за) the open call. 
@@ -64,26 +109,30 @@ One such technique is to structure a concurrent object so that only one thread c
 Если сервис пока будет ждать будет держать лок - то может быть дэдлок, но если он отпустит лок раньше чем сам закончится - то другие потоки начнут новые задачи (что тоже неправильно).
 РЕШЕНИЕ: держать лок достаточно долго чтобы обновить своё состояние в "shutting down", чтобы другие потоки поняли, что сервис завершается, и не посылали новых задач.
 И тогда можно спокойно дождаться завершения.
+You can then wait for shutdown to complete, knowing that only the shutdown thread has access to the service state after the open call completes. Thus, rather than using locking to keep the other threads out of a critical section of code, this technique relies on constructing protocols so that other threads don't try to get in.
 
 *** 10.1.5 Resource deadlocks ***
 Just as threads can deadlock when they are each waiting for a lock that the other holds and will not release, they can also deadlock when waiting for resources.
 
+Say you have two pooled resources, such as connection pools for two different databases. Resource pools are usually implemented with semaphores (see Section 5.5.3) to facilitate blocking when the pool is empty. If a task requires connections to both databases and the two resources are not always requested in the same order...:
 Также если локи к разным ДБ будут получаться разными потоками в разном порядке.. будет дэдлок.
 Чем больше пул - тем меньше вероятность, что это произойдёт.
 (The larger the pools are, the less likely this is to occur; if each pool has N connections, deadlock requires N sets of cyclically waiting threads and a lot of unlucky timing.)
 
-Another form of resource-based deadlock is thread-starvation deadlock.
-Например, task that submits a task and waits for its result executes(в одном и том же потоке) in a single-threaded Executor. The first task will wait forever, permanently stalling that task and all others waiting to execute in that Executor.
-Tasks that wait for the results of other tasks are the primary source of thread-starvation deadlock; bounded pools and interdependent tasks do not mix well.
+Another form of resource-based deadlock is THREAD-STARVATION DEADLOCK.
+Например, task that submits a task and waits for its result (в одном и том же потоке) executes in a single-threaded Executor. The first task will wait forever, permanently stalling that task and all others waiting to execute in that Executor.
+!!! Tasks that wait for the results of other tasks are the primary source of thread-starvation deadlock; BOUNDED POOLS AND INTERDEPENDENT TASKS DO NOT MIX WELL.
 
 *** 10.2 Avoiding and diagnosing deadlocks ***
 A program that never acquires more than one lock at a time cannot experience lock-ordering deadlock.
- If you must acquire multiple locks, lock ordering must be a part of your design: try to minimize the number of potential locking interactions, and follow and document a lock-ordering protocol for locks that may be acquired together.
+If you must acquire multiple locks, LOCK ORDERING MUST BE A PART OF YOUR DESIGN: 
+try to minimize the number of potential locking interactions, and follow and document a lock-ordering protocol for locks that may be acquired together.
 
-Чтобы происнспектировать хороший прогу на дэдлоки используйте
-two-part strategy: 
-1) first, identify where multiple locks could be acquired (try to make this a small set), 
-2) and then perform a global analysis of all such instances(всех этих локов) to ensure that lock ordering is consistent across your entire program. 
+In programs that use fine-grained locking, audit your code for deadlock freedom
+(Чтобы проинспектировать хорошую прогу на дэдлоки используйте )
+two-part strategy:
+1) identify where multiple locks could be acquired (try to make this a small set), 
+2) then perform a global analysis of all such instances(всех этих локов) to ensure that lock ordering is consistent across your entire program. 
 
 Using open calls wherever possible simplifies this analysis substantially. Т.к. при опен коле сокращается кол-во пересекающихся вызовов.
 With no non-open calls, finding instances where multiple locks are acquired is fairly easy, either by code review or by automated bytecode or source code analysis.
@@ -91,35 +140,42 @@ With no non-open calls, finding instances where multiple locks are acquired is f
 *** 10.2.1 Timed lock attempts ***
 Another technique for detecting and recovering from deadlocks is to use the timed tryLock() feature of the explicit Lock classes (see Chapter 13) instead of intrinsic locking.
 Тогда By using a timeout that is much longer than you expect acquiring the lock to take, you can regain control when something unexpected happens. 
-When a timed lock attempt fails, you do not necessarily know why.
-Но по крайней мере можете зарегистрировать что ошибка произошла и т.п.
+(вы можете восстановить контроль, когда происходит нечто неожиданное.)
+
+When a timed lock attempt fails, you do not necessarily know why:
+Maybe there was a deadlock; maybe a thread erroneously entered an infinite loop while
+holding that lock; or maybe some activity is just running a lot slower than you expected. 
+Still, at least you have the opportunity to record that your attempt failed, log any useful information about what you were trying to do, and restart the computation somewhat more gracefully than killing the entire process.
 
 Using timed lock acquisition to acquire multiple locks can be effective against deadlock even when timed locking is not used consistently throughout the program. Если ты не везде их используешь, а хотя бы в половине случаев - то это тоже тебе поможет.
-If a lock acquisition times out, you can release the locks, back off and wait for a while, and try again, possibly clearing the deadlock condition and allowing the program to recover. (This technique works only when the two locks are acquired together; if multiple locks are acquired due to the nesting of method calls, you cannot just release the outer lock, even if you know you hold it.)
+If a lock acquisition times out, you can release the locks, back off and wait for a while, and try again, possibly clearing the deadlock condition and allowing the program to recover. 
+(This technique works only when the two locks are acquired together; if multiple locks are acquired due to the nesting of method calls, you cannot just release the outer lock, even if you know you hold it.)
 
 *** 10.2.2 Deadlock analysis with thread dumps ***
 While preventing deadlocks is mostly your problem, the JVM can help identify them when they do happen using thread dumps. 
-A thread dump includes a stack trace for each running thread, similar to the stack trace that accompanies an exception. 
+A THREAD DUMP includes a STACK TRACE for each running thread, similar to the stack trace that accompanies an exception. 
 Thread dumps also include locking information, such as which locks are held by each thread, in which stack frame they were acquired, and which lock a blocked thread is waiting to acquire.
 
-To trigger a thread dump, you can send the JVM process a SIGQUIT signal (kill -3) on Unix platforms, or press the Ctrl-\ key on Unix or Ctrl -Break on Windows platforms. Many IDEs can request a thread dump as well.
+To trigger a thread dump, you can send the JVM process a SIGQUIT signal (kill -3) on Unix platforms, or press the Ctrl-\ key on Unix or Ctrl-Break on Windows platforms. Many IDEs can request a thread dump as well.
 
-*** 10.3    Other liveness hazards ***
-starvation, missed signals, and livelock
+*** 10.3    Other liveness hazards *** Жизнеспособность ** starvation, missed signals, livelock
+
 *10.3.1 Starvation*
-Starvation occurs when a thread is perpetually denied access to resources it needs in order to make progress;
+Starvation occurs when a thread is perpetually(постоянно, бесконечно) denied access to resources it needs in order to make progress;
 Starvation - случается когда потоку бесконечно отказывают в доступе к ресурсам, в которых он нуждается, чтобы продолжать свою работу далее.
 Например, поток не может получить доступ к CPU cycles, 
- или при владении локом у потока будет выполнение бесконечных конструкций (infinite loops or resource waits that do not terminate), тогда другие потоки которым нужен этот же лок - никогда его не получат.
+Starvation in Java applications can be caused by inappropriate use of thread priorities. 
+It can also be caused by executing nonterminating constructs (infinite loops or resource waits that do not terminate) with a lock held, since other threads that need that lock will never be able to acquire it.
+(другие потоки которым нужен этот же лок - никогда его не получат)
 
 Thread API defines 10 priority levels that the JVM can map to operating system scheduling priorities as it sees fit. Но они могут не совпадать, и ОС сама выберет как эти приоритеты замапить.
 This mapping is platform-specific.
-In most Java applications, all application threads have the same priority, Thread. NORM_PRIORITY.
-it's not always obvious what effect changing priorities will have.
+In most Java applications, all application threads have the same priority, Thread.NORM_PRIORITY.
+it's not always obvious what effect _changing priorities_ will have.
 It is generally wise to resist the temptation to tweak thread priorities.
 Т.е. если вы начнёте start modifying priorities, the behavior of your application becomes platform-specific and you introduce the risk of starvation.
 
-!!! Avoid the temptation to use thread priorities, since they increase platform dependence and can cause liveness problems. Most concurrent applications can use the default priority for all threads.
+!!! Avoid the temptation to use thread priorities, since they increase platform dependence and can cause liveness problems (проблемы жизнеспособности). Most concurrent applications can use the default priority for all threads.
 
 * 10.3.2    Poor responsiveness *
 One step removed from starvation is poor responsiveness.
@@ -129,14 +185,24 @@ Poor responsiveness can also be caused by poor lock management. If a thread hold
 
 * 10.3.3    Livelock *
 Livelock is a form of liveness failure in which a thread, while not blocked, still cannot make progress because it keeps retrying an operation that will always fail. 
+Когда поток работает, а не заблокирован, но он всё равно не может сделать прогресс, он пытается - но всегда неудачно, фэйлится.
 Livelock often occurs in transactional messaging applications: когда в транзакции проблема и она всегда выдаёт ошибку и не может завершится.
-поэтому она откатывается, и ставится в конец очереди, чтобы попробовать снова, но результ будет тот же.
+поэтому она откатывается, и ставится в конец/начала очереди, чтобы попробовать снова, но результат будет тот же.
+Since the message is now back at the head of the queue, the handler is called over and over with the same result.
+
 (This is sometimes called the POISON MESSAGE PROBLEM.)
 если не зависим от состояния - то глючное сообщение можно просто удалить после неудачной попытки его выполнить.
+The message handling thread is not blocked, but it will never make progress either. 
 This form of livelock often comes from overeager(страстно желающий) error-recovery code that mistakenly treats an unrecoverable error as a recoverable one.
+Решение: удалить эту проблемное сообщение из обработки или придумать как перестать повторять его обработку.
 
 Livelock can also occur when multiple cooperating threads change their state in response to the others in such a way that no thread can ever make progress.
-This is similar to what happens when two overly polite people are walking in opposite directions in a hallway..
+This is similar to what happens when two overly polite people решают пропустить друг друга - и всегда уступают в одну сторону.
 
-The solution for this variety of livelock is to introduce some randomness into the retry mechanism.
+The SOLUTION for this variety of livelock is to INTRODUCE SOME RANDOMNESS INTO THE RETRY MECHANISM.
 
+(The ethernet protocol also includes exponential backoff after repeated collisions, reducing both congestion and the risk of repeated failure with multiple colliding stations.) Retrying with random waits and backoffs can be equally effective for avoiding livelock in concurrent applications.
+
+Summary
+Liveness failures are a serious problem because there is no way to recover from them short of aborting the application. The most common form of liveness failure is lock-ordering deadlock. Avoiding lock ordering deadlock starts at design time: ensure that when threads acquire multiple locks, they do so in a consistent order. The best way to do this is by using open calls throughout your program. This greatly reduces the number of places where multiple locks are held at once, and makes it more obvious where those places are.
+    
