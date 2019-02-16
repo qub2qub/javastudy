@@ -191,13 +191,13 @@ Synchronization by one thread can also affect the performance of other threads. 
 UNCONTENDED synchronization can be handled entirely within the JVM.
 CONTENDED synchronization may require OS activity, which adds to the cost. 
 When locking is contended, the losing thread(s) must block. 
+[когда есть соревнование за лок, то проигравший поток заблокируется]
+
 The JVM can implement blocking either  
 1) via SPIN-WAITING (repeatedly trying to acquire the lock until it succeeds) or 
 2) by SUSPENDING THE BLOCKED THREAD through the operating system. 
-
 Which is more efficient depends on 
-1) the relationship between [context switch overhead] and 
-2) the time until the lock becomes available; 
+the relationship between [context switch overhead] and [the time until the lock becomes available]; 
 
 1) spin-waiting is preferable for short waits and 
 2) suspension is preferable for long waits. 
@@ -209,153 +209,191 @@ Suspending a thread because it could not get a lock, or because it blocked on a 
 2) and is then switched back in later after the lock or other resource becomes available. 
 (Blocking due to lock contention also has a cost for the thread holding the lock: when it releases the lock, it must then ask the OS to resume the blocked thread.)
 
-**11.4 Reducing lock contention**
-We've seen that serialization hurts scalability and that context switches hurt performance. Contended locking causes both, so reducing lock contention can improve both performance and scalability.
+**11.4 Reducing lock contention** (3 способа) Уменьшение конкуренции блокировок
+We've seen that serialization hurts scalability and that context switches hurt performance. CONTENDED LOCKING CAUSES BOTH, so reducing lock contention can improve both performance and scalability.
+[соревнование за лок влечёт оба последствия: уменьшает масштабируемость и ухудшает производительность]
 
-Access to resources guarded by an exclusive lock is serialized — only one thread at a time may access it.
+Access to resources guarded by an exclusive lock is serialized — only one thread at a time may access it. (монопольная блокировка, эксклюзивная блокировка)
 Persistent contention for a lock limits scalability.
 
 !! Главная угроза масштабируемости в многопоточном приложении -- это  exclusive resource lock.
+The principal threat to scalability in concurrent applications is the exclusive resource lock.
 
 Two factors influence the likelihood of contention for a lock: 
 1) how often that lock is requested and 
 2) how long it is held once acquired.
 
 This is a corollary( [kəˈrɔlərɪ] следствие) of Little's law, a result from queueing theory that says "the average number of customers in a stable system is equal to their average arrival rate multiplied by their average time in the system".
-среднее кол-во юзеров в системе == среднее время прибытия * на среднее время обработки
+[среднее кол-во юзеров в системе == среднее время прибытия * на среднее время обработки]
 
 There are three ways to reduce lock contention:
 1) Reduce the duration for which locks are held;
-2) Reduce the frequency with which locks are requested; or
+2) Reduce the frequency with which locks are requested;
 3) Replace exclusive locks with coordination mechanisms that permit greater concurrency.
 
 **11.4.1 Narrowing lock scope ("Get in, get out")** стр 233 половина этой главы
+*** Reduce the duration for which locks are held ***
 
-An effective way to reduce the likelihood of contention is to hold locks as briefly as possible. This can be done by moving code that doesn't require the lock out of synchronized blocks, especially for expensive operations and potentially blocking operations such as I/O.
+An effective way to reduce the likelihood of contention is to HOLD LOCKS AS BRIEFLY AS POSSIBLE. This can be done by moving code that doesn't require the lock out of synchronized blocks, especially for expensive operations and potentially blocking operations such as I/O.
 
-Нет нужды синхронизировать expressions которые do not access shared state.
+It is easy to see how holding a "hot" lock for too long can limit scalability; we saw an example of this in SynchronizedFactorizer in Chapter 2. If an operation holds a lock for 2 milliseconds and every operation requires that lock, throughput can be no greater than 500 operations per second, no matter how many processors are available. Reducing the time the lock is held to 1 millisecond improves the lock-induced throughput limit to 1000 operations per second.
+
+Нет нужды синхронизировать expressions, которые do not access shared state.
 By Amdahl's law, this removes an impediment( помеха, препятствие, задержка) to scalability because the amount of serialized code is reduced.
 
-Because AttributeStore has only one state variable, attributes, we can improve it further by the technique of delegating thread safety (Section 4.3). By replacing attributes with a thread-safe Map.
-This eliminates the need for explicit synchronization in AttributeStore, reduces the lock scope to the duration of the Map access, and removes the risk that a future maintainer will undermine thread safety by forgetting to acquire the appropriate lock before accessing attributes.
+Because AttributeStore has only one state variable,_attributes_, we can improve it further by the technique of delegating thread safety (Section 4.3). By replacing attributes with a thread-safe Map (ConcurrentHashMap).
+AttributeStore can delegate all its thread safety obligations to the underlying thread-safe collection. This eliminates the need for explicit synchronization in AttributeStore, reduces the lock scope to the duration of the Map access, and removes the risk that a future maintainer will undermine thread safety by forgetting to acquire the appropriate lock before accessing attributes.
 
-operations that need to be atomic must be contained in a single synchronized block. 
+While shrinking synchronized blocks can improve scalability, a synchronized block can be too small — operations that need to be atomic (such updating multiple variables that participate in an invariant) must be contained in a single synchronized block. 
 And because the cost of synchronization is nonzero, breaking one synchronized block into multiple synchronized blocks (correctness permitting) at some point becomes counterproductive in terms of performance.
-Компилято всё равно может объединить их в 1.
-МОжет быть лучше взять разные объекты для лока.
+Компилятор всё равно может объединить их в 1. Поэтому, может быть, лучше взять разные объекты для лока/блокировки.
+The ideal balance is of course platform-dependent, but in practice it makes sense to worry about the size of a synchronized block only when you can move "substantial" computation or blocking operations out of it.
 
 **11.4.2 Reducing lock granularity(степень разбиения, модульность)**
+*** Reduce the frequency with which locks are requested ***
+
 granularity -- модульность, глубина [степень] детализации, крупность разбиения (напр., программы на модули),  уровень модульности (системы), степень дробления программы
 
-The other way to reduce the fraction of time that a lock is held (and therefore the likelihood that it will be contended) is to have threads ask for it LESS OFTEN. 
+The other way to reduce the fraction of time (доля времени) that a lock is held (and therefore the likelihood that it will be contended) is to have threads ask for it LESS OFTEN. 
 This can be accomplished by LOCK SPLITTING and LOCK STRIPING, 
-which involve using SEPARATE LOCKS TO GUARD MULTIPLE INDEPENDENT STATE variables previously guarded by a single lock. 
-These techniques reduce the granularity at which locking occurs, potentially allowing greater scalability—but using more locks also increases the risk of deadlock.
+which involve using SEPARATE LOCKS TO GUARD MULTIPLE INDEPENDENT STATE VARIABLES previously guarded by a single lock. 
+These techniques reduce the granularity at which locking occurs, potentially allowing greater scalability — but using more locks also increases the risk of deadlock.
 
 If a lock guards more than one independent state variable, you may be able to improve scalability by splitting it into multiple locks that each guard different variables. This results in each lock being requested less often.
 
-**11.4.3    Lock striping**
+(см ServerStatus.java)
+1) Splitting a heavily contended lock into two is likely to result in two heavily contended locks.
+2) Splitting a lock into two offers the greatest possibility for improvement when the lock is experiencing MODERATE BUT NOT HEAVY CONTENTION. 
+3) Splitting locks that are experiencing LITTLE CONTENTION yields little net improvement in performance or throughput, although it might increase the load threshold (порог нагрузки) at which performance starts to degrade due to contention. (конкуренция, соревнование, состязание)
+4) Splitting locks experiencing moderate contention might actually turn them into mostly uncontended locks, which is the most desirable outcome for both performance and scalability.
+
+**11.4.3    Lock striping** (чередование блокировок, или полоски/зоны блокировок)
+
 Splitting a heavily contended lock into two is likely to result in two heavily contended locks. While this will produce a small scalability improvement by enabling two threads to execute concurrently instead of one, it still does not dramatically improve prospects for concurrency on a system with many processors. The lock splitting example in the ServerStatus classes does not offer any obvious opportunity for splitting the locks further.
 
-Lock splitting can sometimes be extended to partition locking on a variablesized set(набор с изменяемым размером) of independent objects, in which case it is called LOCK STRIPING.
+Lock splitting can sometimes be extended to partition locking on a variable-sized set(набор с изменяемым размером) of independent objects, in which case it is called LOCK STRIPING.
 
 В ConcurrentHashMap ис-ся массив из 16 locks, каждый из которых охраняет 1/16 (одну шестнадцатую) всех бакетов. (bucket N is guarded by lock N mod 16)
+Assuming the hash function provides reasonable spreading characteristics and keys are accessed uniformly(равномерно), this should reduce the demand for any given lock by approximately a factor of 16. It is this technique that enables ConcurrentHashMap to support up to 16 concurrent writers. (The number of locks could be increased to provide even better concurrency under heavy access on high-processor-count systems, but the number of stripes should be increased beyond the default of 16 only when you have evidence that concurrent writers are generating enough contention to warrant raising the limit.)
 
 One of the downsides of lock striping is that locking the collection for exclusive access is more difficult and costly than with a single lock. 
-Т.е. когда надо залочить ВСЮ коллекцию ЦЕЛИКОМ. (например когда надо сделать рехэш)
 Usually an operation can be performed by acquiring at most one lock, but occasionally you need to lock the entire collection.
+Т.е. когда надо залочить ВСЮ коллекцию ЦЕЛИКОМ. (например когда надо сделать рехэш)
+when ConcurrentHashMap needs to expand the map and rehash the values into a larger set of buckets. This is typically done by ACQUIRING ALL OF THE LOCKS IN THE STRIPE SET.
 И есть только единственный способ это сделать:
-The only way to acquire an arbitrary set of intrinsic locks is via recursion.
---Some methods may need to acquire all the locks but, as in the implementation for clear(), may not need to acquire them all simultaneously.
+The only way to acquire an arbitrary set of intrinsic locks is via RECURSION.
 
-**11.4.4    Avoiding hot fields**
+(см StripedMap.java)
+There are N_LOCKS locks, each guarding a subset of the buckets. Most methods, like get, need acquire only a single bucket lock. Some methods may need to acquire all the locks but, as in the implementation for clear(), may not need to acquire them all simultaneously.
+[Clearing the Map in this way is not atomic, so there is not necessarily a time when the 'StripedMap' is actually empty if other threads are concurrently adding elements; making the operation atomic would require acquiring all the locks at once. 
+However, for concurrent collections that clients typically cannot lock for exclusive access, the result of methods like size() or isEmpty() may be out of date by the time they return anyway, so this behavior, while perhaps somewhat surprising, is usually acceptable.]
+
+**11.4.4    Avoiding hot fields** избегай горячих полей
 Lock splitting and lock striping can improve scalability because they enable different threads to operate on different data (or different portions of the same data structure) without interfering with each other. 
 A program that would benefit from lock splitting necessarily exhibits contention for a lock more often than for the data guarded by that lock.
-(Программа выиграет от разбаения лока в том случае, когда у неё в текущем состоянии больше времени тратиться чтобы посоревноваться за получение лока, чем время на получение реальных данных.)
+(Если программа выигрывает от разбиения лока, то это показывает, что у неё больше времени тратиться на соревнования за получение лока, чем на получение реальных данных охраняемых этим локом.)
+If a lock guards two independent variables X and Y, and thread A wants to access X while B wants to access Y (as would be the case if one thread called addUser while another called addQuery in ServerStatus), then the two threads are not contending for any data, even though they are contending for a lock.
 
-Lock granularity cannot be reduced when there are VARIABLES that are REQUIRED FOR EVERY OPERATION. 
-This is yet another area where raw performance and scalability are often at odds with each other; 
-common optimizations such as caching frequently computed values can introduce "hot fields" that limit scalability.
+Lock granularity cannot be reduced when there are VARIABLES that are REQUIRED FOR EVERY OPERATION. This is yet another area where raw performance and scalability are often at odds with each other; common optimizations such as caching frequently computed values can introduce "hot fields" that limit scalability.
 
-Keeping a separate count to speed up operations like size() and isEmpty() works fine for a single-threaded or fully synchronized implementation, but makes it much harder to improve the scalability of the implementation because every operation that modifies the map must now update the shared counter.
+Keeping a separate count to speed up operations like size() and isEmpty() works fine for a single-threaded or fully synchronized implementation, but makes it much harder to improve the scalability of the implementation because every operation that modifies the map must now update the shared counter, который сейчас будет "HOT FIELD".
+Even if you use lock striping for the hash chains, synchronizing access to the counter reintroduces the scalability problems of exclusive locking. What looked like a performance optimization—caching the results of the size operation—has turned into a scalability liability. 
+In this case, the counter is called a HOT FIELD because every mutative operation needs to access it.
 
---synchronizing access to the counter reintroduces the scalability problems of exclusive locking.
---the COUNTER is called a HOT FIELD because every mutative operation needs to access it.
-
-Для ConcurrentHashMap кол-во элементов считается для каждой stripe(лента, полоса)
-
-Если запросов к size() больше, чем операций по изменению коллекции, то можно кэшировать размер в volatile переменной. А при любом изменении писать в неё -1.
-При получении значения проверять, если там -1 -- значит надо заново пересчитать все элементы и сохранить значение, если там >0 -- то можно вернуть значение.
+Для ConcurrentHashMap кол-во элементов считается для каждой stripe(полоса, зона)
+ConcurrentHashMap avoids this problem by having size enumerate the stripes and add up the number of elements in each stripe, instead of maintaining a global count. To avoid enumerating every element, ConcurrentHashMap maintains a separate count field for each stripe, also guarded by the stripe lock.
+>> Если запросов к size() больше, чем операций по изменению коллекции, то можно кэшировать размер в volatile переменной. А при любом изменении писать в неё -1.
+При получении значения проверять, если там -1 -- значит надо заново пересчитать все элементы и сохранить значение, если там >0 -- то просто вернуть это значение.
 
 **11.4.5 Alternatives to exclusive locks**
+*** Replace exclusive locks with coordination mechanisms that permit greater concurrency ***
+
 A third technique for mitigating the effect of lock contention is to forego the use of exclusive locks in favor of a more concurrency-friendly means of managing shared state. 
 
 These include using the concurrent collections, read-write locks, immutable objects and atomic variables.
 
-1) ReadWriteLock can offer greater concurrency than exclusive locking; 
-2) for read-only data structures, immutability can eliminate the need for locking entirely.
+ReadWriteLock (see Chapter 13) enforces a multiple-reader, single-writer locking discipline: more than one reader can access the shared resource concurrently so long as none of them wants to modify it, but writers must acquire the lock excusively. 
+For read-mostly data structures, ReadWriteLock can offer greater concurrency than exclusive locking; for read-only data structures, immutability can eliminate the need for locking entirely.
 
 Atomic variables (see Chapter 15) offer a means of reducing the cost of updating "hot fields" such as statistics counters, sequence generators, or the reference to the first node in a linked data structure. 
---Changing your algorithm to have fewer hot fields might improve scalability even more — atomic variables reduce the cost of updating hot fields, but they don't eliminate it.
+The atomic variable classes provide very fine-grained (and therefore more scalable) atomic operations on integers or object references, and are implemented using LOW-LEVEL CONCURRENCY PRIMITIVES (such as compare-and-swap) provided by most modern processors. 
+If your class has a small number of hot fields that do not participate in invariants with other variables, replacing them with atomic variables may improve scalability. (Changing your algorithm to have fewer hot fields might improve scalability even more — atomic variables reduce the cost of updating hot fields, but they don't eliminate it.)
 
 **11.4.6 Monitoring CPU utilization**
 When testing for scalability, the goal is usually to keep the processors fully utilized. 
 Tools like VMSTAT and MPSTAT on Unix systems or PERFMON on Windows systems can tell you just how "hot" the processors are running.
 
- Asymmetric utilization indicates that most of the computation is going on in a small set of threads, and your application will not be able to take advantage of additional processors.
+If the CPUs are asymmetrically utilized (some CPUs are running hot but others are not) your first goal should be to find increased parallelism in your program (найти то что можно запараллелить). Asymmetric utilization indicates that most of the computation is going on in a small set of threads, and your application will not be able to take advantage of additional processors.
 
 4 Причины, почему проц не загружен полностью:
 1) Insufficent load.
-Generating enough load to saturate an application can require substantial computer power; the problem may be that the client systems, not the system being tested, are running at capacity.
+Generating enough load to saturate(насыщать, наполнять) an application can require substantial computer power; the problem may be that the client systems, not the system being tested, are running at capacity.
 
 2) I/O-bound.
 Проверь, может application is disk-bound using iostat or perfmon, and whether it is bandwidth-limited by monitoring traffic levels on your network.
 
 3) Externally bound.
-If your application depends on external services such as a database or web service, the bottleneck may not be in your code.
+If your application depends on external services such as a database or web service, the bottleneck may NOT be in your code.
 You can test for this by using a profiler or database administration tools to determine how much time is being spent waiting for answers from the external service.
 
 4) Lock contention. 
-Profiling tools can tell you how much lock contention your application is experiencing and which locks are "hot". You can often get the same information without a profiler through random sampling, triggering a few thread dumps and looking for threads contending for locks. 
+Profiling tools can tell you how much lock contention your application is experiencing and which locks are "hot". 
+You can often get the same information without a profiler through RANDOM SAMPLING, triggering a few thread dumps and looking for threads contending for locks. 
+If a thread is blocked waiting for a lock, the appropriate stack frame in the thread dump indicates "waiting to lock monitor ..." Locks that are mostly uncontended rarely show up in a thread dump; a heavily contended lock will almost always have at least one thread waiting to acquire it and so will frequently appear in thread dumps.
 
-A program with only four threads may be able to keep a 4-way system fully utilized, but is unlikely to see a performance boost if moved to an 8-way system since there would need to be waiting runnable threads to take advantage of the additional processors.
+If your application is keeping the CPUs sufficiently hot, you can use MONITORING TOOLS to infer whether it would benefit from additional CPUs. 
+A program with only four threads may be able to keep a 4-way system fully utilized, but is unlikely to see a performance boost if moved to an 8-way system since there would need to be waiting runnable threads to take advantage of the additional processors. 
+(You may also be able to reconfigure the program to divide its workload over more threads, such as adjusting a thread pool size.) One of the columns reported by vmstat is the number of threads that are runnable but not currently running because a CPU is not available; 
 
 if CPU utilization is high and there are always runnable threads waiting for a CPU, your application would probably benefit from more processors.
 
-**11.4.7 Just say no to object pooling**
+**11.4.7 Just say no to object pooling** не переиспользуй объекты, создавай новый.
+Теперь в JVM object allocation and garbage collection достаточно быстрые.
+
 To work around "slow" object lifecycles, many developers turned to object pooling, where objects are recycled instead of being garbage collected and allocated anew when needed. 
-Но при этом всё равно есть performance loss for all but the most expensive objects (and a serious loss for light- and medium-weight objects) in single-threaded programs.
+Even taking into account its reduced garbage collection overhead, object pooling has been shown to be a performance loss FOR ALL BUT the most expensive objects (and a serious loss for light- and medium-weight objects) in single-threaded programs.
 
 In concurrent applications, pooling fares even worse.
-Because blocking a thread due to lock contention is hundreds of times more expensive than an allocation, even a small amount of pool-induced contention would be a scalability bottleneck. (Even an uncontended synchronization is usually more expensive than allocating an object.) 
-
-Pooling has its uses, but is of limited utility as a performance optimization.
+When threads allocate new objects, very little inter-thread coordination is required, as allocators typically use thread-local allocation blocks to eliminate most synchronization on heap data structures. 
+But if those threads instead request an object from a pool, some synchronization is necessary to coordinate access to the pool data structure, creating the possibility that a thread will block. Because blocking a thread due to lock contention is hundreds of times more expensive than an allocation, even a small amount of pool-induced contention would be a scalability bottleneck. (Even an uncontended synchronization is usually more expensive than allocating an object.) This is yet another technique intended as a performance optimization but that turned into a scalability hazard. Pooling has its uses, but is of limited utility as a performance optimization.
 
 !!! Allocating objects is usually cheaper than synchronizing.
 
 **11.5 Example: Comparing Map performance**
 The single-threaded performance of ConcurrentHashMap is slightly better than that of a synchronized HashMap, but it is in concurrent use that it really shines. 
-The implementation of ConcurrentHashMap assumes the most common operation is retrieving a value that already exists, and is therefore optimized to provide highest performance and concurrency for successful get operations.
+The implementation of ConcurrentHashMap assumes the most common operation is retrieving a value that already exists, and is therefore optimized to provide highest performance and concurrency for successful 'get' operations.
 
 ConcurrentHashMap does no locking for most successful read operations, and uses lock striping for write operations and those few read operations that do require locking.
+
+The data for ConcurrentHashMap and ConcurrentSkipListMap shows that they scale well to large numbers of threads; throughput continues to improve as threads are added. While the numbers of threads in Figure 11.3 may not seem large, this test program generates more contention per thread than a typical application because it does little other than pound on the Map; a real program would do additional thread-local work in each iteration.
+
+Performance for the one-thread case is comparable to ConcurrentHashMap, but once the load transitions from mostly uncontended to mostly contended — which happens here at two threads—the synchronized collections suffer badly. This is common behavior for code whose scalability is limited by lock contention.
 
 So long as contention is low, time per operation is dominated by the time to actually do the work and throughput may improve as threads are added. 
 Once contention becomes significant, time per operation is dominated by context switch and scheduling delays, and adding more threads has little effect on throughput.
 
 *** 11.6 Reducing context switch overhead ***
-Many tasks involve operations that may block; 
-transitioning between the running and blocked states entails(влечь за собой, вызывать) a context switch. 
-One source of blocking in server applications is generating log messages in the course of processing requests;
+Many tasks involve operations that may block; transitioning between the running and blocked states entails(влечь за собой, вызывать) a context switch.
+One source of blocking in server applications is generating log messages in the course of processing requests; to illustrate how throughput can be improved by reducing context switches, we'll analyze the scheduling behavior of two logging approaches.
 
 Есть 2 подхода:
-1) просто выводить в system.out сразу
-2) выделить отдельный поток для логирования.
+1) просто выводить в system.out сразу (Most logging frameworks are thin wrappers around println; when you have something to log, just write it out right then and there.)
+2) выделить отдельный поток для логирования. (the logging is performed in a dedicated background thread instead of by the requesting thread.)
 
-there may be a difference in performance, depending on the volume of logging activity, how many threads are doing logging, and other factors such as the cost of context switching.
+From the developer's perspective, both approaches are roughly equivalent. But there may be a difference in performance, depending on the volume of logging activity, how many threads are doing logging, and other factors such as the cost of context switching. >>
+>> Building a logger that moves the I/O to another thread may improve performance, but it also introduces a number of design complications, such as 
+1) interruption (what happens if a thread blocked in a logging operation is interrupted?), 
+2) service guarantees (does the logger guarantee that a successfully queued log message will be logged prior to service shutdown?), 
+3) saturation policy (what happens when the producers log messages faster than the logger thread can handle them?), 
+4) and service lifecycle (how do we shut down the logger, and how do we communicate the service state to producers?).
 
-The "get in, get out" principle of Section 11.4.1 tells us that we should hold locks as briefly as possible, because the longer a lock is held, the more likely that lock will be contended.
+The service time for a logging operation includes whatever computation is associated with the I/O stream classes; if the I/O operation blocks, it also includes the duration for which the thread is blocked. The operating system will deschedule the blocked thread until the I/O completes, and probably a little longer. When the I/O completes, other threads are probably active and will be allowed to finish out their scheduling quanta, and threads may already be waiting ahead of us on the scheduling queue—further adding to service time. Alternatively, if multiple threads are logging simultaneously, there may be contention for the output stream lock, in which case the result is the same as with blocking I/O—the thread blocks waiting for the lock and gets switched out. Inline logging involves I/O and locking, which can lead to increased context switching and therefore increased service times.
 
-Concurrent systems perform much better when most lock acquisitions are uncontended, because contended lock acquisition means more context switches.
+Increasing request service time is undesirable for several reasons. 
+First, service time affects quality of service: longer service times mean someone is waiting longer for a result. 
+But more significantly, longer service times in this case mean more lock contention.
+The "get in, get out" principle of Section 11.4.1 tells us that we should hold locks as briefly as possible, because the longer a lock is held, the more likely that lock will be contended. If a thread blocks waiting for I/O while holding a lock, another thread is more likely to want the lock while the first thread is holding it. 
+Concurrent systems perform much better when most lock acquisitions are uncontended, because contended lock acquisition means more context switches. A coding style that encourages more context switches thus yields lower overall throughput.
 
 КОРОЧЕ, ВЫГОДНО ПЕРЕВЕСТИ ЛОГИНГ В !> ОДИН <! ОТДЕЛЬНЫЙ ПОТОК.
 Moving the I/O out of the request-processing thread is likely to shorten the mean service time for request processing. Threads calling log no longer block waiting for the output stream lock or for I/O to complete; they need only queue the message and can then return to their task.
@@ -365,15 +403,15 @@ On the other hand, we've introduced the possibility of contention for the messag
 Because the request thread is now less likely to block, it is less likely to be context-switched out in the middle of a request. 
 What we've done is turned a complicated and uncertain code path [involving I/O and possible lock contention] into a straight-line code path.
 
-To some extent, we are just moving the work around, moving the I/O to a thread where its cost isn't perceived by the user (which may in itself be a win). 
+To some extent, we are just moving the work around, moving the I/O to a thread where its cost isn't perceived [не виден/не воспринимается] by the user (which may in itself be a win). 
 But by moving all the logging I/O to a single thread, we also eliminate the chance of contention for the output stream and thus eliminate a source of blocking. This improves overall throughput because fewer resources are consumed in scheduling, context switching, and lock management.
 
 Moving the I/O from many request-processing threads to a single logger thread is similar to the difference between a bucket brigade and a collection of individuals fighting a fire.
 
 ** Summary **
 Because one of the most common reasons to use threads is to exploit multiple processors, in discussing the performance of concurrent applications, we are usually more concerned with THROUGHPUT OR SCALABILITY than we are with raw service time. 
+Amdahl's law tells us that the scalability of an application is driven by the proportion of code that must be executed serially. 
+Since the primary source of serialization in Java programs is the exclusive resource lock, scalability can often be improved by spending less time holding locks, either by reducing lock granularity, reducing the duration for which locks are held, or replacing exclusive locks with nonexclusive or nonblocking alternatives.
 
 Amdahl's law .. закон, гласящий, что :
 ускорение вычислений (повышение производительности), которое может быть достигнуто путём распределения (распараллеливания) операций программы между p процессорами, не может превысить 1/(f + (1 - f)/p), где f - доля работы программы, выполняемая в последовательном режиме (code that must be executed serially).
-
-Since the primary source of serialization in Java programs is the exclusive resource lock, scalability can often be improved by spending less time holding locks, either by reducing lock granularity, reducing the duration for which locks are held, or replacing exclusive locks with nonexclusive or nonblocking alternatives.

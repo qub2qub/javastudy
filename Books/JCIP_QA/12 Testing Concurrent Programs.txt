@@ -1,11 +1,13 @@
 12 Testing Concurrent Programs (247-274=27)
+Concurrent programs employ similar design principles and patterns to sequential programs. The difference is that concurrent programs have a degree of nondeterminism that sequential programs do not, increasing the number of potential interactions and failure modes that must be planned for and analyzed.
 
-The same techniques for testing correctness and performance in sequential programs can be applied to concurrent programs, but with concurrent programs the space of things that can go wrong is much larger.
+The same techniques for testing correctness and performance in sequential programs can be applied to concurrent programs, but with concurrent programs the space of things that can go wrong is much larger: potential failures may be rare probabalistic occurrences rather than deterministic ones; tests that disclose such failures must be more extensive and run for longer than typical sequential tests.
 
-Most tests of concurrent classes fall into one or both of the classic categories of safety and liveness (живучесть (свойство системы)). 
-In Chapter 1, we defined 
-safety as "nothing bad ever happens" 
-and liveness as "something good eventually happens". (в конечном счёте, в итоге, в конце концов).
+Most tests of concurrent classes fall into one or both of the classic categories of safety and liveness (живучесть/жизнеспособность (свойство системы)). 
+-- SAFETY as "nothing bad ever happens" and 
+-- LIVENESS as "something good eventually happens". (в конечном счёте, в итоге, в конце концов).
+
+Unfortunately, test code can introduce timing or synchronization artifacts that can mask bugs that might otherwise manifest themselves.
 Bugs that disappear when you add debugging or test code are playfully called Heisenbugs.
 
 1) Tests of safety, which verify that a class's behavior conforms to its specification, usually take the form of testing invariants.
@@ -14,26 +16,25 @@ Bugs that disappear when you add debugging or test code are playfully called Hei
 
 3) Performance tests. 
 Performance can be measured in a number of ways, including:
---THROUGHPUT: the rate at which a set of concurrent tasks is completed;
---RESPONSIVENESS: the delay between a request for[some action] and completion of some action (also called latency); or
+--THROUGHPUT: the rate at which a set of concurrent tasks is completed; скорость обработки/вычислений
+--RESPONSIVENESS: the delay between a request for[some action] and completion of some action (also called latency /клиент простаивает); время ожидания
 --SCALABILITY: the improvement in throughput (or lack thereof) as more resources (usually CPUs) are made available.
 
-*** 12.1 Testing for correctness ***
-Тесты начинаются с identifying invariants and postconditions that are amenable[ə`mi:nəb(ə)l] (поддающийся; подверженный; склонный; расположенный) to mechanical checking.
-
+*** 12.1 Testing for correctness *** правильность, корректность
+Developing unit tests for a concurrent class starts with the same analysis as for a sequential class — identifying invariants and postconditions that are amenable to mechanical checking [ə`mi:nəb(ə)l] (поддающийся; подверженный; склонный; расположенный).
 If you are lucky, many of these are present in the specification; the rest of the time, writing tests is an adventure in iterative specification discovery.
 
 Пример, BoundedBuffer.java implements a fixed-length array-based queue with blocking put() and take() methods controlled by a pair of counting semaphores.
 
 --In a COUNTING SEMAPHORE, the permits are not represented explicitly or associated with an owning thread; a RELEASE operation CREATES A PERMIT and an ACQUIRE operation CONSUMES ONE.
 
-The most basic unit tests for BoundedBuffer are similar to what we'd use in a sequential context—create a bounded buffer, call its methods, and assert postconditions and invariants.
+The most basic unit tests for BoundedBuffer are similar to what we'd use in a sequential context — create a bounded buffer, call its methods, and assert postconditions and invariants.
 These simple test methods are entirely sequential. Including a set of sequential tests in your test suite is often helpful, since they can disclose when a problem is not related to concurrency issues before you start looking for data races.
 
 --12.1.2 Testing blocking operations--
 Most testing frameworks are not very concurrency-friendly: they rarely include facilities to create threads or monitor them to ensure that they do not die unexpectedly. 
 
-...the convention that every test must wait until all the threads it created terminate. 
+...following the convention that every test must wait until all the threads it created terminate. 
 ...the key requirements are that it be clear whether the tests passed and that failure information is reported somewhere for use in diagnosing the problem.
 
 If a method is supposed to block under certain conditions, then a test for that behavior should succeed only if the thread does not proceed.
@@ -48,50 +49,72 @@ The obvious way to do this is via interruption —
 4) and then assert that the blocking operation completed. 
 Of course, this requires your blocking methods to respond to interruption by returning early or throwing InterruptedException.
 
-The timed join ensures that the test completes even if take() gets stuck in some unexpected way. 
+The timed .join() ensures that the test completes even if take() gets stuck in some unexpected way. 
 This test method tests several properties of take() — not only that it blocks but that, when interrupted, it throws InterruptedException. 
 
 This is one of the few cases in which it is appropriate to subclass Thread explicitly instead of using a Runnable in a pool: 
-in order to test proper termination with join. The same approach can be used to test that the taker thread unblocks after an element is placed in the queue by the main thread.
+1) in order to test proper termination with join. 
+2) The same approach can be used to test that the taker thread unblocks after an element is placed in the queue by the main thread.
 
 It is tempting to use Thread.getState() to verify that the thread is actually blocked on a condition wait, but THIS APPROACH IS NOT RELIABLE. 
 There is nothing that requires a blocked thread ever to enter the WAITING or TIMED_WAITING states, since the JVM can choose to implement blocking by spin-waiting instead. 
 [spin-waiting (ожидание в состоянии занятости)-- проверять условие в цикле]
 Similarly, because spurious(случайный,побочный) wakeups from Object.wait() or Condition.await() are permitted (see Chapter 14), a thread in the WAITING or TIMED_WAITING state may temporarily transition to RUNNABLE even if the condition for which it is waiting is not yet true. 
-Even ignoring these implementation options, it may take some time for the target thread to settle into a blocking state. The result of Thread.getState() should not be used for concurrency control, and is of limited usefulness for testing—its primary utility is as a source of debugging information.
+Even ignoring these implementation options, it may take some time for the target thread to settle into a blocking state. The result of Thread.getState() should not be used for concurrency control, and is of limited usefulness for testing — its primary utility is as a source of debugging information.
 
 --12.1.3 Testing safety--
-To test that a concurrent class performs correctly under unpredictable concurrent access, we need to set up multiple threads performing put() and take() operations over some amount of time and then somehow test that nothing went wrong.
+To test that a concurrent class performs correctly under unpredictable concurrent access, we need to set up multiple threads performing .put() and .take() operations over some amount of time and then somehow test that nothing went wrong.
 --Developing good concurrent tests can be more difficult than developing the classes they test.
 
 Основная фишка в тестах - это identifying easily checked properties, которые с большой вероятностью за-fail-ятся if something goes wrong; 
-и при этом надо чтобы код из теста не ограничивал искусственно паралленость.
+и при этом надо чтобы код из теста не ограничивал искусственно параллельность.
+>>> The challenge to constructing effective safety tests for concurrent classes is identifying easily checked properties that will, with high probability, fail if something goes wrong, while at the same time not letting the failure-auditing code limit concurrency artificially. It is best if checking the test property does not require any synchronization.
 
-One approach that works well with classes used in producer-consumer designs (like BoundedBuffer) is to check that everything put into a queue or buffer comes out of it, and that nothing else does.
---Но для такого подхода нужно доп. синхронизации, и она исказить расписание работы тестируемых потоков.
+One approach that works well with classes used in producer-consumer designs (like BoundedBuffer) is to check that everything put into a queue or buffer comes out of it, and that nothing else does. A naive implementation of this approach would insert the element into a "shadow" list when it is put on the queue, remove it from the list when it is removed from the queue, and assert that the shadow list is empty when the test has finished. But this approach would distort the scheduling of the test threads because modifying the shadow list would require synchronization and possibly blocking.
+--Но для такого подхода нужно доп. синхронизации, и она может исказить расписание работы тестируемых потоков.
 
 A better approach is to compute checksums of the elements that are enqueued and dequeued using an ORDER-SENSITIVE CHECKSUM FUNCTION, and compare them. 
  If they match, the test passes. This approach works best when there is a single producer putting elements into the buffer and a single consumer taking them out, because it can test not only that the right elements (probably) came out but that they came out in the right order.
 
-Но для случая multiple-producer, multiple-consumer надо учитывать другие особенности...
-requires using a checksum function that is insensitive to the order in which the elements are combined, so that multiple checksums can be combined after the test. (Any commutative operation, such as addition or XOR, meets these requirements.)
+Extending this approach to a multiple-producer, multiple-consumer situation requires using a checksum function that is insensitive to the order in which the elements are combined, so that multiple checksums can be combined after the test. Otherwise, synchronizing access to a shared checksum field could become a concurrency bottleneck or distort the timing of the test. (Any commutative operation, such as addition or XOR, meets these requirements.)
 
-также важно чтобы checksums themselves not be guessable by the compiler. 
-Поэтому test data should be generated randomly,
-и для этого лучше ис-ть Giving each thread its own RNG allows a non-thread-safe RNG to be used.
---Many benchmarks are, unbeknownst[ˏʌnbı`nəʊnst]без ведома to their developers or users, simply tests of how great a concurrency bottleneck the RNG is.
+To ensure that your test actually tests what you think it does, it is important that the checksums themselves not be guessable by the compiler. It would be a bad idea to use consecutive integers (последовательный 1,2,3,4..) as your test data because then the result would always be the same, and a smart compiler could conceivably just precompute it.
 
-The xor-Shift function in Listing 12.4 (Marsaglia, 2003) is among the cheapest medium-quality random number functions. 
-Starting it off with values based on hashCode and nanoTime makes the sums both unguessable and almost always different for each run.
+To avoid this problem, test data should be generated randomly, but many otherwise effective tests are compromised by a poor choice of RANDOM NUMBER GENERATOR (RNG). Random number generation can create couplings between classes and timing artifacts because most random number generator classes are thread-safe and therefore introduce additional synchronization. Giving each thread its own RNG allows a non-thread-safe RNG to be used.
 
-Чтобы все потока стартовали и завершались одновременно надо ис-ть CountDownLatch as a starting gate and another as a finish gate.
+--Many benchmarks are, unbeknownst to their developers or users ([ˏʌnbı`nəʊnst] без ведома), simply tests of how great a concurrency bottleneck the RNG is.
+
+The XOR-Shift function in Listing 12.4 (Marsaglia, 2003) is among the cheapest medium-quality random number functions. 
+Starting it off with values based on hashCode and nanoTime makes the sums both unguessable and almost always different for each run:
+	
+	int seed = (this.hashCode() ^ (int) System.nanoTime());
+	seed = xorShift(seed);
+	...
+    static int xorShift(int y) {
+        y ^= (y << 6);
+        y ^= (y >>> 21);
+        y ^= (y << 7);
+        return y;
+    }
+(см PutTakeTest.java)
+
+Depending on your platform, создание и запуск потока могут занимать время, и первый поток может уже закончится, когда остальные только стартуют, тем самым уменьшается кол-во ожидаемы interleavings.
+Поэтому:
+Чтобы все потоки стартовали и завершались одновременно надо ис-ть CountDownLatch as a starting gate and another as a finish gate.
 Another way to get the same effect is to use a CyclicBarrier, initialized with the number of worker threads plus one.
+This ensures that all threads are up and running before any start working. 
+We still can't guarantee that the scheduler won't run each thread to completion sequentially, but making the runs long enough reduces the extent to which scheduling distorts our results.
+
+The final trick employed by PutTakeTest is to use a deterministic termination criterion so that no additional inter-thread coordination is needed to figure out when the test is finished. The test method starts exactly as many producers as consumers and each of them puts or takes the same number of elements, so the total number of items added and removed is the same.
 
 Tests like PutTakeTest tend to be good at finding safety violations. 
   For example, a common error in implementing semaphore-controlled buffers is to forget that the code actually doing the insertion and extraction requires mutual exclusion (using synchronized or ReentrantLock).
-А чего это не хаватает???? mutual exclusion^^^^^^ наверно как инкремент и декремент.
+А почему нужно mutual exclusion???? наверно как инкремент и декремент.
+Asample run of PutTakeTest with a version of BoundedBuffer that omits making doInsert and doExtract synchronized fails fairly quickly. Running PutTakeTest with a few dozen threads iterating a few million times on buffers of various capacity on various systems increases our confidence about the lack of data corruption in put and take.
 
 To maximize the chance of detecting timing-sensitive data races, there should be more active threads than CPUs, so that at any given time some threads are running and some are switched out, thus reducing the predicatability of interactions between threads.
+
+Tests should be run on multiprocessor systems to increase the diversity of potential interleavings. However, having more than a few CPUs does not necessarily make tests more effective. To maximize the chance of detecting timing-sensitive data races, there should be more active threads than CPUs, so that at any given time some threads are running and some are switched out, thus reducing the predicatability of interactions between threads.
 
 In tests that run until they complete a fixed number of operations, it is possible that the test case will never finish if the code being tested encounters an exception due to a bug. 
 The most common way to handle this is to have the test framework abort tests that do not terminate within a certain amount of time; how long to wait should be determined empirically, and failures must then be analyzed to ensure that the problem wasn't just that you didn't wait long enough. (This problem is not unique to testing concurrent classes; sequential tests must also distinguish between long-running and infinite loops.)
@@ -103,15 +126,25 @@ Any object that holds or manages other objects should not continue to maintain r
 Such storage leaks prevent garbage collectors from reclaiming memory (or threads, file handles, sockets, database connections, or other limited resources) and can lead to resource exhaustion and application failure.
 
 the entire reason for bounding a buffer is to prevent application failure due to resource exhaustion when producers get too far ahead of consumers.
-Bounding causes overly productive producers to block rather than continue to create work that will consume more and more memory or other resources.
+Bounding causes overly[слишком, чрезмерно] productive producers to block rather than continue to create work that will consume more and more memory or other resources.
+
+Undesirable memory retention can be easily tested with heap-inspection tools that measure application memory usage; 
+
+The testLeak method inserts several large objects into a bounded buffer and then removes them; memory usage at heap snapshot #2 should be approximately the same as at heap snapshot #1. On the other hand, if .doExtract() forgot to null out the reference to the returned element (items [i]=null), the reported memory usage at the two snapshots would definitely not be the same. (This is one of the few times where explicit nulling is necessary; most of the time, it is either not helpful or actually harmful.)
+
+Technically, it is impossible to force a garbage collection; System.gc() only suggests to the JVM that this might be a good time to perform a garbage collection. HotSpot can be instructed to ignore System.gc() calls with -XX:+DisableExplicitGC.
 
 *** 12.1.5    Using callbacks ***
 Callbacks to client-provided code can be helpful in constructing test cases; callbacks are often made at known points in an object's lifecycle that are good opportunities to assert invariants. 
 For example, ThreadPoolExecutor makes calls to the task Runnables and to the ThreadFactory.
 
-Что такое вообще колбэки?
+Testing a thread pool involves testing a number of elements of execution policy: that additional threads are created when they are supposed to, but not when they are not supposed to; that idle threads get reaped when they are supposed to, etc. Constructing a comprehensive test suite that covers all the possibilities is a major effort, but many of them can be tested fairly simply individually.
 
-и в чём суть примера TestThreadPool?
+We can instrument thread creation by using a custom thread factory. 
+TestingThreadFactory in Listing 12.8 maintains a count of created threads; test cases can then verify the number of threads created during a test run. 
+TestingThreadFactory could be extended to return a custom Thread that also records when the thread terminates, so that test cases can verify that threads are reaped in accordance with the execution policy.
+
+If the core pool size is smaller than the maximum size, the thread pool should grow as demand for execution increases. Submitting long-running tasks to the pool makes the number of executing tasks stay constant for long enough to make a few assertions, such as testing that the pool is expanded as expected,
 
 *** 12.1.6 Generating more interleavings ***
 We've already mentioned how running on multiprocessor systems with fewer processors than active threads can generate more interleavings than either a single-processor system or one with many processors. 
@@ -123,7 +156,15 @@ A useful trick for increasing the number of interleavings, and therefore more ef
 
 [Thread.yield() = A hint(намёк,совет,подсказка) to the scheduler that the current thread is willing to yield its current use of a processor. The scheduler is free to ignore this hint.]
 
-The inconvenience of adding these calls for testing and removing them for production can be reduced by adding them using aspect-oriented programming (AOP) tools.
+The method in Listing 12.10 transfers credits from one account to another; between the two update operations, invariants such as "sum of all accounts equals zero" do not hold. By sometimes yielding in the middle of an operation, you may activate timing-sensitive bugs in code that does not use adequate synchronization to access state. The inconvenience of adding these calls for testing and removing them for production can be reduced by adding them using aspect-oriented programming (AOP) tools.
+
+public synchronized void transferCredits(Account from, Account to, int amount) {
+        from.setBalance(from.getBalance() - amount);
+        if (random.nextInt(1000) > THRESHOLD) {
+            Thread.yield();
+        }
+        to.setBalance(to.getBalance() + amount);
+    }
 
 ******************************************
 **** 12.2 Testing for performance ****
