@@ -108,7 +108,7 @@ We still can't guarantee that the scheduler won't run each thread to completion 
 The final trick employed by PutTakeTest is to use a deterministic termination criterion so that no additional inter-thread coordination is needed to figure out when the test is finished. The test method starts exactly as many producers as consumers and each of them puts or takes the same number of elements, so the total number of items added and removed is the same.
 
 Tests like PutTakeTest tend to be good at finding safety violations. 
-  For example, a common error in implementing semaphore-controlled buffers is to forget that the code actually doing the insertion and extraction requires mutual exclusion (using synchronized or ReentrantLock).
+  For example, a common error in implementing semaphore-controlled buffers is to forget that the code actually doing the insertion and extraction REQUIRES MUTUAL EXCLUSION (using synchronized or ReentrantLock).
 А почему нужно mutual exclusion???? наверно как инкремент и декремент.
 Asample run of PutTakeTest with a version of BoundedBuffer that omits making doInsert and doExtract synchronized fails fairly quickly. Running PutTakeTest with a few dozen threads iterating a few million times on buffers of various capacity on various systems increases our confidence about the lack of data corruption in put and take.
 
@@ -121,7 +121,7 @@ The most common way to handle this is to have the test framework abort tests tha
 
 *** 12.1.4    Testing resource management ***
 The tests so far have been concerned with a class's adherence to its specification — that it does what it is supposed to do. 
-A secondary aspect to test is that it DOES NOT DO THINGS IT IS NOT SUPPOSED TO do, such as leak resources. 
+A secondary aspect to test is that it DOES NOT DO THINGS IT IS NOT SUPPOSED TO do, such as LEAK RESOURCES. 
 Any object that holds or manages other objects should not continue to maintain references to those objects longer than necessary. 
 Such storage leaks prevent garbage collectors from reclaiming memory (or threads, file handles, sockets, database connections, or other limited resources) and can lead to resource exhaustion and application failure.
 
@@ -130,7 +130,7 @@ Bounding causes overly[слишком, чрезмерно] productive producers 
 
 Undesirable memory retention can be easily tested with heap-inspection tools that measure application memory usage; 
 
-The testLeak method inserts several large objects into a bounded buffer and then removes them; memory usage at heap snapshot #2 should be approximately the same as at heap snapshot #1. On the other hand, if .doExtract() forgot to null out the reference to the returned element (items [i]=null), the reported memory usage at the two snapshots would definitely not be the same. (This is one of the few times where explicit nulling is necessary; most of the time, it is either not helpful or actually harmful.)
+The testLeak method inserts several large objects into a bounded buffer and then removes them; memory usage at heap snapshot #2 should be approximately the same as at heap snapshot #1. On the other hand, if .doExtract() forgot to null out the reference to the returned element (items[i] = null), the reported memory usage at the two snapshots would definitely not be the same. (This is one of the few times where explicit nulling is necessary; most of the time, it is either not helpful or actually harmful.)
 
 Technically, it is impossible to force a garbage collection; System.gc() only suggests to the JVM that this might be a good time to perform a garbage collection. HotSpot can be instructed to ignore System.gc() calls with -XX:+DisableExplicitGC.
 
@@ -141,12 +141,13 @@ For example, ThreadPoolExecutor makes calls to the task Runnables and to the Thr
 Testing a thread pool involves testing a number of elements of execution policy: that additional threads are created when they are supposed to, but not when they are not supposed to; that idle threads get reaped when they are supposed to, etc. Constructing a comprehensive test suite that covers all the possibilities is a major effort, but many of them can be tested fairly simply individually.
 
 We can instrument thread creation by using a custom thread factory. 
-TestingThreadFactory in Listing 12.8 maintains a count of created threads; test cases can then verify the number of threads created during a test run. 
+TestingThreadFactory.java in Listing 12.8 maintains a count of created threads; test cases can then verify the number of threads created during a test run. 
 TestingThreadFactory could be extended to return a custom Thread that also records when the thread terminates, so that test cases can verify that threads are reaped in accordance with the execution policy.
+(см TestThreadPool.java)
 
 If the core pool size is smaller than the maximum size, the thread pool should grow as demand for execution increases. Submitting long-running tasks to the pool makes the number of executing tasks stay constant for long enough to make a few assertions, such as testing that the pool is expanded as expected,
 
-*** 12.1.6 Generating more interleavings ***
+*** 12.1.6 Generating more interleavings *** больше чередований
 We've already mentioned how running on multiprocessor systems with fewer processors than active threads can generate more interleavings than either a single-processor system or one with many processors. 
 Similarly, testing on a variety of systems with different processor counts, operating systems, and processor architectures can disclose(раскрывать, открывать; обнажать, показывать) problems that might not occur on all systems.
 
@@ -170,6 +171,9 @@ public synchronized void transferCredits(Account from, Account to, int amount) {
 **** 12.2 Testing for performance ****
 Performance tests are often extended versions of functionality tests. 
 In fact, it is almost always worthwhile to include some basic functionality testing within performance tests to ensure that you are not testing the performance of broken code.
+
+While there is definitely overlap between performance and functionality tests, they have different goals. 
+Picking a reasonable set of usage scenarios is not always easy; ideally, tests should reflect how the objects being tested are actually used in your application.
 
 1) Performance tests seek( разыскивать; пытаться найти ) to measure end-to-end performance metrics for representative use cases.
 
@@ -331,7 +335,7 @@ Static analysis tools produce a list of warnings that must be examined by hand t
 
 Inconsistent synchronization. Many objects follow the synchronization policy of guarding all variables with the object's intrinsic lock. If a field is accessed frequently but not always with the this lock held, this may indicate that the synchronization policy is not being consistently followed.
 
-Invoking Thread.run. Thread implements Runnable and therefore has a run method. However, it is almost always a mistake to call Thread.run directly; usually the programmer meant to call Thread.start.
+Invoking Thread.run(). Thread implements Runnable and therefore has a run method. However, it is almost always a mistake to call Thread.run() directly; usually the programmer meant to call Thread.start().
 
 Unreleased lock. Unlike intrinsic locks, explicit locks (see Chapter 13) are not automatically released when control exits the scope in which they were acquired. The standard idiom is to release the lock from a finally block; otherwise the lock can remain unreleased in the event of an Exception.
 
@@ -341,13 +345,13 @@ Double-checked locking. Double-checked locking is a broken idiom for reducing sy
 
 Starting a thread from a constructor. Starting a thread from a constructor introduces the risk of subclassing problems, and can allow the this reference to escape the constructor.
 
-Notification errors. The notify() and notifyAll() methods indicate that an object's state may have changed in a way that would unblock threads that are waiting on the associated condition queue. These methods should be called only when the state associated with the condition queue has changed. A synchronized block that calls notify or notifyAll but does not modify any state is likely to be an error. (See Chapter 14.)
+Notification errors. The notify() and notifyAll() methods indicate that an object's state may have changed in a way that would unblock threads that are waiting on the associated condition queue. These methods should be called only when the state associated with the condition queue has changed. A synchronized block that calls notify() or notifyAll() but does not modify any state is likely to be an error. (See Chapter 14.)
 
 Condition wait errors. When waiting on a condition queue, Object.wait() or Condition.await() should be called 
 1_in a loop, 
 2_with the appropriate lock held, 
 3_after testing some state predicate (see Chapter 14). 
-Calling Object.wait or Condition.await() without the lock held, not in a loop, or without testing some state predicate is almost certainly an error.
+Calling Object.wait() or Condition.await() without the lock held, not in a loop, or without testing some state predicate is almost certainly an error.
 
 Misuse of Lock and Condition. Using a Lock as the lock argument for a synchronized block is likely to be a typo, as is calling Condition.wait() instead of await() (though the latter would likely be caught in testing, since it would throw an IllegalMonitorStateException the first time it was called).
 

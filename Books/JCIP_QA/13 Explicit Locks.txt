@@ -1,6 +1,6 @@
 13 Explicit Locks (277-289 = 12) всего до 351
 
-ReentrantLock is not a replacement for intrinsic locking, but rather an alternative with advanced features for when intrinsic locking proves too limited.
+ReentrantLock is not a replacement for intrinsic locking, but rather an ALTERNATIVE with advanced features for when intrinsic locking proves too limited.
 
 *** 13.1    Lock and ReentrantLock ***
 Unlike intrinsic locking, Lock offers a choice of unconditional, polled, timed, and interruptible lock acquisition, and all lock and unlock operations are explicit. 
@@ -12,13 +12,13 @@ and releasing a ReentrantLock has the same memory semantics as exiting a synchro
 а также ReentrantLock provides more flexibility for dealing with lock unavailability than does synchronized.
 
 А зачем вообще было создавать новый механизм, полностью похожий на intrinsic locking?
-Потому что у Intrinsic locking есть некоторые ограниченя:
+Потому что у Intrinsic locking есть некоторые ограничения:
 1) it is not possible to interrupt a thread waiting to acquire a lock, or to attempt to acquire a lock without [being willing] to wait for it forever.
 2)  Intrinsic locks also must be released in the same block of code in which they are acquired; this simplifies coding and interacts nicely with exception handling, but makes non-block-structured locking disciplines impossible. 
 
-None of these are reasons to abandon synchronized, but in some cases a more flexible locking mechanism offers better liveness or performance.
+None of these are reasons to abandon 'synchronized', but in some cases a more flexible locking mechanism offers better liveness or performance.
 
-The lock must be released in a finally block. Otherwise, the lock would never be released if the guarded code were to throw an exception.
+The lock must be released in a 'finally' block. Otherwise, the lock would never be released if the guarded code were to throw an exception.
 This is one reason not to use ReentrantLock as a blanket substitute for synchronized: it is more "dangerous" because it doesn't automatically clean up the lock when control leaves the guarded block. 
 
 When using locking, you must also consider what happens if an exception is thrown out of the try block; if it is possible for the object to be left in an inconsistent state, additional try-catch or try-finally blocks may be needed. 
@@ -30,7 +30,7 @@ ___ tryLock() ___
 Timed and polled locking offer another option: probabalistic deadlock avoidance.
 With intrinsic locks, a deadlock is fatal.
 
-Using timed or polled lock acquisition (tryLock) lets you regain control if you cannot acquire all the required locks, release the ones you did acquire, and try again (or at least log the failure and do something else).
+Using TIMED OR POLLED LOCK ACQUISITION (tryLock) lets you regain control if you cannot acquire all the required locks, release the ones you did acquire, and try again (or at least log the failure and do something else).
 
 Где это смотреть: (See [CPJ 2.5.1.2] and [CPJ 2.5.1.3] for more examples of using polled locks for deadlock avoidance.) ?
 
@@ -44,7 +44,7 @@ Just as timed lock acquisition allows exclusive locking to be used within time-l
 
 Есть 2 способа сделать для Interruptible lock acquisition.
 
-1) The lockInterruptibly() method allows you to try to acquire a lock while remaining responsive to interruption, and its inclusion in Lock avoids creating another category of non-interruptible blocking mechanisms.
+1) The lockInterruptibly() method allows you to try to acquire a lock while remaining responsive to interruption, and its inclusion in Lock avoids creating another category of NON-INTERRUPTIBLE BLOCKING MECHANISMS.
 
 The canonical structure of interruptible lock acquisition is slightly more complicated than normal lock acquisition, as two try blocks are needed. (If the interruptible lock acquisition can throw InterruptedException, the standard try-finally locking idiom works.)
 __метод... throws InterruptedException {
@@ -66,7 +66,7 @@ Automatic lock release simplifies analysis and prevents potential coding errors,
 
 In Chapter 11, we saw how reducing lock granularity can enhance scalability. Lock striping allows different hash chains in a hash-based collection to use different locks. 
 
-Например, в ликедЛисте можно сдлеть отдельный лок на каждый нод, надо получить лок у следующего нода и лишь потом отпустить лок у текущего нода,
+Например, в ликедЛисте можно сделать отдельный лок на каждый нод, надо получить лок у следующего нода и лишь потом отпустить лок у текущего нода,
 и эта техника называется hand-over-hand locking or lock coupling.
 
 *** 13.2 Performance considerations ***
