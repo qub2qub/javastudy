@@ -481,11 +481,12 @@ Similarly, signal() calls releaseShared(), which causes tryReleaseShared() to be
 The tryReleaseShared() implementation unconditionally sets the latch state to open and INDICATES (THROUGH ITS RETURN VALUE) that the synchronizer is in a fully released state. 
 This causes AQS to let ALL WAITING THREADS ATTEMPT TO REACQUIRE the synchronizer(он же ЛОК), and acquisition will now succeed (ДЛЯ ВСЕХ ПОТОКОВ) because tryAcquireShared() returns "success".
 
-А если бы был вызван tryRelease() -- то он бы тоже все потоки проинформировал, что можно REACQUIRE the synchronizer, но в этом случае для акваэ был бы метод tryAcquire() -- а он позволит только 1 из всех потоков получить Acquire/лок.
+А если бы был вызван tryRelease() -- то он бы тоже все потоки проинформировал, что можно REACQUIRE the synchronizer, но в этом случае для ACQUIRE был бы метод tryAcquire() -- а он позволит только 1 из всех потоков получить Acquire/лок.
 
 OneShotLatch is a fully functional, usable, performant synchronizer, implemented in only twenty or so lines of code. Of course, it is missing some useful features—such as timed acquisition or the ability to inspect the latch state—but these are easy to implement as well, since AQS provides timed versions of the acquisition methods and utility methods for common inspection operations.
 
-OneShotLatch could have been implemented by extending AQS rather than delegating to it, but this is undesirable for several reasons [EJ Item 14]. Doing so would undermine the simple (two-method) interface of OneShotLatch, and while the public methods of AQS won't allow callers to corrupt the latch state, callers could easily use them incorrectly. None of the synchronizers in java.util.con-current extends AQS directly—they all delegate to private inner subclasses of AQS instead.
+OneShotLatch could have been implemented by extending AQS rather than delegating to it, but this is undesirable for several reasons [EJ Item 14]. Doing so would undermine the simple (two-method) interface of OneShotLatch, and while the public methods of AQS won't allow callers to corrupt the latch state, callers could easily use them incorrectly. 
+None of the synchronizers in java.util.concurrent extends AQS directly—they all delegate to private inner subclasses of AQS instead.
 
 *** 14.6 AQS in java.util.concurrent synchronizer classes *** 314
 *** 14.6.1 ReentrantLock ***
@@ -505,12 +506,14 @@ If the lock state indicates that it is already held, if the current thread is th
 ReentrantLock also takes advantage of AQS's built-in support for multiple condition variables(= много new Condition()) and wait sets. Lock.newCondition() returns a new instance of ConditionObject, an inner class of AQS.
 
 *** 14.6.2 Semaphore and CountDownLatch *** 315
-Semaphore -- как тоннель с билетами.
+Semaphore -- как тоннель с билетами. == Вахтёр с ограниченными пропусками на парковку.
 Semaphore uses the AQS synchronization STATE to hold the count of permits currently available. 
 The tryAcquireShared() method (see Listing 14.16) first computes the number of permits remaining, and if there are not enough, returns a value indicating that the acquire failed. 
 
 If sufficient permits appear to be left, it attempts to atomically reduce the permit count using compareAndSetState(). 
 If that succeeds (meaning that the permit count had not changed since it last looked), it returns a value indicating that the acquire succeeded. The return value also encodes whether other shared acquisition attempts might succeed, in which case other waiting threads will also be unblocked.
+
+The while loop terminates either when there are not enough permits or when tryAcquireShared can atomically update the permit count to reflect acquisition. While any given call to compareAndSetState may fail due to contention with another thread (see Section 15.3), causing it to retry, one of these two termination criteria will become true within a reasonable number of retries. Similarly, tryRe-leaseShared increases the permit count, potentially unblocking waiting threads, and retries until the update succeeds. The return value of tryReleaseShared indicates whether other threads might have been unblocked by the release.
 --------------
 CountDownLatch uses AQS in a similar manner to Semaphore: the synchronization state holds the current count. 
 The countDown() method calls release(), which causes the counter to be decremented and unblocks waiting threads if the counter has reached zero; 
@@ -519,7 +522,7 @@ await() calls acquire(), which returns immediately if the counter has reached ze
 *** 14.6.3    FutureTask ***
 Future.get() has semantics that are very similar to that of a latch — if some event (the completion or cancellation of the task represented by the FutureTask) has occurred, then threads can proceed, otherwise they are queued until that event occurs.
 
-FutureTask uses the AQS synchronization state to hold the task status —  running, completed, or cancelled. It also maintains additional state variables to hold the result of the computation or the exception it threw. It further maintains a reference to the thread that is running the computation (if it is currently in the running state), so that it can be interrupted if the task is cancelled.
+FutureTask uses the AQS synchronization state to hold the task status —  running, completed, or cancelled. It also maintains additional state variables TO HOLD THE RESULT OF THE COMPUTATION or the EXCEPTION it threw. It further maintains a REFERENCE TO THE THREAD that is running the computation (if it is currently in the running state), so that it can be interrupted if the task is cancelled.
 
 ИЗ JDK FutureTask.java:
      * Revision notes: This differs from previous versions of this
@@ -541,7 +544,7 @@ ReentrantReadWriteLock uses 16 BITS of the STATE for the write-lock count, and t
 Operations on the READ LOCK use the SHARED ACQUIRE() and RELEASE() methods; 
 operations on the WRITE LOCK use the EXCLUSIVE ACQUIRE() and RELEASE() methods.
 
-Internally, AQS maintains a queue of waiting threads, keeping track of whether a thread has requested exclusive or shared access. 
+Internally, AQS maintains a queue of waiting threads, keeping track of whether a thread has requested EXCLUSIVE or SHARED access. 
 In ReentrantReadWriteLock, when the lock becomes available, if the thread at the head of the queue was looking for write access it will get it, and if the thread at the head of the queue was looking for read access, all queued threads up to the first writer will get it.
 
 [This mechanism does not permit the choice of a reader-preference or writer-preference policy, as some read-write lock implementations do. For that, either the AQS wait queue would need to be something other than a FIFO queue, or two queues would be needed. However, such a strict ordering policy is rarely needed in practice; if the nonfair version of ReentrantReadWriteLock does not offer acceptable liveness, the fair version usually provides satisfactory ordering and guarantees nonstarvation of readers and writers.]
