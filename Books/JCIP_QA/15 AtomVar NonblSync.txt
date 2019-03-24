@@ -3,25 +3,27 @@
 *** Atomic Variables and Nonblocking Synchronization ***
 Они явл-ся the primary source of this performance boost.
 
-Much of the recent research on concurrent algorithms has focused on nonblocking algorithms, which use low-level atomic machine instructions such as compare-and-swap instead of locks to ensure data integrity under concurrent access. Nonblocking algorithms are used extensively(много где, всесторонне) in operating systems and JVMs for thread and process scheduling, garbage collection, and to implement locks and other concurrent data structures.
+Much of the recent research on concurrent algorithms has focused on nonblocking algorithms, which use low-level atomic machine instructions such as compare-and-swap [CAS] instead of locks to ensure data integrity under concurrent access. Nonblocking algorithms are used extensively(много где, всесторонне) in operating systems and JVMs for thread and process scheduling, garbage collection, and to implement locks and other concurrent data structures.
 
 Nonblocking algorithms are considerably more complicated to design and implement than lock-based alternatives, but they can offer significant scalability and liveness advantages.
-У них лучшее разбиение на блоки и они уменьшают издержки планирования (scheduling overhead), потому что они не блокируются при множественном доступе к ним.
+У них лучшее разбиение на блоки и они уменьшают издержки планирования (scheduling overhead), потому что они не блокируются при множественном доступе к ОДНИМ И ТЕМ ЖЕ ДАННЫМ.
+They coordinate at a finer level of granularity and can greatly reduce scheduling overhead because they don't block when multiple threads contend for the same data.
 А также: they are immune to deadlock and other liveness problems.
-И ещё: nonblocking algorithms are impervious(невосприимчивый) to individual thread failures.
-Начиная с Java 5.0, it is possible to build efficient nonblocking algorithms in Java using the atomic variable classes such as AtomicInteger and AtomicReference.
+In lock-based algorithms, other threads cannot make progress if a thread goes to sleep or spins while holding a lock, whereas nonblocking algorithms are impervious(невосприимчивый) to individual thread failures. 
+As of Java 5.0, it is possible to build efficient nonblocking algorithms in Java using the atomic variable classes such as AtomicInteger and AtomicReference.
 
-Atomic variables can also be used as "better volatile variables" even if you are not developing nonblocking algorithms. Atomic variables offer the same memory semantics as volatile variables, but with additional support for atomic updates — making them ideal for counters, sequence generators, and statistics gathering while offering better scalability than lock-based alternatives.
+Atomic variables can also be used as "better volatile variables" even if you are not developing nonblocking algorithms. Atomic variables offer the SAME MEMORY SEMANTICS as VOLATILE VARIABLES, but with ADDITIONAL SUPPORT FOR ATOMIC UPDATES — making them ideal for counters, sequence generators, and statistics gathering while offering better scalability than lock-based alternatives.
 
 *** 15.1 Disadvantages of locking ***
-Coordinating access to shared state using a consistent locking protocol ensures that WHICHEVER THREAD [holds the lock guarding a set of variables] 
+Coordinating access to shared state using a consistent locking protocol ensures that WHICHEVER THREAD holds the lock [guarding a set of variables] 
 1__ has exclusive access to those variables, and that 
 2__ any changes made to those variables are visible to other threads that subsequently acquire the lock.
 
 Modern JVMs can optimize UNCONTENDED LOCK ACQUISITION and release fairly effectively, but if multiple threads request the lock at the same time the JVM enlists the help(обращается за помощью) of the operating system.
 If it gets to this point, some unfortunate thread will be suspended and have to be resumed later.
+[A smart JVM need not necessarily suspend a thread if it contends for a lock; it could use profiling data to decide adaptively between suspension and spin locking based on how long the lock has been held during previous acquisitions.]
 
-When that thread is resumed, it may have to wait for other threads to finish their scheduling quanta before it is actually scheduled. Suspending and resuming a thread has a lot of overhead(издержки) and generally entails(влечёт за собой, вызывает) a lengthy interruption.
+When that thread is resumed, it may have to wait for other threads to finish their scheduling quanta before it is actually scheduled. Suspending and resuming a thread has a lot of overhead(издержки) and generally entails(влечёт за собой, вызывает) a lengthy interruption (длительный перерыв).
 
 For lock-based classes with fine-grained operations (such as the synchronized collections classes, where most methods contain only a few operations), the ratio(отношение, коэффициент; пропорция; соотношение) of [scheduling overhead] to [useful work] can be quite high when the lock is frequently contended.
 
@@ -43,12 +45,15 @@ The increment operation (++i) is actually three distinct operations —
 1) fetch the current value of the variable, 
 2) add one to it, 
 3) and then write the updated value back. 
-In order to not lose an update, the entire READ-MODIFY-WRITE OPERATION MUST BE ATOMIC. So far, the only way we've seen to do this is with locking.
+In order to not lose an update, the entire READ-MODIFY-WRITE OPERATION MUST BE ATOMIC. 
+So far, the only way we've seen to do this is with locking. 
+см Counter.java
 
 !!! Under contention, performance suffers because of context-switch overhead and scheduling delays. 
 И если локи берутся ненадолго, то если поток невовремя попросил лок -- он будет приостановлен (put to sleep) -- а это будет довольно большая задержка только из-за того, что он невовремя(неудачно) попросил лок.
+Counter is thread-safe, and in the presence of little or no contention performs just fine. But under contention, performance suffers because of context-switch overhead and scheduling delays. When locks are held so briefly, being put to sleep is a harsh penalty (суровое наказание) for asking for the lock at the wrong time.
 
-Другие недостатки Locking :
+Другие недостатки Locking: (Locking has a few other disadvantages) Основная проблема - в заблокированном состоянии того потока, который ждёт лока.
 1) When a thread is waiting for a lock, it cannot do anything else. 
 2) If a thread holding a lock is delayed (due to a page fault, scheduling delay, or the like), then no thread that needs that lock can make progress.
 3) PRIORITY INVERSION performance hazard:
@@ -56,25 +61,29 @@ In order to not lose an update, the entire READ-MODIFY-WRITE OPERATION MUST BE A
   Even though the higher-priority thread should have precedence, it must wait until the lock is released, and this effectively downgrades its priority to that of the lower-priority thread. 
 4) If a thread holding a lock is permanently blocked (due to an infinite loop, deadlock, livelock, or other liveness failure), any threads waiting for that lock can never make progress.
 
-Even ignoring these hazards, LOCKING is simply a HEAVYWEIGHT mechanism for fine-grained(мелкозернистый) operations(мелкие операции) such as incrementing a counter. 
+Even ignoring these hazards (опасные ситуации), LOCKING is simply a HEAVYWEIGHT mechanism for fine-grained operations (мелкие операции) such as incrementing a counter. 
 It would be nice to have a finer-grained technique for managing contention between threads — something like volatile variables, but offering the possibility of atomic updates as well. 
 Happily, modern processors offer us precisely such a mechanism.
 
 *** 15.2 Hardware support for concurrency *** 321
 Exclusive locking is a PESSIMISTIC TECHNIQUE — it assumes the worst and doesn't proceed until you can guarantee, by acquiring the appropriate locks, that other threads will not interfere.
+(if you don't lock your door, gremlins will come in and rearrange your stuff)
 
 For fine-grained(для мелких) operations, there is an alternate approach that is often more efficient — the OPTIMISTIC APPROACH, whereby(на основании чего, в соответствии с чем) you proceed with an update, hopeful(надеясь) that you can complete it without interference(без помех, вмешательства).
-This approach relies on collision detection to determine if there has been interference from other parties during the update, in which case the operation fails and can be retried (or not). 
+This approach relies on COLLISION DETECTION (обнаружение конфликтов) to determine if there has been interference from other parties during the update, in which case the operation fails and can be retried (or not). 
 The optimistic approach is like the old saying, "IT IS EASIER TO OBTAIN FORGIVENESS THAN PERMISSION", where "easier" here means "more efficient".
+[легче получить прощение, чем разрешение]
 
-Processors designed for multiprocessor operation provide special instructions for managing concurrent access to shared variables.
-Today, nearly every modern processor has some form of atomic read-modify-write instruction, such as compare-and-swap or load-linked/store-conditional.
+Processors designed for multiprocessor operation provide SPECIAL INSTRUCTIONS for managing CONCURRENT ACCESS TO SHARED VARIABLES. 
+Early processors had atomic TEST-AND-SET, FETCH-AND-INCREMENT, or SWAP INSTRUCTIONS sufficient for implementing mutexes that could in turn be used [MUTEXES] to implement more sophisticated concurrent objects.
+Today, nearly every modern processor has some form of atomic READ-MODIFY-WRITE instruction, such as COMPARE-AND-SWAP or LOAD-LINKED/STORE-CONDITIONAL.
+Operating systems and JVMs use these instructions to implement locks and concurrent data structures.
 
 *** 15.2.1 Compare and swap (CAS) ***  CAS instruction
 Большинство процов implement a compare-and-swap (CAS) instruction.
 Другие процы реализуют это через implement the same functionality with a pair of instructions: load-linked and store-conditional.
 
-CAS has three operands — 
+CAS has three operands (аргумент операции) — 
 1) a memory location V on which to operate, 
 2) the expected old value A, 
 3) and the new value B. 
@@ -86,26 +95,32 @@ In either case(и тот и другой; оба),
     The variant called COMPARE-AND-SET instead returns whether the operation succeeded.
 
 CAS means "I think V should have the value A; if it does, put B there, otherwise don't change it but tell me I was wrong." 
-CAS is an optimistic technique — it proceeds with the update in the hope of success, and can detect failure if another thread has updated the variable since it was last examined.
+CAS is an optimistic technique — it proceeds with the update in the hope of success
+См SimulatedCAS.java
 
 When multiple threads attempt to update the same variable simultaneously using CAS, one wins and updates the variable's value, and the rest lose. But the losers are not punished by suspension, as they could be if they failed to acquire a lock; instead, they are told that they didn't win the race this time but can try again.
-Because a thread that loses a CAS is not blocked, it can decide whether it wants to try again, take some other recovery action, or do nothing. This flexibility eliminates many of the liveness hazards associated with locking (though in unusual cases can introduce the risk of livelock—see Section 10.3.3).
-
-!!! address the problem == взяться за решение проблемы, заняться решением проблемы, приступить к решению определённой проблемы
+Because a thread that loses a CAS is not blocked, it can decide whether it wants to try again, take some other recovery action, or do nothing. This flexibility eliminates many of the liveness hazards associated with locking (though in unusual cases can introduce the risk of livelock — see Section 10.3.3).
+[Doing nothing may be a perfectly sensible response to a failed CAS; in some nonblocking algorithms, such as the linked queue algorithm in Section 15.4.2, a failed CAS means that someone else already did the work you were planning to do.]
 
 CAS canonical form:
 1) read the value A from V, 
 2) derive(извлекать) the new value B from A, 
-3) [в бескон. цикле] use CAS to atomically change V from A to B SO LONG as no other thread has changed V to another value in the meantime.
+3) [в бескон. цикле] use CAS to atomically change V from A to B SO LONG as NO other thread has changed V to another value in the meantime.
 
-*** 15.2.2 A nonblocking counter ***
-If the CAS fails, the operation is immediately retried. 
-RETRYING repeatedly is usually a REASONABLE strategy, 
+CAS addresses the problem of implementing atomic read-modify-write sequences without locking, because it can detect interference from other threads.
+!!! address the problem == взяться за решение проблемы, заняться решением проблемы, приступить к решению определённой проблемы
+
+*** 15.2.2 A nonblocking counter *** см CasCounter.java
+CasCounter in Listing 15.2 implements a thread-safe counter using CAS. The increment operation follows the canonical form — fetch the old value, transform it to the new value (adding one), and use CAS to set the new value. If the CAS fails, the operation is immediately retried.
+_RETRYING_ repeatedly is usually a REASONABLE strategy, 
 although in cases of extreme contention it might be DESIRABLE TO WAIT OR BACK OFF before retrying to AVOID LIVELOCK.
+CasCounter does not block, though it may have to retry several times if other threads are updating the counter at the same time. (In practice, if all you need is a counter or sequence generator, just use AtomicInteger or AtomicLong, which provide atomic increment and other arithmetic methods.)
+[Theoretically, it could have to retry arbitrarily many times if other threads keep winning the CAS race; in practice, this sort of starvation rarely happens.]
 
-!!! In reality, CAS-based counters significantly outperform lock-based counters if there is even a small amount of contention, and often even if there is no contention.
-
-Since the CAS succeeds most of the time (assuming low to moderate contention), the hardware will correctly predict the branch implicit in the while loop, minimizing the overhead of the more complicated control logic.
+At first glance, the CAS-based counter looks as if it should perform worse than a lock-based counter; it has more operations and a more complicated control flow, and depends on the seemingly complicated (казалось бы, сложно) CAS operation. But 
+   !!! In reality, CAS-based counters significantly outperform lock-based counters if there is even a small amount of contention, and often even if there is no contention.
+The fast path for [uncontended lock acquisition] typically requires at least one CAS plus other [lock-related housekeeping], so more work is going on in the best case for a lock-based counter than in the normal case for the CAS-based counter.
+Since the CAS succeeds most of the time (assuming low to moderate contention), the hardware will correctly predict the branch implicit in the while loop, minimizing the overhead (накладные расходы) of the more complicated control logic.
 
 	overhead == доп. действия и операции, кот надо сделать чтобы завершить действие.
 
@@ -114,12 +129,19 @@ Since the CAS succeeds most of the time (assuming low to moderate contention), t
    проходить (по дереву поиска); 
    обходить (вершины графа)
 
-Locking entails traversing a relatively complicated code path in the JVM and may entail OS-level locking, thread suspension, and context switches. 
-On the other hand, executing a CAS from within the program involves no JVM code, system calls, or scheduling activity. 
-
+*** __ 'jcip ch 15_1'.mp3  stops here____ ***
+The language syntax for locking may be compact, but the work done by the JVM and OS to manage locks is not. Locking entails (Блокировка влечет за собой) traversing a relatively complicated code path in the JVM and may entail (может повлечь): 
+1) OS-level locking, 
+2) thread suspension, and 
+3) context switches. 
+In the best case, locking requires at least one CAS, so using locks moves the CAS out of sight but doesn't save any actual execution cost. On the other hand, executing a CAS from within the program involves no JVM code, system calls, or scheduling activity. 
+What looks like a longer code path at the application level is in fact a much shorter code path when JVM and OS activity are taken into account. 
 The primary disadvantage of CAS is that 
-IT FORCES THE CALLER TO DEAL WITH CONTENTION (by retrying, backing off, or giving up), whereas locks deal with contention automatically by blocking until the lock is available.
-   !!! Actually, the biggest disadvantage of CAS is the difficulty of constructing the surrounding algorithms correctly.
+   IT FORCES THE CALLER TO DEAL WITH CONTENTION (by retrying, backing off, or giving up), whereas locks deal with contention automatically by blocking until the lock is available.
+[Actually, the biggest disadvantage of CAS is the difficulty of constructing the surrounding algorithms correctly.]
+
+CAS performance varies widely across processors. 
+On a single-CPU system, a CAS typically takes on the order of a handful of clock cycles, since no synchronization across processors is necessary. As of this writing, the cost of an uncontended CAS on multiple CPU systems ranges from about ten to about 150 cycles; CAS performance is a rapidly moving target(подвижная цель ) and varies not only across architectures but even across versions of the same processor. Competitive forces will likely result in continued CAS performance improvement over the next several years.
 
 rule of thumb == 
 1. грубый эмпирический метод; практическое правило
@@ -127,27 +149,31 @@ rule of thumb ==
 3. правило, основанное на практическом опыте (на практике)
 
 A good rule of thumb is that the cost of the "fast path" for uncontended lock acquisition and release on most processors is approximately twice the cost of a CAS.
+(1 cas = 2 uncondendent lock aquisition.)
 
 *** 15.2.3    CAS support in the JVM ***
+Prior to Java 5.0, there was no way to do this short of writing native code. 
 In Java 5.0, low-level support was added to expose CAS operations on int, long, and object references, and the JVM compiles these into the most efficient means provided by the underlying hardware.
-
+On platforms supporting CAS, the runtime inlines them into the appropriate machine instruction(s);
    in the WORST CASE, if a CAS-like instruction is not available the JVM uses a SPIN LOCK. 
 
 SPIN LOCK (спин-блокировка) == это цикл с ожиданием (busy-waiting loop), в котором процесс ждёт доступа к разделяемому ресурсу (shared resource), периодически опрашивая флаг, указывающий, что ресурс свободен.
 
---как это может быть реализовано в ЖВМ? спин-лок для кас.
-
-This low-level JVM support is used by the atomic variable classes (AtomicXxx in java.util.concurrent.atomic); 
-these atomic variable classes are used, directly or indirectly, to implement most of the classes in java.util.concurrent.
+This low-level JVM support is used by the atomic variable classes (AtomicXxx in java.util.concument.atomic) to provide an efficient CAS operation on numeric and reference types; these atomic variable classes are used, directly or indirectly, to implement most of the classes in java.util.concument.
 
 *** 15.3 Atomic variable classes *** 324
-Atomic variables are finer-grained(более тонкий, мелкий) and lighter-weight(легковесный,облегчённый) than locks, and are critical for implementing high-performance concurrent code on multiprocessor systems. Atomic variables limit the scope of contention to a single variable; this is as finegrained as you can get.
+Atomic variables are finer-grained (более тонкий, мелкий) and lighter-weight (легковесный, облегчённый) than locks, and are critical for implementing high-performance concurrent code on multiprocessor systems. Atomic variables limit the scope of contention to a single variable; this is as finegrained as you can get.
 
-The fast (uncontended) path for updating an atomic variable is no slower than the fast path for acquiring a lock, and usually faster; the slow path is definitely faster than the slow path for locks because it does not involve suspending and rescheduling threads. 
+The FAST (uncontended = неконкурентная) path for updating an atomic variable is no slower than the fast path for acquiring a lock, and usually faster; 
+the SLOW path is definitely faster than the slow path for locks because it does not involve suspending and rescheduling threads. 
 With algorithms based on atomic variables instead of locks, threads are more likely to be able to proceed without delay and have an easier time recovering if they do experience contention.
 
-The atomic variable classes provide a generalization of volatile variables to support atomic conditional read-modify-write operations. Atomiclnteger represents an int value, and provides get and set methods with the SAME MEMORY SEMANTICS as reads and writes to a VOLATILE int.
+The atomic variable classes provide a generalization(обобщение=расширенные) of volatile variables to support atomic conditional read-modify-write operations. 
+AtomicInteger represents an int value, and provides get() and set() methods with the SAME MEMORY SEMANTICS as reads and writes to a VOLATILE int.
+It also provides an atomic '.compareAndSet()' method (which if successful has the memory effects of both reading and writing a volatile variable) and, for convenience, atomic 'add()', 'increment()', and 'decrement()' methods. 
+AtomicInteger bears a superficial resemblance to an extended Counter class (AtomicInteger имеет поверхностное сходство с расширенным классом счетчиков), but offers far greater scalability under contention because it can directly exploit underlying hardware support for concurrency. (потому напрямую использует базовую аппаратную поддержку многопоточности)
 
+// scalar [ˈskeɪlə] скалярный
 There are 12 atomic variable classes, divided into 4 groups: 
 1) scalars (AtomicInteger, AtomicLong, AtomicBoolean, AtomicReference)
 2) field updaters 
@@ -157,40 +183,53 @@ There are 12 atomic variable classes, divided into 4 groups:
 (To simulate atomic variables of other primitive types, you can cast short or byte values to and from int, and use floatToIntBits() or doubleToLongBits() for floating-point numbers.)
 
 The atomic array classes are arrays whose elements can be updated atomically.
-Т.е. когда ты записываешь переменную в массив или считываешь из неё.
+Т.е. ты АТОМАРНО записываешь переменную в массив или АТОМАРНО считываешь её из массива.
 
-The atomic array classes provide volatile access semantics to the elements of the array, a feature not available for ordinary arrays — a volatile array has VOLATILE semantics ONLY FOR THE ARRAY REFERENCE, not for its elements.
+The atomic array classes provide volatile access semantics to the elements of the array, a feature not available for ordinary arrays — a volatile array has VOLATILE semantics ONLY FOR THE ARRAY REFERENCE, not for its elements. (когда у массива стоит модификатор volatile)
 А в примере с volatile array видна будет только ссылка на массив, а переменные в массиве(их изменения) могут быть не видны другим потокам.
 
 While the atomic scalar classes extend Number, they do not extend the primitive wrapper classes such as Integer or Long. 
 In fact, they cannot: the primitive wrapper classes are immutable whereas the atomic variable classes are mutable. 
-The atomic variable classes also do not redefine hashCode() or equals(); each instance is distinct. Like most mutable objects, they are not good candidates for keys in hash-based collections.
+The ATOMIC VARIABLE CLASSES also DO NOT REDEFINE hashCode() or equals(); each instance is distinct.
+-- почему не переопределяют? 
+Like most mutable objects, they are not good candidates for keys in hash-based collections.
 
 public class AtomicInteger extends Number implements java.io.Serializable {..}
 
 *** 15.3.1 Atomics as "better volatiles" ***
+In Section 3.4.2 (OneValueCache.java), (Listing 3.12. Immutable holder for caching a number and its factors.) (VolatileCachedFactorizer.java)
+we used a volatile reference to an immutable object to update multiple state variables atomically. 
+That example relied on check-then-act, but in that particular case the race was harmless because we did not care if we occasionally lost an update. 
+In most other situations, such a check-then-act would not be harmless and could compromise data integrity. 
+For example, NumberRange on page 67 could not be implemented safely with a volatile reference to an immutable holder object for the upper and lower bounds, nor with using atomic integers to store the bounds. Because an invariant constrains the two numbers and they cannot be updated simultaneously while preserving the invariant, a number range class using volatile references or multiple atomic integers will have unsafe check-then-act sequences.
+
 We can combine the technique from OneValueCache with atomic references to close the race condition by atomically updating the reference to an immutable object holding the lower and upper bounds. 
-CasNumberRange.java in Listing 15.3; by using compareAndSet() it can update the upper or lower bound without the race conditions of NumberRange.
 
-AtomicReference гарантирует АТОМАРНУЮ замену ссылки (т.е. ты создаёшь новый объект, и его сетаешь вместо старого ис-я КАС)
+См CasNumberRange.java in Listing 15.3; by using compareAndSet() it can update the upper or lower bound without the race conditions of NumberRange.
 
-*** 15.3.2 Performance comparison: locks versus atomic variables ***
-Listings 15.4 and 15.5 show two implementations of a thread-safe PRNG, one using ReentrantLock and the other using AtomicInteger. 
+AtomicReference гарантирует АТОМАРНУЮ замену ссылки (т.е. ты создаёшь новый объект, и его сетаешь вместо старого используя КАС)
 
-This simulates typical operations that include some portion of operating on shared state and some portion of operating on thread-local state.
+*** 15.3.2 Performance comparison: locks versus atomic variables *** 326
+Listings 15.4 and 15.5 show two implementations of a thread-safe PRNG, one using ReentrantLock and the other using AtomicInteger. The test driver invokes each repeatedly; each iteration generates a random number (which fetches and modifies the shared seed state) and also performs a number of "busy-work" iterations that operate strictly on thread-local data. This simulates typical operations that include some portion of operating on shared state and some portion of operating on thread-local state.
 
-In practice, atomics tend to scale better than locks because atomics deal more effectively with typical contention levels.
+Figures 15.1 and 15.2 show throughput with low and moderate levels of simulated work in each iteration. With a low level of thread-local computation, the lock or atomic variable experiences heavy contention; with more thread-local computation, the lock or atomic variable experiences less contention since it is accessed less often by each thread.
+
+As these graphs show, at high contention levels locking tends to outperform atomic variables, but at more realistic contention levels atomic variables outperform locks.
+[The same holds true in other domains: traffic lights provide better throughput for high traffic but rotaries provide better throughput for low traffic; the contention scheme used by ethernet networks performs better at low traffic levels, but the token-passing scheme used by token ring networks does better with heavy traffic.]
+This is because a lock reacts to contention by suspending threads, reducing CPU usage and synchronization traffic on the shared memory bus. (This is similar to how blocking producers in a producer-consumer design reduces the load on consumers and thereby lets them catch up.) On the other hand, with atomic variables, contention management is pushed back to the calling class. Like most CAS-based algorithms, AtomicPseudoRandom reacts to contention by trying again immediately, which is usually the right approach but in a high-contention environment just creates more contention.
+
+Before we condemn AtomicPseudoRandom as poorly written or atomic variables as a poor choice compared to locks, we should realize that the level of contention in Figure 15.1 is unrealistically high: no real program does nothing but contend for a lock or atomic variable. In practice, atomics tend to scale better than locks because atomics deal more effectively with typical contention levels.
 
 The performance reversal between locks and atomics at differing levels of contention illustrates the strengths and weaknesses of each. 
 With LOW TO MODERATE CONTENTION, atomics offer better scalability; 
-with HIGH CONTENTION, locks offer better contention avoidance. 
+with HIGH CONTENTION, locks offer better contention avoidance. (предотвращение, избегание, предупреждение)
 (CAS-based algorithms also outperform lock-based ones on single-CPU systems, since a CAS always succeeds on a single-CPU system except in the unlikely case that a thread is preempted(вытеснили, прервали) in the middle of the read-modify-write operation.)
 
 Figures 15.1 and 15.2 include a third curve; an implementation of PseudoRandom that uses a ThreadLocal for the PRNG state. 
 This implementation approach changes the behavior of the class — each thread sees its own private sequence of pseudorandom numbers, instead of all threads sharing one sequence — but illustrates that it is often cheaper to not share state at all if it can be avoided. 
 We can improve scalability by dealing more effectively with contention, but true scalability is achieved only by eliminating contention entirely.
 
-*** 15.4 Nonblocking algorithms ***
+*** 15.4 Nonblocking algorithms *** 329
 Lock-based algorithms are at risk for a number of liveness failures. 
 If a thread HOLDING A LOCK is delayed due to blocking I/O, page fault, or other delay, it is possible that no thread will make progress. 
 
@@ -205,13 +244,15 @@ NONBLOCKING ALGORITHMS are also IMMUNE TO DEADLOCK OR PRIORITY INVERSION (though
 
 Good nonblocking algorithms are known for many common data structures, including stacks, queues, priority queues, and hash tables — though designing new ones is a task best left to experts.
 
-*** 15.4.1    A nonblocking stack ***
+*** 15.4.1    A nonblocking stack *** 330
 Nonblocking algorithms are considerably more complicated than their lock-based equivalents. 
-The key to creating nonblocking algorithms is figuring out how to LIMIT THE SCOPE OF ATOMIC CHANGES TO A SINGLE VARIABLE while maintaining data consistency.
+The key to creating nonblocking algorithms is figuring out how to LIMIT THE SCOPE OF ATOMIC CHANGES TO A __SINGLE VARIABLE__ while maintaining data consistency.
 
-Stacks are the simplest linked data structure: each element refers to only one other element and each element is referred to by only one object reference. 
+In linked collection classes such as queues, you can sometimes get away with expressing state transformations as changes to individual links and using an AtomicReference to represent each link that must be updated atomically.
 
-ConcurrentStack.java in Listing 15.6
+Stacks are the simplest linked data structure: each element refers to only one other element and each element is referred to by only one object reference.
+(СМ ConcurrentStack.java in Listing 15.6)
+
 The stack is a linked list of Node elements, rooted at top, each of which contains a VALUE and a LINK to the next element. 
 The push() method prepares a new link node whose next field refers to the current top of the stack, and then uses CAS to try to install it on the top of the stack. 
 If the same node is still on the top of the stack as when we started, the CAS succeeds; 
@@ -219,58 +260,58 @@ if the top node has changed (because another thread has added or removed element
 In either case, the stack is still in a consistent state after the CAS.
 
 Characteristics of all nonblocking algorithms: 
-SOME WORK IS DONE SPECULATIVELY(рисковано, допускать, делать предположение не зная всех фактов) AND MAY HAVE TO BE REDONE.
+SOME WORK IS DONE SPECULATIVELY(рисковано, теоретически, делать предположение не зная всех фактов) AND MAY HAVE TO BE REDONE.
 
 In ConcurrentStack, when we construct the Node representing the new element, WE ARE HOPING that the value of the next reference will still be correct by the time it is installed on the stack, but ARE PREPARED TO RETRY in the event of contention(разногласие, конфликт, спор, соревнование).
 
 Nonblocking algorithms like ConcurrentStack derive their THREAD SAFETY from the fact that, like locking, compareAndSet() PROVIDES BOTH ATOMICITY AND VISIBILITY GUARANTEES. 
----When a thread changes the state of the stack, it does so with a compareAndSet, which has the memory effects of a VOLATILE WRITE.
----When a thread examines the stack, it does so by calling get on the same AtomicReference, which has the memory effects of a VOLATILE READ. 
--So any CHANGES made by one thread are SAFELY PUBLISHED to any other thread that examines the state of the list. And the list is modified with a compareAndSet that atomically either updates the top reference or fails if it detects interference from another thread.
+---When a thread changes the state of the stack, it does so with a 'compareAndSet()', which has the memory effects of a VOLATILE WRITE.
+---When a thread examines the stack, it does so by calling 'get()' on the same AtomicReference, which has the memory effects of a VOLATILE READ. 
+---So any CHANGES made by one thread are SAFELY PUBLISHED to any other thread that examines the state of the list. 
+---And the list is modified with a 'compareAndSet()' that atomically either updates the top reference or fails if it detects interference from another thread.
 
---------------------------------------
+==================== VOLATILE WRITE & VOLATILE READ EFFECTS: ====================
 The visibility effects of volatile variables extend beyond the value of the volatile variable itself. When thread A writes to a volatile variable and subsequently thread B reads that same variable, the values of all variables that were visible to A prior to writing to the volatile variable become visible to B after reading the volatile variable. 
 So from a memory visibility perspective, writing a volatile variable is like exiting a synchronized block and reading a volatile variable is like entering a synchronized block. 
 However, we do not recommend relying too heavily on volatile variables for visibility; code that relies on volatile variables for visibility of arbitrary state is more fragile and harder to understand than code that uses locking.
 
 Under the new memory model, it is still true that volatile variables cannot be reordered with each other. The difference is that it is now no longer so easy to reorder normal field accesses around them. Writing to a volatile field has the same memory effect as a monitor release, and reading from a volatile field has the same memory effect as a monitor acquire. In effect, because the new memory model places stricter constraints on reordering of volatile field accesses with other field accesses, volatile or not, anything that was visible to thread A when it writes to volatile field f becomes visible to thread B when it reads f. 
---------------------------------------
-
+============================================================
 
 *** 15.4.2    A nonblocking linked list *** 330
+Basic pattern of using CAS: to update a value speculatively, retrying if the update fails.
 The trick to building nonblocking algorithms is TO LIMIT THE SCOPE OF ATOMIC CHANGES TO A SINGLE VARIABLE. 
 Т.е. ограничить область, в которой будут изменения, одной переменной.
-
 With counters this is trivial, and with a stack it is straightforward enough, but for more complicated data structures such as queues, hash tables, or trees, it can get a lot trickier.
 
-Queue maintains separate head and tail pointers. 
+A linked queue is more complicated than a stack because it must support fast access to both the head and the tail. To do this, it maintains separate head and tail pointers. Two pointers refer to the node at the tail: (1) the next pointer of the current last element, and (2) the tail pointer. To insert a new element successfully, both of these pointers must be updated—atomically. At first glance, this cannot be done with atomic variables; separate CAS operations are required to update the two pointers, and if the first succeeds but the second one fails the queue is left in an inconsistent state. And, even if both operations succeed, another thread could try to access the queue between the first and the second. Building a nonblocking algorithm for a linked queue requires a plan for both these situations.
+
 На ноду в конце указывают 2 указателя:
 Two pointers refer to the node at the tail: 
 1) the next pointer of the current last element, 
 2) and the tail pointer. 
 To insert a new element successfully, both of these pointers must be updated atomically. 
 
-Кажется, что нужны 2 операции, и даже if both operations succeed, another thread could try to access the queue between the first and the second.
-
 Поэтому используем хитрости:
 1) The first is to ensure that the data structure is always in a consistent state, even in the middle of an multi-step update.
     That way, if thread A is in the middle of a update when thread B arrives on the scene, B can tell that an operation has been partially completed and knows not to try immediately to apply its own update. Then B can wait (by repeatedly examining the queue state) until A finishes, so that the two don't get in each other's way.
-    
-2) the second trick is to make sure that if B arrives to find the data structure in the middle of an update by A, enough information is already embodied(содержится) in the data structure [for B to finish the update for A].
-    To make the algorithm nonblocking, we must ensure that the failure of a thread does not prevent other threads from making progress.
-    If one thread failed in the middle of an update, no thread would be able to access the queue at all.
-If B "helps" A by finishing A's operation, B can proceed with its own operation without waiting for A. When A gets around to finishing its operation, it will find that B already did the job for it.
+
+While this trick by itself would suffice to let threads "take turns" accessing the data structure without corrupting it, if one thread failed in the middle of an update, no thread would be able to access the queue at all. To make the algorithm nonblocking, we must ensure that the failure of a thread does not prevent other threads from making progress. Thus,    
+   2) the second trick is to make sure that if B arrives to find the data structure in the middle of an update by A, enough information is already embodied(содержится) in the data structure [for B to finish the update for A].
+   If B "helps" A by finishing A's operation, B can proceed with its own operation without waiting for A. When A gets around to finishing its operation, it will find that B already did the job for it.
+
+As in many queue algorithms, an empty queue consists of a "sentinel" or "dummy" node, and the head and tail pointers are initialized to refer to the sentinel. The tail pointer always refers to the sentinel (if the queue is empty), the last element in the queue, or (in the case that an operation is in mid-update) the second-to-last element.
 
 Inserting a new element involves updating two pointers. The first links the new node to the end of the list by updating the next pointer of the current last element; the second swings the tail pointer around to point to the new last element. 
 Between these two operations, the queue is in the intermediate state, shown in Figure 15.4. 
-After the second update, the queue is again in the quiescent state (в состоянии покоя,устойчивый), shown in Figure 15.5.
+After the second update, the queue is again in the quiescent state ([kwaɪˈesnt] в состоянии покоя,устойчивый), shown in Figure 15.5.
 
 Поэтому ключ к применению тех 2х трюков:
-1) if the queue is in the quiescent state, the next field of the link node pointed to by tail is null, 
+The key observation that enables both of the required tricks is that:
+1) if the queue is in the quiescent state, the next field of the link node pointed to by tail is null, (tail.next() == NULL)
 2) and if it is in the intermediate state, tail.next() is non-null.
 So any thread can immediately tell the state of the queue by examining tail.next().
 Further, if the queue is in the intermediate state, it can be restored to the quiescent state by advancing the tail pointer forward one node, finishing the operation for whichever thread is in the middle of inserting an element.
-
 
 A) LinkedQueue.put() first checks to see if the queue is in the INTERMEDIATE STATE before attempting to insert a new element (step A).
 
@@ -283,16 +324,23 @@ C) The CAS at step C, which links the new node at the tail of the queue, could f
 [если поток сможет добавить новый нод -- то в этом if будет true -- и, значит, поток уже по-любому выйдет из while(true), даже если он не успеет передвинуть указатель хвоста.
 это за него сделает другой поток.]
 
-
 D) the second CAS (step D) is considered "cleanup", since it can be performed either by the inserting thread or by any other thread. 
 If D fails, the inserting thread returns anyway rather than retrying the CAS, because no retry is needed — another thread has already finished the job in its step B!
+This works because before any thread tries to link a new node into the queue, it first checks to see if the queue needs cleaning up by checking if 'tail.next' is non-null. If it is, it advances the tail pointer first (perhaps multiple times) until the queue is in the quiescent state.
+
 А в любом ли случае поток дойдёт до выхода из while (true) ?
 ВСЕГДА!
 он правда может не успеть пердвинуть хвост (метод tail.compareAndSet(..) вернёт false), но это неважно, т.к. текущий поток всё равно здесь выйдет из while (true).
-главное что в этом if он уже добавил свой новый нод.
+главное что в этом if он уже добавил ссылку на свой новый нод в curTail.next.
 
 *** 15.4.3 Atomic field updaters *** 335
 Instead of representing each Node with an atomic reference, ConcurrentLinkedQueue uses an ORDINARY VOLATILE REFERENCE and updates it through the reflection-based AtomicReferenceFieldUpdater, as shown in Listing 15.8.
+      private class Node<E> {
+        private final E item;
+        private volatile Node<E> next;
+    ...... }
+       private static AtomicReferenceFieldUpdater<Node, Node> nextUpdater
+              = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
 
 The atomic field updater classes (available in Integer, Long, and Reference versions) represent a reflection-based "view" of an existing volatile field so that CAS can be used on existing volatile fields. 
 The updater classes have no constructors; to create one, you call the newUpdater() factory method, specifying the class and field name. 
@@ -301,10 +349,10 @@ The atomicity guarantees for the updater classes are weaker than for the regular
 
 !!! т.е. если все потоки будут обновлять значение через этот же апдейтер -- то всё ок, атомарность гарантируется. А если кто-то будет изменять значение напрямую -- то не гарантируется.
 
-This somewhat circuitous approach(обходной путь) is used entirely for performance reasons. For frequently allocated, shortlived objects like queue link nodes, eliminating the creation of an AtomicReference for each Node is significant enough to reduce the cost of insertion operations.
+This somewhat circuitous approach([sɜːˈkjʊɪtəs] окольный/извилистый путь) is used entirely for performance reasons. For frequently allocated, shortlived objects like queue link nodes, eliminating the creation of an AtomicReference for each Node is significant enough to reduce the cost of insertion operations.
 
 However, in nearly all situations, ordinary atomic variables perform just fine — in only a few cases will the atomic field updaters be needed. (The atomic field updaters are also useful when you want to perform atomic updates while [preserving(сохранять, оберегать) the serialized form] of an existing class.)
-Т.е. чтобы класс после любой оперции был в consistent state, и его можно было передавать в сериализованном виде.
+Т.е. чтобы класс после любой операции был в consistent state, и его можно было передавать в сериализованном виде.
 
 *** 15.4.4 The ABA problem ***
 A -> B -> A
@@ -319,21 +367,19 @@ This ABA problem can arise in algorithms that do their own memory management for
 In this case, that the head of a list still refers to a previously observed node IS NOT ENOUGH TO IMPLY that the CONTENTS of the list HAVE NOT CHANGED. 
 В ноде лежит значение, ты не изменяешь нод, а меняешь её контент, и там уже другое значение.
 
-If you CANNOT avoid the ABA problem by letting the garbage collector manage link nodes for you, [т.е. GC решает АБА проблему]
-[а без GC --]there is still a relatively simple SOLUTION:
+If you CANNOT avoid the ABA problem by letting the garbage collector manage link nodes for you, there is still a relatively simple SOLUTION
+[т.е. GC решает АБА проблему, а без GC надо ис-ть следующее:]
 INSTEAD OF UPDATING THE VALUE OF A REFERENCE, UPDATE A PAIR OF VALUES, A REFERENCE AND A VERSION NUMBER. 
 
 Even if the value changes from A to B and back to A, the version numbers will be different. 
 AtomicStampedReference (and its cousin AtomicMarkableReference) provide atomic conditional update on a pair of variables. 
-AtomicStampedReference updates an object reference-integer pair, allowing "versioned" references that are immune[8-In practice, anyway; theoretically the counter could wrap.] to the ABA problem. 
+AtomicStampedReference updates an object reference-integer pair, allowing "versioned" references that are immune[In practice, anyway; theoretically the counter could wrap.] to the ABA problem. 
 
-Similarly, AtomicMarkableReference updates an object reference-boolean pair that is used by some algorithms to let a node remain in a list while being marked as deleted.[9-Many processors provide a double-wide CAS (CAS2 or CASX) operation that can operate on a pointer-integer pair, which would make this operation reasonably efficient. 
+Similarly, AtomicMarkableReference updates an object reference-boolean pair that is used by some algorithms to let a node remain in a list while being marked as deleted.[Many processors provide a double-wide CAS (CAS2 or CASX) operation that can operate on a pointer-integer pair, which would make this operation reasonably efficient. 
 As of Java 6, AtomicStampedReference does not use double-wide CAS even on platforms that support it. 
 (Double-wide CAS differs from DCAS, which operates on two unrelated memory locations; as of this writing, no current processor implements DCAS.)]
 
-
 *** Summary ***
-
 Nonblocking algorithms maintain thread safety by using low-level concurrency primitives such as compare-and-swap instead of locks. 
 These low-level primitives are exposed through the atomic variable classes, which can also be used as "better volatile variables" providing atomic update operations for integers and object references.
 
