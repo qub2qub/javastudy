@@ -1,49 +1,60 @@
 Chapter 16 The Java Memory Model (337 - 351 = 15)
+Throughout this book, we've mostly avoided the low-level details of the Java Memory Model (JMM) and instead focused on higher-level design issues such as safe publication, specification of, and adherence to synchronization policies. These derive their safety from the JMM, and you may find it easier to use these mechanisms effectively when you understand why they work. This chapter pulls back the curtain to reveal the low-level requirements and guarantees of the Java Memory Model and the reasoning behind some of the higher-level design rules offered in this book.
 
 *** 16.1 What is a memory model, and why would I want one? ***
-
+A memory model addresses the question "Under what conditions does a thread that reads aVariable see the value 3?"
 Memory model решает вопрос, "при каких условиях поток, который считывает переменную, увидит её значение, например 3".
 
 При отсутствии синхронизации есть масса причин, почему поток может не увидеть этого значения сразу, или даже вообще.
-
 Компиляторы могут генерировать инструкции в другом порядке, чем в сорс коде, или могут сохранять переменную в регистрах, вместо памяти.
 Процессоры могут выполнять инструкции параллельно или в "беспорядке", Кэши могут изменять порядок, в котором запись в переменную передаётся в главную память.
 А также значения, сохранённые в локальных кэшах процессора, могут не быть видны другим процессорам.
-
 Из-за всего этого поток может не увидеть up-to-date(современный; новейший) значение переменной;
 или при отсутствии синхронизации действия с памятью в других потоках может происхоить без порядка(out of order).
 
+there are a number of reasons a thread might not immediately—or ever—see the results of an operation in another thread. Compilers may generate instructions in a different order than the "obvious" one suggested by the source code, or store variables in registers instead of in memory; processors may execute instructions in parallel or out of order; caches may vary the order in which writes to variables are committed to main memory; and values stored in processor-local caches may not be visible to other processors. These factors can prevent a thread from seeing the most up-to-date value for a variable and can cause memory actions in other threads to appear to happen out of order—if you don't use adequate synchronization.
+
 В однопоточном приложении это всё скрыто от нас, и никак не влияет, кроме что скорости.
+In a single-threaded environment, all these tricks played on our program by the environment are hidden from us and have no effect other than to speed up execution. 
 
-Java Language Specification requires the JVM to maintain within-thread as-if-serial semantics:
+Java Language Specification requires the JVM to maintain "within-thread as-if-serial semantics":
 --до тех пор, пока программа имеет тот же результат, как если бы она выполнялась в порядке "последовательно, как и написана программа, (в строго последовательном окружении)" -- все эти игры (с перестановкой и др.) разрешены. В этом есть и плюс, т.к. увеличивается производительность.
---as long as the program has the same result as if it were executed in program order in a strictly sequential environment, all these games are permissible. And that's a good thing, too, because these rearrangements are responsible for much of the improvement in computing performance.
+--as long as the program has the same result as if it were executed in program order in a strictly sequential environment, all these games are permissible. And that's a good thing, too, because these rearrangements are responsible for much of the improvement in computing performance in recent years.
 
-INCREASED PARALLELISM — pipelined superscalar execution units, dynamic instruction scheduling, speculative execution, and sophisticated multilevel memory caches. 
+Certainly higher clock rates have contributed to improved performance, but so has INCREASED PARALLELISM — pipelined superscalar execution units, dynamic instruction scheduling, speculative execution, and sophisticated multilevel memory caches. As processors have become more sophisticated, so too have compilers, rearranging instructions to facilitate optimal execution and using sophisticated global register-allocation algorithms. And as processor manufacturers transition to multicore processors, largely because clock rates are getting harder to increase economically, HARDWARE PARALLELISM WILL ONLY INCREASE.
 
-As processors have become more sophisticated, so too have compilers, rearranging instructions to facilitate optimal execution and using sophisticated global register-allocation algorithms.
+IN A MULTITHREADED ENVIRONMENT, THE ILLUSION OF SEQUENTIALITY CANNOT BE MAINTAINED WITHOUT SIGNIFICANT PERFORMANCE COST. Since most of the time threads within a concurrent application are each "DOING THEIR OWN THING", excessive inter-thread coordination WOULD ONLY SLOW DOWN the application to NO REAL BENEFIT. 
+It is only WHEN multiple threads SHARE DATA that it is necessary to coordinate their activities, and the JVM relies on the program to identify when this is happening by using synchronization.
 
-In a multithreaded environment, the illusion of sequentiality cannot be maintained without significant performance cost. 
-Since most of the time threads within a concurrent application are each "doing their own thing", excessive inter-thread coordination would only slow down the application to no real benefit.
+The JMM specifies the minimal guarantees the JVM must make about when writes to variables become visible to other threads. It was designed to balance the need for predictability and ease of program development with the realities of implementing high-performance JVMs on a wide range of popular processor architectures. Some aspects of the JMM may be disturbing at first if you are not familiar with the tricks used by modern processors and compilers to squeeze extra performance out of your program.
 
 *** 16.1.1 Platform memory models ***
 In a shared-memory multiprocessor architecture, each processor has its own cache that is periodically reconciled(приводить в соответствие, согласовывать) with main memory.
-
+Processor architectures provide varying degrees of CACHE COHERENCE; some provide minimal guarantees that allow different processors to see different values for the same memory location at virtually any time.
 The operating system, compiler, and runtime (and sometimes, the program, too) must make up the difference between what the hardware provides and what thread safety requires.
 
-Ensuring that every processor knows what every other processor is doing at all times is expensive. Most of the time this information is not needed, so processors relax their memory-coherency guarantees to improve performance. 
-Есть memory model у каждой архитектуры, и ММ говорит программе, какие guarantees they can expect from the memory system, и говорит, какие нужны доп. инструкции при работе sharing data.
+Ensuring that every processor knows what every other processor is doing at all times is expensive. MOST OF THE TIME THIS INFORMATION IS NOT NEEDED, so processors relax their memory-coherency guarantees to improve performance. 
+An architecture's memory model tells programs what guarantees they can expect from the memory system, and specifies the special instructions required (called "memory barriers" or "fences") to get the additional memory coordination guarantees required when sharing data. 
 In order to shield the Java developer from the differences between memory models across architectures, Java provides its own memory model, and the JVM deals with the differences between the JMM and the underlying platform's memory model by inserting memory barriers at the appropriate places.
 
+One convenient mental model for program execution is to imagine that there is a single order in which the operations happen in a program, regardless of what processor they execute on, and that each read of a variable will see the last write in the execution order to that variable by any processor. This happy, if unrealistic, model is called SEQUENTIAL CONSISTENCY. 
+
 SEQUENTIAL CONSISTENCY -- последовательная согласованность -- это если думать, что операции в программе выполняются в единственном порядке, как они записаны в сырцах, и думать что каждый процессор увидит самое последнее изменее переменной, сделанное любым другим процессором.
-The classic sequential computing model, the von Neumann model, is only a vague approximation of how modern multiprocessors behave.
+
+Software developers often mistakenly assume sequential consistency, but no modern multiprocessor offers sequential consistency and the JMM does not either. The classic sequential computing model, the von Neumann model, is only a vague approximation of how modern multiprocessors behave.
+
+The bottom line is that modern shared-memory multiprocessors (and compilers) can do some surprising things when data is shared across threads, unless you've told them not to through the use of memory barriers. Fortunately, Java programs need not specify the placement of memory barriers; they need only identify when shared state is being accessed, through the proper use of synchronization.
 
 *** 16.1.2    Reordering ***
-JMM can permit actions to appear to execute in different orders from the perspective of different threads, making reasoning about ordering in the absence of synchronization even more complicated. 
+"unlucky timing" where the scheduler interleaved operations so as to cause incorrect results in insufficiently synchronized programs. 
+To make matters worse, the JMM can permit actions to appear to execute in different orders from the perspective of different threads, making reasoning about ordering in the absence of synchronization even more complicated. The various reasons why operations might be delayed or appear to execute out of order can all be grouped into the general category of reordering.
+
+(см PossibleReordering.java)
 
 reason about == рассуждать о (чем-либо)
 The actions in each thread have no dataflow dependence on each other, and accordingly can be executed out of order.
 
+It is prohibitively difficult to reason about ordering in the absence of synchronization; it is much easier to ensure that your program uses synchronization appropriately.
 Synchronization inhibits(запрещать; налагать запрет) the compiler, runtime, and hardware from reordering memory operations in ways that would violate the visibility guarantees provided by the JMM.
 [On most popular processor architectures, the memory model is strong enough that the performance cost of a volatile read is in line with that of a nonvolatile read.]
 
@@ -58,7 +69,7 @@ A data race случается, когда нет happens-before порядка 
 
 __ что такое data race ??
 
-A correctly synchronized program is one with no data races; 
+A "correctly synchronized program" is one with no data races; 
 correctly synchronized programs exhibit(показывают, проявляют) sequential consistency, meaning that all actions within the program appear to happen in a fixed, global order.
 
 The rules for HAPPENS-BEFORE are:
