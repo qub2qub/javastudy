@@ -164,7 +164,7 @@ If you do not ensure that publishing the shared reference happens-before another
 [И будет что ссылка может стать доступной раньше, чем завершится запись данных во все филды объекта.]
 overlook == не заметить, просмотреть, пропустить; не обращать внимания, не придавать значения, игнорировать
 
-Unsafe publication can happen as a result of an incorrect lazy initialization, as shown in Figure 16.3. At first glance, the only problem here seems to be the race condition described in Section 2.2.2. Under certain circumstances, such as when all instances of the Resource are identical, you might be willing to overlook these (along with the inefficiency of possibly creating the Resource more than once). Unfortunately, even if these defects are overlooked, UnsafeLazylnitialization is still not safe, because another thread could observe a reference to a partially constructed Resource.
+Unsafe publication can happen as a result of an incorrect lazy initialization, as shown in Figure 16.3. At first glance, the only problem here seems to be the race condition described in Section 2.2.2. Under certain circumstances, such as when all instances of the Resource are identical, you might be willing to overlook these [возможно, вы захотите закрыть на это глаза] (along with the inefficiency of possibly creating the Resource more than once). Unfortunately, even if these defects are overlooked, UnsafeLazylnitialization is still not safe, because another thread could observe a reference to a partially constructed Resource.
 
 Пример,...
 private static Resource resource;
@@ -174,7 +174,7 @@ public static Resource getInstance() {
 	return resource;
 }
 Suppose thread A is the first to invoke .getInstance(). 
-It sees that resource is 'null', instantiates a new Resource, and sets resource to reference it. When thread B later calls getInstance, it might see that resource already has a NON-NULL VALUE (а может и не увидеть) and just USE the already constructed Resource. 
+It sees that resource is 'null', instantiates a new Resource, and sets resource to reference it. When thread B later calls getInstance(), it might see that resource already has a NON-NULL VALUE (а может и не увидеть) and just USE the already constructed Resource. 
 This might look harmless at first, but there is no happens-before ordering between the writing of resource in A and the reading of resource in B. 
 A data race has been used to publish the object, and therefore B is not guaranteed to see the correct state of the Resource.
 
@@ -197,14 +197,14 @@ Similarly, using a shared variable guarded by a lock or a shared volatile variab
 
 !!! This happens-before guarantee is actually a stronger promise of visibility and ordering than made by safe publication.
 
-When X is safely published from A to B, the safe publication guarantees visibility of the state of X, but not of the state of other variables A may have touched. But if A putting X on a queue happens-before B fetches X from that queue, not only does B see X in the state that A left it (assuming that X has not been subsequently modified by A or anyone else), but B sees everything A did before the handoff (again, subject to the same caveat)-->[The JMM guarantees that B sees a value at least as up-to-date as the value that A wrote; subsequent writes may or may not be visible.]
+When X is safely published from 'A' to 'B', the safe publication guarantees visibility of the state of X, but not of the state of other variables 'A' may have touched. But if A putting X on a queue happens-before B fetches X from that queue, not only does B see X in the state that A left it (assuming that X has not been subsequently modified by A or anyone else), but B sees everything A did before the handoff (again, subject to the same caveat)-->[The JMM guarantees that B sees a value at least as up-to-date as the value that A wrote; subsequent writes may or may not be visible.]
 
-Why did we focus so heavily on @GuardedBy and safe publication, when the JMM already provides us with the more powerful happens-before? Thinking in terms of handing off object ownership and publication fits better into most program designs than thinking in terms of visibility of individual memory writes. The happens-before ordering operates at the level of individual memory accesses— it is a sort of "concurrency assembly language". Safe publication operates at a level closer to that of your program's design.
+Why did we focus so heavily on @GuardedBy and safe publication, when the JMM already provides us with the more powerful happens-before? Thinking in terms of handing off object ownership and publication fits better into most program designs than thinking in terms of visibility of individual memory writes. The happens-before ordering operates at the level of individual memory accesses — it is a sort of "concurrency assembly language". Safe publication operates at a level closer to that of your program's design.
 
 *** 16.2.3    Safe initialization idioms ***
-It sometimes makes sense to defer initialization of objects that are expensive to initialize until they are actually needed, but we have seen how the misuse of lazy initialization can lead to trouble. UnsafeLazylnitialization can be fixed by making the getResource method synchronized, as shown in Listing 16.4. Because the code path through getInstance is fairly short (a test and a predicted branch), if getInstance is not called frequently by many threads, there is little enough contention for the SafeLazyInitialization lock that this approach offers adequate performance.
+It sometimes makes sense to defer initialization of objects that are expensive to initialize until they are actually needed, but we have seen how the misuse of lazy initialization can lead to trouble. UnsafeLazylnitialization can be fixed by making the .getResource() method 'synchronized', as shown in Listing 16.4. Because the code path through 'getInstance' is fairly short (a test and a predicted branch), if 'getInstance' is not called frequently by many threads, there is little enough contention for the SafeLazyInitialization lock that this approach offers adequate performance.
 
-The treatment of static fields with initializers (or fields whose value is initialized in a static initialization block) IS SOMEWHAT SPECIAL and offers additional thread-safety guarantees. 
+The treatment of STATIC FIELDS WITH INITIALIZERS (or fields whose value is initialized in a static initialization block) IS SOMEWHAT SPECIAL and offers additional thread-safety guarantees. 
 
 !!! Static initializers are run by the JVM at class initialization time, after class loading but before the class is used by any thread. 
 
@@ -240,7 +240,8 @@ The JVM defers[dı`fɜ:](откладывать, отсрочивать, зад�
 The FIRST CALL to getResource() by any thread causes ResourceHolder to be loaded and initialized [самой ЖВМ], at which time the initialization of the Resource happens through the STATIC INITIALIZER.
 
 *** 16.2.4 Double-checked locking (DCL) *** ! ANTIPATTERN !
-In very early JVMs, synchronization, even uncontended synchronization, had a significant performance cost. As a result, many clever (or at least clever-looking) tricks were invented to reduce the impact of synchronization—some good, some bad, and some ugly. DCL falls into the "ugly" category.
+
+In very early JVMs, synchronization, even uncontended synchronization, had a significant performance cost. As a result, many clever (or at least clever-looking) tricks were invented to reduce the impact of synchronization — some good, some bad, and some ugly. DCL falls into the "ugly" category.
 
 Again, because the performance of early JVMs left something to be desired, lazy initialization was often used to avoid potentially unnecessary expensive operations or reduce application startup time. A properly written lazy initialization method requires synchronization. But at the time, synchronization was slow and, more importantly, not completely understood: the exclusion aspects were well enough understood, but the visibility aspects were not.
 
@@ -284,10 +285,10 @@ WITHOUT initialization safety, supposedly immutable objects like String can appe
 !!! THE SECURITY ARCHITECTURE RELIES ON THE IMMUTABILITY OF STRING; 
 the lack of initialization safety could create security vulnerabilities that allow malicious(злобный; злой, злоумышленный, злонамеренный) code to bypass security checks.
 
-!!!! Initialization safety guarantees that FOR PROPERLY CONSTRUCTED OBJECTS, all threads will see the CORRECT VALUES OF FINAL FIELDS that were set by the constructor, regardless of how the object is published. 
+!!!! INITIALIZATION SAFETY guarantees that FOR PROPERLY CONSTRUCTED OBJECTS, all threads will see the CORRECT VALUES OF FINAL FIELDS that were set by the constructor, regardless of how the object is published. 
 !!!! Further, ANY VARIABLES THAT CAN BE REACHED THROUGH A FINAL FIELD[Т.е. любые другие переменные, которые можно получить из этого файнал поля/класса/списка/массива] of a properly constructed object (such as the elements of a final array or the contents of a HashMap referenced by a final field) are also guaranteed to be visible to other threads.-->[This applies only to objects that are reachable ONLY through final fields OF THE OBJECT UNDER CONSTRUCTION.] т.е. ссылка есть ТОЛЬКО в файнал поле данного объекта.
 
-!!! For objects with final fields, initialization safety prohibits reordering [any part of construction] with the [initial load of a reference to that object]. 
+!!! For objects with final fields, INITIALIZATION SAFETY prohibits reordering [any part of construction] with the [initial load of a reference to that object]. 
 т.е. ссылка на файнал объект станет доступна только после выполнения всех операций в конструкторе.(сами операции в конструкторе навреное и могут переставляться, но суть что ссылка станет доступна только после этого.)
 
 All writes to final fields made by the constructor, as well as to any variables reachable through those fields, become "FROZEN" when the constructor completes, and any thread that obtains a reference to that object is guaranteed to see a value that is at least as up to date as the frozen value. 
@@ -299,7 +300,7 @@ However, a number of small changes to SafeStates would take away its thread safe
 1__ If states were not final, 
 2__ or if any method other than the constructor modified its contents, initialization safety would not be strong enough to safely access SafeStates without synchronization. 
 
-If SafeStates had other NONFINAL fields, other threads might still see INCORRECT values of those fields. 
+If SafeStates had other NONFINAL fields, other threads might still see INCORRECT values of those fields.
 3__ !!! And allowing the object to ESCAPE DURING CONSTRUCTION invalidates the initialization-safety guarantee.
 
 Initialization safety makes visibility guarantees only for the values that are reachable through final fields as of the time the constructor finishes. 
