@@ -1,0 +1,138 @@
+Глава 1 • Надежные, масштабируемые и удобные в сопровождении приложения
+Reliable, Scalable, and Maintainable Applications
+Many applications today are data-intensive, as opposed to compute-intensive. Raw CPU power is rarely a limiting factor for these applications—bigger problems are usually the amount of data, the complexity of data, and the speed at which it is changing.
+...
+*** Reliability
+typical expectations include:
+• The application performs the function that the user expected.
+• It can tolerate the user making mistakes or using the software in unexpected ways.
+• Its performance is good enough for the required use case, under the expected load and data volume.
+• The system prevents any unauthorized access and abuse.
+If all those things together mean “working correctly,” then we can understand reliability as meaning, roughly, “continuing to work correctly, even when things go wrong.”
+
+Note that a fault is not the same as a failure [2]. 
+A FAULT is usually defined as one component of the system deviating from its spec, 
+whereas a FAILURE is when the system as a whole stops providing the required service to the user. 
+It is impossible to reduce the probability of a fault to zero; therefore it is usually best to design fault-tolerance mechanisms that prevent faults from causing failures. In this book we cover several techniques for building reliable systems from unreliable parts.
+
+Hardware Faults
+Software Errors
+Human Errors
+
+How Important Is Reliability?
+
+*** Scalability
+Even if a system is working reliably today, that doesn’t mean it will necessarily work reliably in the future. One common reason for degradation is increased load.
+Scalability is the term we use to describe a system’s ABILITY TO COPE WITH INCREASED LOAD;
+discussing scalability means considering questions like “If the system grows in a particular way, what are our options for coping with the growth?” and “How can we add computing resources to handle the additional load?”
+
+Describing Load
+First, we need to succinctly describe the current load on the system; only then can we discuss growth questions (what happens if our load doubles?). Load can be described with a few numbers which we call LOAD PARAMETERS. 
+The best choice of parameters depends on the architecture of your system: 
+it may be requests per second to a web server, the ratio of reads to writes in a database, the number of simultaneously active users in a chat room, the hit rate on a cache, or something else.
+
+Describing Performance
+Once you have described the load on your system, you can investigate what happens when the load increases. You can look at it in two ways:
+• When you increase a load parameter and keep the system resources (CPU, memory, network bandwidth, etc.) unchanged, how is the performance of your system affected?
+• When you increase a load parameter, how much do you need to increase the resources if you want to keep performance unchanged?
+Both questions require performance numbers
+
+In a batch processing system such as Hadoop, we usually care about throughput—the number of records we can process per second, or the total time it takes to run a job on a dataset of a certain size.iU In online systems, what’s usually more important is the service’s response time—that is, the time between a client sending a request and receiving a response.
+
+LATENCY and RESPONSE TIME are often used synonymously, but they are not the same. The response time is what the client sees: besides the actual time to process the request (the service time), it includes network delays and queueing delays. Latency is the duration that a request is waiting to be handled—during which it is latent, awaiting service [17].
+
+you’ll get a slightly different response time on every try -- We therefore need to think of response time not as a single number, but as a distribution of values that you can measure.
+
+Amazon has also observed that a 100 ms increase in response time reduces sales by 1%, and others report that a 1-second slowdown reduces a customer satisfaction metric by 16%.
+
+For example, percentiles are often used in service level objectives (SLOs) and service level agreements (SLAs), contracts that define the expected performance and availability of a service. An SLA may state that the service is considered to be up if it has a median response time of less than 200 ms and a 99th percentile under 1 s (if the response time is longer, it might as well be down), and the service may be required to be up at least 99.9% of the time. These metrics set expectations for clients of the service and allow customers to demand a refund if the SLA is not met.
+процентили часто используются в требованиях к уровню предоставления сервиса (service level objectives, SLO) и соглашениях об уровне предоставления сервиса (service level agreements, SLA) — контрактах, описывающих ожидаемые производительность и доступность сервиса.
+
+it only takes a small number of slow requests to hold up the processing of subsequent requests—an effect sometimes known as head-of-line blocking.
+Due to this effect, it is important to measure response times on the client side.
+
+Percentiles in Practice
+Even if only a small percentage of backend calls are slow, the chance of getting a slow call increases if an end-user request requires multiple backend calls, and so a higher proportion of end-user requests end up being slow (an effect known as tail latency amplification).
+
+Approaches for Coping with Load
+An architecture that is appropriate for one level of load is unlikely to cope with 10 times that load. If you are working on a fast-growing service, it is therefore likely that you will need to rethink your architecture on every order of magnitude load increase —or perhaps even more often than that.
+(вероятно, вам придется пересматривать архитектуру при каждом возрастании нагрузки на порядок)
+
+dichotomy [daɪˈkɒtəmɪ] дихотомия, двойственность, раздвоенность
+
+People often talk of a dichotomy between scaling up (vertical scaling, moving to a more powerful machine) and scaling out (horizontal scaling, distributing the load across multiple smaller machines).
+In reality, good architectures usually involve a pragmatic mixture of approaches: for example, using several fairly powerful machines can still be simpler and cheaper than a large number of small virtual machines.
+
+Some systems are elastic, meaning that they can automatically add computing resources when they detect a load increase, whereas other systems are scaled manually (a human analyzes the capacity and decides to add more machines to the system). An elastic system can be useful if load is highly unpredictable, but manually scaled systems are simpler and may have fewer operational surprises (see “Rebalancing Partitions” on page 209).
+
+The architecture of systems that operate at large scale is usually highly specific to the application—there is no such thing as a generic, one-size-fits-all scalable architecture
+
+*** Maintainability
+It is well known that the majority of the cost of software is not in its initial development, but in its ongoing maintenance—fixing bugs, keeping its systems operational, investigating failures, adapting it to new platforms, modifying it for new use cases, repaying technical debt, and adding new features.
+However, we can and should design software in such a way that it will hopefully minimize pain during maintenance, and thus avoid creating legacy software ourselves. To this end, we will pay particular attention to three design principles for software systems:
+1) Operability -- Make it easy for operations teams to keep the system running smoothly.
+2) Simplicity -- Make it easy for new engineers to understand the system, by removing as much complexity as possible from the system. (Note this is not the same as simplicity of the user interface.)
+3) Evolvability -- Make it easy for engineers to make changes to the system in the future, adapting it for unanticipated use cases as requirements change. Also known as extensibility, modifiability, or plasticity.
+□    Удобство эксплуатации. Облегчает обслуживающему персоналу поддержание беспрепятственной работы системы.
+□    Простота. Облегчает понимание системы новыми инженерами путем максимально возможного ее упрощения. (Обратите внимание: это не то же самое, что простота пользовательского интерфейса.)
+□    Возможность развития. Упрощает разработчикам внесение в будущем изменений в систему, адаптацию ее для непредвиденных сценариев использования при смене требований. Известна под названиями «расширяемость» (extensibility), «модифицируемость» (modifiability) и «пластичность» (plasticity).
+
+Operability: Making Life Easy for Operations
+It has been suggested that “good operations can often work around the limitations of bad (or incomplete) software, but good software cannot run reliably with bad operations”. While some aspects of operations can and should be automated, it is still up to humans to set up that automation in the first place and to make sure it’s working correctly.
+
+Operations teams are vital to keeping a software system running smoothly. A good operations team typically is responsible for the following, and more [29]:
+1 -- Monitoring the health of the system and quickly restoring service if it goes into a bad state
+2 -- Tracking down the cause of problems, such as system failures or degraded performance
+3 -- Keeping software and platforms up to date, including security patches
+4 -- Keeping tabs on how different systems affect each other, so that a problematic change can be avoided before it causes damage
+5 -- Anticipating future problems and solving them before they occur (e.g., capacity planning)
+6 -- Establishing good practices and tools for deployment, configuration management, and more
+7 -- Performing complex maintenance tasks, such as moving an application from one platform to another
+8 -- Maintaining the security of the system as configuration changes are made
+9 -- Defining processes that make operations predictable and help keep the production environment stable
+10 -- Preserving the organization’s knowledge about the system, even as individual people come and go
+
+Good operability means making routine tasks easy, allowing the operations team to focus their efforts on high-value activities. Data systems can do various things to make routine tasks easy, including:
+1 -- Providing visibility into the runtime behavior and internals of the system, with good monitoring
+2 -- Providing good support for automation and integration with standard tools
+3 -- Avoiding dependency on individual machines (allowing machines to be taken down for maintenance while the system as a whole continues running uninterrupted)
+4 -- Providing good documentation and an easy-to-understand operational model (“If I do X, Y will happen”)
+5 -- Providing good default behavior, but also giving administrators the freedom to override defaults when needed
+6 -- Self-healing where appropriate, but also giving administrators manual control over the system state when needed
+7 -- Exhibiting predictable behavior, minimizing surprises
+
+Simplicity: Managing Complexity
+Small software projects can have delightfully simple and expressive code, but as projects get larger, they often become very complex and difficult to understand. This complexity slows down everyone who needs to work on the system, further increasing the cost of maintenance. A software project mired in complexity is sometimes described as a BIG BALL OF MUD.
+There are various possible symptoms of complexity: explosion of the state space, tight coupling of modules, tangled dependencies, inconsistent naming and terminology, hacks aimed at solving performance problems, special-casing to work around issues elsewhere, and many more.
+
+when the system is harder for developers to understand and reason about, hidden assumptions, unintended consequences, and unexpected interactions are more easily overlooked.
+
+Making a system simpler does not necessarily mean reducing its functionality; it can also mean removing ACCIDENTAL COMPLEXITY --> if it is not inherent in the problem that the software solves (as seen by the users) but arises only from the implementation.
+
+One of the best tools we have for removing accidental complexity is abstraction. A good abstraction can hide a great deal of implementation detail behind a clean, simple-to-understand facade.
+ A good abstraction can also be used for a wide range of different applications. Not only is this reuse more efficient than reimplementing a similar thing multiple times, but it also leads to higher-quality software, as quality improvements in the abstracted component benefit all applications that use it.
+
+ However, finding good abstractions is very hard
+
+ Evolvability: Making Change Easy
+It’s extremely unlikely that your system’s requirements will remain unchanged forever. They are much more likely to be in constant flux: you learn new facts, previously unanticipated use cases emerge, business priorities change, users request new features, new platforms replace old platforms, legal or regulatory requirements change, growth of the system forces architectural changes, etc.
+
+In terms of organizational processes, Agile working patterns provide a framework for adapting to change. The Agile community has also developed technical tools and patterns that are helpful when developing software in a frequently changing environment, such as test-driven development (TDD) and refactoring.
+
+The ease with which you can modify a data system, and adapt it to changing requirements, is closely linked to its simplicity and its abstractions: simple and easy-to-understand systems are usually easier to modify than complex ones. EVOLVABILITY
+
+ Summary
+ An application has to meet various requirements in order to be useful. There are functional requirements (what it should do, such as allowing data to be stored, retrieved, searched, and processed in various ways), and some nonfunctional requirements (general properties like security, reliability, compliance, scalability, compatibility, and maintainability). In this chapter we discussed reliability, scalability, and maintainability in detail.
+
+Reliability means making systems work correctly, even when faults occur. Faults can be in hardware (typically random and uncorrelated), software (bugs are typically systematic and hard to deal with), and humans (who inevitably make mistakes from time to time). Fault-tolerance techniques can hide certain types of faults from the end user.
+
+Scalability means having strategies for keeping performance good, even when load increases. In order to discuss scalability, we first need ways of describing load and performance quantitatively. We briefly looked at Twitter’s home timelines as an example of describing load, and response time percentiles as a way of measuring performance. In a scalable system, you can add processing capacity in order to remain reliable under high load.
+
+Maintainability has many facets, but in essence it’s about making life better for the engineering and operations teams who need to work with the system. Good abstractions can help reduce complexity and make the system easier to modify and adapt for new use cases. Good operability means having good visibility into the system’s health, and having effective ways of managing it.
+
+There is unfortunately no easy fix for making applications reliable, scalable, or maintainable. However, there are certain patterns and techniques that keep reappearing in different kinds of applications.
+
+*** Data Models and Query Languages
+Data models are perhaps the most important part of developing software, because they have such a profound effect: not only on how the software is written, but also on how we think about the problem that we are solving.
+
+
