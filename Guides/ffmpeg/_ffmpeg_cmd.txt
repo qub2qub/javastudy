@@ -8,6 +8,10 @@ ffmpeg -i "n37 Profiling.mp4" -vcodec libx264 -acodec aac -ar 16000 -ac 1 -b:a 6
 >>>>____ использую это внизу ____ >>>>
 ffmpeg -i "filename.mp4" -vcodec libx264 -crf 28 -acodec aac -ar 16000 -ac 1 -b:a 64k  resultFile.mp4
 
+for %f in (*.mp4) do ffmpeg -i "%f" -vn -ar 44100 -ac 1 -b:a 32k -f mp3 "%~nf.mp3"
+for %f in (*.mp4) do ffmpeg -i "%f" -vcodec libx264 -crf 28 -acodec aac -ar 16000 -ac 1 -b:a 64k "z%~nf.mp4"
+for %f in (*.mp4) do ffmpeg -i "%f" -vcodec libx264 -crf 28 -acodec aac -ar 16000 -ac 1 -b:a 64k "1\z%~nf.mp4"
+
 >>>>
 ffmpeg -i "VTS_01_1.VOB" -vcodec libx264 -acodec aac -ar 32000 -ac 1 -b:a 128k -crf 23 test1.mp4
 
